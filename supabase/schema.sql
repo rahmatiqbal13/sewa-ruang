@@ -334,6 +334,27 @@ CREATE TABLE IF NOT EXISTS public.notification_preferences (
   UNIQUE(user_id, channel, event_type)
 );
 
+CREATE TABLE IF NOT EXISTS public.notification_channel_configs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  channel notification_channel NOT NULL UNIQUE,
+  is_enabled BOOLEAN NOT NULL DEFAULT false,
+  config JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by UUID REFERENCES public.users(id)
+);
+
+CREATE TABLE IF NOT EXISTS public.notification_templates (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_type TEXT NOT NULL,
+  channel notification_channel NOT NULL,
+  subject TEXT,
+  body TEXT NOT NULL DEFAULT '',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by UUID REFERENCES public.users(id),
+  UNIQUE(event_type, channel)
+);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================
@@ -371,6 +392,8 @@ ALTER TABLE public.room_inventory_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.asset_tracking_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_channel_configs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agreement_templates ENABLE ROW LEVEL SECURITY;
 
 -- Helper: get current user role
@@ -466,6 +489,14 @@ CREATE POLICY "notifications_own" ON public.notifications FOR ALL USING (user_id
 
 -- NOTIFICATION PREFERENCES
 CREATE POLICY "notif_prefs_own" ON public.notification_preferences FOR ALL USING (user_id = auth.uid());
+
+-- NOTIFICATION CHANNEL CONFIGS (admin only)
+CREATE POLICY "admin_manage_channel_configs" ON public.notification_channel_configs FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "staff_read_channel_configs" ON public.notification_channel_configs FOR SELECT USING (public.is_admin_or_staff());
+
+-- NOTIFICATION TEMPLATES (admin only)
+CREATE POLICY "admin_manage_templates" ON public.notification_templates FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "staff_read_templates" ON public.notification_templates FOR SELECT USING (public.is_admin_or_staff());
 
 -- AGREEMENT TEMPLATES
 CREATE POLICY "agreement_templates_public_read" ON public.agreement_templates FOR SELECT USING (true);

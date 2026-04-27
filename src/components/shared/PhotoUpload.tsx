@@ -38,7 +38,11 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
       .upload(path, file, { upsert: true })
 
     if (error) {
-      toast.error('Gagal mengunggah foto: ' + error.message)
+      if (error.message.includes('Bucket not found') || error.message.includes('bucket')) {
+        toast.error('Storage bucket belum dibuat. Hubungi admin untuk setup Supabase Storage.')
+      } else {
+        toast.error('Gagal mengunggah foto: ' + error.message)
+      }
       setUploading(false)
       return
     }
