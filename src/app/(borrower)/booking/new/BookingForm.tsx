@@ -62,14 +62,19 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
 
   const selectedAsset = assets.find(a => a.id === assetId)
 
-  function recalcTotal() {
-    if (!selectedAsset || !startDate || !startTime || !endDate || !endTime) return
-    const start = new Date(`${startDate}T${startTime}`)
-    const end = new Date(`${endDate}T${endTime}`)
+  function recalcTotal(overrides?: Partial<{ asset_id: string; start_date: string; start_time: string; end_date: string; end_time: string }>) {
+    const sd = overrides?.start_date ?? startDate
+    const st = overrides?.start_time ?? startTime
+    const ed = overrides?.end_date ?? endDate
+    const et = overrides?.end_time ?? endTime
+    const aid = overrides?.asset_id ?? assetId
+    const asset = assets.find(a => a.id === aid) ?? selectedAsset
+    if (!asset || !sd || !st || !ed || !et) return
+    const start = new Date(`${sd}T${st}`)
+    const end = new Date(`${ed}T${et}`)
     if (end <= start) { setEstimatedTotal(null); return }
     const hours = (end.getTime() - start.getTime()) / 3600000
-    const rate = selectedAsset.rate_per_hour ?? 0
-    setEstimatedTotal(hours * rate)
+    setEstimatedTotal(hours * (asset.rate_per_hour ?? 0))
   }
 
   async function onSubmit(data: FormData) {
@@ -129,7 +134,7 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Pilih Aset</Label>
-            <Select defaultValue={defaultAssetId} onValueChange={(v) => { if (v) { setValue('asset_id', v); recalcTotal() } }}>
+            <Select defaultValue={defaultAssetId} onValueChange={(v) => { if (v) { setValue('asset_id', v); recalcTotal({ asset_id: v }) } }}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih ruang atau alat..." />
               </SelectTrigger>
@@ -149,20 +154,20 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Tanggal Mulai</Label>
-              <Input type="date" {...register('start_date')} onChange={(e) => { register('start_date').onChange(e); recalcTotal() }} />
+              <Input type="date" {...register('start_date')} onChange={(e) => { register('start_date').onChange(e); recalcTotal({ start_date: e.target.value }) }} />
               {errors.start_date && <p className="text-sm text-destructive">{errors.start_date.message}</p>}
             </div>
             <div className="space-y-2">
               <Label>Jam Mulai</Label>
-              <Input type="time" {...register('start_time')} onChange={(e) => { register('start_time').onChange(e); recalcTotal() }} />
+              <Input type="time" {...register('start_time')} onChange={(e) => { register('start_time').onChange(e); recalcTotal({ start_time: e.target.value }) }} />
             </div>
             <div className="space-y-2">
               <Label>Tanggal Selesai</Label>
-              <Input type="date" {...register('end_date')} onChange={(e) => { register('end_date').onChange(e); recalcTotal() }} />
+              <Input type="date" {...register('end_date')} onChange={(e) => { register('end_date').onChange(e); recalcTotal({ end_date: e.target.value }) }} />
             </div>
             <div className="space-y-2">
               <Label>Jam Selesai</Label>
-              <Input type="time" {...register('end_time')} onChange={(e) => { register('end_time').onChange(e); recalcTotal() }} />
+              <Input type="time" {...register('end_time')} onChange={(e) => { register('end_time').onChange(e); recalcTotal({ end_time: e.target.value }) }} />
             </div>
           </div>
 
