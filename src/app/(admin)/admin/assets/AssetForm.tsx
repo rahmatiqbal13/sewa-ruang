@@ -1,0 +1,192 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Loader2 } from 'lucide-react'
+
+const schema = z.object({
+  name: z.string().min(2),
+  category: z.enum(['room', 'equipment']),
+  building_id: z.string().optional(),
+  floor_number: z.coerce.number().int().min(1).optional(),
+  room_sequence: z.coerce.number().int().min(1).max(99).optional(),
+  description: z.string().optional(),
+  capacity: z.coerce.number().int().min(1).optional(),
+  rate_per_hour: z.coerce.number().min(0).optional(),
+  rate_per_day: z.coerce.number().min(0).optional(),
+})
+type FormData = {
+  name: string
+  category: 'room' | 'equipment'
+  building_id?: string
+  floor_number?: number
+  room_sequence?: number
+  description?: string
+  capacity?: number
+  rate_per_hour?: number
+  rate_per_day?: number
+}
+
+interface Building { id: string; name: string; code: string; floor_count: number }
+interface Asset {
+  id: string; name: string; category: string; building_id: string | null;
+  floor_number: number | null; room_sequence: number | null; room_code: string | null;
+  description: string | null; capacity: number | null; rate_per_hour: number | null;
+  rate_per_day: number | null
+}
+
+export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Building[] }) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
+    defaultValues: asset ? {
+      name: asset.name,
+      category: asset.category as 'room' | 'equipment',
+      building_id: asset.building_id ?? '',
+      floor_number: asset.floor_number ?? undefined,
+      room_sequence: asset.room_sequence ?? undefined,
+      description: asset.description ?? '',
+      capacity: asset.capacity ?? undefined,
+      rate_per_hour: asset.rate_per_hour ?? undefined,
+      rate_per_day: asset.rate_per_day ?? undefined,
+    } : { category: 'room' },
+  })
+
+  const category = watch('category')
+  const buildingId = watch('building_id')
+  const selectedBuilding = buildings.find(b => b.id === buildingId)
+
+  async function onSubmit(data: FormData) {
+    setLoading(true)
+    const supabase = createClient()
+    const payload = {
+      ...data,
+      building_id: data.category === 'room' ? (data.building_id || null) : null,
+      floor_number: data.category === 'room' ? (data.floor_number || null) : null,
+      room_sequence: data.category === 'room' ? (data.room_sequence || null) : null,
+    }
+
+    let error
+    if (asset) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = await (supabase.from('assets') as any).update(payload).eq('id', asset.id)
+      error = res.error
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = await (supabase.from('assets') as any).insert(payload)
+      error = res.error
+    }
+
+    if (error) { toast.error(error.message); setLoading(false); return }
+    toast.success(asset ? 'Aset diperbarui' : 'Aset ditambahkan')
+    router.push('/admin/assets')
+    router.refresh()
+    setLoading(false)
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="space-y-2">
+            <Label>Nama Aset</Label>
+            <Input placeholder="Nama ruang atau alat" {...register('name')} />
+            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Kategori</Label>
+            <Select defaultValue={asset?.category ?? 'room'} onValueChange={(v) => setValue('category', v as 'room' | 'equipment')}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="room">Ruang</SelectItem>
+                <SelectItem value="equipment">Alat / Peralatan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {category === 'room' && (
+            <>
+              <div className="space-y-2">
+                <Label>Gedung</Label>
+                <Select
+                  defaultValue={asset?.building_id ?? ''}
+                  onValueChange={(v) => setValue('building_id', v ?? undefined)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Pilih gedung..." /></SelectTrigger>
+                  <SelectContent>
+                    {buildings.map(b => (
+                      <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Lantai</Label>
+                  <Select
+                    defaultValue={asset?.floor_number?.toString()}
+                    onValueChange={(v) => setValue('floor_number', v ? parseInt(v) : undefined)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Pilih lantai..." /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: selectedBuilding?.floor_count ?? 10 }, (_, i) => i + 1).map(n => (
+                        <SelectItem key={n} value={n.toString()}>Lantai {n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Nomor Urut Ruang</Label>
+                  <Input type="number" min={1} max={99} placeholder="1" {...register('room_sequence')} />
+                  <p className="text-xs text-muted-foreground">Urutan ruang di lantai tersebut</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Kapasitas (orang)</Label>
+                <Input type="number" min={1} placeholder="30" {...register('capacity')} />
+              </div>
+            </>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Tarif per Jam (Rp)</Label>
+              <Input type="number" min={0} placeholder="50000" {...register('rate_per_hour')} />
+            </div>
+            <div className="space-y-2">
+              <Label>Tarif per Hari (Rp)</Label>
+              <Input type="number" min={0} placeholder="300000" {...register('rate_per_day')} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Deskripsi (opsional)</Label>
+            <Textarea placeholder="Deskripsi aset..." {...register('description')} />
+          </div>
+
+          <div className="flex gap-3">
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {asset ? 'Simpan Perubahan' : 'Tambah Aset'}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => router.back()}>Batal</Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
