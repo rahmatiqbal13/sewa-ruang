@@ -55,6 +55,10 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
+  ALTER TYPE user_role ADD VALUE 'super_admin';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
   CREATE TYPE tracking_action_type AS ENUM ('scan_public', 'update_condition', 'update_location', 'marked_returned');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -398,20 +402,33 @@ ALTER TABLE public.agreement_templates ENABLE ROW LEVEL SECURITY;
 
 -- Helper: get current user role
 CREATE OR REPLACE FUNCTION public.get_user_role()
-RETURNS user_role AS $$
-  SELECT role FROM public.users WHERE id = auth.uid();
+RETURNS TEXT AS $$
+  SELECT role::TEXT FROM public.users WHERE id = auth.uid();
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
--- Helper: check if admin or staff
+-- Helper: check if super_admin
+CREATE OR REPLACE FUNCTION public.is_super_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'super_admin');
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Helper: check if admin or above (includes super_admin)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('super_admin', 'admin'));
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Helper: check if admin or staff (includes super_admin)
 CREATE OR REPLACE FUNCTION public.is_admin_or_staff()
 RETURNS BOOLEAN AS $$
-  SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'staff'));
+  SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('super_admin', 'admin', 'staff'));
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- USERS policies
 CREATE POLICY "users_select_own" ON public.users FOR SELECT USING (id = auth.uid() OR public.is_admin_or_staff());
 CREATE POLICY "users_update_own" ON public.users FOR UPDATE USING (id = auth.uid());
-CREATE POLICY "admin_manage_users" ON public.users FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "admin_manage_users" ON public.users FOR ALL USING (public.is_admin());
+CREATE POLICY "super_admin_all_users" ON public.users FOR ALL USING (public.is_super_admin());
 
 -- BUILDINGS policies
 CREATE POLICY "buildings_public_read" ON public.buildings FOR SELECT USING (true);
