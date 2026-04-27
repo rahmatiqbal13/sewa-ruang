@@ -40,12 +40,12 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="flex flex-col w-64 min-h-screen bg-zinc-900 text-zinc-100 shrink-0">
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-zinc-700">
-        <Building2 className="h-6 w-6 text-primary" />
-        <span className="font-bold text-sm leading-tight">Sewa Ruang & Alat</span>
+    <aside className="flex flex-col w-64 min-h-screen bg-blue-950 text-blue-100 shrink-0">
+      <div className="flex items-center gap-2 px-6 py-5 border-b border-blue-800">
+        <Building2 className="h-6 w-6 text-blue-300" />
+        <span className="font-bold text-sm leading-tight text-white">Sewa Ruang & Alat</span>
       </div>
-      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
@@ -55,8 +55,8 @@ export function AdminSidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-blue-300 hover:text-white hover:bg-blue-800/60'
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
@@ -65,10 +65,10 @@ export function AdminSidebar() {
           )
         })}
       </nav>
-      <div className="p-3 border-t border-zinc-700">
+      <div className="p-3 border-t border-blue-800">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-blue-300 hover:text-white hover:bg-blue-800/60 transition-colors"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Keluar

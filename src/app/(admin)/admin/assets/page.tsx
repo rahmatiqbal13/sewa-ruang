@@ -6,14 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus, Package } from 'lucide-react'
 import { AssetActions } from './AssetActions'
+import { ConditionBadge } from '@/components/shared/ConditionBadge'
+import { AvailabilityBadge } from '@/components/shared/AvailabilityBadge'
+import { ActionStatusBadge } from '@/components/shared/ActionStatusBadge'
 import { formatRupiah } from '@/lib/utils'
-
-const conditionLabel: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  good: { label: 'Baik', variant: 'default' },
-  needs_repair: { label: 'Perlu Perbaikan', variant: 'outline' },
-  damaged: { label: 'Rusak', variant: 'destructive' },
-  lost: { label: 'Hilang', variant: 'destructive' },
-}
 
 export default async function AssetsPage() {
   const supabase = await createClient()
@@ -21,7 +17,14 @@ export default async function AssetsPage() {
   const { data: assets } = await (supabase.from('assets') as any)
     .select('*, buildings(name, code)')
     .order('category')
-    .order('name') as { data: Array<{id:string;name:string;category:string;room_code:string|null;current_condition:string;rate_per_hour:number|null;is_active:boolean;buildings:{name:string;code:string}|null}> | null }
+    .order('name') as {
+      data: Array<{
+        id: string; name: string; category: string; room_code: string | null
+        current_condition: string; rate_per_hour: number | null; is_active: boolean
+        merk: string | null; ketersediaan: string | null; status_tindakan: string | null
+        buildings: { name: string; code: string } | null
+      }> | null
+    }
 
   return (
     <div className="p-6 space-y-6">
@@ -49,8 +52,10 @@ export default async function AssetsPage() {
                 <TableHead>Nama</TableHead>
                 <TableHead>Kategori</TableHead>
                 <TableHead>Kode / Gedung</TableHead>
+                <TableHead>Merk</TableHead>
                 <TableHead>Tarif/Jam</TableHead>
                 <TableHead>Kondisi</TableHead>
+                <TableHead>Ketersediaan</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
               </TableRow>
@@ -58,41 +63,42 @@ export default async function AssetsPage() {
             <TableBody>
               {assets?.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Belum ada data aset
                   </TableCell>
                 </TableRow>
               )}
-              {assets?.map((a) => {
-                const cond = conditionLabel[a.current_condition]
-                return (
-                  <TableRow key={a.id}>
-                    <TableCell className="font-medium">{a.name}</TableCell>
-                    <TableCell>
-                      <Badge variant={a.category === 'room' ? 'default' : 'secondary'}>
-                        {a.category === 'room' ? 'Ruang' : 'Alat'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {a.room_code
-                        ? <span className="font-mono font-medium text-foreground">{a.room_code}</span>
-                        : (a.buildings as {name:string}|null)?.name ?? '-'}
-                    </TableCell>
-                    <TableCell>{a.rate_per_hour ? formatRupiah(a.rate_per_hour) : '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={cond.variant}>{cond.label}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={a.is_active ? 'default' : 'secondary'}>
-                        {a.is_active ? 'Aktif' : 'Nonaktif'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <AssetActions id={a.id} isActive={a.is_active} />
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
+              {assets?.map((a) => (
+                <TableRow key={a.id}>
+                  <TableCell className="font-medium">{a.name}</TableCell>
+                  <TableCell>
+                    <Badge variant={a.category === 'room' ? 'default' : 'secondary'}>
+                      {a.category === 'room' ? 'Ruang' : 'Alat'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {a.room_code
+                      ? <span className="font-mono font-medium text-foreground">{a.room_code}</span>
+                      : (a.buildings as { name: string } | null)?.name ?? '-'}
+                  </TableCell>
+                  <TableCell className="text-sm">{a.merk ?? '-'}</TableCell>
+                  <TableCell>{a.rate_per_hour ? formatRupiah(a.rate_per_hour) : '-'}</TableCell>
+                  <TableCell><ConditionBadge condition={a.current_condition} /></TableCell>
+                  <TableCell>
+                    {a.category === 'equipment'
+                      ? <AvailabilityBadge status={a.ketersediaan ?? 'tersedia'} />
+                      : <span className="text-xs text-muted-foreground">-</span>}
+                  </TableCell>
+                  <TableCell>
+                    {a.category === 'equipment' && a.status_tindakan
+                      ? <ActionStatusBadge status={a.status_tindakan} />
+                      : <Badge variant={a.is_active ? 'default' : 'secondary'}>{a.is_active ? 'Aktif' : 'Nonaktif'}</Badge>}
+                  </TableCell>
+                  <TableCell>
+                    <AssetActions id={a.id} isActive={a.is_active} />
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>

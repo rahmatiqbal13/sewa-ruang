@@ -25,6 +25,11 @@ const schema = z.object({
   capacity: z.coerce.number().int().min(1).optional(),
   rate_per_hour: z.coerce.number().min(0).optional(),
   rate_per_day: z.coerce.number().min(0).optional(),
+  merk: z.string().optional(),
+  ketersediaan: z.enum(['tersedia', 'digunakan', 'hilang']).optional(),
+  status_tindakan: z.enum(['normal', 'perawatan', 'menunggu_part', 'afkir']).optional(),
+  sumber: z.string().optional(),
+  tgl_terakhir_cek: z.string().optional(),
 })
 type FormData = {
   name: string
@@ -36,14 +41,20 @@ type FormData = {
   capacity?: number
   rate_per_hour?: number
   rate_per_day?: number
+  merk?: string
+  ketersediaan?: 'tersedia' | 'digunakan' | 'hilang'
+  status_tindakan?: 'normal' | 'perawatan' | 'menunggu_part' | 'afkir'
+  sumber?: string
+  tgl_terakhir_cek?: string
 }
 
 interface Building { id: string; name: string; code: string; floor_count: number }
 interface Asset {
-  id: string; name: string; category: string; building_id: string | null;
-  floor_number: number | null; room_sequence: number | null; room_code: string | null;
-  description: string | null; capacity: number | null; rate_per_hour: number | null;
-  rate_per_day: number | null
+  id: string; name: string; category: string; building_id: string | null
+  floor_number: number | null; room_sequence: number | null; room_code: string | null
+  description: string | null; capacity: number | null; rate_per_hour: number | null
+  rate_per_day: number | null; merk: string | null; ketersediaan: string | null
+  status_tindakan: string | null; sumber: string | null; tgl_terakhir_cek: string | null
 }
 
 export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Building[] }) {
@@ -62,7 +73,12 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
       capacity: asset.capacity ?? undefined,
       rate_per_hour: asset.rate_per_hour ?? undefined,
       rate_per_day: asset.rate_per_day ?? undefined,
-    } : { category: 'room' },
+      merk: asset.merk ?? '',
+      ketersediaan: (asset.ketersediaan as FormData['ketersediaan']) ?? 'tersedia',
+      status_tindakan: (asset.status_tindakan as FormData['status_tindakan']) ?? 'normal',
+      sumber: asset.sumber ?? '',
+      tgl_terakhir_cek: asset.tgl_terakhir_cek ?? '',
+    } : { category: 'room', ketersediaan: 'tersedia', status_tindakan: 'normal' },
   })
 
   const category = watch('category')
@@ -77,6 +93,9 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
       building_id: data.category === 'room' ? (data.building_id || null) : null,
       floor_number: data.category === 'room' ? (data.floor_number || null) : null,
       room_sequence: data.category === 'room' ? (data.room_sequence || null) : null,
+      merk: data.merk || null,
+      sumber: data.sumber || null,
+      tgl_terakhir_cek: data.tgl_terakhir_cek || null,
     }
 
     let error
@@ -162,6 +181,56 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
             </>
           )}
 
+          {category === 'equipment' && (
+            <>
+              <div className="space-y-2">
+                <Label>Merk / Produsen</Label>
+                <Input placeholder="Samsung, Epson, dll." {...register('merk')} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Ketersediaan</Label>
+                  <Select
+                    defaultValue={asset?.ketersediaan ?? 'tersedia'}
+                    onValueChange={(v) => v && setValue('ketersediaan', v as FormData['ketersediaan'])}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tersedia">Tersedia</SelectItem>
+                      <SelectItem value="digunakan">Digunakan</SelectItem>
+                      <SelectItem value="hilang">Hilang</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status Tindakan</Label>
+                  <Select
+                    defaultValue={asset?.status_tindakan ?? 'normal'}
+                    onValueChange={(v) => v && setValue('status_tindakan', v as FormData['status_tindakan'])}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="perawatan">Perawatan</SelectItem>
+                      <SelectItem value="menunggu_part">Menunggu Part</SelectItem>
+                      <SelectItem value="afkir">Afkir</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Sumber / Pengadaan</Label>
+                  <Input placeholder="Pengadaan 2024, Hibah, dll." {...register('sumber')} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tgl. Terakhir Cek</Label>
+                  <Input type="date" {...register('tgl_terakhir_cek')} />
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Tarif per Jam (Rp)</Label>
@@ -174,8 +243,8 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
           </div>
 
           <div className="space-y-2">
-            <Label>Deskripsi (opsional)</Label>
-            <Textarea placeholder="Deskripsi aset..." {...register('description')} />
+            <Label>Deskripsi / Keterangan (opsional)</Label>
+            <Textarea placeholder="Deskripsi atau catatan tambahan..." {...register('description')} />
           </div>
 
           <div className="flex gap-3">

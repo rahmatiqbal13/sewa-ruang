@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
+import { buttonVariants } from '@/components/ui/button'
 import { QRCodeDisplay } from './QRCodeDisplay'
 
 export default async function QRPage({ searchParams }: { searchParams: Promise<{ id?: string; type?: string }> }) {
@@ -23,7 +25,12 @@ export default async function QRPage({ searchParams }: { searchParams: Promise<{
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">QR Code</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">QR Code</h1>
+        <Link href="/admin/qr/batch" className={buttonVariants({ variant: 'outline' })}>
+          Cetak Label Massal
+        </Link>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-2">

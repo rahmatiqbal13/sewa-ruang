@@ -43,6 +43,14 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
+  CREATE TYPE availability_status AS ENUM ('tersedia', 'digunakan', 'hilang');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE action_status AS ENUM ('normal', 'perawatan', 'menunggu_part', 'afkir');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
   CREATE TYPE notification_channel AS ENUM ('email', 'whatsapp', 'telegram');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -110,6 +118,11 @@ CREATE TABLE IF NOT EXISTS public.assets (
   operating_hours JSONB,
   current_condition asset_condition NOT NULL DEFAULT 'good',
   current_location TEXT,
+  merk TEXT,
+  ketersediaan availability_status NOT NULL DEFAULT 'tersedia',
+  status_tindakan action_status NOT NULL DEFAULT 'normal',
+  sumber TEXT,
+  tgl_terakhir_cek DATE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT room_requires_building CHECK (
     category != 'room' OR (building_id IS NOT NULL AND floor_number IS NOT NULL AND room_sequence IS NOT NULL)
