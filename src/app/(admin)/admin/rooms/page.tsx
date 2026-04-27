@@ -37,7 +37,7 @@ export default async function RoomsPage() {
           <h1 className="text-2xl font-bold">Ruangan</h1>
           <p className="text-muted-foreground text-sm">Kelola ruangan yang tersedia untuk peminjaman</p>
         </div>
-        <Link href="/admin/assets/new" className={buttonVariants()}>
+        <Link href="/admin/rooms/new" className={buttonVariants()}>
           <Plus className="mr-2 h-4 w-4" /> Tambah Ruangan
         </Link>
       </div>
@@ -67,7 +67,7 @@ export default async function RoomsPage() {
               {rooms?.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                    Belum ada ruangan. <Link href="/admin/assets/new" className="text-primary hover:underline">Tambah sekarang</Link>
+                    Belum ada ruangan. <Link href="/admin/rooms/new" className="text-primary hover:underline">Tambah sekarang</Link>
                   </TableCell>
                 </TableRow>
               )}

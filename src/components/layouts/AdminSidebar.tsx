@@ -15,7 +15,7 @@ const navItems = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Gedung', href: '/admin/buildings', icon: Building2 },
   { label: 'Ruangan', href: '/admin/rooms', icon: DoorOpen },
-  { label: 'Aset', href: '/admin/assets', icon: Package },
+  { label: 'Alat', href: '/admin/assets', icon: Package },
   { label: 'Inventaris', href: '/admin/inventory', icon: Boxes },
   { label: 'Pengajuan', href: '/admin/bookings', icon: CalendarDays },
   { label: 'Pembayaran', href: '/admin/payments', icon: CreditCard },

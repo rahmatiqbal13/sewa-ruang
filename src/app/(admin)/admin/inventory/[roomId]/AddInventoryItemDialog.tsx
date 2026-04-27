@@ -21,6 +21,7 @@ const schema = z.object({
   condition: z.enum(['good', 'needs_repair', 'damaged']),
   inventory_code: z.string().optional(),
   notes: z.string().optional(),
+  photo_url: z.string().url('URL foto tidak valid').optional().or(z.literal('')),
 })
 type FormData = {
   name: string
@@ -28,6 +29,7 @@ type FormData = {
   condition: 'good' | 'needs_repair' | 'damaged'
   inventory_code?: string
   notes?: string
+  photo_url?: string
 }
 
 export function AddInventoryItemDialog({ roomId }: { roomId: string }) {
@@ -52,6 +54,7 @@ export function AddInventoryItemDialog({ roomId }: { roomId: string }) {
       condition: data.condition,
       inventory_code: data.inventory_code || null,
       notes: data.notes || null,
+      photo_url: data.photo_url || null,
       last_updated_by: user!.id,
     })
     if (error) { toast.error(error.message); setLoading(false); return }
@@ -95,6 +98,10 @@ export function AddInventoryItemDialog({ roomId }: { roomId: string }) {
                 <SelectItem value="damaged">Rusak</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>URL Foto (opsional)</Label>
+            <Input placeholder="https://..." {...register('photo_url')} />
           </div>
           <div className="space-y-2">
             <Label>Catatan (opsional)</Label>

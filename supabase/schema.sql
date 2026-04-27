@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS public.assets (
   status_tindakan action_status NOT NULL DEFAULT 'normal',
   sumber TEXT,
   tgl_terakhir_cek DATE,
+  photo_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT room_requires_building CHECK (
     category != 'room' OR (building_id IS NOT NULL AND floor_number IS NOT NULL AND room_sequence IS NOT NULL)
@@ -282,6 +283,7 @@ CREATE TABLE IF NOT EXISTS public.room_inventory_items (
   condition inventory_condition NOT NULL DEFAULT 'good',
   inventory_code TEXT,
   notes TEXT,
+  photo_url TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
   last_updated_by UUID REFERENCES public.users(id),
   last_updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),

@@ -11,8 +11,9 @@ export default async function NewAssetPage() {
 
   return (
     <div className="p-6 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Tambah Aset</h1>
-      <AssetForm buildings={buildings ?? []} />
+      <h1 className="text-2xl font-bold mb-1">Tambah Alat / Peralatan</h1>
+      <p className="text-muted-foreground text-sm mb-6">Isi data alat yang akan ditambahkan ke sistem</p>
+      <AssetForm buildings={buildings ?? []} lockedCategory="equipment" />
     </div>
   )
 }

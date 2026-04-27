@@ -30,6 +30,7 @@ const schema = z.object({
   status_tindakan: z.enum(['normal', 'perawatan', 'menunggu_part', 'afkir']).optional(),
   sumber: z.string().optional(),
   tgl_terakhir_cek: z.string().optional(),
+  photo_url: z.string().url('URL foto tidak valid').optional().or(z.literal('')),
 })
 type FormData = {
   name: string
@@ -46,6 +47,7 @@ type FormData = {
   status_tindakan?: 'normal' | 'perawatan' | 'menunggu_part' | 'afkir'
   sumber?: string
   tgl_terakhir_cek?: string
+  photo_url?: string
 }
 
 interface Building { id: string; name: string; code: string; floor_count: number }
@@ -55,9 +57,10 @@ interface Asset {
   description: string | null; capacity: number | null; rate_per_hour: number | null
   rate_per_day: number | null; merk: string | null; ketersediaan: string | null
   status_tindakan: string | null; sumber: string | null; tgl_terakhir_cek: string | null
+  photo_url: string | null
 }
 
-export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Building[] }) {
+export function AssetForm({ asset, buildings, lockedCategory }: { asset?: Asset; buildings: Building[]; lockedCategory?: 'room' | 'equipment' }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
@@ -78,10 +81,11 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
       status_tindakan: (asset.status_tindakan as FormData['status_tindakan']) ?? 'normal',
       sumber: asset.sumber ?? '',
       tgl_terakhir_cek: asset.tgl_terakhir_cek ?? '',
-    } : { category: 'room', ketersediaan: 'tersedia', status_tindakan: 'normal' },
+      photo_url: asset.photo_url ?? '',
+    } : { category: lockedCategory ?? 'room', ketersediaan: 'tersedia', status_tindakan: 'normal' },
   })
 
-  const category = watch('category')
+  const category = lockedCategory ?? watch('category')
   const buildingId = watch('building_id')
   const selectedBuilding = buildings.find(b => b.id === buildingId)
 
@@ -96,6 +100,7 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
       merk: data.merk || null,
       sumber: data.sumber || null,
       tgl_terakhir_cek: data.tgl_terakhir_cek || null,
+      photo_url: data.photo_url || null,
     }
 
     let error
@@ -111,7 +116,11 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
 
     if (error) { toast.error(error.message); setLoading(false); return }
     toast.success(asset ? 'Aset diperbarui' : 'Aset ditambahkan')
-    router.push('/admin/assets')
+    const backPath = lockedCategory === 'room' ? '/admin/rooms' : '/admin/assets'
+    router.push(asset
+      ? (asset.category === 'room' ? '/admin/rooms' : '/admin/assets')
+      : backPath
+    )
     router.refresh()
     setLoading(false)
   }
@@ -126,16 +135,18 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label>Kategori</Label>
-            <Select defaultValue={asset?.category ?? 'room'} onValueChange={(v) => setValue('category', v as 'room' | 'equipment')}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="room">Ruang</SelectItem>
-                <SelectItem value="equipment">Alat / Peralatan</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {!lockedCategory && (
+            <div className="space-y-2">
+              <Label>Kategori</Label>
+              <Select defaultValue={asset?.category ?? 'room'} onValueChange={(v) => setValue('category', v as 'room' | 'equipment')}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="room">Ruang</SelectItem>
+                  <SelectItem value="equipment">Alat / Peralatan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {category === 'room' && (
             <>
@@ -240,6 +251,12 @@ export function AssetForm({ asset, buildings }: { asset?: Asset; buildings: Buil
               <Label>Tarif per Hari (Rp)</Label>
               <Input type="number" min={0} placeholder="300000" {...register('rate_per_day')} />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>URL Foto (opsional)</Label>
+            <Input placeholder="https://..." {...register('photo_url')} />
+            <p className="text-xs text-muted-foreground">Link ke foto ruangan atau alat</p>
           </div>
 
           <div className="space-y-2">
