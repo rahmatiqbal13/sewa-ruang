@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { AdminSidebar } from '@/components/layouts/AdminSidebar'
+import { AdminShell } from '@/components/layouts/AdminShell'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -17,12 +17,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/dashboard')
   }
 
-  return (
-    <div className="flex min-h-screen">
-      <AdminSidebar />
-      <main className="flex-1 bg-zinc-50 overflow-auto">
-        {children}
-      </main>
-    </div>
-  )
+  return <AdminShell>{children}</AdminShell>
 }

@@ -27,7 +27,7 @@ const navItems = [
   { label: 'Pengaturan', href: '/admin/settings', icon: Settings },
 ]
 
-export function AdminSidebar() {
+export function AdminSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -40,7 +40,7 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="flex flex-col w-64 min-h-screen bg-blue-950 text-blue-100 shrink-0">
+    <aside className="flex flex-col h-full bg-blue-950 text-blue-100">
       <div className="flex items-center gap-2 px-6 py-5 border-b border-blue-800">
         <Building2 className="h-6 w-6 text-blue-300" />
         <span className="font-bold text-sm leading-tight text-white">Sewa Ruang & Alat</span>
@@ -52,6 +52,7 @@ export function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 active

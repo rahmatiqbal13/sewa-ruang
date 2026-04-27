@@ -11,8 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, Loader2 } from 'lucide-react'
+import { Building2, Loader2, CheckCircle2 } from 'lucide-react'
 
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -39,27 +38,15 @@ export default function RegisterPage() {
     const { data: authData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: {
-        data: { name: data.name, role: 'borrower' },
-      },
+      options: { data: { name: data.name, role: 'borrower' } },
     })
-    if (error) {
-      toast.error(error.message)
-      setLoading(false)
-      return
-    }
+    if (error) { toast.error(error.message); setLoading(false); return }
     if (authData.user) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('users') as any).upsert({
-        id: authData.user.id,
-        name: data.name,
-        email: data.email,
-        role: 'borrower',
-        phone: data.phone,
-        institution: data.institution,
-        class_division: data.class_division,
-        identity_number: data.identity_number || null,
-        telegram_username: data.telegram_username || null,
+        id: authData.user.id, name: data.name, email: data.email, role: 'borrower',
+        phone: data.phone, institution: data.institution, class_division: data.class_division,
+        identity_number: data.identity_number || null, telegram_username: data.telegram_username || null,
       })
     }
     toast.success('Akun berhasil dibuat! Silakan masuk.')
@@ -68,68 +55,109 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 px-4 py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-2">
-            <Building2 className="h-8 w-8 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Daftar Akun</CardTitle>
-          <CardDescription>Buat akun untuk mengajukan peminjaman</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nama Lengkap</Label>
-              <Input id="name" placeholder="Nama lengkap Anda" {...register('name')} />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+    <div className="min-h-screen flex bg-zinc-50">
+      {/* Left panel */}
+      <div className="hidden lg:flex flex-col w-[400px] shrink-0 bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-900 text-white p-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32" />
+        <div className="relative z-10">
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg mb-16">
+            <div className="bg-white/20 p-2 rounded-xl">
+              <Building2 className="h-5 w-5" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="nama@email.com" {...register('email')} />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Min. 8 karakter" {...register('password')} />
-              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Nomor WhatsApp</Label>
-              <Input id="phone" placeholder="08xxxxxxxxxx" {...register('phone')} />
-              {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="institution">Instansi / Organisasi</Label>
-              <Input id="institution" placeholder="Universitas / Perusahaan / Komunitas" {...register('institution')} />
-              {errors.institution && <p className="text-sm text-destructive">{errors.institution.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="class_division">Kelas / Divisi</Label>
-              <Input id="class_division" placeholder="Contoh: TI-3A, Divisi IT" {...register('class_division')} />
-              {errors.class_division && <p className="text-sm text-destructive">{errors.class_division.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="identity_number">NIM / NIP / KTP (opsional)</Label>
-              <Input id="identity_number" placeholder="Nomor identitas" {...register('identity_number')} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="telegram_username">Username Telegram (opsional)</Label>
-              <Input id="telegram_username" placeholder="@username" {...register('telegram_username')} />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Daftar
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Sudah punya akun?{' '}
-            <Link href="/login" className="text-primary hover:underline font-medium">
-              Masuk
-            </Link>
+            Sewa Ruang & Alat
+          </Link>
+          <h2 className="text-3xl font-bold mb-4 leading-tight">Bergabung Sekarang</h2>
+          <p className="text-blue-200 mb-10 leading-relaxed">
+            Buat akun peminjam dan mulai ajukan peminjaman ruangan atau peralatan secara digital.
           </p>
-        </CardContent>
-      </Card>
+          <div className="space-y-4">
+            {['Proses pengajuan 100% online', 'Notifikasi status real-time', 'Riwayat peminjaman tersimpan', 'Perjanjian digital otomatis'].map(t => (
+              <div key={t} className="flex items-center gap-3 text-sm">
+                <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
+                <span className="text-blue-100">{t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="relative z-10 mt-auto text-blue-400 text-xs">
+          &copy; {new Date().getFullYear()} Sistem Sewa Ruang & Alat
+        </p>
+      </div>
+
+      {/* Right form panel */}
+      <div className="flex-1 flex items-start justify-center py-8 px-6 overflow-y-auto">
+        <div className="w-full max-w-lg">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2 font-bold text-blue-950 mb-6 justify-center">
+            <div className="bg-blue-950 text-white p-1.5 rounded-lg">
+              <Building2 className="h-4 w-4" />
+            </div>
+            Sewa Ruang & Alat
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border p-8">
+            <h1 className="text-2xl font-bold text-zinc-900 mb-1">Buat Akun</h1>
+            <p className="text-muted-foreground text-sm mb-7">Isi data diri untuk membuat akun peminjam</p>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-zinc-700">Nama Lengkap</Label>
+                  <Input placeholder="Nama lengkap Anda" className="h-10" {...register('name')} />
+                  {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-zinc-700">Email</Label>
+                  <Input type="email" placeholder="nama@email.com" className="h-10" {...register('email')} />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-zinc-700">Password</Label>
+                  <Input type="password" placeholder="Min. 8 karakter" className="h-10" {...register('password')} />
+                  {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-zinc-700">Nomor WhatsApp</Label>
+                  <Input placeholder="08xxxxxxxxxx" className="h-10" {...register('phone')} />
+                  {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-700">Instansi / Organisasi</Label>
+                  <Input placeholder="Universitas / Komunitas" className="h-10" {...register('institution')} />
+                  {errors.institution && <p className="text-xs text-destructive">{errors.institution.message}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-700">Kelas / Divisi</Label>
+                  <Input placeholder="TI-3A, Divisi IT" className="h-10" {...register('class_division')} />
+                  {errors.class_division && <p className="text-xs text-destructive">{errors.class_division.message}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-700 flex items-center gap-1">NIM / NIP / KTP <span className="text-muted-foreground font-normal">(opsional)</span></Label>
+                  <Input placeholder="Nomor identitas" className="h-10" {...register('identity_number')} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-700 flex items-center gap-1">Username Telegram <span className="text-muted-foreground font-normal">(opsional)</span></Label>
+                  <Input placeholder="@username" className="h-10" {...register('telegram_username')} />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full h-11 bg-blue-950 hover:bg-blue-900 text-white font-semibold mt-2" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Buat Akun
+              </Button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Sudah punya akun?{' '}
+              <Link href="/login" className="text-blue-700 hover:text-blue-900 font-medium hover:underline">Masuk sekarang</Link>
+            </p>
+          </div>
+
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            <Link href="/" className="hover:underline">← Kembali ke Beranda</Link>
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
