@@ -168,10 +168,9 @@ CREATE TABLE IF NOT EXISTS public.booking_slots (
   asset_id UUID NOT NULL REFERENCES public.assets(id),
   booking_id UUID NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
   slot TSTZRANGE NOT NULL,
+  status booking_status NOT NULL DEFAULT 'pending',
   EXCLUDE USING gist (asset_id WITH =, slot WITH &&)
-    WHERE (booking_id IN (
-      SELECT id FROM public.bookings WHERE status IN ('approved', 'paid')
-    ))
+    WHERE (status IN ('approved', 'paid'))
 );
 
 CREATE TABLE IF NOT EXISTS public.booking_agreements (
