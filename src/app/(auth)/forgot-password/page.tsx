@@ -27,17 +27,22 @@ export default function ForgotPasswordPage() {
 
   async function onSubmit(data: FormData) {
     setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-    if (error) {
-      toast.error(error.message)
-      setLoading(false)
-      return
+    try {
+      const supabase = createClient()
+      const origin = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${origin}/reset-password`,
+      })
+      if (error) {
+        toast.error(error.message)
+        setLoading(false)
+        return
+      }
+      setSentEmail(data.email)
+      setSent(true)
+    } catch {
+      toast.error('Terjadi kesalahan. Silakan coba lagi.')
     }
-    setSentEmail(data.email)
-    setSent(true)
     setLoading(false)
   }
 
