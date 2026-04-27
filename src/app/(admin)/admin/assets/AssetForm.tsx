@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2 } from 'lucide-react'
+import { PhotoUpload } from '@/components/shared/PhotoUpload'
 
 const schema = z.object({
   name: z.string().min(2),
@@ -30,7 +31,7 @@ const schema = z.object({
   status_tindakan: z.enum(['normal', 'perawatan', 'menunggu_part', 'afkir']).optional(),
   sumber: z.string().optional(),
   tgl_terakhir_cek: z.string().optional(),
-  photo_url: z.string().url('URL foto tidak valid').optional().or(z.literal('')),
+  photo_url: z.string().optional(),
 })
 type FormData = {
   name: string
@@ -254,9 +255,12 @@ export function AssetForm({ asset, buildings, lockedCategory }: { asset?: Asset;
           </div>
 
           <div className="space-y-2">
-            <Label>URL Foto (opsional)</Label>
-            <Input placeholder="https://..." {...register('photo_url')} />
-            <p className="text-xs text-muted-foreground">Link ke foto ruangan atau alat</p>
+            <Label>Foto</Label>
+            <PhotoUpload
+              value={watch('photo_url')}
+              onChange={(url) => setValue('photo_url', url ?? '')}
+              folder={category === 'room' ? 'rooms' : 'equipment'}
+            />
           </div>
 
           <div className="space-y-2">

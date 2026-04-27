@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Plus, Loader2 } from 'lucide-react'
+import { PhotoUpload } from '@/components/shared/PhotoUpload'
 
 const schema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
@@ -21,7 +22,7 @@ const schema = z.object({
   condition: z.enum(['good', 'needs_repair', 'damaged']),
   inventory_code: z.string().optional(),
   notes: z.string().optional(),
-  photo_url: z.string().url('URL foto tidak valid').optional().or(z.literal('')),
+  photo_url: z.string().optional(),
 })
 type FormData = {
   name: string
@@ -36,7 +37,7 @@ export function AddInventoryItemDialog({ roomId }: { roomId: string }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: { quantity: 1, condition: 'good' },
@@ -100,8 +101,12 @@ export function AddInventoryItemDialog({ roomId }: { roomId: string }) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>URL Foto (opsional)</Label>
-            <Input placeholder="https://..." {...register('photo_url')} />
+            <Label>Foto (opsional)</Label>
+            <PhotoUpload
+              value={watch('photo_url')}
+              onChange={(url) => setValue('photo_url', url ?? undefined)}
+              folder="inventory"
+            />
           </div>
           <div className="space-y-2">
             <Label>Catatan (opsional)</Label>
