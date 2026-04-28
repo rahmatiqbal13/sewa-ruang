@@ -6,7 +6,8 @@
       "Bash(git commit -m ' *)",
       "Bash(npx supabase *)",
       "Bash(supabase projects *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npx tsc *)"
     ]
   }
 }
