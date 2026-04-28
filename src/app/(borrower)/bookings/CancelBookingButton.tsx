@@ -21,6 +21,11 @@ export function CancelBookingButton({ id }: { id: string }) {
     const { error } = await (supabase.from('bookings') as any).update({ status: 'cancelled' }).eq('id', id)
     if (error) { toast.error('Gagal membatalkan'); setLoading(false); return }
     toast.success('Pengajuan dibatalkan')
+    fetch('/api/notifications/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type: 'booking_cancelled', booking_id: id }),
+    })
     router.refresh()
     setLoading(false)
   }

@@ -60,6 +60,11 @@ export function RecordPaymentButton({ bookingId, totalAmount }: { bookingId: str
     await (supabase.from('bookings') as any).update({ status: 'paid' }).eq('id', bookingId)
 
     toast.success('Pembayaran berhasil dicatat')
+    fetch('/api/notifications/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type: 'payment_received', booking_id: bookingId }),
+    })
     setOpen(false)
     router.refresh()
     setLoading(false)

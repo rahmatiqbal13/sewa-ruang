@@ -9,6 +9,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, X, Loader2 } from 'lucide-react'
 
+async function sendNotif(event_type: string, booking_id: string) {
+  await fetch('/api/notifications/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_type, booking_id }),
+  })
+}
+
 export function ApprovalButtons({ bookingId }: { bookingId: string }) {
   const router = useRouter()
   const [rejectionNotes, setRejectionNotes] = useState('')
@@ -23,6 +31,7 @@ export function ApprovalButtons({ bookingId }: { bookingId: string }) {
       .eq('id', bookingId)
     if (error) { toast.error('Gagal menyetujui'); setLoading(null); return }
     toast.success('Pengajuan disetujui')
+    sendNotif('booking_approved', bookingId)
     router.refresh()
     setLoading(null)
   }
@@ -40,6 +49,7 @@ export function ApprovalButtons({ bookingId }: { bookingId: string }) {
       .eq('id', bookingId)
     if (error) { toast.error('Gagal menolak'); setLoading(null); return }
     toast.success('Pengajuan ditolak')
+    sendNotif('booking_rejected', bookingId)
     router.refresh()
     setLoading(null)
   }

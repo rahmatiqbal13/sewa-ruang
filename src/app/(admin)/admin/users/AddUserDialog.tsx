@@ -74,7 +74,7 @@ export function AddUserDialog() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Role</Label>
-              <Select defaultValue="borrower" onValueChange={v => set('role', v)}>
+              <Select defaultValue="borrower" onValueChange={v => v && set('role', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="super_admin">Super Admin</SelectItem>

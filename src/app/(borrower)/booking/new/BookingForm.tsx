@@ -111,6 +111,11 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
     await sb.from('booking_assets').insert({ booking_id: booking.id, asset_id: data.asset_id })
 
     toast.success('Pengajuan berhasil dikirim!')
+    fetch('/api/notifications/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type: 'booking_submitted', booking_id: booking.id }),
+    })
     router.push('/bookings')
     router.refresh()
     setLoading(false)
