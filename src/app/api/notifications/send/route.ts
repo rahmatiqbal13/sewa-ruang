@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminSb } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
-import { sendEmail, sendWhatsApp, sendTelegram, replaceVars } from '@/lib/notifications/sender'
+import { sendEmail, sendTelegram, replaceVars } from '@/lib/notifications/sender'
+
+function toWaUrl(phone: string, message: string): string {
+  let num = phone.replace(/\D/g, '')
+  if (num.startsWith('0')) num = '62' + num.slice(1)
+  return `https://wa.me/${num}?text=${encodeURIComponent(message)}`
+}
 
 function adminClient() {
   return createAdminSb(
@@ -11,7 +17,7 @@ function adminClient() {
   )
 }
 
-const CHANNELS = ['email', 'whatsapp', 'telegram'] as const
+const CHANNELS = ['email', 'telegram'] as const
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -78,9 +84,6 @@ export async function POST(req: NextRequest) {
         const subject = replaceVars(tpl.subject ?? event_type, vars)
         await sendEmail(cfg.config as unknown as Parameters<typeof sendEmail>[0], bookingUser.email, subject, message)
         results.push({ channel: 'email', status: 'sent' })
-      } else if (ch === 'whatsapp' && bookingUser?.phone) {
-        await sendWhatsApp(cfg.config as unknown as Parameters<typeof sendWhatsApp>[0], bookingUser.phone, message)
-        results.push({ channel: 'whatsapp', status: 'sent' })
       } else if (ch === 'telegram') {
         // Send to admin_chat_id — notifies admin of all booking events
         const chatId = (cfg.config as Record<string, string>).admin_chat_id
@@ -94,6 +97,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Generate wa.me link using WhatsApp template if available
+  let whatsapp_url: string | null = null
+  if (bookingUser?.phone) {
+    const waTpl = templates?.find(t => t.channel === 'whatsapp')
+    const waMessage = waTpl ? replaceVars(waTpl.body, vars) : message_for_event(event_type, vars)
+    whatsapp_url = toWaUrl(bookingUser.phone, waMessage)
+  }
+
   // Log in-app notification for the booking user
   if (booking.user_id && bookingUser?.name) {
     await sb.from('notifications').insert({
@@ -105,7 +116,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  return NextResponse.json({ ok: true, results })
+  return NextResponse.json({ ok: true, results, whatsapp_url })
 }
 
 function message_for_event(event_type: string, vars: Record<string, string>): string {

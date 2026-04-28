@@ -64,6 +64,13 @@ export function RecordPaymentButton({ bookingId, totalAmount }: { bookingId: str
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event_type: 'payment_received', booking_id: bookingId }),
+    }).then(r => r.json()).then(json => {
+      if (json.whatsapp_url) {
+        toast('Kirim notifikasi WhatsApp?', {
+          action: { label: 'Buka WhatsApp', onClick: () => window.open(json.whatsapp_url, '_blank') },
+          duration: 10000,
+        })
+      }
     })
     setOpen(false)
     router.refresh()

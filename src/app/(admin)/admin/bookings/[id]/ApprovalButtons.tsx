@@ -10,11 +10,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, X, Loader2 } from 'lucide-react'
 
 async function sendNotif(event_type: string, booking_id: string) {
-  await fetch('/api/notifications/send', {
+  const res = await fetch('/api/notifications/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event_type, booking_id }),
   })
+  const json = await res.json()
+  if (json.whatsapp_url) {
+    toast('Kirim notifikasi WhatsApp?', {
+      action: { label: 'Buka WhatsApp', onClick: () => window.open(json.whatsapp_url, '_blank') },
+      duration: 10000,
+    })
+  }
 }
 
 export function ApprovalButtons({ bookingId }: { bookingId: string }) {
