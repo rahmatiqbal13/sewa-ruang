@@ -40,7 +40,7 @@ export default function LoginPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: profile } = await (supabase.from('users') as any)
         .select('role').eq('id', user.id).single() as { data: { role: string } | null }
-      router.push(profile?.role === 'admin' || profile?.role === 'staff' ? '/admin/dashboard' : '/dashboard')
+      router.push(['super_admin', 'admin', 'staff'].includes(profile?.role ?? '') ? '/admin/dashboard' : '/dashboard')
       router.refresh()
     }
     setLoading(false)
