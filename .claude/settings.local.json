@@ -10,7 +10,10 @@
       "Bash(npx tsc *)",
       "Bash(node scripts/csv-to-sql.mjs)",
       "Bash(xargs grep *)",
-      "Bash(node scripts/import-inventory.mjs)"
+      "Bash(node scripts/import-inventory.mjs)",
+      "Read(//c/Users/rahmatiqbal13/**)",
+      "Bash(npm create *)",
+      "Bash(npm install *)"
     ]
   }
 }
