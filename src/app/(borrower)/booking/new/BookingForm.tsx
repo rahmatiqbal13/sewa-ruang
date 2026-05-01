@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -72,6 +72,17 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
   const [loading, setLoading] = useState(false)
   const [estimatedTotal, setEstimatedTotal] = useState<number | null>(null)
   const borrowerCategory: BorrowerCategory = profile?.borrower_category ?? 'mahasiswa'
+
+  // Auto-number duplicate asset names for display in dropdown
+  const assetsWithNumbers = useMemo(() => {
+    const nameCount: Record<string, number> = {}
+    for (const a of assets) nameCount[a.name] = (nameCount[a.name] || 0) + 1
+    const nameIndex: Record<string, number> = {}
+    return assets.map(a => {
+      nameIndex[a.name] = (nameIndex[a.name] || 0) + 1
+      return { ...a, displayName: nameCount[a.name] > 1 ? `${a.name} ${nameIndex[a.name]}` : a.name }
+    })
+  }, [assets])
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
@@ -187,9 +198,9 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
                 <SelectValue placeholder="Pilih ruang atau alat..." />
               </SelectTrigger>
               <SelectContent>
-                {assets.filter(a => a.current_condition === 'good').map(a => (
+                {assetsWithNumbers.filter(a => a.current_condition === 'good').map(a => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.name}
+                    {a.displayName}
                     {a.room_code ? ` (${a.room_code})` : a.asset_code ? ` [${a.asset_code}]` : ''}
                     {a.category === 'equipment'
                       ? (getRateForCategory(a, borrowerCategory) > 0 ? ` — ${formatRupiah(getRateForCategory(a, borrowerCategory))}/hari` : '')

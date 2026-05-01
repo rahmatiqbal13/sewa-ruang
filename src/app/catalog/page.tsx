@@ -10,7 +10,7 @@ export default async function CatalogPage() {
 
   type BuildingRow = {
     id: string; name: string; code: string
-    assets: Array<{ id: string; name: string; capacity: number | null; rate_per_hour: number | null; rate_per_day: number | null; current_condition: string; room_code: string | null; is_active: boolean }>
+    assets: Array<{ id: string; name: string; capacity: number | null; rate_per_hour: number | null; rate_per_day: number | null; current_condition: string; room_code: string | null; is_active: boolean; is_for_rent: boolean | null }>
   }
   type EquipmentRow = {
     id: string; name: string; description: string | null; rate_per_hour: number | null
@@ -20,7 +20,7 @@ export default async function CatalogPage() {
 
   const [{ data: buildings }, { data: equipment }] = await Promise.all([
     sb.from('buildings')
-      .select('id, name, code, assets(id, name, capacity, rate_per_hour, rate_per_day, current_condition, room_code, is_active)')
+      .select('id, name, code, assets(id, name, capacity, rate_per_hour, rate_per_day, current_condition, room_code, is_active, is_for_rent)')
       .eq('is_active', true)
       .order('name') as Promise<{ data: BuildingRow[] | null }>,
     sb.from('assets')
