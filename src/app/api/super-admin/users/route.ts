@@ -17,13 +17,14 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await (supabase.from('users') as any).select('role').eq('id', user.id).single() as { data: { role: string } | null }
+  const admin = adminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (admin.from('users') as any).select('role').eq('id', user.id).single() as { data: { role: string } | null }
   if (profile?.role !== 'super_admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  const { name, email, password, role, phone, institution, class_division, identity_number, telegram_username } = body
+  const { name, email, password, role, phone, borrower_category, institution, class_division, identity_number, telegram_username } = body
 
-  const admin = adminClient()
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
     password,
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
     id: authData.user.id,
     name, email, role,
     phone: phone || null,
+    borrower_category: borrower_category || null,
     institution: institution || null,
     class_division: class_division || null,
     identity_number: identity_number || null,

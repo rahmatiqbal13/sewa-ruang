@@ -37,17 +37,41 @@ type FormData = {
   agreed: boolean
 }
 
+type BorrowerCategory = 'mahasiswa' | 'pascasarjana' | 'dosen_karyawan' | 'kerjasama' | 'umum'
+
 interface Asset {
   id: string; name: string; category: string; rate_per_hour: number | null
   rate_per_day: number | null; current_condition: string; room_code: string | null
-  buildings: { name: string } | null
+  asset_code: string | null; buildings: { name: string } | null
+  rate_mahasiswa: number | null; rate_pascasarjana: number | null
+  rate_dosen_karyawan: number | null; rate_kerjasama: number | null; rate_umum: number | null
 }
-interface Profile { id: string; name: string; institution: string; class_division: string }
+interface Profile { id: string; name: string; institution: string; class_division: string; borrower_category: BorrowerCategory | null }
+
+const BORROWER_CATEGORIES: { value: BorrowerCategory; label: string }[] = [
+  { value: 'mahasiswa', label: 'Mahasiswa' },
+  { value: 'pascasarjana', label: 'Mahasiswa Pascasarjana' },
+  { value: 'dosen_karyawan', label: 'Dosen / Karyawan' },
+  { value: 'kerjasama', label: 'Kerjasama' },
+  { value: 'umum', label: 'Umum' },
+]
+
+function getRateForCategory(asset: Asset, category: BorrowerCategory): number {
+  const map: Record<BorrowerCategory, number | null> = {
+    mahasiswa: asset.rate_mahasiswa,
+    pascasarjana: asset.rate_pascasarjana,
+    dosen_karyawan: asset.rate_dosen_karyawan,
+    kerjasama: asset.rate_kerjasama,
+    umum: asset.rate_umum,
+  }
+  return map[category] ?? 0
+}
 
 export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset[]; profile: Profile | null; defaultAssetId?: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [estimatedTotal, setEstimatedTotal] = useState<number | null>(null)
+  const borrowerCategory: BorrowerCategory = profile?.borrower_category ?? 'mahasiswa'
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
@@ -68,13 +92,19 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
     const ed = overrides?.end_date ?? endDate
     const et = overrides?.end_time ?? endTime
     const aid = overrides?.asset_id ?? assetId
+    const cat = borrowerCategory
     const asset = assets.find(a => a.id === aid) ?? selectedAsset
     if (!asset || !sd || !st || !ed || !et) return
     const start = new Date(`${sd}T${st}`)
     const end = new Date(`${ed}T${et}`)
     if (end <= start) { setEstimatedTotal(null); return }
-    const hours = (end.getTime() - start.getTime()) / 3600000
-    setEstimatedTotal(hours * (asset.rate_per_hour ?? 0))
+    if (asset.category === 'equipment') {
+      const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
+      setEstimatedTotal(days * getRateForCategory(asset, cat))
+    } else {
+      const hours = (end.getTime() - start.getTime()) / 3600000
+      setEstimatedTotal(hours * (asset.rate_per_hour ?? 0))
+    }
   }
 
   async function onSubmit(data: FormData) {
@@ -90,8 +120,18 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
     }
 
     const asset = assets.find(a => a.id === data.asset_id)
-    const hours = (end.getTime() - start.getTime()) / 3600000
-    const total = (asset?.rate_per_hour ?? 0) * hours
+    let total = 0
+    let snapshotRate: Record<string, unknown> = {}
+    if (asset?.category === 'equipment') {
+      const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
+      const ratePerDay = getRateForCategory(asset, borrowerCategory)
+      total = days * ratePerDay
+      snapshotRate = { borrower_category: borrowerCategory, rate_per_day: ratePerDay }
+    } else {
+      const hours = (end.getTime() - start.getTime()) / 3600000
+      total = (asset?.rate_per_hour ?? 0) * hours
+      snapshotRate = { rate_per_hour: asset?.rate_per_hour, rate_per_day: asset?.rate_per_day }
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any
@@ -102,7 +142,7 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
       start_datetime: start.toISOString(),
       end_datetime: end.toISOString(),
       total_amount: total,
-      snapshot_rate: { rate_per_hour: asset?.rate_per_hour, rate_per_day: asset?.rate_per_day },
+      snapshot_rate: snapshotRate,
       reference_no: '',
     }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
 
@@ -125,10 +165,13 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {profile && (
         <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-4 pb-3">
+          <CardContent className="pt-4 pb-3 space-y-1">
             <p className="text-sm flex items-center gap-2 text-blue-700">
               <Info className="h-4 w-4 shrink-0" />
               Pengajuan atas nama <strong>{profile.name}</strong> — {profile.institution}, {profile.class_division}
+            </p>
+            <p className="text-xs text-blue-600 pl-6">
+              Tarif dihitung untuk kategori: <strong>{BORROWER_CATEGORIES.find(c => c.value === borrowerCategory)?.label ?? borrowerCategory}</strong>
             </p>
           </CardContent>
         </Card>
@@ -147,8 +190,10 @@ export function BookingForm({ assets, profile, defaultAssetId }: { assets: Asset
                 {assets.filter(a => a.current_condition === 'good').map(a => (
                   <SelectItem key={a.id} value={a.id}>
                     {a.name}
-                    {a.room_code ? ` (${a.room_code})` : ''}
-                    {a.rate_per_hour ? ` — ${formatRupiah(a.rate_per_hour)}/jam` : ''}
+                    {a.room_code ? ` (${a.room_code})` : a.asset_code ? ` [${a.asset_code}]` : ''}
+                    {a.category === 'equipment'
+                      ? (getRateForCategory(a, borrowerCategory) > 0 ? ` — ${formatRupiah(getRateForCategory(a, borrowerCategory))}/hari` : '')
+                      : (a.rate_per_hour ? ` — ${formatRupiah(a.rate_per_hour)}/jam` : '')}
                   </SelectItem>
                 ))}
               </SelectContent>

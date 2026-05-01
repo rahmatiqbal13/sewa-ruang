@@ -16,7 +16,7 @@ export function AddUserDialog() {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
     name: '', email: '', password: '', role: 'borrower',
-    phone: '', institution: '', class_division: '',
+    phone: '', borrower_category: 'mahasiswa', institution: '', class_division: '',
     identity_number: '', telegram_username: '',
   })
 
@@ -44,7 +44,7 @@ export function AddUserDialog() {
       toast.error(json.error ?? 'Gagal membuat pengguna')
     } else {
       toast.success(`Akun ${form.name} berhasil dibuat`)
-      setForm({ name: '', email: '', password: '', role: 'borrower', phone: '', institution: '', class_division: '', identity_number: '', telegram_username: '' })
+      setForm({ name: '', email: '', password: '', role: 'borrower', phone: '', borrower_category: 'mahasiswa', institution: '', class_division: '', identity_number: '', telegram_username: '' })
       setOpen(false)
       router.refresh()
     }
@@ -81,6 +81,19 @@ export function AddUserDialog() {
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
                   <SelectItem value="borrower">Peminjam</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Kategori Peminjam</Label>
+              <Select defaultValue="mahasiswa" onValueChange={v => v && set('borrower_category', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mahasiswa">Mahasiswa</SelectItem>
+                  <SelectItem value="pascasarjana">Mahasiswa Pascasarjana</SelectItem>
+                  <SelectItem value="dosen_karyawan">Dosen / Karyawan</SelectItem>
+                  <SelectItem value="kerjasama">Kerjasama</SelectItem>
+                  <SelectItem value="umum">Umum</SelectItem>
                 </SelectContent>
               </Select>
             </div>

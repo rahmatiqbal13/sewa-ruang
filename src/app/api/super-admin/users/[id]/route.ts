@@ -14,8 +14,10 @@ async function verifySuperAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return false
+  // Use service role to bypass RLS when reading the caller's own role
+  const admin = adminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase.from('users') as any).select('role').eq('id', user.id).single() as { data: { role: string } | null }
+  const { data } = await (admin.from('users') as any).select('role').eq('id', user.id).single() as { data: { role: string } | null }
   return data?.role === 'super_admin'
 }
 

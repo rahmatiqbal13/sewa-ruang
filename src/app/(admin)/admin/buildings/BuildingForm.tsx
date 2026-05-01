@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { PhotoUpload } from '@/components/shared/PhotoUpload'
 
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -20,6 +21,7 @@ const schema = z.object({
   floor_count: z.coerce.number().int().min(1).max(99),
   address: z.string().optional(),
   description: z.string().optional(),
+  photo_url: z.string().optional(),
 })
 type FormData = {
   name: string
@@ -27,17 +29,18 @@ type FormData = {
   floor_count: number
   address?: string
   description?: string
+  photo_url?: string
 }
 
 interface Building {
   id: string; name: string; code: string; floor_count: number;
-  address: string | null; description: string | null
+  address: string | null; description: string | null; photo_url: string | null
 }
 
 export function BuildingForm({ building }: { building?: Building }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: building ? {
@@ -46,6 +49,7 @@ export function BuildingForm({ building }: { building?: Building }) {
       floor_count: building.floor_count,
       address: building.address ?? '',
       description: building.description ?? '',
+      photo_url: building.photo_url ?? '',
     } : {},
   })
 
@@ -113,6 +117,14 @@ export function BuildingForm({ building }: { building?: Building }) {
           <div className="space-y-2">
             <Label>Deskripsi (opsional)</Label>
             <Textarea placeholder="Deskripsi singkat gedung..." {...register('description')} />
+          </div>
+          <div className="space-y-2">
+            <Label>Foto Gedung</Label>
+            <PhotoUpload
+              value={watch('photo_url')}
+              onChange={(url) => setValue('photo_url', url ?? '')}
+              folder="buildings"
+            />
           </div>
           <div className="flex gap-3">
             <Button type="submit" disabled={loading}>

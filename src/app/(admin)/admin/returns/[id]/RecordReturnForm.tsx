@@ -13,12 +13,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PhotoUpload } from '@/components/shared/PhotoUpload'
 import { Loader2 } from 'lucide-react'
 
 const schema = z.object({
   returned_at: z.string().min(1),
   condition: z.enum(['good', 'minor_damage', 'major_damage', 'lost']),
   notes: z.string().optional(),
+  photo_url: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -31,6 +33,7 @@ export function RecordReturnForm({ bookingId }: { bookingId: string }) {
   })
 
   const condition = watch('condition')
+  const photoUrl = watch('photo_url')
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -43,6 +46,7 @@ export function RecordReturnForm({ bookingId }: { bookingId: string }) {
       returned_at: new Date(data.returned_at).toISOString(),
       condition: data.condition,
       notes: data.notes || null,
+      photo_url: data.photo_url || null,
       recorded_by: user!.id,
     })
 
@@ -66,6 +70,7 @@ export function RecordReturnForm({ bookingId }: { bookingId: string }) {
             <Label>Waktu Pengembalian Aktual</Label>
             <Input type="datetime-local" {...register('returned_at')} />
           </div>
+
           <div className="space-y-2">
             <Label>Kondisi Aset</Label>
             <Select defaultValue="good" onValueChange={(v) => v && setValue('condition', v as FormData['condition'])}>
@@ -78,13 +83,26 @@ export function RecordReturnForm({ bookingId }: { bookingId: string }) {
               </SelectContent>
             </Select>
           </div>
+
           <div className="space-y-2">
-            <Label>Catatan Kondisi {condition !== 'good' && <span className="text-destructive">*</span>}</Label>
+            <Label>
+              Catatan Kondisi {condition !== 'good' && <span className="text-destructive">*</span>}
+            </Label>
             <Textarea
               placeholder={condition !== 'good' ? 'Wajib diisi — jelaskan kondisi kerusakan/kehilangan...' : 'Catatan tambahan (opsional)...'}
               {...register('notes')}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label>Foto Kondisi Aset</Label>
+            <PhotoUpload
+              value={photoUrl}
+              onChange={(url) => setValue('photo_url', url ?? '')}
+              folder="returns"
+            />
+          </div>
+
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Pengembalian

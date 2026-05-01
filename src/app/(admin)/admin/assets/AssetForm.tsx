@@ -26,6 +26,12 @@ const schema = z.object({
   capacity: z.coerce.number().int().min(1).optional(),
   rate_per_hour: z.coerce.number().min(0).optional(),
   rate_per_day: z.coerce.number().min(0).optional(),
+  rate_mahasiswa: z.coerce.number().min(0).optional(),
+  rate_pascasarjana: z.coerce.number().min(0).optional(),
+  rate_dosen_karyawan: z.coerce.number().min(0).optional(),
+  rate_kerjasama: z.coerce.number().min(0).optional(),
+  rate_umum: z.coerce.number().min(0).optional(),
+  asset_code: z.string().optional(),
   merk: z.string().optional(),
   ketersediaan: z.enum(['tersedia', 'digunakan', 'hilang']).optional(),
   status_tindakan: z.enum(['normal', 'perawatan', 'menunggu_part', 'afkir']).optional(),
@@ -43,6 +49,12 @@ type FormData = {
   capacity?: number
   rate_per_hour?: number
   rate_per_day?: number
+  rate_mahasiswa?: number
+  rate_pascasarjana?: number
+  rate_dosen_karyawan?: number
+  rate_kerjasama?: number
+  rate_umum?: number
+  asset_code?: string
   merk?: string
   ketersediaan?: 'tersedia' | 'digunakan' | 'hilang'
   status_tindakan?: 'normal' | 'perawatan' | 'menunggu_part' | 'afkir'
@@ -58,7 +70,9 @@ interface Asset {
   description: string | null; capacity: number | null; rate_per_hour: number | null
   rate_per_day: number | null; merk: string | null; ketersediaan: string | null
   status_tindakan: string | null; sumber: string | null; tgl_terakhir_cek: string | null
-  photo_url: string | null
+  photo_url: string | null; asset_code: string | null
+  rate_mahasiswa: number | null; rate_pascasarjana: number | null
+  rate_dosen_karyawan: number | null; rate_kerjasama: number | null; rate_umum: number | null
 }
 
 export function AssetForm({ asset, buildings, lockedCategory }: { asset?: Asset; buildings: Building[]; lockedCategory?: 'room' | 'equipment' }) {
@@ -77,6 +91,12 @@ export function AssetForm({ asset, buildings, lockedCategory }: { asset?: Asset;
       capacity: asset.capacity ?? undefined,
       rate_per_hour: asset.rate_per_hour ?? undefined,
       rate_per_day: asset.rate_per_day ?? undefined,
+      rate_mahasiswa: asset.rate_mahasiswa ?? undefined,
+      rate_pascasarjana: asset.rate_pascasarjana ?? undefined,
+      rate_dosen_karyawan: asset.rate_dosen_karyawan ?? undefined,
+      rate_kerjasama: asset.rate_kerjasama ?? undefined,
+      rate_umum: asset.rate_umum ?? undefined,
+      asset_code: asset.asset_code ?? '',
       merk: asset.merk ?? '',
       ketersediaan: (asset.ketersediaan as FormData['ketersediaan']) ?? 'tersedia',
       status_tindakan: (asset.status_tindakan as FormData['status_tindakan']) ?? 'normal',
@@ -249,16 +269,52 @@ export function AssetForm({ asset, buildings, lockedCategory }: { asset?: Asset;
             </>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Tarif per Jam (Rp)</Label>
-              <Input type="number" min={0} placeholder="50000" {...register('rate_per_hour')} />
+          {category === 'room' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tarif per Jam (Rp)</Label>
+                <Input type="number" min={0} placeholder="50000" {...register('rate_per_hour')} />
+              </div>
+              <div className="space-y-2">
+                <Label>Tarif per Hari (Rp)</Label>
+                <Input type="number" min={0} placeholder="300000" {...register('rate_per_day')} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Tarif per Hari (Rp)</Label>
-              <Input type="number" min={0} placeholder="300000" {...register('rate_per_day')} />
-            </div>
-          </div>
+          )}
+
+          {category === 'equipment' && (
+            <>
+              <div className="space-y-2">
+                <Label>Kode Alat</Label>
+                <Input placeholder="USC-0001" {...register('asset_code')} />
+              </div>
+              <div className="space-y-1">
+                <Label>Tarif Sewa per Hari (Rp) — per Kategori Peminjam</Label>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Mahasiswa</p>
+                    <Input type="number" min={0} placeholder="0" {...register('rate_mahasiswa')} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Mahasiswa Pascasarjana</p>
+                    <Input type="number" min={0} placeholder="0" {...register('rate_pascasarjana')} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Dosen / Karyawan</p>
+                    <Input type="number" min={0} placeholder="0" {...register('rate_dosen_karyawan')} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Kerjasama</p>
+                    <Input type="number" min={0} placeholder="0" {...register('rate_kerjasama')} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Umum</p>
+                    <Input type="number" min={0} placeholder="0" {...register('rate_umum')} />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label>Foto</Label>

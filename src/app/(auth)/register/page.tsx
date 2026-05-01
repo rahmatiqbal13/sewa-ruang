@@ -11,13 +11,23 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Building2, Loader2, CheckCircle2 } from 'lucide-react'
+
+const BORROWER_CATEGORIES = [
+  { value: 'mahasiswa',       label: 'Mahasiswa' },
+  { value: 'pascasarjana',    label: 'Mahasiswa Pascasarjana' },
+  { value: 'dosen_karyawan',  label: 'Dosen / Karyawan' },
+  { value: 'kerjasama',       label: 'Kerjasama' },
+  { value: 'umum',            label: 'Umum' },
+]
 
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
   email: z.string().email('Email tidak valid'),
   password: z.string().min(8, 'Password minimal 8 karakter'),
   phone: z.string().min(10, 'Nomor WhatsApp tidak valid'),
+  borrower_category: z.enum(['mahasiswa', 'pascasarjana', 'dosen_karyawan', 'kerjasama', 'umum'], { message: 'Kategori peminjam wajib dipilih' }),
   institution: z.string().min(2, 'Instansi wajib diisi').max(100),
   class_division: z.string().min(1, 'Kelas/Divisi wajib diisi').max(50),
   identity_number: z.string().max(20).optional(),
@@ -28,8 +38,9 @@ type FormData = z.infer<typeof schema>
 export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
   })
 
   async function onSubmit(data: FormData) {
@@ -45,7 +56,8 @@ export default function RegisterPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('users') as any).upsert({
         id: authData.user.id, name: data.name, email: data.email, role: 'borrower',
-        phone: data.phone, institution: data.institution, class_division: data.class_division,
+        phone: data.phone, borrower_category: data.borrower_category,
+        institution: data.institution, class_division: data.class_division,
         identity_number: data.identity_number || null, telegram_username: data.telegram_username || null,
       })
     }
@@ -120,6 +132,18 @@ export default function RegisterPage() {
                   <Label className="text-zinc-700">Nomor WhatsApp</Label>
                   <Input placeholder="08xxxxxxxxxx" className="h-10" {...register('phone')} />
                   {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-zinc-700">Kategori Peminjam <span className="text-destructive">*</span></Label>
+                  <Select onValueChange={(v) => v && setValue('borrower_category', v as FormData['borrower_category'])}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Pilih kategori Anda..." /></SelectTrigger>
+                    <SelectContent>
+                      {BORROWER_CATEGORIES.map(c => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.borrower_category && <p className="text-xs text-destructive">{errors.borrower_category.message}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-zinc-700">Instansi / Organisasi</Label>

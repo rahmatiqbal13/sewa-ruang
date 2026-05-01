@@ -14,7 +14,7 @@ export function ResetPasswordButton({ email, userName }: { email: string; userNa
     const supabase = createClient()
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/reset-password`,
+      redirectTo: `${origin}/auth/callback?next=/reset-password`,
     })
     if (error) {
       toast.error('Gagal mengirim: ' + error.message)

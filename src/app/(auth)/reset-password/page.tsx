@@ -37,35 +37,36 @@ function ResetPasswordForm() {
   useEffect(() => {
     const supabase = createClient()
 
-    // PKCE flow: Supabase SSR sends ?code= in the URL
-    const code = searchParams.get('code')
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) {
-          toast.error('Link tidak valid atau sudah kadaluarsa')
-        } else {
-          setReady(true)
-        }
-        setChecking(false)
-      })
+    // If callback route already exchanged the code, session exists — check it
+    const errorParam = searchParams.get('error')
+    if (errorParam === 'invalid_link') {
+      setChecking(false)
       return
     }
 
-    // Implicit flow fallback: hash-based #access_token=...&type=recovery
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+    // Check if there's already an active recovery session (set by /auth/callback)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
         setReady(true)
         setChecking(false)
+        return
+      }
+
+      // Fallback: listen for PASSWORD_RECOVERY event (implicit/hash flow)
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setReady(true)
+          setChecking(false)
+        }
+      })
+
+      const timer = setTimeout(() => setChecking(false), 2000)
+
+      return () => {
+        subscription.unsubscribe()
+        clearTimeout(timer)
       }
     })
-
-    // Give the hash-based flow a moment to fire, then give up
-    const timer = setTimeout(() => setChecking(false), 1500)
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timer)
-    }
   }, [searchParams])
 
   async function onSubmit(data: FormData) {
