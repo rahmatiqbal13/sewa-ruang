@@ -157,7 +157,13 @@ export function AssetForm({ asset, buildings, lockedCategory }: { asset?: Asset;
                   defaultValue={asset?.building_id ?? ''}
                   onValueChange={(v) => setValue('building_id', v ?? undefined)}
                 >
-                  <SelectTrigger><SelectValue placeholder="Pilih gedung..." /></SelectTrigger>
+                  <SelectTrigger>
+                    <span className="flex flex-1 text-left text-sm">
+                      {selectedBuilding
+                        ? `${selectedBuilding.name} (${selectedBuilding.code})`
+                        : <span className="text-muted-foreground">Pilih gedung...</span>}
+                    </span>
+                  </SelectTrigger>
                   <SelectContent>
                     {buildings.map(b => (
                       <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
