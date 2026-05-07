@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { AdminSidebar } from './AdminSidebar'
 import { NotificationBell } from './NotificationBell'
-import { Building2, Menu } from 'lucide-react'
+import { Building2, Menu, ChevronDown, User, Shield } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export function AdminShell({
   children,
@@ -26,60 +27,85 @@ export function AdminShell({
     staff: 'Staff',
   }
 
+  const roleColor: Record<string, string> = {
+    super_admin: 'bg-purple-100 text-purple-700 border-purple-200',
+    admin: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    staff: 'bg-blue-100 text-blue-700 border-blue-200',
+  }
+
   return (
-    <div className="flex min-h-screen bg-zinc-50">
+    <div className="flex min-h-screen bg-slate-50">
+      {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-30 w-64 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={cn(
+        'fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out lg:translate-x-0',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      )}>
         <AdminSidebar onClose={() => setSidebarOpen(false)} userRole={userRole} />
       </div>
 
       {/* Main area */}
-      <div className="flex flex-col flex-1 lg:pl-64 min-w-0">
+      <div className="flex flex-col flex-1 lg:pl-72 min-w-0">
 
         {/* Mobile header */}
-        <header className="lg:hidden sticky top-0 z-10 flex items-center gap-3 px-4 h-14 bg-blue-950 text-white shrink-0 shadow-md">
+        <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-16 bg-white border-b border-slate-200 text-slate-900 shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg hover:bg-blue-800 transition-colors"
+            className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-2 font-bold text-sm flex-1">
-            <Building2 className="h-4 w-4 text-blue-300" />
-            Sewa Ruang & Alat
+          <div className="flex items-center gap-3 font-bold text-lg flex-1">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg blur opacity-40" />
+              <div className="relative h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+            </div>
+            RentSpace
           </div>
           <NotificationBell />
         </header>
 
         {/* Desktop top bar */}
-        <header className="hidden lg:flex sticky top-0 z-10 items-center justify-between px-6 h-14 bg-white border-b border-zinc-200 shrink-0 shadow-sm">
+        <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between px-8 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-green-400" />
-            <span className="text-sm text-zinc-500">Sistem aktif</span>
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-sm text-slate-500 font-medium">Sistem aktif dan berjalan normal</span>
           </div>
-          <div className="flex items-center gap-3">
+          
+          <div className="flex items-center gap-4">
             <NotificationBell />
+            
             {userName && (
-              <div className="flex items-center gap-2 pl-3 border-l border-zinc-200">
-                <div className="h-8 w-8 rounded-full bg-blue-950 text-white text-xs font-bold flex items-center justify-center">
+              <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+                <div className={cn(
+                  'h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold border-2',
+                  roleColor[userRole ?? ''] || 'bg-slate-100 text-slate-700 border-slate-200'
+                )}>
                   {userName.charAt(0).toUpperCase()}
                 </div>
                 <div className="text-right hidden xl:block">
-                  <p className="text-sm font-medium text-zinc-800 leading-tight">{userName}</p>
-                  <p className="text-xs text-zinc-400">{roleLabel[userRole ?? ''] ?? userRole}</p>
+                  <p className="text-sm font-semibold text-slate-900 leading-tight">{userName}</p>
+                  <div className="flex items-center gap-1.5">
+                    {userRole === 'super_admin' && <Shield className="h-3 w-3 text-purple-500" />}
+                    <p className="text-xs text-slate-500">{roleLabel[userRole ?? ''] ?? userRole}</p>
+                  </div>
                 </div>
+                <ChevronDown className="h-4 w-4 text-slate-400 hidden xl:block" />
               </div>
             )}
           </div>
         </header>
 
+        {/* Main Content */}
         <main className="flex-1 overflow-auto">
           {children}
         </main>

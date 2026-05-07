@@ -17,13 +17,45 @@ interface Room {
   is_active: boolean; is_for_rent: boolean | null
 }
 interface BuildingRow { id: string; name: string; code: string; assets: Room[] }
+interface EquipmentRate {
+  user_category: string
+  rate_per_day: number
+  rate_per_hour: number | null
+  requires_supervision: boolean
+}
+
 interface EquipmentRow {
-  id: string; name: string; description: string | null; rate_per_hour: number | null
-  rate_per_day: number | null; current_condition: string; ketersediaan: string | null
+  id: string; name: string; description: string | null
+  current_condition: string; ketersediaan: string | null
   merk: string | null; is_active: boolean
+  equipment_rates: EquipmentRate[] | null
 }
 
 interface Props { buildings: BuildingRow[]; equipment: EquipmentRow[] }
+
+// Helper untuk mendapatkan harga per kategori
+function getRateByCategory(rates: EquipmentRate[] | null | undefined, category: string): number | null {
+  if (!rates || rates.length === 0) return null
+  const rate = rates.find(r => r.user_category === category)
+  return rate ? rate.rate_per_day : null
+}
+
+// Helper untuk menampilkan range harga
+function getPriceRange(rates: EquipmentRate[] | null | undefined): { min: number | null; max: number | null } {
+  if (!rates || rates.length === 0) return { min: null, max: null }
+  const prices = rates.map(r => r.rate_per_day).filter(p => p > 0)
+  if (prices.length === 0) return { min: null, max: null }
+  return { min: Math.min(...prices), max: Math.max(...prices) }
+}
+
+// Kategori labels
+const CATEGORY_LABELS: Record<string, string> = {
+  'mahasiswa_s1': 'Mahasiswa',
+  'mahasiswa_s2': 'Mahasiswa Pascasarjana',
+  'dosen': 'Dosen/Karyawan',
+  'mou_unesa': 'Kerjasama',
+  'umum': 'Umum'
+}
 
 function Paginator({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
   if (total <= 1) return null
@@ -211,38 +243,58 @@ export function CatalogClient({ buildings, equipment }: Props) {
           {filteredRooms.length === 0 && (
             <p className="text-center text-muted-foreground py-10">Tidak ada ruangan ditemukan</p>
           )}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {pagedRooms.map(room => (
-              <Card key={room.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-3 space-y-1.5">
-                  <div className="flex items-start justify-between gap-1">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm leading-tight truncate">{room.displayName}</p>
+              <Card key={room.id} className="hover:shadow-md transition-shadow flex flex-col">
+                <CardContent className="p-4 space-y-3 flex-1">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm leading-tight truncate" title={room.displayName}>{room.displayName}</p>
                       {room.room_code && (
                         <span className="font-mono text-xs text-muted-foreground">{room.room_code}</span>
                       )}
                     </div>
                     <ConditionBadge condition={room.current_condition} />
                   </div>
+                  
+                  {/* Info */}
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <MapPin className="h-3 w-3 shrink-0" /> {room.buildingName}
                   </p>
                   {room.capacity && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Users className="h-3 w-3 shrink-0" /> {room.capacity} orang
+                      <Users className="h-3 w-3 shrink-0" /> Kapasitas {room.capacity} orang
                     </p>
                   )}
-                  {room.rate_per_hour && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3 shrink-0" /> {formatRupiah(room.rate_per_hour)}/jam
-                    </p>
-                  )}
+                  
+                  {/* Pricing */}
+                  <div className="space-y-2 pt-2 border-t">
+                    {(room.rate_per_hour || room.rate_per_day) ? (
+                      <>
+                        {room.rate_per_day && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Per Hari</span>
+                            <span className="text-sm font-semibold text-emerald-600">{formatRupiah(room.rate_per_day)}</span>
+                          </div>
+                        )}
+                        {room.rate_per_hour && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Per Jam</span>
+                            <span className="text-sm font-medium">{formatRupiah(room.rate_per_hour)}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Tarif belum diatur</p>
+                    )}
+                  </div>
                 </CardContent>
-                <CardFooter className="p-3 pt-0 gap-2">
-                  <Link href={`/rooms/${room.id}/inventory`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'flex-1 text-xs h-7')}>
+                <CardFooter className="p-4 pt-0 gap-2">
+                  <Link href={`/rooms/${room.id}/inventory`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'flex-1 text-xs h-8')}>
                     Inventaris
                   </Link>
-                  <Link href="/login" className={cn(buttonVariants({ size: 'sm' }), 'flex-1 text-xs h-7')}>
+                  <Link href="/login" className={cn(buttonVariants({ size: 'sm' }), 'flex-1 text-xs h-8')}>
                     Pesan
                   </Link>
                 </CardFooter>
@@ -296,32 +348,67 @@ export function CatalogClient({ buildings, equipment }: Props) {
             {filteredEquip.length === 0 && (
               <p className="text-center text-muted-foreground py-10">Tidak ada alat ditemukan</p>
             )}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {pagedEquip.map(item => (
-                <Card key={item.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-3 space-y-1.5">
-                    <div className="flex items-start justify-between gap-1">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-sm leading-tight truncate">{item.displayName}</p>
-                        {item.merk && <p className="text-xs text-muted-foreground truncate">{item.merk}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {pagedEquip.map(item => {
+                const priceRange = getPriceRange(item.equipment_rates)
+                const hasRates = item.equipment_rates && item.equipment_rates.length > 0
+                
+                return (
+                  <Card key={item.id} className="hover:shadow-md transition-shadow flex flex-col">
+                    <CardContent className="p-4 space-y-3 flex-1">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm leading-tight truncate" title={item.displayName}>{item.displayName}</p>
+                          {item.merk && <p className="text-xs text-muted-foreground truncate">{item.merk}</p>}
+                        </div>
+                        <ConditionBadge condition={item.current_condition} />
                       </div>
-                      <ConditionBadge condition={item.current_condition} />
-                    </div>
-                    <AvailabilityBadge status={item.ketersediaan ?? 'tersedia'} />
-                    {item.rate_per_hour && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3 shrink-0" /> {formatRupiah(item.rate_per_hour)}/jam
-                      </p>
-                    )}
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
-                    )}
-                  </CardContent>
-                  <CardFooter className="p-3 pt-0">
-                    <Link href="/login" className={cn(buttonVariants({ size: 'sm' }), 'w-full text-xs h-7')}>Pesan</Link>
-                  </CardFooter>
-                </Card>
-              ))}
+                      
+                      {/* Availability */}
+                      <AvailabilityBadge status={item.ketersediaan ?? 'tersedia'} />
+                      
+                      {/* Price Info */}
+                      {hasRates ? (
+                        <div className="space-y-2 pt-2 border-t">
+                          {/* Show price range */}
+                          {priceRange.min !== null && priceRange.max !== null && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">Mulai dari</span>
+                              <span className="text-sm font-semibold text-emerald-600">
+                                {formatRupiah(priceRange.min)}/hari
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Show detailed prices */}
+                          <div className="space-y-1">
+                            {['mahasiswa_s1', 'mahasiswa_s2', 'dosen', 'mou_unesa', 'umum'].map(cat => {
+                              const price = getRateByCategory(item.equipment_rates, cat)
+                              if (price === null || price === 0) return null
+                              return (
+                                <div key={cat} className="flex items-center justify-between text-xs">
+                                  <span className="text-muted-foreground">{CATEGORY_LABELS[cat]}</span>
+                                  <span className="font-medium">{formatRupiah(price)}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic pt-2 border-t">Tarif belum diatur</p>
+                      )}
+                      
+                      {item.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2 pt-2 border-t">{item.description}</p>
+                      )}
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0">
+                      <Link href="/login" className={cn(buttonVariants({ size: 'sm' }), 'w-full text-xs h-8')}>Pesan</Link>
+                    </CardFooter>
+                  </Card>
+                )
+              })}
             </div>
             <Paginator page={equipPage} total={equipTotalPages} onChange={setEquipPage} />
           </section>

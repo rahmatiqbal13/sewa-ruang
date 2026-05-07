@@ -69,10 +69,25 @@ export default async function InventoryIndexPage({
 
   return (
     <div className="p-6 space-y-6">
+      {/* Info Banner */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+        <div className="flex items-start gap-3">
+          <Boxes className="h-5 w-5 text-amber-600 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-amber-800">Apa itu Inventaris?</h3>
+            <p className="text-sm text-amber-700 mt-1">
+              Inventaris adalah barang-barang yang ada di dalam ruangan (meja, kursi, AC, dll) yang 
+              <strong> tidak untuk disewakan</strong>. Untuk alat yang bisa disewakan, gunakan menu 
+              <Link href="/admin/equipment" className="text-amber-800 underline hover:text-amber-900"> Alat & Peralatan</Link>.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Inventaris Ruangan</h1>
-          <p className="text-muted-foreground text-sm">Seluruh item inventaris di semua ruangan</p>
+          <p className="text-muted-foreground text-sm">Barang-barang di dalam ruangan (tidak untuk disewakan)</p>
         </div>
         <div className="flex items-center gap-2 text-sm text-zinc-500 bg-white border rounded-lg px-3 py-1.5">
           <Boxes className="h-4 w-4 text-teal-500" />

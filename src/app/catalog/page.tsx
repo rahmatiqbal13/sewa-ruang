@@ -8,32 +8,46 @@ export default async function CatalogPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
-  type BuildingRow = {
-    id: string; name: string; code: string
-    assets: Array<{ id: string; name: string; capacity: number | null; rate_per_hour: number | null; rate_per_day: number | null; current_condition: string; room_code: string | null; is_active: boolean; is_for_rent: boolean | null }>
-  }
-  type EquipmentRow = {
-    id: string; name: string; description: string | null; rate_per_hour: number | null
-    rate_per_day: number | null; current_condition: string; ketersediaan: string | null
-    merk: string | null; is_active: boolean
-  }
-
-  const [{ data: buildings }, { data: equipment }] = await Promise.all([
+  // Query dari tabel rooms (baru) dan equipment (baru)
+  const [{ data: buildingsData }, { data: roomsData }, { data: equipmentData }] = await Promise.all([
     sb.from('buildings')
-      .select('id, name, code, assets(id, name, capacity, rate_per_hour, rate_per_day, current_condition, room_code, is_active, is_for_rent)')
+      .select('id, name, code')
       .eq('is_active', true)
-      .order('name') as Promise<{ data: BuildingRow[] | null }>,
-    sb.from('assets')
-      .select('id, name, description, rate_per_hour, rate_per_day, current_condition, ketersediaan, merk, is_active')
-      .eq('category', 'equipment')
+      .order('name') as Promise<{ data: any[] | null }>,
+    sb.from('rooms')
+      .select('id, name, building_id, capacity, rate_per_hour, rate_per_day, current_condition, room_code, is_active, is_for_rent')
       .eq('is_active', true)
-      .order('name') as Promise<{ data: EquipmentRow[] | null }>,
+      .eq('is_for_rent', true)
+      .order('name') as Promise<{ data: any[] | null }>,
+    sb.from('equipment')
+      .select(`
+        id, name, description, current_condition, ketersediaan, merk, is_active, photo_url,
+        equipment_rates(user_category, rate_per_day, rate_per_hour, requires_supervision)
+      `)
+      .eq('is_active', true)
+      .order('name') as Promise<{ data: any[] | null }>,
   ])
+
+  console.log('Buildings data:', buildingsData?.length || 0, 'items')
+  console.log('Rooms data:', roomsData?.length || 0, 'items')
+  console.log('Equipment data:', equipmentData?.length || 0, 'items')
+
+  // Transform data buildings untuk compatibility dengan CatalogClient
+  // Gabungkan buildings dengan rooms
+  const transformedBuildings = buildingsData?.map(building => ({
+    id: building.id,
+    name: building.name,
+    code: building.code,
+    assets: roomsData?.filter(room => room.building_id === building.id) || []
+  })) || []
+
+  console.log('Transformed buildings:', transformedBuildings.length, 'items')
+  console.log('Sample building:', transformedBuildings[0])
 
   return (
     <CatalogClient
-      buildings={buildings ?? []}
-      equipment={equipment ?? []}
+      buildings={transformedBuildings}
+      equipment={equipmentData ?? []}
     />
   )
 }

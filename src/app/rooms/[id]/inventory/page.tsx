@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { Building2, Clock, Package2, ImageOff } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
-import Image from 'next/image'
+import { SafeImage } from '@/components/shared/SafeImage'
 
 export const revalidate = 60
 
@@ -43,8 +43,12 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
         {/* Room info card */}
         <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
           {room.photo_url ? (
-            <div className="relative h-48 w-full">
-              <Image src={room.photo_url} alt={room.name} fill className="object-cover" />
+            <div className="relative h-48 w-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+              <SafeImage 
+                src={room.photo_url} 
+                alt={room.name} 
+                className="object-contain w-full h-full" 
+              />
             </div>
           ) : (
             <div className="h-32 bg-gradient-to-br from-blue-950 to-indigo-900 flex items-center justify-center">
@@ -88,10 +92,14 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
             {items?.map((item) => (
               <div key={item.id} className="bg-white rounded-xl border shadow-sm overflow-hidden flex">
                 {/* Photo column */}
-                <div className="w-20 shrink-0 bg-zinc-100 flex items-center justify-center">
+                <div className="w-24 shrink-0 bg-zinc-100 flex items-center justify-center p-1">
                   {item.photo_url ? (
-                    <div className="relative w-20 h-full min-h-[80px]">
-                      <Image src={item.photo_url} alt={item.name} fill className="object-cover" />
+                    <div className="relative w-full h-full min-h-[80px] flex items-center justify-center">
+                      <SafeImage 
+                        src={item.photo_url} 
+                        alt={item.name} 
+                        className="object-contain w-full h-full max-h-20" 
+                      />
                     </div>
                   ) : (
                     <ImageOff className="h-6 w-6 text-zinc-300" />

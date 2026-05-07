@@ -1,12 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import Image from 'next/image'
 import { buttonVariants } from '@/components/ui/button'
 import { Plus, Package, User, MapPin } from 'lucide-react'
 import { AssetActions } from './AssetActions'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { AvailabilityBadge } from '@/components/shared/AvailabilityBadge'
 import { formatRupiah, cn } from '@/lib/utils'
+import { SafeImage } from '@/components/shared/SafeImage'
 
 const CONDITIONS = [
   { value: '',             label: 'Semua',          color: 'bg-zinc-800 text-white' },
@@ -133,9 +133,15 @@ export default async function AssetsPage({
           return (
             <div key={a.id} className="bg-white rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow">
               {/* Photo */}
-              <div className="relative h-36 bg-gradient-to-br from-green-50 to-green-100">
+              <div className="relative h-40 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-2">
                 {a.photo_url ? (
-                  <Image src={a.photo_url} alt={a.name} fill className="object-cover" />
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <SafeImage 
+                      src={a.photo_url} 
+                      alt={a.name} 
+                      className="object-contain w-full h-full max-h-36" 
+                    />
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <Package className="h-12 w-12 text-green-200" />

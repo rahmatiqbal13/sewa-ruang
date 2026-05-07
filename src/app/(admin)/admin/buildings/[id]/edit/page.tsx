@@ -9,8 +9,7 @@ export default async function EditBuildingPage({ params }: { params: Promise<{ i
   if (!building) notFound()
 
   return (
-    <div className="p-6 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Edit Gedung</h1>
+    <div className="p-6">
       <BuildingForm building={building} />
     </div>
   )

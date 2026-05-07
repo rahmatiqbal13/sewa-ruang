@@ -10,8 +10,15 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Sistem Sewa Ruang & Alat",
-  description: "Sistem pencatatan dan pengelolaan peminjaman ruang dan peralatan",
+  title: "RentSpace - Sistem Manajemen Peminjaman Ruang & Alat",
+  description: "Platform modern untuk pengelolaan dan peminjaman ruang serta peralatan. Efisien, terintegrasi, dan mudah digunakan.",
+  keywords: ["sewa ruang", "peminjaman alat", "manajemen aset", "booking ruangan"],
+  authors: [{ name: "RentSpace" }],
+  openGraph: {
+    title: "RentSpace - Sistem Manajemen Peminjaman",
+    description: "Platform modern untuk pengelolaan dan peminjaman ruang serta peralatan",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -21,10 +28,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-slate-50">
         <QueryProvider>
           {children}
-          <Toaster richColors closeButton />
+          <Toaster 
+            richColors 
+            closeButton 
+            position="top-right"
+            toastOptions={{
+              style: {
+                fontFamily: 'Inter, system-ui, sans-serif',
+              },
+            }}
+          />
         </QueryProvider>
       </body>
     </html>

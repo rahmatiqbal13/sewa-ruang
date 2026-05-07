@@ -3,9 +3,20 @@
 import { useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Camera, Upload, X, Loader2, ImageIcon } from 'lucide-react'
+import { Camera, Upload, X, Loader2, ImageIcon, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import Image from 'next/image'
+import { Input } from '@/components/ui/input'
+
+// Helper function to validate URL
+function isValidUrl(string: string | null | undefined): boolean {
+  if (!string || string.trim() === '') return false
+  try {
+    new URL(string)
+    return true
+  } catch (_) {
+    return false
+  }
+}
 
 interface Props {
   value?: string | null
@@ -15,6 +26,8 @@ interface Props {
 
 export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
   const [uploading, setUploading] = useState(false)
+  const [showUrlInput, setShowUrlInput] = useState(false)
+  const [urlValue, setUrlValue] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
 
@@ -55,18 +68,29 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
 
   async function handleRemove() {
     onChange(null)
+    setUrlValue('')
+    setShowUrlInput(false)
+  }
+
+  function handleUrlSubmit() {
+    if (urlValue.trim()) {
+      onChange(urlValue.trim())
+      setShowUrlInput(false)
+      toast.success('URL foto berhasil ditambahkan')
+    }
   }
 
   return (
     <div className="space-y-2">
       {/* Preview */}
-      {value ? (
-        <div className="relative w-full h-44 rounded-xl overflow-hidden border bg-zinc-100">
-          <Image src={value} alt="Foto" fill className="object-cover" />
+      {value && isValidUrl(value) ? (
+        <div className="relative w-full h-52 rounded-xl overflow-hidden border bg-zinc-50 flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt="Foto" className="object-contain w-full h-full p-3" />
           <button
             type="button"
             onClick={handleRemove}
-            className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors"
+            className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors z-10"
           >
             <X className="h-4 w-4" />
           </button>
@@ -87,9 +111,28 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
         </div>
       )}
 
-      {/* Buttons */}
-      {!uploading && (
+      {/* URL Input */}
+      {showUrlInput && (
         <div className="flex gap-2">
+          <Input
+            type="url"
+            placeholder="https://example.com/image.jpg"
+            value={urlValue}
+            onChange={(e) => setUrlValue(e.target.value)}
+            className="flex-1"
+          />
+          <Button type="button" size="sm" onClick={handleUrlSubmit}>
+            OK
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowUrlInput(false)}>
+            Batal
+          </Button>
+        </div>
+      )}
+
+      {/* Buttons */}
+      {!uploading && !showUrlInput && (
+        <div className="flex gap-2 flex-wrap">
           <Button
             type="button"
             variant="outline"
@@ -98,7 +141,7 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
             onClick={() => fileRef.current?.click()}
           >
             <Upload className="h-4 w-4 mr-1.5" />
-            Pilih File
+            File
           </Button>
           <Button
             type="button"
@@ -108,7 +151,17 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
             onClick={() => cameraRef.current?.click()}
           >
             <Camera className="h-4 w-4 mr-1.5" />
-            Ambil Foto
+            Kamera
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => setShowUrlInput(true)}
+          >
+            <Link2 className="h-4 w-4 mr-1.5" />
+            URL
           </Button>
         </div>
       )}

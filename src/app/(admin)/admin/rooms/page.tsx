@@ -1,12 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import Image from 'next/image'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, DoorOpen, Users, Building2, Layers, Tag, EyeOff } from 'lucide-react'
 import { RoomActions } from './RoomActions'
 import { formatRupiah, cn } from '@/lib/utils'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
+import { SafeImage } from '@/components/shared/SafeImage'
 
 const RENT_TABS = [
   { value: '',      label: 'Semua Ruangan',   color: 'bg-zinc-800 text-white' },
@@ -24,30 +24,15 @@ export default async function RoomsPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
-  // Base query without is_for_rent (works even before migration)
+  // Query from new 'rooms' table (after migration from assets)
   let query = sb
-    .from('assets')
-    .select('id, name, room_code, floor_number, capacity, rate_per_hour, current_condition, is_active, photo_url, buildings(name, code)')
-    .eq('category', 'room')
+    .from('rooms')
+    .select('id, name, room_code, floor_number, capacity, rate_per_hour, current_condition, is_active, is_for_rent, photo_url, buildings(name, code)')
     .order('name')
 
-  // Add is_for_rent to select — if column doesn't exist, Supabase returns error and rooms = null
-  let hasIsForRent = false
-  const testRes = await sb
-    .from('assets')
-    .select('id, is_for_rent')
-    .eq('category', 'room')
-    .limit(1)
-  if (!testRes.error) {
-    hasIsForRent = true
-    query = sb
-      .from('assets')
-      .select('id, name, room_code, floor_number, capacity, rate_per_hour, current_condition, is_active, is_for_rent, photo_url, buildings(name, code)')
-      .eq('category', 'room')
-      .order('name')
-    if (for_rent === 'true')  query = query.eq('is_for_rent', true)
-    if (for_rent === 'false') query = query.eq('is_for_rent', false)
-  }
+  let hasIsForRent = true  // Column exists after migration
+  if (for_rent === 'true')  query = query.eq('is_for_rent', true)
+  if (for_rent === 'false') query = query.eq('is_for_rent', false)
 
   const { data: rooms } = await query as {
     data: Array<{
@@ -124,9 +109,15 @@ export default async function RoomsPage({
               !isForRent && 'opacity-70'
             )}>
               {/* Photo */}
-              <div className="relative h-36 bg-gradient-to-br from-purple-50 to-purple-100">
+              <div className="relative h-40 bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center p-2">
                 {room.photo_url ? (
-                  <Image src={room.photo_url} alt={room.name} fill className="object-cover" />
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <SafeImage 
+                      src={room.photo_url} 
+                      alt={room.name} 
+                      className="object-contain w-full h-full max-h-36" 
+                    />
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <DoorOpen className="h-12 w-12 text-purple-200" />

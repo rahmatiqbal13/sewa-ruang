@@ -9,33 +9,40 @@ import {
   Building2, LayoutDashboard, Package, CalendarDays,
   CreditCard, RotateCcw, BarChart3, QrCode, Boxes,
   LogOut, Users, Settings, BellRing, DoorOpen, ShieldCheck,
+  ChevronRight
 } from 'lucide-react'
+import { useState } from 'react'
 
-type NavItem = { label: string; href: string; icon: React.ElementType; color: string }
+type NavItem = { 
+  label: string; 
+  href: string; 
+  icon: React.ElementType; 
+}
 
 const regularItems: NavItem[] = [
-  { label: 'Dashboard',    href: '/admin/dashboard',     icon: LayoutDashboard, color: 'text-blue-400' },
-  { label: 'Gedung',       href: '/admin/buildings',     icon: Building2,       color: 'text-orange-400' },
-  { label: 'Ruangan',      href: '/admin/rooms',         icon: DoorOpen,        color: 'text-purple-400' },
-  { label: 'Alat',         href: '/admin/assets',        icon: Package,         color: 'text-green-400' },
-  { label: 'Inventaris',   href: '/admin/inventory',     icon: Boxes,           color: 'text-teal-400' },
-  { label: 'Pengajuan',    href: '/admin/bookings',      icon: CalendarDays,    color: 'text-amber-400' },
-  { label: 'Pembayaran',   href: '/admin/payments',      icon: CreditCard,      color: 'text-emerald-400' },
-  { label: 'Pengembalian', href: '/admin/returns',       icon: RotateCcw,       color: 'text-rose-400' },
-  { label: 'QR Code',      href: '/admin/qr',            icon: QrCode,          color: 'text-violet-400' },
-  { label: 'Laporan',      href: '/admin/reports',       icon: BarChart3,       color: 'text-sky-400' },
-  { label: 'Notifikasi',   href: '/admin/notifications', icon: BellRing,        color: 'text-red-400' },
-  { label: 'Pengaturan',   href: '/admin/settings',      icon: Settings,        color: 'text-zinc-400' },
+  { label: 'Dashboard',    href: '/admin/dashboard',     icon: LayoutDashboard },
+  { label: 'Gedung',       href: '/admin/buildings',     icon: Building2 },
+  { label: 'Ruangan',      href: '/admin/rooms',         icon: DoorOpen },
+  { label: 'Alat',         href: '/admin/equipment',     icon: Package },
+  { label: 'Inventaris',   href: '/admin/inventory',     icon: Boxes },
+  { label: 'Pengajuan',    href: '/admin/bookings',      icon: CalendarDays },
+  { label: 'Pembayaran',   href: '/admin/payments',      icon: CreditCard },
+  { label: 'Pengembalian', href: '/admin/returns',       icon: RotateCcw },
+  { label: 'QR Code',      href: '/admin/qr',            icon: QrCode },
+  { label: 'Laporan',      href: '/admin/reports',       icon: BarChart3 },
+  { label: 'Notifikasi',   href: '/admin/notifications', icon: BellRing },
+  { label: 'Pengaturan',   href: '/admin/settings',      icon: Settings },
 ]
 
 const superAdminItems: NavItem[] = [
-  { label: 'Pengguna',     href: '/admin/users',         icon: Users,           color: 'text-indigo-400' },
+  { label: 'Pengguna',     href: '/admin/users',         icon: Users },
 ]
 
 export function AdminSidebar({ onClose, userRole }: { onClose?: () => void; userRole?: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const isSuperAdmin = userRole === 'super_admin'
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   async function handleLogout() {
     const supabase = createClient()
@@ -52,37 +59,68 @@ export function AdminSidebar({ onClose, userRole }: { onClose?: () => void; user
         href={item.href}
         onClick={onClose}
         className={cn(
-          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+          'group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden',
           active
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-blue-300 hover:text-white hover:bg-blue-800/60'
+            ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
         )}
       >
-        <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-white' : item.color)} />
-        {item.label}
+        {/* Active Indicator */}
+        {active && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+        )}
+        
+        <item.icon className={cn(
+          'h-5 w-5 shrink-0 transition-transform duration-200',
+          active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-500',
+          'group-hover:scale-110'
+        )} />
+        
+        <span className="flex-1">{item.label}</span>
+        
+        {active && (
+          <ChevronRight className="h-4 w-4 text-white/70" />
+        )}
       </Link>
     )
   }
 
   return (
-    <aside className="flex flex-col h-full bg-blue-950 text-blue-100">
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-blue-800">
-        <Building2 className="h-6 w-6 text-blue-300" />
-        <span className="font-bold text-sm leading-tight text-white">Sewa Ruang & Alat</span>
+    <aside className="flex flex-col h-full bg-white border-r border-slate-200/80">
+      {/* Logo Section */}
+      <div className="flex items-center gap-3 px-6 py-6 border-b border-slate-100">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl blur-lg opacity-40" />
+          <div className="relative h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <Building2 className="h-5 w-5 text-white" />
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <span className="font-bold text-lg text-slate-900 leading-tight">RentSpace</span>
+          <span className="text-xs text-slate-500">Admin Panel</span>
+        </div>
       </div>
 
-      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+      {/* Navigation */}
+      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+        {/* Section Label */}
+        <div className="px-4 mb-2">
+          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            Menu Utama
+          </span>
+        </div>
+        
         {regularItems.map(item => <NavLink key={item.href} item={item} />)}
 
         {isSuperAdmin && (
           <>
-            <div className="pt-4 pb-1">
-              <div className="flex items-center gap-2 px-3 mb-1">
-                <div className="flex-1 h-px bg-blue-800/70" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-blue-500 flex items-center gap-1">
+            <div className="pt-4 pb-2">
+              <div className="flex items-center gap-2 px-4 mb-2">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 flex items-center gap-1.5 bg-purple-50 px-2 py-1 rounded-full">
                   <ShieldCheck className="h-3 w-3" /> Super Admin
                 </span>
-                <div className="flex-1 h-px bg-blue-800/70" />
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
               </div>
             </div>
             {superAdminItems.map(item => <NavLink key={item.href} item={item} />)}
@@ -90,13 +128,16 @@ export function AdminSidebar({ onClose, userRole }: { onClose?: () => void; user
         )}
       </nav>
 
-      <div className="p-3 border-t border-blue-800">
+      {/* Logout Section */}
+      <div className="p-4 border-t border-slate-100">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-blue-300 hover:text-white hover:bg-blue-800/60 transition-colors"
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 group"
         >
-          <LogOut className="h-4 w-4 shrink-0" />
-          Keluar
+          <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-red-100 transition-colors">
+            <LogOut className="h-4 w-4 text-slate-500 group-hover:text-red-500 transition-colors" />
+          </div>
+          <span>Keluar</span>
         </button>
       </div>
     </aside>
