@@ -11,8 +11,8 @@ import { SafeImage } from '@/components/shared/SafeImage'
 const CONDITIONS = [
   { value: '',             label: 'Semua',          color: 'bg-zinc-800 text-white' },
   { value: 'good',         label: 'Baik',           color: 'bg-green-600 text-white' },
-  { value: 'needs_repair', label: 'Rusak Ringan',   color: 'bg-yellow-500 text-white' },
-  { value: 'damaged',      label: 'Rusak Berat',    color: 'bg-red-600 text-white' },
+  { value: 'needs_repair', label: 'Perlu Perbaikan', color: 'bg-yellow-500 text-white' },
+  { value: 'damaged',      label: 'Rusak',           color: 'bg-red-600 text-white' },
   { value: 'lost',         label: 'Hilang',         color: 'bg-zinc-500 text-white' },
 ]
 
@@ -139,7 +139,8 @@ export default async function AssetsPage({
                     <SafeImage 
                       src={a.photo_url} 
                       alt={a.name} 
-                      className="object-contain w-full h-full max-h-36" 
+                      className="object-contain w-full h-full max-h-36"
+                      fallbackClassName="w-full h-full rounded-lg"
                     />
                   </div>
                 ) : (

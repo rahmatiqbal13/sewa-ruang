@@ -52,7 +52,9 @@ export function BuildingForm({ building }: { building?: Building }) {
       address: building.address ?? '',
       description: building.description ?? '',
       photo_url: building.photo_url ?? '',
-    } : {},
+    } : {
+      floor_count: 1,
+    },
   })
 
   async function onSubmit(data: FormData) {
@@ -66,8 +68,13 @@ export function BuildingForm({ building }: { building?: Building }) {
       error = res.error
     } else {
       const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('Anda harus login terlebih dahulu')
+        setLoading(false)
+        return
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await (supabase.from('buildings') as any).insert({ ...data, created_by: user!.id })
+      const res = await (supabase.from('buildings') as any).insert({ ...data, created_by: user.id })
       error = res.error
     }
 
@@ -152,8 +159,8 @@ export function BuildingForm({ building }: { building?: Building }) {
                   className="h-12 rounded-xl border-slate-200 uppercase font-mono focus:border-indigo-500 focus:ring-indigo-500/20"
                   {...register('code')}
                   onChange={(e) => {
-                    e.target.value = e.target.value.toUpperCase()
-                    register('code').onChange(e)
+                    const upperValue = e.target.value.toUpperCase()
+                    setValue('code', upperValue, { shouldValidate: true })
                   }}
                 />
                 {errors.code && (

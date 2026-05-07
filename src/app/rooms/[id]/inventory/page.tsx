@@ -47,7 +47,8 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
               <SafeImage 
                 src={room.photo_url} 
                 alt={room.name} 
-                className="object-contain w-full h-full" 
+                className="object-contain w-full h-full"
+                fallbackClassName="w-full h-full rounded-lg"
               />
             </div>
           ) : (
@@ -98,7 +99,8 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
                       <SafeImage 
                         src={item.photo_url} 
                         alt={item.name} 
-                        className="object-contain w-full h-full max-h-20" 
+                        className="object-contain w-full h-full max-h-20"
+                        fallbackClassName="w-full h-full rounded"
                       />
                     </div>
                   ) : (

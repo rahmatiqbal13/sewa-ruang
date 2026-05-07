@@ -1,16 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { Boxes, ChevronRight, Building2, DoorOpen, Package } from 'lucide-react'
+import { Boxes, ChevronRight, Building2, DoorOpen, Package, Plus } from 'lucide-react'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const CONDITIONS = [
   { value: '',             label: 'Semua',        color: 'bg-zinc-800 text-white' },
   { value: 'good',         label: 'Baik',         color: 'bg-green-600 text-white' },
-  { value: 'needs_repair', label: 'Rusak Ringan', color: 'bg-yellow-500 text-white' },
-  { value: 'damaged',      label: 'Rusak Berat',  color: 'bg-red-600 text-white' },
+  { value: 'needs_repair', label: 'Perlu Perbaikan', color: 'bg-yellow-500 text-white' },
+  { value: 'damaged',      label: 'Rusak',           color: 'bg-red-600 text-white' },
 ]
 
 export default async function InventoryIndexPage({
@@ -89,9 +89,16 @@ export default async function InventoryIndexPage({
           <h1 className="text-2xl font-bold">Inventaris Ruangan</h1>
           <p className="text-muted-foreground text-sm">Barang-barang di dalam ruangan (tidak untuk disewakan)</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-zinc-500 bg-white border rounded-lg px-3 py-1.5">
-          <Boxes className="h-4 w-4 text-teal-500" />
-          {allItems?.length ?? 0} item · {rooms.size} ruangan
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-zinc-500 bg-white border rounded-lg px-3 py-1.5">
+            <Boxes className="h-4 w-4 text-teal-500" />
+            {allItems?.length ?? 0} item · {rooms.size} ruangan
+          </div>
+          <Button asChild className="bg-amber-600 hover:bg-amber-700">
+            <Link href="/admin/inventory/new">
+              <Plus className="h-4 w-4 mr-1" /> Tambah Item
+            </Link>
+          </Button>
         </div>
       </div>
 

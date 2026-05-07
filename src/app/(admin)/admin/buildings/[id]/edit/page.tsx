@@ -5,12 +5,26 @@ import { BuildingForm } from '../../BuildingForm'
 export default async function EditBuildingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: building } = await supabase.from('buildings').select('*').eq('id', id).single()
-  if (!building) notFound()
+  
+  try {
+    const { data: building, error } = await supabase
+      .from('buildings')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (error || !building) {
+      console.error('Error fetching building:', error)
+      notFound()
+    }
 
-  return (
-    <div className="p-6">
-      <BuildingForm building={building} />
-    </div>
-  )
+    return (
+      <div className="p-6">
+        <BuildingForm building={building} />
+      </div>
+    )
+  } catch (error) {
+    console.error('Error in EditBuildingPage:', error)
+    notFound()
+  }
 }

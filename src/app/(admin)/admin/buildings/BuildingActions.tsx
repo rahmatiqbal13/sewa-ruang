@@ -7,7 +7,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, Power, PowerOff, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Pencil, Power, PowerOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Props { id: string; isActive: boolean }

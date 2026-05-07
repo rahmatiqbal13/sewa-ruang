@@ -72,7 +72,8 @@ export default async function AssetScanPage({ params }: { params: Promise<{ id: 
               <SafeImage 
                 src={asset.photo_url} 
                 alt={asset.name} 
-                className="object-contain w-full h-full" 
+                className="object-contain w-full h-full"
+                fallbackClassName="w-full h-full rounded-lg"
               />
             </div>
           ) : (

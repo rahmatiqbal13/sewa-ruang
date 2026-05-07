@@ -7,18 +7,24 @@ import { BuildingActions } from './BuildingActions'
 import { cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 
+interface Building {
+  id: string
+  name: string
+  code: string
+  floor_count: number
+  address: string | null
+  description: string | null
+  photo_url: string | null
+  is_active: boolean
+}
+
 export default async function BuildingsPage() {
   const supabase = await createClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: buildings } = await (supabase.from('buildings') as any)
-    .select('*, assets(count)')
-    .order('name') as {
-      data: Array<{
-        id: string; name: string; code: string; floor_count: number
-        is_active: boolean; address: string | null; photo_url: string | null
-        assets: { count: number }[]
-      }> | null
-    }
+  const { data: buildings } = await (supabase as any)
+    .from('buildings')
+    .select('*, rooms(count)')
+    .order('name')
 
   return (
     <div className="p-6 space-y-8">
@@ -57,8 +63,9 @@ export default async function BuildingsPage() {
 
       {/* Buildings Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {buildings?.map((building) => {
-          const roomCount = (building.assets as { count: number }[])?.[0]?.count ?? 0
+        {(buildings as Building[] | null)?.map((building) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const roomCount = ((building as any).rooms as { count: number }[])?.[0]?.count ?? 0
           return (
             <div 
               key={building.id} 
@@ -71,7 +78,8 @@ export default async function BuildingsPage() {
                     <SafeImage 
                       src={building.photo_url} 
                       alt={building.name} 
-                      className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105" 
+                      className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105"
+                      fallbackClassName="w-full h-full rounded-xl"
                     />
                   </div>
                 ) : (
@@ -161,7 +169,7 @@ export default async function BuildingsPage() {
               <div>
                 <p className="text-slate-500 text-sm font-medium">Gedung Aktif</p>
                 <p className="text-3xl font-bold text-slate-900 mt-1">
-                  {buildings.filter(b => b.is_active).length}
+                  {(buildings as Building[]).filter((b: Building) => b.is_active).length}
                 </p>
               </div>
               <div className="h-12 w-12 bg-emerald-100 rounded-xl flex items-center justify-center">
@@ -177,7 +185,7 @@ export default async function BuildingsPage() {
               <div>
                 <p className="text-slate-500 text-sm font-medium">Total Lantai</p>
                 <p className="text-3xl font-bold text-slate-900 mt-1">
-                  {buildings.reduce((acc, b) => acc + b.floor_count, 0)}
+                  {(buildings as Building[]).reduce((acc: number, b: Building) => acc + b.floor_count, 0)}
                 </p>
               </div>
               <div className="h-12 w-12 bg-amber-100 rounded-xl flex items-center justify-center">

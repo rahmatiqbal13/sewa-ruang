@@ -2,11 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle, Search } from 'lucide-react'
+import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { SafeImage } from '@/components/shared/SafeImage'
+import { EquipmentFilters } from './EquipmentFilters'
 
 const AVAILABILITY_TABS = [
   { value: '',           label: 'Semua Alat',    color: 'bg-zinc-800 text-white' },
@@ -117,22 +117,22 @@ export default async function EquipmentPage({
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
 
   // Get categories for filter
-  const { data: categories } = await supabase
+  const { data: categories } = await sb
     .from('equipment')
     .select('category')
     .not('category', 'is', null)
-    
-  const uniqueCategories = [...new Set(categories?.map(c => c.category).filter(Boolean) || [])]
+
+  const uniqueCategories = [...new Set((categories as { category: string }[] | null)?.map(c => c.category).filter(Boolean) || [])]
 
   // Get counts for all availability (not just current page)
   const { data: allEquipment } = await sb
     .from('equipment')
     .select('ketersediaan')
-    
+
   const availabilityCounts = {
-    'tersedia': allEquipment?.filter(e => e.ketersediaan === 'tersedia').length ?? 0,
-    'digunakan': allEquipment?.filter(e => e.ketersediaan === 'digunakan').length ?? 0,
-    'hilang': allEquipment?.filter(e => e.ketersediaan === 'hilang').length ?? 0,
+    'tersedia': (allEquipment as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'tersedia').length ?? 0,
+    'digunakan': (allEquipment as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'digunakan').length ?? 0,
+    'hilang': (allEquipment as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'hilang').length ?? 0,
   }
 
   const getKetersediaanColor = (status: string) => {
@@ -154,7 +154,7 @@ export default async function EquipmentPage({
   }
 
   // Get lowest rate for display
-  const getDisplayRate = (rates: typeof equipment extends null ? never : typeof equipment[0]['equipment_rates']) => {
+  const getDisplayRate = (rates: { rate_per_day: number; rate_per_hour: number | null; user_category: string; requires_supervision: boolean }[] | null | undefined) => {
     if (!rates || rates.length === 0) return null
     const sorted = [...rates].sort((a, b) => a.rate_per_day - b.rate_per_day)
     return sorted[0]
@@ -256,93 +256,8 @@ export default async function EquipmentPage({
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white border rounded-xl p-4">
-        <form action="/admin/equipment" method="GET" className="flex gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-            <Input
-              type="text"
-              name="search"
-              placeholder="Cari alat berdasarkan nama, kode, atau merk..."
-              defaultValue={search || ''}
-              className="pl-10"
-            />
-          </div>
-          {ketersediaan && <input type="hidden" name="ketersediaan" value={ketersediaan} />}
-          {category && <input type="hidden" name="category" value={category} />}
-          <button
-            type="submit"
-            className="px-4 py-2 bg-zinc-800 text-white rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
-          >
-            Cari
-          </button>
-          {search && (
-            <Link
-              href="/admin/equipment"
-              className="px-4 py-2 border border-zinc-300 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors"
-            >
-              Reset
-            </Link>
-          )}
-        </form>
-      </div>
-
       {/* Filters */}
-      <div className="flex flex-wrap gap-4">
-        {/* Availability Tabs */}
-        <div className="flex gap-2 flex-wrap">
-          {AVAILABILITY_TABS.map(tab => {
-            const isActive = (ketersediaan ?? '') === tab.value
-            const count = tab.value ? availabilityCounts[tab.value as keyof typeof availabilityCounts] : totalItems
-            return (
-              <Link
-                key={tab.value}
-                href={tab.value ? `/admin/equipment?ketersediaan=${tab.value}${search ? `&search=${search}` : ''}` : `/admin/equipment${search ? `?search=${search}` : ''}`}
-                className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all',
-                  isActive ? tab.color : 'bg-white border text-zinc-600 hover:bg-zinc-50'
-                )}
-              >
-                {tab.label}
-                {count > 0 && (
-                  <span className={cn('text-xs rounded-full px-1.5 py-0.5 font-bold', isActive ? 'bg-white/20' : 'bg-zinc-100')}>
-                    {count}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
-        </div>
-
-        {/* Category Filter */}
-        {uniqueCategories.length > 0 && (
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-sm text-muted-foreground py-1.5">Kategori:</span>
-            <Link
-              href={`/admin/equipment${search ? `?search=${search}` : ''}`}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-sm font-medium transition-all border',
-                !category ? 'bg-zinc-800 text-white' : 'bg-white text-zinc-600 hover:bg-zinc-50'
-              )}
-            >
-              Semua
-            </Link>
-            {uniqueCategories.map((cat) => (
-              <Link
-                key={cat}
-                href={`/admin/equipment?category=${cat}${search ? `&search=${search}` : ''}`}
-                className={cn(
-                  'px-3 py-1.5 rounded-full text-sm font-medium transition-all border',
-                  category === cat ? 'bg-zinc-800 text-white' : 'bg-white text-zinc-600 hover:bg-zinc-50'
-                )}
-              >
-                {CATEGORY_LABELS[cat] || cat}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+      <EquipmentFilters categories={uniqueCategories} />
 
       {/* Pagination Info */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -374,17 +289,21 @@ export default async function EquipmentPage({
 
           return (
             <div key={item.id} className={cn(
-              "rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow",
+              "rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow group",
               isDuplicate ? "bg-amber-50 border-amber-300" : "bg-white"
             )}>
-              {/* Photo */}
-              <div className="relative h-44 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-2">
+              {/* Photo - Clickable to detail */}
+              <Link 
+                href={`/admin/equipment/${createSlug(item.name)}`}
+                className="relative h-44 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-2 block"
+              >
                 {item.photo_url ? (
                   <div className="relative w-full h-full flex items-center justify-center">
                     <SafeImage 
                       src={item.photo_url} 
                       alt={item.name} 
                       className="object-contain w-full h-full max-h-40"
+                      fallbackClassName="w-full h-full rounded-lg"
                     />
                   </div>
                 ) : (
@@ -413,13 +332,15 @@ export default async function EquipmentPage({
                     </span>
                   </div>
                 )}
-              </div>
+              </Link>
 
               {/* Info */}
               <div className="p-4">
-                <h3 className="font-semibold text-zinc-900 text-sm truncate" title={item.name}>
-                  {item.name}
-                </h3>
+                <Link href={`/admin/equipment/${createSlug(item.name)}`}>
+                  <h3 className="font-semibold text-zinc-900 text-sm truncate group-hover:text-blue-600 transition-colors" title={item.name}>
+                    {item.name}
+                  </h3>
+                </Link>
                 {item.merk && (
                   <p className="text-xs text-zinc-500 mt-0.5">{item.merk}</p>
                 )}
@@ -479,6 +400,12 @@ export default async function EquipmentPage({
                 <div className="flex items-center justify-between mt-3 pt-2 border-t">
                   <ConditionBadge condition={item.current_condition} />
                   <div className="flex gap-1">
+                    <Link 
+                      href={`/admin/equipment/${createSlug(item.name)}`}
+                      className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium"
+                    >
+                      Detail
+                    </Link>
                     <Link 
                       href={`/admin/equipment/${createSlug(item.name)}/edit`}
                       className="text-xs px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 transition-colors"

@@ -212,6 +212,9 @@ CREATE TABLE IF NOT EXISTS public.equipment (
   is_active BOOLEAN NOT NULL DEFAULT true,
   photo_url TEXT,
   current_location TEXT,
+  -- Location hierarchy (all optional since room data may not be complete)
+  building_id UUID REFERENCES public.buildings(id),
+  floor INTEGER,
   storage_room_id UUID REFERENCES public.rooms(id),
   created_by UUID NOT NULL REFERENCES public.users(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -493,6 +496,8 @@ CREATE INDEX IF NOT EXISTS idx_rooms_for_rent ON public.rooms(is_for_rent);
 CREATE INDEX IF NOT EXISTS idx_equipment_active ON public.equipment(is_active);
 CREATE INDEX IF NOT EXISTS idx_equipment_ketersediaan ON public.equipment(ketersediaan);
 CREATE INDEX IF NOT EXISTS idx_equipment_storage ON public.equipment(storage_room_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_building ON public.equipment(building_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_floor ON public.equipment(floor);
 CREATE INDEX IF NOT EXISTS idx_room_inventories_room ON public.room_inventories(room_id);
 CREATE INDEX IF NOT EXISTS idx_booking_items_booking ON public.booking_items(booking_id);
 CREATE INDEX IF NOT EXISTS idx_booking_items_room ON public.booking_items(room_id) WHERE room_id IS NOT NULL;

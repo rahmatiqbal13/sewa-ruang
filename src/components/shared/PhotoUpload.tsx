@@ -1,11 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Camera, Upload, X, Loader2, ImageIcon, Link2 } from 'lucide-react'
+import { Camera, Upload, X, Loader2, ImageIcon, Link2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 // Helper function to validate URL
 function isValidUrl(string: string | null | undefined): boolean {
@@ -24,12 +25,45 @@ interface Props {
   folder?: string
 }
 
+// Helper function to extract path from Supabase storage URL
+function extractStoragePath(url: string): string | null {
+  try {
+    // Check if it's a Supabase storage URL
+    if (url.includes('.supabase.co/storage/v1/object/public/photos/')) {
+      const match = url.match(/\/photos\/(.+)$/)
+      if (match) return match[1]
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
   const [uploading, setUploading] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [urlValue, setUrlValue] = useState('')
+  const [showCamera, setShowCamera] = useState(false)
+  const [stream, setStream] = useState<MediaStream | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  async function deleteOldPhoto(oldUrl: string | null | undefined) {
+    if (!oldUrl) return
+    
+    const path = extractStoragePath(oldUrl)
+    if (!path) return // Not a supabase storage file, skip
+    
+    const supabase = createClient()
+    try {
+      await supabase.storage.from('photos').remove([path])
+      console.log('Old photo deleted:', path)
+    } catch (error) {
+      console.error('Failed to delete old photo:', error)
+    }
+  }
 
   async function handleFile(file: File) {
     if (!file.type.startsWith('image/')) {
@@ -46,6 +80,9 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
     const ext = file.name.split('.').pop() ?? 'jpg'
     const path = `${folder}/${Date.now()}.${ext}`
 
+    // Store old URL for deletion after successful upload
+    const oldUrl = value
+
     const { data, error } = await supabase.storage
       .from('photos')
       .upload(path, file, { upsert: true })
@@ -61,23 +98,104 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
     }
 
     const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(data.path)
+    
+    // Update with new URL
     onChange(publicUrl)
+    
+    // Delete old photo from storage
+    if (oldUrl && oldUrl !== publicUrl) {
+      await deleteOldPhoto(oldUrl)
+    }
+    
     toast.success('Foto berhasil diunggah')
     setUploading(false)
   }
 
   async function handleRemove() {
+    // Delete from storage if it's a supabase storage file
+    await deleteOldPhoto(value)
+    
     onChange(null)
     setUrlValue('')
     setShowUrlInput(false)
+    toast.success('Foto berhasil dihapus')
   }
 
-  function handleUrlSubmit() {
+  async function handleUrlSubmit() {
     if (urlValue.trim()) {
-      onChange(urlValue.trim())
+      const oldUrl = value
+      const newUrl = urlValue.trim()
+      
+      onChange(newUrl)
       setShowUrlInput(false)
+      
+      // Delete old photo from storage if different from new URL
+      if (oldUrl && oldUrl !== newUrl) {
+        await deleteOldPhoto(oldUrl)
+      }
+      
       toast.success('URL foto berhasil ditambahkan')
     }
+  }
+
+  // Camera functions
+  const startCamera = useCallback(async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' },
+        audio: false 
+      })
+      setStream(mediaStream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
+      }
+    } catch (err) {
+      console.error('Error accessing camera:', err)
+      toast.error('Tidak dapat mengakses kamera. Pastikan Anda memberikan izin.')
+      // Fallback to file input with capture
+      cameraRef.current?.click()
+    }
+  }, [])
+
+  const stopCamera = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+    }
+  }, [stream])
+
+  const capturePhoto = useCallback(() => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(video, 0, 0)
+        
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' })
+            await handleFile(file)
+            stopCamera()
+            setShowCamera(false)
+          }
+        }, 'image/jpeg', 0.9)
+      }
+    }
+  }, [stopCamera])
+
+  const openCamera = () => {
+    setShowCamera(true)
+    startCamera()
+  }
+
+  const closeCamera = () => {
+    stopCamera()
+    setShowCamera(false)
   }
 
   return (
@@ -130,6 +248,34 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
         </div>
       )}
 
+      {/* Camera Dialog */}
+      <Dialog open={showCamera} onOpenChange={(open) => { if (!open) closeCamera() }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ambil Foto</DialogTitle>
+          </DialogHeader>
+          <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+          <div className="flex gap-2 justify-center">
+            <Button type="button" variant="outline" onClick={closeCamera}>
+              Batal
+            </Button>
+            <Button type="button" onClick={capturePhoto} className="bg-blue-600 hover:bg-blue-700">
+              <Camera className="h-4 w-4 mr-2" />
+              Ambil Foto
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Buttons */}
       {!uploading && !showUrlInput && (
         <div className="flex gap-2 flex-wrap">
@@ -148,7 +294,7 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
             variant="outline"
             size="sm"
             className="flex-1"
-            onClick={() => cameraRef.current?.click()}
+            onClick={openCamera}
           >
             <Camera className="h-4 w-4 mr-1.5" />
             Kamera
@@ -174,6 +320,7 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }}
       />
+      {/* Fallback camera input for mobile */}
       <input
         ref={cameraRef}
         type="file"

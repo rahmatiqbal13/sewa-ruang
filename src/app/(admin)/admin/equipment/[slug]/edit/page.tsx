@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Package, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Package, AlertTriangle, Info, ChevronDown, ChevronUp } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { EquipmentImageUpload } from '../../EquipmentImageUpload'
 import { EquipmentRatesForm } from '../../EquipmentRatesForm'
@@ -27,7 +27,6 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
-// Helper function to create slug from name
 function createSlug(name: string): string {
   return name
     .toLowerCase()
@@ -35,15 +34,15 @@ function createSlug(name: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
-// Helper function to match slug to equipment
 function slugMatchesEquipment(slug: string, equipmentName: string): boolean {
-  const equipmentSlug = createSlug(equipmentName)
-  return equipmentSlug === slug
+  return createSlug(equipmentName) === slug
 }
 
 export default async function EditEquipmentPage({ params }: Props) {
   const { slug } = await params
   const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -51,7 +50,7 @@ export default async function EditEquipmentPage({ params }: Props) {
   }
 
   // Get user role
-  const { data: userData } = await supabase
+  const { data: userData } = await sb
     .from('users')
     .select('role')
     .eq('id', user.id)
@@ -62,12 +61,12 @@ export default async function EditEquipmentPage({ params }: Props) {
   }
 
   // Get all equipment to find by slug
-  const { data: allEquipment } = await supabase
+  const { data: allEquipment } = await sb
     .from('equipment')
     .select('id, name')
 
   // Find equipment that matches the slug
-  const matchedEquipment = allEquipment?.find(eq => slugMatchesEquipment(slug, eq.name))
+  const matchedEquipment = allEquipment?.find((eq: { id: string; name: string }) => slugMatchesEquipment(slug, eq.name))
   
   if (!matchedEquipment) {
     notFound()
@@ -76,7 +75,7 @@ export default async function EditEquipmentPage({ params }: Props) {
   const equipmentId = matchedEquipment.id
 
   // Get full equipment data
-  const { data: equipment } = await supabase
+  const { data: equipment } = await sb
     .from('equipment')
     .select('*')
     .eq('id', equipmentId)
@@ -87,29 +86,37 @@ export default async function EditEquipmentPage({ params }: Props) {
   }
 
   // Get equipment rates
-  const { data: equipmentRates } = await supabase
+  const { data: equipmentRates } = await sb
     .from('equipment_rates')
     .select('user_category, rate_per_day, rate_per_hour, requires_supervision')
     .eq('equipment_id', equipmentId)
 
-  // Get rooms for storage dropdown - only select name (not room_code in display)
-  const { data: rooms } = await supabase
-    .from('rooms')
-    .select('id, name, room_code')
+  // Get buildings for dropdown
+  const { data: buildings } = await sb
+    .from('buildings')
+    .select('id, name, code, floor_count')
     .eq('is_active', true)
     .order('name')
 
-  // Get all existing equipment names (excluding current) untuk cek duplikat
-  const { data: existingNames } = await supabase
-    .from('equipment')
-    .select('name')
-    .neq('id', equipmentId)
+  // Get rooms for storage dropdown
+  const { data: rooms } = await sb
+    .from('rooms')
+    .select('id, name, room_code, building_id, floor_number')
+    .eq('is_active', true)
     .order('name')
+
+  // Get count of existing equipment names only (not the list)
+  const { count: existingCount } = await sb
+    .from('equipment')
+    .select('name', { count: 'exact', head: true })
+    .neq('id', equipmentId)
 
   async function updateEquipment(formData: FormData) {
     'use server'
     
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sba = supabase as any
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -117,8 +124,7 @@ export default async function EditEquipmentPage({ params }: Props) {
     }
 
     let name = formData.get('name') as string
-    // equipment_code tidak diubah - baca dari form tapi tidak diupdate ke DB
-    formData.get('equipment_code') // consume from form
+    formData.get('equipment_code')
     const description = formData.get('description') as string
     const merk = formData.get('merk') as string
     const category = formData.get('category') as string
@@ -126,25 +132,25 @@ export default async function EditEquipmentPage({ params }: Props) {
     const ketersediaan = formData.get('ketersediaan') as string
     const status_tindakan = formData.get('status_tindakan') as string
     const sumber = formData.get('sumber') as string
+    const building_id = formData.get('building_id') as string || null
+    const floor = formData.get('floor') as string
+    const floor_number = floor ? parseInt(floor) : null
     const current_location = formData.get('current_location') as string
     const storage_room_id = formData.get('storage_room_id') as string || null
     const is_active = formData.get('is_active') === 'true'
     const photo_url = formData.get('photo_url') as string || null
 
-    // Check for duplicate names (excluding current equipment)
-    const { data: existingNames } = await supabase
+    // Check for duplicate names
+    const { data: existingNames } = await sba
       .from('equipment')
       .select('name')
       .neq('id', equipmentId)
-      .order('name')
 
-    // Generate unique name if duplicate exists
     if (existingNames) {
       const normalizedNewName = name.toLowerCase().trim()
-      const existingBaseNames = existingNames.map(e => e.name.toLowerCase().trim())
+      const existingBaseNames = existingNames.map((e: { name: string }) => e.name.toLowerCase().trim())
       
       if (existingBaseNames.includes(normalizedNewName)) {
-        // Find available number
         let counter = 2
         let newName = `${name} (${counter})`
         
@@ -157,11 +163,10 @@ export default async function EditEquipmentPage({ params }: Props) {
       }
     }
 
-    const { error } = await supabase
+    const { error } = await sba
       .from('equipment')
       .update({
         name,
-        // equipment_code tidak diupdate - kode tetap sama
         description,
         merk,
         category,
@@ -169,6 +174,8 @@ export default async function EditEquipmentPage({ params }: Props) {
         ketersediaan,
         status_tindakan,
         sumber,
+        building_id,
+        floor: floor_number,
         current_location,
         storage_room_id,
         is_active,
@@ -190,8 +197,7 @@ export default async function EditEquipmentPage({ params }: Props) {
       const requiresSupervision = formData.get(`${category}_supervision`) === 'true'
 
       if (!isNaN(rateDay) && rateDay > 0) {
-        // Upsert rate (insert or update)
-        await supabase.from('equipment_rates').upsert({
+        await sba.from('equipment_rates').upsert({
           equipment_id: equipmentId,
           user_category: category,
           rate_per_day: rateDay,
@@ -201,15 +207,13 @@ export default async function EditEquipmentPage({ params }: Props) {
           onConflict: 'equipment_id,user_category'
         })
       } else {
-        // Delete rate if 0 or empty
-        await supabase.from('equipment_rates')
+        await sba.from('equipment_rates')
           .delete()
           .eq('equipment_id', equipmentId)
           .eq('user_category', category)
       }
     }
 
-    // Redirect to new slug URL if name changed
     const newSlug = createSlug(name)
     if (newSlug !== slug) {
       redirect(`/admin/equipment/${newSlug}/edit`)
@@ -219,85 +223,73 @@ export default async function EditEquipmentPage({ params }: Props) {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
+      {/* Header */}
       <div className="mb-6">
-        <Link href="/admin/equipment" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2">
+        <Link 
+          href="/admin/equipment" 
+          className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mb-3 transition-colors"
+        >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Alat
         </Link>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Package className="h-6 w-6" /> Edit Alat
-        </h1>
-        <p className="text-muted-foreground">Perbarui informasi alat: {equipment.name}</p>
-      </div>
-
-      {/* Warning tentang duplikat */}
-      {existingNames && existingNames.length > 0 && (
-        <Alert className="bg-amber-50 border-amber-200 mb-4">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
-            <p className="font-medium mb-1">Nama alat harus unik!</p>
-            <p className="text-sm">
-              Jika nama sama dengan alat yang sudah ada, sistem akan otomatis menambahkan nomor urut
-              (contoh: &quot;Grip Strength&quot; menjadi &quot;Grip Strength (2)&quot;).
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Daftar nama yang sudah ada */}
-      {existingNames && existingNames.length > 0 && (
-        <div className="bg-gray-50 border rounded-lg p-4 mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">
-            Nama alat yang sudah ada ({existingNames.length}):
-          </p>
-          <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-            {existingNames.map((eq, idx) => (
-              <span
-                key={idx}
-                className="text-xs bg-white border px-2 py-1 rounded"
-                title={eq.name}
-              >
-                {eq.name.length > 30 ? eq.name.substring(0, 30) + '...' : eq.name}
-              </span>
-            ))}
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/25">
+            <Package className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Edit Alat</h1>
+            <p className="text-slate-500">{equipment.name}</p>
           </div>
         </div>
-      )}
+      </div>
 
-      <form action={updateEquipment}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Informasi Alat</CardTitle>
-            <CardDescription>Data dasar alat atau peralatan</CardDescription>
+      {/* Compact Warning */}
+      <Alert className="bg-amber-50 border-amber-200 mb-6">
+        <Info className="h-4 w-4 text-amber-600" />
+        <AlertDescription className="text-amber-800 text-sm">
+          <span className="font-medium">Nama alat harus unik.</span>{' '}
+          Sistem otomatis menambahkan nomor urut jika nama sama ({existingCount || 0} alat tersedia).
+        </AlertDescription>
+      </Alert>
+
+      <form action={updateEquipment} className="space-y-6">
+        {/* Main Info Card */}
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Informasi Dasar</CardTitle>
+            <CardDescription>Data identitas dan klasifikasi alat</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nama Alat *</Label>
-                <Input id="name" name="name" required defaultValue={equipment.name} />
+          <CardContent className="space-y-6">
+            {/* Row 1: Name & Code */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="name" className="text-slate-700">Nama Alat *</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  required 
+                  defaultValue={equipment.name}
+                  className="h-11"
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="equipment_code">Kode Alat</Label>
+                <Label htmlFor="equipment_code" className="text-slate-700">Kode Alat</Label>
                 <Input
                   id="equipment_code"
                   name="equipment_code"
                   defaultValue={equipment.equipment_code || ''}
                   readOnly
-                  className="bg-gray-100 font-mono"
+                  className="h-11 bg-slate-50 font-mono text-slate-500"
                 />
-                <p className="text-xs text-muted-foreground">Kode alat tidak dapat diubah</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Row 2: Category & Merk */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="merk">Merk/Brand</Label>
-                <Input id="merk" name="merk" defaultValue={equipment.merk || ''} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Kategori</Label>
+                <Label htmlFor="category" className="text-slate-700">Kategori</Label>
                 <Select name="category" defaultValue={equipment.category || ''}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder="Pilih kategori" />
                   </SelectTrigger>
                   <SelectContent>
@@ -309,113 +301,206 @@ export default async function EditEquipmentPage({ params }: Props) {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="merk" className="text-slate-700">Merk/Brand</Label>
+                <Input 
+                  id="merk" 
+                  name="merk" 
+                  defaultValue={equipment.merk || ''}
+                  className="h-11"
+                  placeholder="Contoh: Technogym, Sony, dll"
+                />
+              </div>
             </div>
 
+            {/* Row 3: Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Deskripsi</Label>
-              <Textarea id="description" name="description" defaultValue={equipment.description || ''} />
-            </div>
-
-            {/* Foto Alat */}
-            <div className="space-y-2 pt-4 border-t">
-              <Label>Foto Alat</Label>
-              <EquipmentImageUpload initialValue={equipment.photo_url || ''} />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="current_condition">Kondisi *</Label>
-                <Select name="current_condition" defaultValue={equipment.current_condition}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="good">Baik</SelectItem>
-                    <SelectItem value="needs_repair">Perlu Perbaikan</SelectItem>
-                    <SelectItem value="damaged">Rusak</SelectItem>
-                    <SelectItem value="lost">Hilang</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ketersediaan">Ketersediaan *</Label>
-                <Select name="ketersediaan" defaultValue={equipment.ketersediaan}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tersedia">Tersedia</SelectItem>
-                    <SelectItem value="digunakan">Digunakan</SelectItem>
-                    <SelectItem value="hilang">Hilang</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status_tindakan">Status Tindakan *</Label>
-                <Select name="status_tindakan" defaultValue={equipment.status_tindakan}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="perawatan">Perawatan</SelectItem>
-                    <SelectItem value="menunggu_part">Menunggu Part</SelectItem>
-                    <SelectItem value="afkir">Afkir</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="sumber">Sumber Perolehan</Label>
-                <Input id="sumber" name="sumber" defaultValue={equipment.sumber || ''} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="current_location">Lokasi Saat Ini</Label>
-                <Input id="current_location" name="current_location" defaultValue={equipment.current_location || ''} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="storage_room_id">Ruangan Penyimpanan</Label>
-              <RoomSelect 
-                rooms={rooms?.map(r => ({ id: r.id, name: r.name })) || []} 
-                defaultValue={equipment.storage_room_id || ''}
+              <Label htmlFor="description" className="text-slate-700">Deskripsi</Label>
+              <Textarea 
+                id="description" 
+                name="description" 
+                defaultValue={equipment.description || ''}
+                rows={3}
+                placeholder="Deskripsi singkat alat..."
+                className="resize-none"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="is_active">Status Aktif</Label>
-              <Select name="is_active" defaultValue={equipment.is_active.toString()}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Aktif</SelectItem>
-                  <SelectItem value="false">Nonaktif</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tarif Sewa */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tarif Sewa per Kategori</CardTitle>
-            <CardDescription>Atur harga sewa untuk setiap kategori pengguna (kosongkan jika tidak tersedia)</CardDescription>
+        {/* Photo & Status Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Photo */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Foto Alat</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EquipmentImageUpload initialValue={equipment.photo_url || ''} />
+            </CardContent>
+          </Card>
+
+          {/* Status */}
+          <Card className="lg:col-span-2 border-slate-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Status & Kondisi</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current_condition" className="text-slate-700 text-sm">Kondisi *</Label>
+                  <Select name="current_condition" defaultValue={equipment.current_condition}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="good">Baik</SelectItem>
+                      <SelectItem value="needs_repair">Perlu Perbaikan</SelectItem>
+                      <SelectItem value="damaged">Rusak</SelectItem>
+                      <SelectItem value="lost">Hilang</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ketersediaan" className="text-slate-700 text-sm">Ketersediaan *</Label>
+                  <Select name="ketersediaan" defaultValue={equipment.ketersediaan}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tersedia">Tersedia</SelectItem>
+                      <SelectItem value="digunakan">Digunakan</SelectItem>
+                      <SelectItem value="hilang">Hilang</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status_tindakan" className="text-slate-700 text-sm">Status Tindakan *</Label>
+                  <Select name="status_tindakan" defaultValue={equipment.status_tindakan}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="perawatan">Perawatan</SelectItem>
+                      <SelectItem value="menunggu_part">Menunggu Part</SelectItem>
+                      <SelectItem value="afkir">Afkir</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="building_id" className="text-slate-700 text-sm">
+                    Gedung <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                  </Label>
+                  <Select name="building_id" defaultValue={equipment.building_id || ''}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Pilih gedung..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Belum ada gedung</SelectItem>
+                      {buildings?.map((b: { id: string; name: string; code: string; floor_count: number }) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name} ({b.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="floor" className="text-slate-700 text-sm">
+                    Lantai <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                  </Label>
+                  <Select name="floor" defaultValue={equipment.floor?.toString() || ''}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Pilih lantai..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Belum ada lantai</SelectItem>
+                      {buildings?.find((b: { id: string }) => b.id === equipment.building_id)?.floor_count && 
+                        Array.from({ length: buildings.find((b: { id: string }) => b.id === equipment.building_id)?.floor_count || 0 }, (_, i) => i + 1).map((floor) => (
+                          <SelectItem key={floor} value={floor.toString()}>
+                            Lantai {floor}
+                          </SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="storage_room_id" className="text-slate-700 text-sm">
+                    Ruangan <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                  </Label>
+                  <Select name="storage_room_id" defaultValue={equipment.storage_room_id || ''}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Pilih ruangan..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Belum ada ruangan</SelectItem>
+                      {rooms?.map((r: { id: string; name: string; room_code: string }) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.name} ({r.room_code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sumber" className="text-slate-700 text-sm">Sumber Perolehan</Label>
+                  <Input 
+                    id="sumber" 
+                    name="sumber" 
+                    defaultValue={equipment.sumber || ''}
+                    className="h-10"
+                    placeholder="Contoh: Hibah, Pembelian"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="current_location" className="text-slate-700 text-sm">
+                    Keterangan Lokasi <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                  </Label>
+                  <Input 
+                    id="current_location" 
+                    name="current_location" 
+                    defaultValue={equipment.current_location || ''}
+                    className="h-10"
+                    placeholder="Contoh: Rak B, Lemari Penyimpanan"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Rates Card */}
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Tarif Sewa per Kategori</CardTitle>
+            <CardDescription>Kosongkan kategori yang tidak tersedia</CardDescription>
           </CardHeader>
           <CardContent>
             <EquipmentRatesForm initialRates={equipmentRates || []} />
           </CardContent>
         </Card>
 
-        <div className="flex gap-3 mt-6">
-          <Button type="submit">Simpan Perubahan</Button>
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-4">
           <Button type="button" variant="outline" asChild>
             <Link href="/admin/equipment">Batal</Link>
           </Button>
+          <div className="flex gap-3">
+            <Button 
+              type="submit"
+              className="bg-teal-600 hover:bg-teal-700 h-11 px-6"
+            >
+              Simpan Perubahan
+            </Button>
+          </div>
         </div>
       </form>
     </div>
