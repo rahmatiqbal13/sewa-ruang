@@ -4,17 +4,18 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
-import { Building2, Package, Users, Clock, MapPin, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Building2, Package, Users, MapPin, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { AvailabilityBadge } from '@/components/shared/AvailabilityBadge'
 
 const PAGE_SIZE = 10
 
+interface RoomRate { usage_category: string; rate_per_hour: number | null; rate_per_day: number | null }
 interface Room {
-  id: string; name: string; capacity: number | null; rate_per_hour: number | null
-  rate_per_day: number | null; current_condition: string; room_code: string | null
-  is_active: boolean; is_for_rent: boolean | null
+  id: string; name: string; capacity: number | null; current_condition: string
+  room_code: string | null; is_active: boolean; is_for_rent: boolean | null
+  room_rates: RoomRate[] | null
 }
 interface BuildingRow { id: string; name: string; code: string; assets: Room[] }
 interface EquipmentRate {
@@ -48,13 +49,20 @@ function getPriceRange(rates: EquipmentRate[] | null | undefined): { min: number
   return { min: Math.min(...prices), max: Math.max(...prices) }
 }
 
-// Kategori labels
-const CATEGORY_LABELS: Record<string, string> = {
+// Kategori labels — equipment
+const EQUIP_CATEGORY_LABELS: Record<string, string> = {
   'mahasiswa_s1': 'Mahasiswa',
   'mahasiswa_s2': 'Mahasiswa Pascasarjana',
   'dosen': 'Dosen/Karyawan',
   'mou_unesa': 'Kerjasama',
   'umum': 'Umum'
+}
+
+// Kategori labels — room usage
+const ROOM_CATEGORY_LABELS: Record<string, string> = {
+  'perkuliahan':     'Perkuliahan',
+  'event_mahasiswa': 'Event Mahasiswa',
+  'event_umum':      'Event Umum',
 }
 
 function Paginator({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
@@ -95,14 +103,13 @@ export function CatalogClient({ buildings, equipment }: Props) {
   const [roomSearch, setRoomSearch] = useState('')
   const [roomBuilding, setRoomBuilding] = useState('all')
   const [equipSearch, setEquipSearch] = useState('')
-  const [equipCondition, setEquipCondition] = useState('all')
   const [equipAvail, setEquipAvail] = useState('all')
   const [roomPage, setRoomPage] = useState(1)
   const [equipPage, setEquipPage] = useState(1)
 
   // Reset pages when filters change
   useEffect(() => { setRoomPage(1) }, [roomSearch, roomBuilding])
-  useEffect(() => { setEquipPage(1) }, [equipSearch, equipCondition, equipAvail])
+  useEffect(() => { setEquipPage(1) }, [equipSearch, equipAvail])
 
   // Rooms: filter is_active AND is_for_rent (null treated as true for backward compat)
   const allRooms = useMemo(() =>
@@ -151,10 +158,9 @@ export function CatalogClient({ buildings, equipment }: Props) {
 
   const filteredEquip = useMemo(() => equipWithNumbers.filter(e => {
     const matchSearch = !equipSearch || e.displayName.toLowerCase().includes(equipSearch.toLowerCase()) || (e.merk?.toLowerCase().includes(equipSearch.toLowerCase()))
-    const matchCond = equipCondition === 'all' || e.current_condition === equipCondition
     const matchAvail = equipAvail === 'all' || (e.ketersediaan ?? 'tersedia') === equipAvail
-    return matchSearch && matchCond && matchAvail
-  }), [equipWithNumbers, equipSearch, equipCondition, equipAvail])
+    return matchSearch && matchAvail
+  }), [equipWithNumbers, equipSearch, equipAvail])
 
   const roomTotalPages = Math.max(1, Math.ceil(filteredRooms.length / PAGE_SIZE))
   const equipTotalPages = Math.max(1, Math.ceil(filteredEquip.length / PAGE_SIZE))
@@ -268,23 +274,18 @@ export function CatalogClient({ buildings, equipment }: Props) {
                     </p>
                   )}
                   
-                  {/* Pricing */}
-                  <div className="space-y-2 pt-2 border-t">
-                    {(room.rate_per_hour || room.rate_per_day) ? (
-                      <>
-                        {room.rate_per_day && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Per Hari</span>
-                            <span className="text-sm font-semibold text-emerald-600">{formatRupiah(room.rate_per_day)}</span>
+                  {/* Pricing per kategori */}
+                  <div className="space-y-1.5 pt-2 border-t">
+                    {room.room_rates && room.room_rates.length > 0 ? (
+                      room.room_rates.map(r => (
+                        <div key={r.usage_category}>
+                          <p className="text-xs font-medium text-zinc-500">{ROOM_CATEGORY_LABELS[r.usage_category] ?? r.usage_category}</p>
+                          <div className="flex gap-3 text-xs">
+                            {r.rate_per_hour ? <span className="text-emerald-600">{formatRupiah(r.rate_per_hour)}/jam</span> : null}
+                            {r.rate_per_day  ? <span className="text-emerald-700 font-medium">{formatRupiah(r.rate_per_day)}/hari</span> : null}
                           </div>
-                        )}
-                        {room.rate_per_hour && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Per Jam</span>
-                            <span className="text-sm font-medium">{formatRupiah(room.rate_per_hour)}</span>
-                          </div>
-                        )}
-                      </>
+                        </div>
+                      ))
                     ) : (
                       <p className="text-xs text-muted-foreground italic">Tarif belum diatur</p>
                     )}
@@ -323,16 +324,6 @@ export function CatalogClient({ buildings, equipment }: Props) {
                   className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
-              <select
-                value={equipCondition}
-                onChange={e => setEquipCondition(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Semua Kondisi</option>
-                <option value="good">Baik</option>
-                <option value="needs_repair">Rusak Ringan</option>
-                <option value="damaged">Rusak Berat</option>
-              </select>
               <select
                 value={equipAvail}
                 onChange={e => setEquipAvail(e.target.value)}
@@ -388,7 +379,7 @@ export function CatalogClient({ buildings, equipment }: Props) {
                               if (price === null || price === 0) return null
                               return (
                                 <div key={cat} className="flex items-center justify-between text-xs">
-                                  <span className="text-muted-foreground">{CATEGORY_LABELS[cat]}</span>
+                                  <span className="text-muted-foreground">{EQUIP_CATEGORY_LABELS[cat]}</span>
                                   <span className="font-medium">{formatRupiah(price)}</span>
                                 </div>
                               )

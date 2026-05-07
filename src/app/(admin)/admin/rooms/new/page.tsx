@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { AssetForm } from '../../assets/AssetForm'
+import { RoomForm } from '../RoomForm'
 
 export default async function NewRoomPage() {
   const supabase = await createClient()
@@ -13,7 +13,7 @@ export default async function NewRoomPage() {
     <div className="p-6 max-w-2xl">
       <h1 className="text-2xl font-bold mb-1">Tambah Ruangan</h1>
       <p className="text-muted-foreground text-sm mb-6">Isi data ruangan yang akan ditambahkan ke sistem</p>
-      <AssetForm buildings={buildings ?? []} lockedCategory="room" />
+      <RoomForm buildings={buildings ?? []} />
     </div>
   )
 }

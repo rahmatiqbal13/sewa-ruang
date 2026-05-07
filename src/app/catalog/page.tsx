@@ -15,7 +15,7 @@ export default async function CatalogPage() {
       .eq('is_active', true)
       .order('name') as Promise<{ data: any[] | null }>,
     sb.from('rooms')
-      .select('id, name, building_id, capacity, rate_per_hour, rate_per_day, current_condition, room_code, is_active, is_for_rent')
+      .select('id, name, building_id, capacity, current_condition, room_code, is_active, is_for_rent, room_rates(usage_category, rate_per_hour, rate_per_day)')
       .eq('is_active', true)
       .eq('is_for_rent', true)
       .order('name') as Promise<{ data: any[] | null }>,
@@ -25,6 +25,7 @@ export default async function CatalogPage() {
         equipment_rates(user_category, rate_per_day, rate_per_hour, requires_supervision)
       `)
       .eq('is_active', true)
+      .eq('current_condition', 'good')
       .order('name') as Promise<{ data: any[] | null }>,
   ])
 
@@ -39,7 +40,7 @@ export default async function CatalogPage() {
     name: building.name,
     code: building.code,
     assets: roomsData?.filter(room => room.building_id === building.id) || []
-  })) || []
+  })).filter(b => b.assets.length > 0) || []
 
   console.log('Transformed buildings:', transformedBuildings.length, 'items')
   console.log('Sample building:', transformedBuildings[0])
