@@ -1,6 +1,7 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import * as XLSX from 'xlsx'
 
 export interface ImportResult {
@@ -114,11 +115,19 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
     const actualData = data.slice(headerRowIndex)
     
     const supabase = await createClient()
-    const adminSupabase = await createAdminClient()
+    // Create direct service role client to bypass RLS
+    const serviceRoleClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const adminSb = adminSupabase as any
+    const serviceSb = serviceRoleClient as any
+    
+    // Debug: Check if service role client is created
+    console.log('Service role client created:', !!serviceRoleClient)
+    console.log('Service role key available:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
 
     // Get current user for created_by
     const { data: { user } } = await supabase.auth.getUser()
@@ -468,14 +477,17 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
                 console.log(`    - Inserting rate: day=${ratePerDay}, hour=${ratePerHour}, supervision=${requiresSupervision}`)
                 
                 try {
-                  // Use admin client to bypass RLS for rate insertion
-                  const { error: rateError } = await adminSb.from('equipment_rates').insert({
+                  // Use service role client to bypass RLS for rate insertion
+                  console.log(`    - Using serviceSb for rate insertion:`, !!serviceSb)
+                  const rateInsertData = {
                     equipment_id: insertedData.id,
                     user_category: rateCat.category,
                     rate_per_day: ratePerDay,
                     rate_per_hour: ratePerHour,
                     requires_supervision: requiresSupervision,
-                  })
+                  }
+                  console.log(`    - Rate insert data:`, rateInsertData)
+                  const { error: rateError } = await serviceSb.from('equipment_rates').insert(rateInsertData)
                   
                   if (rateError) {
                     console.error(`    - Error inserting rate:`, rateError)
