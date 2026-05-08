@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, Package, AlertTriangle, Info, ChevronDown, ChevronUp } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { EquipmentImageUpload } from '../../EquipmentImageUpload'
 import { EquipmentRatesForm } from '../../EquipmentRatesForm'
@@ -124,7 +125,7 @@ export default async function EditEquipmentPage({ params }: Props) {
     }
 
     let name = formData.get('name') as string
-    formData.get('equipment_code')
+    let equipment_code = formData.get('equipment_code') as string
     const description = formData.get('description') as string
     const merk = formData.get('merk') as string
     const category = formData.get('category') as string
@@ -139,6 +140,30 @@ export default async function EditEquipmentPage({ params }: Props) {
     const storage_room_id = formData.get('storage_room_id') as string || null
     const is_active = formData.get('is_active') === 'true'
     const photo_url = formData.get('photo_url') as string || null
+
+    // Generate equipment code if not exists
+    if (!equipment_code) {
+      const { data: maxCodeData } = await sba
+        .from('equipment')
+        .select('equipment_code')
+        .not('equipment_code', 'is', null)
+        .ilike('equipment_code', 'ALT-%')
+        .order('equipment_code', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (maxCodeData?.equipment_code) {
+        const match = maxCodeData.equipment_code.match(/ALT-(\d+)/)
+        if (match) {
+          const lastNum = parseInt(match[1], 10)
+          equipment_code = `ALT-${String(lastNum + 1).padStart(4, '0')}`
+        } else {
+          equipment_code = 'ALT-0001'
+        }
+      } else {
+        equipment_code = 'ALT-0001'
+      }
+    }
 
     // Check for duplicate names
     const { data: existingNames } = await sba
@@ -167,6 +192,7 @@ export default async function EditEquipmentPage({ params }: Props) {
       .from('equipment')
       .update({
         name,
+        equipment_code,
         description,
         merk,
         category,
@@ -261,28 +287,39 @@ export default async function EditEquipmentPage({ params }: Props) {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Row 1: Name & Code */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="name" className="text-slate-700">Nama Alat *</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  required 
-                  defaultValue={equipment.name}
-                  className="h-11"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="name" className="text-slate-700">Nama Alat *</Label>
+                  <Input 
+                    id="name" 
+                    name="name" 
+                    required 
+                    defaultValue={equipment.name}
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="equipment_code" className="text-slate-700">
+                    Kode Alat {equipment.equipment_code ? '' : <span className="text-amber-600">*</span>}
+                  </Label>
+                  <Input
+                    id="equipment_code"
+                    name="equipment_code"
+                    defaultValue={equipment.equipment_code || ''}
+                    readOnly={!!equipment.equipment_code}
+                    placeholder={equipment.equipment_code ? '' : 'Akan dibuat otomatis'}
+                    className={cn(
+                      "h-11 font-mono",
+                      equipment.equipment_code 
+                        ? "bg-slate-50 text-slate-500" 
+                        : "bg-amber-50 border-amber-200 text-amber-700 placeholder:text-amber-400"
+                    )}
+                  />
+                  {!equipment.equipment_code && (
+                    <p className="text-xs text-amber-600">Kode akan dibuat otomatis saat simpan</p>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="equipment_code" className="text-slate-700">Kode Alat</Label>
-                <Input
-                  id="equipment_code"
-                  name="equipment_code"
-                  defaultValue={equipment.equipment_code || ''}
-                  readOnly
-                  className="h-11 bg-slate-50 font-mono text-slate-500"
-                />
-              </div>
-            </div>
 
             {/* Row 2: Category & Merk */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -290,7 +327,11 @@ export default async function EditEquipmentPage({ params }: Props) {
                 <Label htmlFor="category" className="text-slate-700">Kategori</Label>
                 <Select name="category" defaultValue={equipment.category || ''}>
                   <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Pilih kategori" />
+                    {equipment.category ? (
+                      <span>{EQUIPMENT_CATEGORIES.find(cat => cat.value === equipment.category)?.label || equipment.category}</span>
+                    ) : (
+                      <span className="text-slate-400">Pilih kategori</span>
+                    )}
                   </SelectTrigger>
                   <SelectContent>
                     {EQUIPMENT_CATEGORIES.map((cat) => (
@@ -351,7 +392,10 @@ export default async function EditEquipmentPage({ params }: Props) {
                   <Label htmlFor="current_condition" className="text-slate-700 text-sm">Kondisi *</Label>
                   <Select name="current_condition" defaultValue={equipment.current_condition}>
                     <SelectTrigger className="h-10">
-                      <SelectValue />
+                      {equipment.current_condition === 'good' && <span>Baik</span>}
+                      {equipment.current_condition === 'needs_repair' && <span>Perlu Perbaikan</span>}
+                      {equipment.current_condition === 'damaged' && <span>Rusak</span>}
+                      {equipment.current_condition === 'lost' && <span>Hilang</span>}
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="good">Baik</SelectItem>
@@ -365,7 +409,9 @@ export default async function EditEquipmentPage({ params }: Props) {
                   <Label htmlFor="ketersediaan" className="text-slate-700 text-sm">Ketersediaan *</Label>
                   <Select name="ketersediaan" defaultValue={equipment.ketersediaan}>
                     <SelectTrigger className="h-10">
-                      <SelectValue />
+                      {equipment.ketersediaan === 'tersedia' && <span>Tersedia</span>}
+                      {equipment.ketersediaan === 'digunakan' && <span>Digunakan</span>}
+                      {equipment.ketersediaan === 'hilang' && <span>Hilang</span>}
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="tersedia">Tersedia</SelectItem>
@@ -378,7 +424,10 @@ export default async function EditEquipmentPage({ params }: Props) {
                   <Label htmlFor="status_tindakan" className="text-slate-700 text-sm">Status Tindakan *</Label>
                   <Select name="status_tindakan" defaultValue={equipment.status_tindakan}>
                     <SelectTrigger className="h-10">
-                      <SelectValue />
+                      {equipment.status_tindakan === 'normal' && <span>Normal</span>}
+                      {equipment.status_tindakan === 'perawatan' && <span>Perawatan</span>}
+                      {equipment.status_tindakan === 'menunggu_part' && <span>Menunggu Part</span>}
+                      {equipment.status_tindakan === 'afkir' && <span>Afkir</span>}
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="normal">Normal</SelectItem>
@@ -397,7 +446,11 @@ export default async function EditEquipmentPage({ params }: Props) {
                   </Label>
                   <Select name="building_id" defaultValue={equipment.building_id || ''}>
                     <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Pilih gedung..." />
+                      {equipment.building_id ? (
+                        <span>{buildings?.find((b: { id: string }) => b.id === equipment.building_id)?.name || 'Pilih gedung...'}</span>
+                      ) : (
+                        <span className="text-slate-400">Pilih gedung...</span>
+                      )}
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Belum ada gedung</SelectItem>
@@ -415,7 +468,11 @@ export default async function EditEquipmentPage({ params }: Props) {
                   </Label>
                   <Select name="floor" defaultValue={equipment.floor?.toString() || ''}>
                     <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Pilih lantai..." />
+                      {equipment.floor ? (
+                        <span>Lantai {equipment.floor}</span>
+                      ) : (
+                        <span className="text-slate-400">Pilih lantai...</span>
+                      )}
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Belum ada lantai</SelectItem>
@@ -435,7 +492,11 @@ export default async function EditEquipmentPage({ params }: Props) {
                   </Label>
                   <Select name="storage_room_id" defaultValue={equipment.storage_room_id || ''}>
                     <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Pilih ruangan..." />
+                      {equipment.storage_room_id ? (
+                        <span>{rooms?.find((r: { id: string }) => r.id === equipment.storage_room_id)?.name || 'Pilih ruangan...'}</span>
+                      ) : (
+                        <span className="text-slate-400">Pilih ruangan...</span>
+                      )}
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Belum ada ruangan</SelectItem>

@@ -56,6 +56,12 @@ DROP POLICY IF EXISTS "extensions_own_insert" ON public.booking_extensions;
 DROP POLICY IF EXISTS "admin_manage_extensions" ON public.booking_extensions;
 DROP POLICY IF EXISTS "waitlists_own" ON public.booking_waitlists;
 
+-- Drop policies that depend on helper functions (must drop before functions)
+DROP POLICY IF EXISTS "notifications_own" ON public.notifications;
+DROP POLICY IF EXISTS "admin_manage_channel_configs" ON public.notification_channel_configs;
+DROP POLICY IF EXISTS "admin_manage_templates" ON public.notification_templates;
+DROP POLICY IF EXISTS "admin_manage_templates" ON public.agreement_templates;
+
 -- Drop old helper functions
 DROP FUNCTION IF EXISTS public.get_user_role();
 DROP FUNCTION IF EXISTS public.is_super_admin();

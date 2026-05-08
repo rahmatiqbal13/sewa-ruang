@@ -7,6 +7,11 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
 
+  console.log('[Auth Callback] ==========================================')
+  console.log('[Auth Callback] Origin:', origin)
+  console.log('[Auth Callback] Next:', next)
+  console.log('[Auth Callback] Code present:', !!code)
+
   if (code) {
     const cookieStore = await cookies()
     const supabase = createServerClient(
@@ -24,11 +29,34 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+    try {
+      const { error, data } = await supabase.auth.exchangeCodeForSession(code)
+      
+      console.log('[Auth Callback] Exchange result:', {
+        error: error?.message || null,
+        hasSession: !!data.session,
+        user: data.session?.user?.email || null,
+      })
+      
+      if (!error && data.session) {
+        const redirectUrl = `${origin}${next}`
+        console.log('[Auth Callback] Success! Redirecting to:', redirectUrl)
+        console.log('[Auth Callback] ==========================================')
+        return NextResponse.redirect(redirectUrl)
+      }
+      
+      if (error) {
+        console.error('[Auth Callback] Exchange error:', error)
+      }
+    } catch (err) {
+      console.error('[Auth Callback] Exception:', err)
     }
+  } else {
+    console.log('[Auth Callback] No code provided')
   }
 
+  // If we get here, something went wrong
+  console.log('[Auth Callback] Failed - redirecting to error page')
+  console.log('[Auth Callback] ==========================================')
   return NextResponse.redirect(`${origin}/reset-password?error=invalid_link`)
 }

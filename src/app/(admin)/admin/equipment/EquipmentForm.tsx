@@ -117,21 +117,30 @@ export function EquipmentForm({
       name: equipment.name,
       equipment_code: equipment.equipment_code,
       merk: equipment.merk ?? '',
-      category: equipment.category,
+      category: equipment.category || '',
       description: equipment.description ?? '',
-      current_condition: equipment.current_condition as FormData['current_condition'],
-      ketersediaan: equipment.ketersediaan as FormData['ketersediaan'],
-      status_tindakan: equipment.status_tindakan as FormData['status_tindakan'],
+      current_condition: (equipment.current_condition || 'good') as FormData['current_condition'],
+      ketersediaan: (equipment.ketersediaan || 'tersedia') as FormData['ketersediaan'],
+      status_tindakan: (equipment.status_tindakan || 'normal') as FormData['status_tindakan'],
       sumber: equipment.sumber ?? '',
       building_id: equipment.building_id ?? '',
-      floor: equipment.floor ?? undefined,
+      floor: equipment.floor ?? 0,
       storage_room_id: equipment.storage_room_id ?? '',
       photo_url: equipment.photo_url ?? '',
     } : {
+      name: '',
       equipment_code: nextCode,
+      merk: '',
+      category: '',
+      description: '',
       current_condition: 'good',
       ketersediaan: 'tersedia',
       status_tindakan: 'normal',
+      sumber: '',
+      building_id: '',
+      floor: 0,
+      storage_room_id: '',
+      photo_url: '',
     }
   })
 
@@ -359,7 +368,7 @@ export function EquipmentForm({
                     Kategori <span className="text-red-500">*</span>
                   </Label>
                   <Select 
-                    value={watch('category')} 
+                    value={watch('category') || ''} 
                     onValueChange={(v) => v && setValue('category', v)}
                   >
                     <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500/20">
@@ -414,14 +423,14 @@ export function EquipmentForm({
                   Kondisi Fisik <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  value={watch('current_condition')}
+                  value={watch('current_condition') || 'good'}
                   onValueChange={(v) => v && setValue('current_condition', v as FormData['current_condition'])}
                 >
                   <SelectTrigger className="h-12 rounded-xl border-slate-200">
                     {watch('current_condition') ? (
                       <span className="text-slate-900">{CONDITION_LABELS[watch('current_condition')]}</span>
                     ) : (
-                      <SelectValue />
+                      <SelectValue placeholder="Pilih kondisi..." />
                     )}
                   </SelectTrigger>
                   <SelectContent>
@@ -438,14 +447,14 @@ export function EquipmentForm({
                   Ketersediaan <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  value={watch('ketersediaan')}
+                  value={watch('ketersediaan') || 'tersedia'}
                   onValueChange={(v) => v && setValue('ketersediaan', v as FormData['ketersediaan'])}
                 >
                   <SelectTrigger className="h-12 rounded-xl border-slate-200">
                     {watch('ketersediaan') ? (
                       <span className="text-slate-900">{KETERSEDIAAN_LABELS[watch('ketersediaan')]}</span>
                     ) : (
-                      <SelectValue />
+                      <SelectValue placeholder="Pilih ketersediaan..." />
                     )}
                   </SelectTrigger>
                   <SelectContent>
@@ -461,14 +470,14 @@ export function EquipmentForm({
                   Status Tindakan <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  value={watch('status_tindakan')}
+                  value={watch('status_tindakan') || 'normal'}
                   onValueChange={(v) => v && setValue('status_tindakan', v as FormData['status_tindakan'])}
                 >
                   <SelectTrigger className="h-12 rounded-xl border-slate-200">
                     {watch('status_tindakan') ? (
                       <span className="text-slate-900">{STATUS_TINDAKAN_LABELS[watch('status_tindakan')]}</span>
                     ) : (
-                      <SelectValue />
+                      <SelectValue placeholder="Pilih status..." />
                     )}
                   </SelectTrigger>
                   <SelectContent>
@@ -512,9 +521,9 @@ export function EquipmentForm({
                 <Select
                   value={watch('building_id') || ''}
                   onValueChange={(v) => {
-                    setValue('building_id', v || undefined)
+                    setValue('building_id', v || '')
                     setValue('floor', undefined)
-                    setValue('storage_room_id', undefined)
+                    setValue('storage_room_id', '')
                   }}
                 >
                   <SelectTrigger className="h-12 rounded-xl border-slate-200">
@@ -540,10 +549,10 @@ export function EquipmentForm({
                   Lantai <span className="text-xs text-slate-400 font-normal">(opsional)</span>
                 </Label>
                 <Select
-                  value={selectedFloor?.toString() || ''}
+                  value={selectedFloor ? selectedFloor.toString() : ''}
                   onValueChange={(v) => {
-                    setValue('floor', v ? parseInt(v) : undefined)
-                    setValue('storage_room_id', undefined)
+                    setValue('floor', v ? parseInt(v) : 0)
+                    setValue('storage_room_id', '')
                   }}
                   disabled={!selectedBuilding}
                 >
@@ -574,7 +583,7 @@ export function EquipmentForm({
                 </Label>
                 <Select
                   value={watch('storage_room_id') || ''}
-                  onValueChange={(v) => setValue('storage_room_id', v || undefined)}
+                  onValueChange={(v) => setValue('storage_room_id', v || '')}
                 >
                   <SelectTrigger className={cn(
                     "h-12 rounded-xl border-slate-200",

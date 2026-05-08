@@ -38,18 +38,21 @@ export default async function NewEquipmentPage() {
     .order('name')
 
   // Generate next equipment code
-  const { data: lastEquipment } = await sb
+  // Get the highest existing code number
+  const { data: maxCodeData } = await sb
     .from('equipment')
     .select('equipment_code')
-    .order('created_at', { ascending: false })
+    .not('equipment_code', 'is', null)
+    .ilike('equipment_code', 'ALT-%')
+    .order('equipment_code', { ascending: false })
     .limit(1)
     .single()
 
   let nextCode = 'ALT-0001'
-  if (lastEquipment?.equipment_code) {
-    const match = lastEquipment.equipment_code.match(/ALT-(\d+)/)
+  if (maxCodeData?.equipment_code) {
+    const match = maxCodeData.equipment_code.match(/ALT-(\d+)/)
     if (match) {
-      const lastNum = parseInt(match[1])
+      const lastNum = parseInt(match[1], 10)
       nextCode = `ALT-${String(lastNum + 1).padStart(4, '0')}`
     }
   }

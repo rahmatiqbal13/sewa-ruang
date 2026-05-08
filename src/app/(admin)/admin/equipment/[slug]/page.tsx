@@ -13,6 +13,7 @@ import { formatRupiah, cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { EquipmentQRCode } from '../EquipmentQRCode'
+import { SoftDeleteButton, RestoreButton } from '../SoftDeleteButtons'
 
 const CATEGORY_LABELS: Record<string, string> = {
   elektronik: 'Elektronik',
@@ -208,6 +209,17 @@ export default async function EquipmentDetailPage({ params }: Props) {
               equipmentName={equipment.name}
               equipmentCode={equipment.equipment_code}
             />
+            {equipment.is_active ? (
+              <SoftDeleteButton 
+                equipmentId={equipment.id}
+                equipmentName={equipment.name}
+              />
+            ) : (
+              <RestoreButton 
+                equipmentId={equipment.id}
+                equipmentName={equipment.name}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -239,6 +251,17 @@ export default async function EquipmentDetailPage({ params }: Props) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Aktif/Nonaktif Badge */}
+              {!equipment.is_active && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 border border-gray-200">
+                  <XCircle className="h-5 w-5 shrink-0 text-gray-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Nonaktif</p>
+                    <p className="text-xs text-gray-500">Alat tidak ditampilkan di katalog</p>
+                  </div>
+                </div>
+              )}
+
               {/* Ketersediaan */}
               <div className={cn(
                 "flex items-center gap-3 p-3 rounded-xl border",

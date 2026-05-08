@@ -10,12 +10,15 @@ import {
   Clock, 
   AlertTriangle,
   Tag,
-  Search
+  Search,
+  EyeOff,
+  CalendarPlus
 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface EquipmentFiltersProps {
   categories: string[]
@@ -54,6 +57,8 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
   const category = searchParams.get('category') || ''
   const condition = searchParams.get('condition') || ''
   const search = searchParams.get('search') || ''
+  const showInactive = searchParams.get('showInactive') === 'true'
+  const todayOnly = searchParams.get('todayOnly') === 'true'
 
   const selectedKetersediaan = useMemo(() => {
     return KETERSEDIAAN_OPTIONS.find(opt => opt.value === ketersediaan)
@@ -74,13 +79,15 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
       category,
       condition,
       search,
+      showInactive: showInactive ? 'true' : '',
+      todayOnly: todayOnly ? 'true' : '',
       ...params
     }
     const valid = Object.entries(current).filter(([_, v]) => v)
     return valid.length > 0 ? '/admin/equipment?' + valid.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&') : '/admin/equipment'
-  }, [ketersediaan, category, condition, search])
+  }, [ketersediaan, category, condition, search, showInactive, todayOnly])
 
-  const hasActiveFilters = ketersediaan || category || condition || search
+  const hasActiveFilters = ketersediaan || category || condition || search || showInactive || todayOnly
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4">
@@ -109,6 +116,7 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
         {ketersediaan && <input type="hidden" name="ketersediaan" value={ketersediaan} />}
         {category && <input type="hidden" name="category" value={category} />}
         {condition && <input type="hidden" name="condition" value={condition} />}
+        {showInactive && <input type="hidden" name="showInactive" value="true" />}
         <button
           type="submit"
           className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors"
@@ -222,6 +230,39 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Show Inactive Toggle */}
+        <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <Checkbox
+              checked={showInactive}
+              onCheckedChange={(checked) => 
+                router.push(buildUrl({ showInactive: checked ? 'true' : '' }))
+              }
+            />
+            <div className="flex items-center gap-2">
+              <EyeOff className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+              <span className="text-sm text-slate-600 group-hover:text-slate-800">
+                Tampilkan alat yang dinonaktifkan
+              </span>
+            </div>
+          </label>
+          
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <Checkbox
+              checked={todayOnly}
+              onCheckedChange={(checked) => 
+                router.push(buildUrl({ todayOnly: checked ? 'true' : '' }))
+              }
+            />
+            <div className="flex items-center gap-2">
+              <CalendarPlus className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+              <span className="text-sm text-slate-600 group-hover:text-slate-800">
+                Ditambahkan hari ini saja
+              </span>
+            </div>
+          </label>
         </div>
       </div>
     </div>

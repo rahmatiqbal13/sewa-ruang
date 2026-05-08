@@ -1,0 +1,580 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle, Download, FileUp } from 'lucide-react'
+import { formatRupiah, cn } from '@/lib/utils'
+import { ConditionBadge } from '@/components/shared/ConditionBadge'
+import { SafeImage } from '@/components/shared/SafeImage'
+import { EquipmentFilters } from './EquipmentFilters'
+import { SoftDeleteButton, RestoreButton } from './SoftDeleteButtons'
+import { useBulkActions, BulkActionsBar, ItemCheckbox, SelectAllCheckbox } from './BulkActions'
+import { exportEquipmentToExcel } from './exportEquipment'
+import { importEquipmentFromExcel, undoImportEquipment, deleteAllEquipment } from './importEquipment'
+import { downloadEquipmentTemplate } from './exportEquipment'
+import { ImportDialog } from './ImportDialog'
+import type { ImportResult } from './importEquipment'
+
+const AVAILABILITY_TABS = [
+  { value: '',           label: 'Semua Alat',    color: 'bg-zinc-800 text-white' },
+  { value: 'tersedia',   label: 'Tersedia',      color: 'bg-green-600 text-white' },
+  { value: 'digunakan',  label: 'Digunakan',     color: 'bg-orange-600 text-white' },
+  { value: 'hilang',     label: 'Hilang',        color: 'bg-red-600 text-white' },
+]
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'elektronik': 'Elektronik',
+  'mebel': 'Mebel',
+  'transportasi': 'Transportasi',
+  'alat_tes_pengukuran': 'Alat Tes Pengukuran',
+  'alat_gym': 'Alat Gym/Fitness',
+  'perlengkapan': 'Perlengkapan',
+  'lainnya': 'Lainnya',
+}
+
+// Helper function to create slug from name
+function createSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+interface Equipment {
+  id: string
+  name: string
+  equipment_code: string | null
+  description: string | null
+  merk: string | null
+  category: string | null
+  current_condition: string
+  ketersediaan: string
+  status_tindakan: string
+  is_active: boolean
+  photo_url: string | null
+  current_location: string | null
+  storage_room_id: string | null
+  equipment_rates: Array<{
+    user_category: string
+    rate_per_day: number
+    rate_per_hour: number | null
+    requires_supervision: boolean
+  }>
+}
+
+interface EquipmentListProps {
+  equipment: Equipment[]  // Paginated equipment for display
+  allEquipment: Equipment[]  // All equipment for export
+  totalItems: number
+  currentPage: number
+  totalPages: number
+  availabilityCounts: {
+    tersedia: number
+    digunakan: number
+    hilang: number
+  }
+  duplicateBaseNames: Set<string>
+  uniqueCategories: string[]
+  hasDuplicates: boolean
+  searchParams: {
+    ketersediaan?: string
+    category?: string
+    search?: string
+    todayOnly?: string
+  }
+}
+
+const ITEMS_PER_PAGE = 10
+
+export function EquipmentList({
+  equipment,
+  allEquipment,
+  totalItems,
+  currentPage,
+  totalPages,
+  availabilityCounts,
+  duplicateBaseNames,
+  uniqueCategories,
+  hasDuplicates,
+  searchParams
+}: EquipmentListProps) {
+  const {
+    selectedIds,
+    toggleSelection,
+    toggleAll,
+    clearSelection,
+    isSelected,
+    isAllSelected,
+    hasSelection,
+    selectedCount
+  } = useBulkActions(equipment)
+
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+
+  const handleExport = () => {
+    setIsExporting(true)
+    const selectedArray = Array.from(selectedIds)
+    // Use allEquipment for export, but filter by selected if any
+    const equipmentToExport = selectedArray.length > 0
+      ? allEquipment.filter(item => selectedArray.includes(item.id))
+      : allEquipment
+    exportEquipmentToExcel([], equipmentToExport)
+    setIsExporting(false)
+    clearSelection()
+  }
+
+  const handleImport = async (formData: FormData): Promise<ImportResult> => {
+    return await importEquipmentFromExcel(formData)
+  }
+
+  const getKetersediaanColor = (status: string) => {
+    switch (status) {
+      case 'tersedia': return 'bg-green-100 text-green-700 border-green-200'
+      case 'digunakan': return 'bg-orange-100 text-orange-700 border-orange-200'
+      case 'hilang': return 'bg-red-100 text-red-700 border-red-200'
+      default: return 'bg-gray-100 text-gray-700'
+    }
+  }
+
+  const getKetersediaanLabel = (status: string) => {
+    switch (status) {
+      case 'tersedia': return 'Tersedia'
+      case 'digunakan': return 'Digunakan'
+      case 'hilang': return 'Hilang'
+      default: return status
+    }
+  }
+
+  const getDisplayRate = (rates: { rate_per_day: number; rate_per_hour: number | null; user_category: string; requires_supervision: boolean }[] | null | undefined) => {
+    if (!rates || rates.length === 0) return null
+    const sorted = [...rates].sort((a, b) => a.rate_per_day - b.rate_per_day)
+    return sorted[0]
+  }
+
+  const buildQueryString = (newPage: number) => {
+    const params = new URLSearchParams()
+    if (searchParams.ketersediaan) params.set('ketersediaan', searchParams.ketersediaan)
+    if (searchParams.category) params.set('category', searchParams.category)
+    if (searchParams.search) params.set('search', searchParams.search)
+    if (searchParams.todayOnly) params.set('todayOnly', searchParams.todayOnly)
+    params.set('page', newPage.toString())
+    return params.toString()
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Import Dialog */}
+      <ImportDialog
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onImport={handleImport}
+        onDownloadTemplate={downloadEquipmentTemplate}
+        onUndoImport={undoImportEquipment}
+        onDeleteAll={deleteAllEquipment}
+        title="Import Alat"
+        description="Unggah file Excel untuk mengimport data alat"
+        entityName="alat"
+      />
+
+      {/* Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <Package className="h-5 w-5 text-blue-600 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-blue-800">Apa itu Asset (Alat)?</h3>
+            <p className="text-sm text-blue-700 mt-1">
+              Asset adalah alat dan peralatan yang dapat <strong>disewakan</strong> oleh pengguna.
+              Contoh: Alat tes pengukuran, alat gym, proyektor, dll.
+              Untuk barang inventaris ruangan (meja, kursi, AC), gunakan menu
+              <Link href="/admin/inventory" className="text-blue-800 underline hover:text-blue-900"> Inventaris</Link>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Duplicate Warning Banner */}
+      {hasDuplicates && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-amber-800">Perhatian: Ada Nama Alat yang Sama!</h3>
+              <p className="text-sm text-amber-700 mt-1">
+                Terdapat {duplicateBaseNames.size} nama alat yang memiliki duplikat.
+                Alat dengan nama sama ditandai dengan warna <span className="font-medium">oranje/amber</span>.
+                Pertimbangkan untuk mengganti nama agar lebih spesifik.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Alat & Peralatan (Asset)</h1>
+          <p className="text-muted-foreground text-sm">Alat yang dapat disewakan dengan tarif per kategori pengguna</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Export Selected Button */}
+          {hasSelection && (
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              disabled={isExporting}
+              className="hidden sm:flex border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export ({selectedCount})
+            </Button>
+          )}
+          
+          {/* Export All Button */}
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={isExporting}
+            className="hidden sm:flex"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? 'Mengekspor...' : 'Export Semua'}
+          </Button>
+          
+          {/* Import Button */}
+          <Button
+            variant="outline"
+            onClick={() => setIsImportDialogOpen(true)}
+            className="hidden sm:flex"
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          
+          <Link href="/admin/equipment/new" className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+            <Plus className="mr-2 h-4 w-4" /> Tambah Alat
+          </Link>
+        </div>
+      </div>
+
+      {/* Info Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+          <p className="text-blue-600 text-sm font-medium">Total Alat</p>
+          <p className="text-2xl font-bold text-blue-900">{totalItems}</p>
+        </div>
+        <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+          <p className="text-green-600 text-sm font-medium">Tersedia</p>
+          <p className="text-2xl font-bold text-green-900">{availabilityCounts['tersedia']}</p>
+        </div>
+        <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
+          <p className="text-orange-600 text-sm font-medium">Digunakan</p>
+          <p className="text-2xl font-bold text-orange-900">{availabilityCounts['digunakan']}</p>
+        </div>
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+          <p className="text-red-600 text-sm font-medium">Hilang/Rusak</p>
+          <p className="text-2xl font-bold text-red-900">{availabilityCounts['hilang']}</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <EquipmentFilters categories={uniqueCategories} />
+
+      {/* Selection Header */}
+      {equipment.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <SelectAllCheckbox
+              checked={isAllSelected}
+              onCheckedChange={toggleAll}
+              disabled={equipment.length === 0}
+            />
+            <span className="text-sm text-slate-600">
+              {hasSelection ? `${selectedCount} dipilih` : 'Pilih semua'}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Menampilkan {equipment.length} dari {totalItems} alat
+            {totalPages > 1 && ` (Halaman ${currentPage} dari ${totalPages})`}
+          </p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {equipment.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-xl">
+          <Package className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p>
+            {searchParams.search
+              ? `Tidak ada alat dengan kata kunci "${searchParams.search}"`
+              : 'Belum ada alat.'}
+            <Link href="/admin/equipment/new" className="text-primary hover:underline"> Tambah sekarang</Link>
+          </p>
+        </div>
+      )}
+
+      {/* Equipment Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {equipment.map((item) => {
+          const lowestRate = getDisplayRate(item.equipment_rates)
+          const baseName = item.name.replace(/\s*\(\d+\)$/, '').toLowerCase().trim()
+          const isDuplicate = duplicateBaseNames.has(baseName)
+
+          return (
+            <div key={item.id} className={cn(
+              "rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow group",
+              isDuplicate ? "bg-amber-50 border-amber-300" : "bg-white",
+              !item.is_active && "opacity-60 grayscale"
+            )}>
+              {/* Photo - Clickable to detail */}
+              <Link
+                href={`/admin/equipment/${createSlug(item.name)}`}
+                className="relative h-44 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-2 block"
+              >
+                {item.photo_url ? (
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <SafeImage
+                      src={item.photo_url}
+                      alt={item.name}
+                      className="object-contain w-full h-full max-h-40"
+                      fallbackClassName="w-full h-full rounded-lg"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <Package className="h-12 w-12 text-blue-200" />
+                  </div>
+                )}
+                {item.equipment_code && (
+                  <div className="absolute top-2 left-2">
+                    <span className="bg-white/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded-lg font-mono text-blue-700 border border-blue-200">
+                      {item.equipment_code}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                  {!item.is_active && (
+                    <span className="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      Nonaktif
+                    </span>
+                  )}
+                  <Badge variant={item.is_active ? 'default' : 'secondary'} className="text-xs">
+                    {item.is_active ? 'Aktif' : 'Nonaktif'}
+                  </Badge>
+                </div>
+
+                {/* Category Badge */}
+                {item.category && (
+                  <div className="absolute bottom-2 left-2">
+                    <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {CATEGORY_LABELS[item.category] || item.category}
+                    </span>
+                  </div>
+                )}
+
+                {/* Checkbox overlay */}
+                <div className="absolute bottom-2 right-2">
+                  <div
+                    className="bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <ItemCheckbox
+                      checked={isSelected(item.id)}
+                      onCheckedChange={() => toggleSelection(item.id)}
+                    />
+                  </div>
+                </div>
+              </Link>
+
+              {/* Info */}
+              <div className="p-4">
+                <Link href={`/admin/equipment/${createSlug(item.name)}`}>
+                  <h3 className={cn(
+                    "font-semibold text-zinc-900 text-sm truncate group-hover:text-blue-600 transition-colors",
+                    !item.is_active && "line-through"
+                  )} title={item.name}>
+                    {item.name}
+                  </h3>
+                </Link>
+                {item.merk && (
+                  <p className="text-xs text-zinc-500 mt-0.5">{item.merk}</p>
+                )}
+
+                {/* Availability & Status */}
+                <div className="mt-2 flex flex-wrap gap-1">
+                  <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-medium border', getKetersediaanColor(item.ketersediaan))}>
+                    {getKetersediaanLabel(item.ketersediaan)}
+                  </span>
+                  {item.status_tindakan !== 'normal' && (
+                    <span className="bg-yellow-100 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                      {item.status_tindakan === 'perawatan' ? 'Perawatan' :
+                       item.status_tindakan === 'menunggu_part' ? 'Menunggu Part' : 'Afkir'}
+                    </span>
+                  )}
+                  {isDuplicate && (
+                    <span className="bg-amber-100 text-amber-700 border border-amber-300 px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-0.5">
+                      <AlertTriangle className="h-3 w-3" /> Duplikat
+                    </span>
+                  )}
+                </div>
+
+                {/* Location */}
+                {item.current_location && (
+                  <p className="mt-2 text-xs text-zinc-500 flex items-center gap-1">
+                    <span className="truncate">{item.current_location}</span>
+                  </p>
+                )}
+
+                {/* Pricing */}
+                <div className="mt-3 pt-2 border-t">
+                  {lowestRate ? (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-zinc-400">Mulai dari</p>
+                        <p className="text-sm font-semibold text-emerald-600">
+                          {formatRupiah(lowestRate.rate_per_day)}/hari
+                        </p>
+                        {lowestRate.rate_per_hour && (
+                          <p className="text-[10px] text-zinc-400">
+                            {formatRupiah(lowestRate.rate_per_hour)}/jam
+                          </p>
+                        )}
+                      </div>
+                      {lowestRate.requires_supervision && (
+                        <span className="text-[10px] bg-yellow-50 text-yellow-600 px-1.5 py-0.5 rounded border border-yellow-200">
+                          Perlu Supervisi
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-zinc-400 italic">Tarif belum diatur</p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between mt-3 pt-2 border-t">
+                  <ConditionBadge condition={item.current_condition} />
+                  <div className="flex gap-1">
+                    <Link
+                      href={`/admin/equipment/${createSlug(item.name)}`}
+                      className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium"
+                    >
+                      Detail
+                    </Link>
+                    <Link
+                      href={`/admin/equipment/${createSlug(item.name)}/edit`}
+                      className="text-xs px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 transition-colors"
+                    >
+                      Edit
+                    </Link>
+                    {item.is_active ? (
+                      <SoftDeleteButton
+                        equipmentId={item.id}
+                        equipmentName={item.name}
+                        variant="outline"
+                        size="sm"
+                      />
+                    ) : (
+                      <RestoreButton
+                        equipmentId={item.id}
+                        equipmentName={item.name}
+                        variant="outline"
+                        size="sm"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-6">
+          {currentPage > 1 ? (
+            <Link
+              href={`/admin/equipment?${buildQueryString(currentPage - 1)}`}
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white border text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Sebelumnya
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed">
+              <ChevronLeft className="h-4 w-4" />
+              Sebelumnya
+            </span>
+          )}
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+              const shouldShow =
+                pageNum === 1 ||
+                pageNum === totalPages ||
+                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+
+              const showEllipsis =
+                (pageNum === 2 && currentPage > 3) ||
+                (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+
+              if (showEllipsis) {
+                return <span key={`ellipsis-${pageNum}`} className="px-2 text-zinc-400">...</span>
+              }
+
+              if (!shouldShow) return null
+
+              return (
+                <Link
+                  key={pageNum}
+                  href={`/admin/equipment?${buildQueryString(pageNum)}`}
+                  className={cn(
+                    'w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-all',
+                    currentPage === pageNum
+                      ? 'bg-zinc-800 text-white'
+                      : 'bg-white border text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300'
+                  )}
+                >
+                  {pageNum}
+                </Link>
+              )
+            })}
+          </div>
+
+          {currentPage < totalPages ? (
+            <Link
+              href={`/admin/equipment?${buildQueryString(currentPage + 1)}`}
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white border text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300"
+            >
+              Selanjutnya
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed">
+              Selanjutnya
+              <ChevronRight className="h-4 w-4" />
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Page Info Footer */}
+      {totalPages > 1 && (
+        <div className="text-center text-sm text-muted-foreground">
+          Halaman {currentPage} dari {totalPages} • {ITEMS_PER_PAGE} item per halaman
+        </div>
+      )}
+
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCount={selectedCount}
+        selectedIds={Array.from(selectedIds)}
+        equipment={equipment}
+        onClear={clearSelection}
+      />
+    </div>
+  )
+}

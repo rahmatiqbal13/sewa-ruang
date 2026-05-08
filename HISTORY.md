@@ -198,3 +198,145 @@ Folder lama `[id]/edit/page.tsx` dihapus.
 - Menampilkan nama ruangan yang dipilih di SelectValue
 - Menambahkan opsi "-- Tidak ada --" untuk value kosong
 - Update edit page untuk menggunakan RoomSelect component
+
+---
+
+## 7 Mei 2026
+
+### 1. Fix Dropdown Display (UUID → Nama)
+**Files**:
+- `src/app/(admin)/admin/rooms/RoomForm.tsx`
+- `src/app/(admin)/admin/inventory/InventoryForm.tsx`
+- `src/app/(admin)/admin/equipment/EquipmentForm.tsx`
+
+**Perubahan**:
+- Building dropdown: tampil "Nama Gedung (Kode)" bukan UUID
+- Floor dropdown: tampil "Lantai X" bukan angka saja
+- Room dropdown: tampil "Gedung → Ruangan (Kode)" bukan UUID
+- Category, Condition, Ketersediaan, Status: tampil label bukan code
+
+---
+
+### 2. Halaman Detail Alat Baru (`/admin/equipment/[slug]`)
+**File**: `src/app/(admin)/admin/equipment/[slug]/page.tsx` (baru)
+
+**Fitur**:
+- Layout modern 3 kolom (foto, status, lokasi)
+- Status ketersediaan real-time dengan indikator visual
+- Jadwal penggunaan (booking aktif & mendatang)
+- Riwayat penggunaan (5 booking terakhir)
+- Info booking lengkap: kode, peminjam, tujuan, waktu
+
+---
+
+### 3. QR Code Generator
+**File**: `src/app/(admin)/admin/equipment/EquipmentQRCode.tsx` (baru)
+
+**Fitur**:
+- Generate QR code otomatis saat dialog dibuka
+- URL scan: `/assets/{equipmentId}/scan`
+- Download QR code sebagai PNG
+- Print QR code dengan informasi alat
+
+---
+
+### 4. Filter & Pencarian Alat
+**File**: `src/app/(admin)/admin/equipment/EquipmentFilters.tsx` (baru)
+
+**Fitur**:
+- Search bar dengan icon
+- Filter: Status Ketersediaan, Kategori, Kondisi
+- URL-based filtering (bisa di-share)
+- Reset filter button
+
+---
+
+### 5. Perbaikan Label Kondisi
+**Files**: `ConditionBadge.tsx`, `InventoryForm.tsx`, `assets/page.tsx`, `inventory/page.tsx`
+
+**Perubahan**:
+- `needs_repair`: "Rusak Ringan" → "Perlu Perbaikan"
+- `damaged`: "Rusak Berat" → "Rusak"
+
+---
+
+### 6. Optimasi Tampilan Edit Alat
+**File**: `src/app/(admin)/admin/equipment/[slug]/edit/page.tsx`
+
+**Yang dihapus**:
+- Daftar 200+ nama alat yang terlalu ramai
+- Chips nama alat yang memenuhi halaman
+
+**Yang ditambahkan**:
+- Layout terorganisir dengan Card
+- Compact warning (hanya jumlah alat)
+- Collapsible tarif per kategori dengan toggle switch
+- Stats ringkas (Aktif: X/5, Terendah, Tertinggi)
+
+---
+
+### 7. Form Alat - Gedung, Lantai, Ruangan (Opsional)
+**Migration**: `20250507_add_building_floor_to_equipment.sql`
+
+**Database**:
+- Tambah kolom `building_id` (UUID → buildings)
+- Tambah kolom `floor` (INTEGER)
+- Index untuk performance
+
+**Form**:
+- Dropdown Gedung (opsional) - "Belum ada gedung"
+- Dropdown Lantai (opsional) - dinamis berdasarkan floor_count
+- Dropdown Ruangan (opsional) - bisa filter by gedung & lantai
+- Keterangan Lokasi Tambahan (opsional)
+
+**Halaman Detail**:
+- Tampil hierarki: Gedung → Lantai → Ruangan → Keterangan
+
+---
+
+### 8. Sistem Auto Kode Alat (ALT-XXXX)
+**Migration**: `20250507_auto_generate_equipment_codes.sql`
+
+**Fitur**:
+- Format: `ALT-0001`, `ALT-0002`, dst (sequential)
+- Trigger otomatis saat insert: `generate_equipment_code()`
+- Backfill data lama yang kosong
+- Generate kode saat edit jika belum ada
+
+**Form**:
+- Tambah Alat: Kode muncul otomatis (read-only)
+- Edit Alat (tanpa kode): Field kode berwarna amber, pesan "Akan dibuat otomatis"
+
+---
+
+### 9. Fix Controlled/Uncontrolled Select Error
+**File**: `src/app/(admin)/admin/equipment/EquipmentForm.tsx`
+
+**Perubahan**:
+- Semua defaultValues terdefinisi (tidak undefined)
+- `building_id: ''`, `floor: 0`, `storage_room_id: ''`
+- Select value selalu string: `watch('field') || ''`
+- setValue menggunakan empty string bukan undefined
+
+---
+
+### 10. Fix Schema SQL - Dependency Error
+**File**: `supabase/schema-v2.sql`
+
+**Masalah**: `DROP FUNCTION get_user_role()` error karena masih dipakai policy
+
+**Solusi**:
+- Drop policies yang menggunakan function SEBELUM drop function
+- Urutan: Drop policies → Drop functions → Recreate functions → Recreate policies
+
+---
+
+### Files Baru Hari Ini:
+1. `src/app/(admin)/admin/equipment/[slug]/page.tsx` - Detail alat
+2. `src/app/(admin)/admin/equipment/EquipmentQRCode.tsx` - QR generator
+3. `src/app/(admin)/admin/equipment/EquipmentFilters.tsx` - Filter component
+4. `supabase/migrations/20250507_add_building_floor_to_equipment.sql`
+5. `supabase/migrations/20250507_auto_generate_equipment_codes.sql`
+6. `supabase/migrations/20250507_fix_get_user_role_function.sql`
+
+### Status Build: ✅ Sukses
