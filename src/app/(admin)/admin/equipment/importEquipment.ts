@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import * as XLSX from 'xlsx'
 
 export interface ImportResult {
@@ -30,6 +30,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'File tidak ditemukan' }]
       }
     }
@@ -37,23 +38,87 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
     // Read Excel file
     const bytes = await file.arrayBuffer()
     const workbook = XLSX.read(bytes, { type: 'array' })
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+    
+    // Try to find the correct sheet - look for "Data Alat" first, then auto-detect
+    let worksheet = null
+    let sheetName = ''
+    let data: string[][] = []
+    
+    // First, try to find sheet named "Data Alat"
+    const dataAlatSheet = workbook.SheetNames.find(name => 
+      name.toLowerCase().includes('data') || name.toLowerCase().includes('alat')
+    )
+    
+    if (dataAlatSheet) {
+      sheetName = dataAlatSheet
+      worksheet = workbook.Sheets[dataAlatSheet]
+      data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+      console.log(`Import Equipment - Using sheet: ${sheetName}`)
+    }
+    
+    // If not found or empty, try auto-detect by looking for "nama alat" header
+    if (!data.length || data.length < 2) {
+      for (const name of workbook.SheetNames) {
+        const sheet = workbook.Sheets[name]
+        const sheetData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as string[][]
+        
+        if (sheetData.length > 0) {
+          const firstRow = sheetData[0].map(h => h?.toString().toLowerCase().trim() || '')
+          // Check if this sheet has "nama" or "nama alat" in header
+          if (firstRow.some(h => h.includes('nama') || h.includes('alat'))) {
+            sheetName = name
+            worksheet = sheet
+            data = sheetData
+            console.log(`Import Equipment - Auto-detected sheet: ${sheetName}`)
+            break
+          }
+        }
+      }
+    }
+    
+    // Fallback to first sheet if nothing found
+    if (!data.length && workbook.SheetNames.length > 0) {
+      sheetName = workbook.SheetNames[0]
+      worksheet = workbook.Sheets[sheetName]
+      data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+      console.log(`Import Equipment - Fallback to first sheet: ${sheetName}`)
+    }
 
-    if (data.length < 2) {
+    if (!data.length || data.length < 2) {
       return {
         success: false,
-        message: 'File Excel kosong atau tidak memiliki data',
+        message: 'File Excel kosong atau tidak memiliki data. Pastikan ada sheet dengan header "Nama Alat"',
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
-        errors: [{ row: 0, message: 'File Excel kosong' }]
+        importedIds: [],
+        errors: [{ row: 0, message: `Sheet yang tersedia: ${workbook.SheetNames.join(', ')}` }]
       }
     }
 
+    // Find the actual header row (skip empty rows or rows without "nama")
+    let headerRowIndex = 0
+    for (let i = 0; i < Math.min(data.length, 10); i++) {
+      const row = data[i]
+      if (row && row.length > 0) {
+        const rowText = row.map(h => h?.toString().toLowerCase().trim() || '').join(' ')
+        if (rowText.includes('nama') || rowText.includes('alat')) {
+          headerRowIndex = i
+          console.log(`Import Equipment - Header row found at index: ${headerRowIndex}`)
+          break
+        }
+      }
+    }
+    
+    // Slice data from header row onwards
+    const actualData = data.slice(headerRowIndex)
+    
     const supabase = await createClient()
+    const adminSupabase = await createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const adminSb = adminSupabase as any
 
     // Get current user for created_by
     const { data: { user } } = await supabase.auth.getUser()
@@ -64,6 +129,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'Unauthorized' }]
       }
     }
@@ -96,11 +162,34 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
     const errors: Array<{ row: number; message: string; data?: Record<string, unknown> }> = []
     const importedIds: string[] = []
     let successCount = 0
-    const headerRow = data[0]
-    const rows = data.slice(1)
+    const headerRow = actualData[0]
+    const rows = actualData.slice(1)
 
-    // Map column indices
-    const getColumnIndex = (name: string) => headerRow.findIndex(h => h?.toString().toLowerCase().includes(name.toLowerCase()))
+    // Debug: Log header row
+    console.log('Import Equipment - Header detected:', headerRow)
+
+    // Map column indices - trim whitespace and handle various formats
+    const getColumnIndex = (name: string) => {
+      const cleanName = name.toLowerCase().trim()
+      return headerRow.findIndex(h => {
+        const headerText = h?.toString().toLowerCase().trim()
+        // For rate columns, be more specific to avoid matching "tarif s1 jam" when looking for "tarif s1"
+        if (cleanName.includes('tarif')) {
+          // Exact match or match with parentheses (with or without space)
+          return headerText === cleanName || 
+                 headerText === `${cleanName} (hari)` ||
+                 headerText === `${cleanName}(hari)` ||
+                 headerText === `${cleanName} (jam)` ||
+                 headerText === `${cleanName}(jam)` ||
+                 headerText.startsWith(cleanName + ' ') ||
+                 headerText.startsWith(cleanName + '(')
+        }
+        // Check if header contains the search term
+        return headerText.includes(cleanName) || 
+               // Handle "Rusak / Damaged" format - check both parts
+               (cleanName.includes('/') && headerText.includes(cleanName.split('/')[0].trim()))
+      })
+    }
 
     const colIndices = {
       name: getColumnIndex('nama') !== -1 ? getColumnIndex('nama') : getColumnIndex('name'),
@@ -112,17 +201,63 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
       status_tindakan: getColumnIndex('status tindakan') !== -1 ? getColumnIndex('status tindakan') : getColumnIndex('action status'),
       sumber: getColumnIndex('sumber') !== -1 ? getColumnIndex('sumber') : getColumnIndex('source'),
       current_location: getColumnIndex('lokasi') !== -1 ? getColumnIndex('lokasi') : getColumnIndex('location'),
-      // Rate columns
-      tarif_s1_day: getColumnIndex('tarif s1') !== -1 ? getColumnIndex('tarif s1') : getColumnIndex('s1 day'),
-      tarif_s1_hour: getColumnIndex('tarif s1 jam') !== -1 ? getColumnIndex('tarif s1 jam') : getColumnIndex('s1 hour'),
-      tarif_s2_day: getColumnIndex('tarif s2') !== -1 ? getColumnIndex('tarif s2') : getColumnIndex('s2 day'),
-      tarif_s2_hour: getColumnIndex('tarif s2 jam') !== -1 ? getColumnIndex('tarif s2 jam') : getColumnIndex('s2 hour'),
-      tarif_dosen_day: getColumnIndex('tarif dosen') !== -1 ? getColumnIndex('tarif dosen') : getColumnIndex('dosen day'),
-      tarif_dosen_hour: getColumnIndex('tarif dosen jam') !== -1 ? getColumnIndex('tarif dosen jam') : getColumnIndex('dosen hour'),
-      tarif_mou_day: getColumnIndex('tarif mou') !== -1 ? getColumnIndex('tarif mou') : getColumnIndex('mou day'),
-      tarif_mou_hour: getColumnIndex('tarif mou jam') !== -1 ? getColumnIndex('tarif mou jam') : getColumnIndex('mou hour'),
-      tarif_umum_day: getColumnIndex('tarif umum') !== -1 ? getColumnIndex('tarif umum') : getColumnIndex('umum day'),
-      tarif_umum_hour: getColumnIndex('tarif umum jam') !== -1 ? getColumnIndex('tarif umum jam') : getColumnIndex('umum hour'),
+      // Rate columns - support format "Tarif S1 (Hari)" with "Perlu Supervisi" columns
+      // Handle export format: Tarif S1 (Hari) | Tarif S1 (Jam) | S1 Perlu Supervisi | Tarif S2 (Hari) | ...
+      tarif_s1_day: getColumnIndex('tarif s1 (hari)') !== -1 ? getColumnIndex('tarif s1 (hari)') : 
+                    getColumnIndex('tarif s1') !== -1 ? getColumnIndex('tarif s1') : 
+                    getColumnIndex('s1 day'),
+      tarif_s1_hour: getColumnIndex('tarif s1 (jam)') !== -1 ? getColumnIndex('tarif s1 (jam)') :
+                     getColumnIndex('tarif s1 jam') !== -1 ? getColumnIndex('tarif s1 jam') :
+                     getColumnIndex('s1 hour'),
+      tarif_s1_supervision: getColumnIndex('s1 perlu supervisi') !== -1 ? getColumnIndex('s1 perlu supervisi') : -1,
+      tarif_s2_day: getColumnIndex('tarif s2 (hari)') !== -1 ? getColumnIndex('tarif s2 (hari)') :
+                    getColumnIndex('tarif s2') !== -1 ? getColumnIndex('tarif s2') :
+                    getColumnIndex('s2 day'),
+      tarif_s2_hour: getColumnIndex('tarif s2 (jam)') !== -1 ? getColumnIndex('tarif s2 (jam)') :
+                     getColumnIndex('tarif s2 jam') !== -1 ? getColumnIndex('tarif s2 jam') :
+                     getColumnIndex('s2 hour'),
+      tarif_s2_supervision: getColumnIndex('s2 perlu supervisi') !== -1 ? getColumnIndex('s2 perlu supervisi') : -1,
+      tarif_dosen_day: getColumnIndex('tarif dosen (hari)') !== -1 ? getColumnIndex('tarif dosen (hari)') :
+                       getColumnIndex('tarif dosen') !== -1 ? getColumnIndex('tarif dosen') :
+                       getColumnIndex('dosen day'),
+      tarif_dosen_hour: getColumnIndex('tarif dosen (jam)') !== -1 ? getColumnIndex('tarif dosen (jam)') :
+                        getColumnIndex('tarif dosen jam') !== -1 ? getColumnIndex('tarif dosen jam') :
+                        getColumnIndex('dosen hour'),
+      tarif_dosen_supervision: getColumnIndex('dosen perlu supervisi') !== -1 ? getColumnIndex('dosen perlu supervisi') : -1,
+      tarif_mou_day: getColumnIndex('tarif mou (hari)') !== -1 ? getColumnIndex('tarif mou (hari)') :
+                     getColumnIndex('tarif mou') !== -1 ? getColumnIndex('tarif mou') :
+                     getColumnIndex('mou day'),
+      tarif_mou_hour: getColumnIndex('tarif mou (jam)') !== -1 ? getColumnIndex('tarif mou (jam)') :
+                      getColumnIndex('tarif mou jam') !== -1 ? getColumnIndex('tarif mou jam') :
+                      getColumnIndex('mou hour'),
+      tarif_mou_supervision: getColumnIndex('mou perlu supervisi') !== -1 ? getColumnIndex('mou perlu supervisi') : -1,
+      tarif_umum_day: getColumnIndex('tarif umum (hari)') !== -1 ? getColumnIndex('tarif umum (hari)') :
+                      getColumnIndex('tarif umum') !== -1 ? getColumnIndex('tarif umum') :
+                      getColumnIndex('umum day'),
+      tarif_umum_hour: getColumnIndex('tarif umum (jam)') !== -1 ? getColumnIndex('tarif umum (jam)') :
+                       getColumnIndex('tarif umum jam') !== -1 ? getColumnIndex('tarif umum jam') :
+                       getColumnIndex('umum hour'),
+      tarif_umum_supervision: getColumnIndex('umum perlu supervisi') !== -1 ? getColumnIndex('umum perlu supervisi') : -1,
+    }
+
+    // Debug: Log column indices
+    console.log('Import Equipment - Column indices:', colIndices)
+    
+    // Validate required columns
+    if (colIndices.name === -1) {
+      return {
+        success: false,
+        message: 'Kolom "Nama Alat" tidak ditemukan. Pastikan header Excel sesuai template.',
+        totalRows: 0,
+        successCount: 0,
+        errorCount: 1,
+        importedIds: [],
+        errors: [{ 
+          row: 1, 
+          message: `Header yang terdeteksi: ${headerRow.join(', ')}`,
+          data: { headers: headerRow }
+        }]
+      }
     }
 
     // Process each row
@@ -144,7 +279,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         // Check for duplicate names and generate unique name
         let finalName = name
         const normalizedBase = name.toLowerCase().trim()
-        const baseExistingNames = existingNames.filter(n => n === normalizedBase || n.startsWith(normalizedBase + ' ('))
+        const baseExistingNames = existingNames.filter((n: string) => n === normalizedBase || n.startsWith(normalizedBase + ' ('))
         
         if (baseExistingNames.length > 0) {
           let counter = 2
@@ -181,8 +316,10 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         }
         const category = categoryMap[categoryInput] || 'lainnya'
 
-        // Map condition
-        const conditionInput = row[colIndices.current_condition]?.toString().toLowerCase().trim()
+        // Map condition - handle "Rusak / Damaged" format
+        const conditionInputRaw = row[colIndices.current_condition]?.toString().toLowerCase().trim() || ''
+        // Extract first part before "/" if exists (e.g., "rusak" from "rusak / damaged")
+        const conditionInput = conditionInputRaw.split('/')[0].trim()
         const conditionMap: Record<string, string> = {
           'baik': 'good',
           'good': 'good',
@@ -195,8 +332,10 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         }
         const currentCondition = conditionMap[conditionInput] || 'good'
 
-        // Map ketersediaan
-        const ketersediaanInput = row[colIndices.ketersediaan]?.toString().toLowerCase().trim()
+        // Map ketersediaan - handle "Tersedia / Available" format
+        const ketersediaanInputRaw = row[colIndices.ketersediaan]?.toString().toLowerCase().trim() || ''
+        // Extract first part before "/" if exists
+        const ketersediaanInput = ketersediaanInputRaw.split('/')[0].trim()
         const ketersediaanMap: Record<string, string> = {
           'tersedia': 'tersedia',
           'available': 'tersedia',
@@ -208,8 +347,9 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         }
         const ketersediaan = ketersediaanMap[ketersediaanInput] || 'tersedia'
 
-        // Map status tindakan
-        const statusInput = row[colIndices.status_tindakan]?.toString().toLowerCase().trim()
+        // Map status tindakan - handle format with "/"
+        const statusInputRaw = row[colIndices.status_tindakan]?.toString().toLowerCase().trim() || ''
+        const statusInput = statusInputRaw.split('/')[0].trim()
         const statusMap: Record<string, string> = {
           'normal': 'normal',
           'perawatan': 'perawatan',
@@ -222,6 +362,8 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         const statusTindakan = statusMap[statusInput] || 'normal'
 
         // Insert equipment and get the ID
+        console.log(`Importing row ${rowNum}:`, { name: finalName, equipmentCode, category, currentCondition })
+        
         const { data: insertedData, error } = await sb
           .from('equipment')
           .insert({
@@ -242,8 +384,10 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
           .single()
 
         if (error) {
-          errors.push({ row: rowNum, message: error.message, data: { row } })
+          console.error(`Error importing row ${rowNum}:`, error)
+          errors.push({ row: rowNum, message: `Database error: ${error.message}`, data: { row, error: error.message } })
         } else {
+          console.log(`Successfully imported row ${rowNum}:`, insertedData)
           successCount++
           importedIds.push(insertedData.id)
           // Add to existing names to prevent duplicates within the same import
@@ -254,47 +398,109 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
             { 
               category: 'mahasiswa_s1', 
               day: colIndices.tarif_s1_day, 
-              hour: colIndices.tarif_s1_hour 
+              hour: colIndices.tarif_s1_hour,
+              supervision: colIndices.tarif_s1_supervision
             },
             { 
               category: 'mahasiswa_s2', 
               day: colIndices.tarif_s2_day, 
-              hour: colIndices.tarif_s2_hour 
+              hour: colIndices.tarif_s2_hour,
+              supervision: colIndices.tarif_s2_supervision
             },
             { 
               category: 'dosen', 
               day: colIndices.tarif_dosen_day, 
-              hour: colIndices.tarif_dosen_hour 
+              hour: colIndices.tarif_dosen_hour,
+              supervision: colIndices.tarif_dosen_supervision
             },
             { 
               category: 'mou_unesa', 
               day: colIndices.tarif_mou_day, 
-              hour: colIndices.tarif_mou_hour 
+              hour: colIndices.tarif_mou_hour,
+              supervision: colIndices.tarif_mou_supervision
             },
             { 
               category: 'umum', 
               day: colIndices.tarif_umum_day, 
-              hour: colIndices.tarif_umum_hour 
+              hour: colIndices.tarif_umum_hour,
+              supervision: colIndices.tarif_umum_supervision
             },
           ]
+          
+          console.log(`Row ${rowNum} - Processing rates for: ${insertedData.id} (${finalName})`)
+        console.log(`  Full row data:`, row)
+        console.log(`  Column indices:`, colIndices)
           
           for (const rateCat of rateCategories) {
             const dayValue = row[rateCat.day]?.toString().trim()
             const hourValue = row[rateCat.hour]?.toString().trim()
             
-            if (dayValue) {
-              const ratePerDay = parseFloat(dayValue.replace(/[^0-9.]/g, ''))
+            console.log(`  ${rateCat.category}:`)
+            console.log(`    - dayIndex=${rateCat.day}, hourIndex=${rateCat.hour}`)
+            console.log(`    - dayValue="${dayValue}" (type: ${typeof row[rateCat.day]})`)
+            console.log(`    - hourValue="${hourValue}"`)
+            
+            if (dayValue && dayValue !== '') {
+              // Remove any non-numeric characters except decimal point
+              const cleanValue = dayValue.replace(/[^0-9.]/g, '')
+              console.log(`    - Clean value: "${cleanValue}"`)
+              
+              const ratePerDay = parseFloat(cleanValue)
+              console.log(`    - Parsed day rate: ${ratePerDay} (isNaN: ${isNaN(ratePerDay)})`)
+              
               if (!isNaN(ratePerDay) && ratePerDay > 0) {
-                const ratePerHour = hourValue ? parseFloat(hourValue.replace(/[^0-9.]/g, '')) : null
+                let ratePerHour: number | null = null
+                if (hourValue && hourValue !== '') {
+                  const cleanHourValue = hourValue.replace(/[^0-9.]/g, '')
+                  const parsedHour = parseFloat(cleanHourValue)
+                  if (!isNaN(parsedHour) && parsedHour > 0) {
+                    ratePerHour = parsedHour
+                  }
+                }
                 
-                await sb.from('equipment_rates').insert({
-                  equipment_id: insertedData.id,
-                  user_category: rateCat.category,
-                  rate_per_day: ratePerDay,
-                  rate_per_hour: (!isNaN(ratePerHour!) && ratePerHour! > 0) ? ratePerHour : null,
-                  requires_supervision: false,
-                })
+                // Check supervision flag from Excel
+                let requiresSupervision = false
+                if (rateCat.supervision !== -1) {
+                  const supervisionValue = row[rateCat.supervision]?.toString().toLowerCase().trim()
+                  requiresSupervision = supervisionValue === 'ya' || supervisionValue === 'yes' || supervisionValue === 'true'
+                }
+                
+                console.log(`    - Inserting rate: day=${ratePerDay}, hour=${ratePerHour}, supervision=${requiresSupervision}`)
+                
+                try {
+                  // Use admin client to bypass RLS for rate insertion
+                  const { error: rateError } = await adminSb.from('equipment_rates').insert({
+                    equipment_id: insertedData.id,
+                    user_category: rateCat.category,
+                    rate_per_day: ratePerDay,
+                    rate_per_hour: ratePerHour,
+                    requires_supervision: requiresSupervision,
+                  })
+                  
+                  if (rateError) {
+                    console.error(`    - Error inserting rate:`, rateError)
+                    // Log the error but don't fail the whole import
+                    errors.push({ 
+                      row: rowNum, 
+                      message: `Gagal insert tarif ${rateCat.category}: ${rateError.message}`, 
+                      data: { category: rateCat.category, error: rateError.message } 
+                    })
+                  } else {
+                    console.log(`    - Rate inserted successfully!`)
+                  }
+                } catch (rateInsertError) {
+                  console.error(`    - Exception inserting rate:`, rateInsertError)
+                  errors.push({ 
+                    row: rowNum, 
+                    message: `Exception insert tarif ${rateCat.category}`, 
+                    data: { category: rateCat.category, error: String(rateInsertError) } 
+                  })
+                }
+              } else {
+                console.log(`    - Skipping: parsed value is NaN or <= 0`)
               }
+            } else {
+              console.log(`    - Skipping: no day value (empty or undefined)`)
             }
           }
         }
@@ -309,7 +515,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
       message: errors.length === 0 
         ? `Berhasil mengimport ${successCount} alat` 
         : `Berhasil mengimport ${successCount} alat, ${errors.length} gagal`,
-      totalRows: rows.length,
+      totalRows: rows.filter(row => row && row.some(cell => cell)).length,
       successCount,
       errorCount: errors.length,
       importedIds,

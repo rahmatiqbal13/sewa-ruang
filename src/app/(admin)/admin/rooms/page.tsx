@@ -17,51 +17,89 @@ export default async function RoomsPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
-  // Get all buildings for filter dropdown (include floor_count)
-  const { data: buildings } = await supabase
-    .from('buildings')
-    .select('id, name, code, floor_count')
-    .eq('is_active', true)
-    .order('name')
+  try {
+    // Get all buildings for filter dropdown (include floor_count)
+    const { data: buildings, error: buildingsError } = await supabase
+      .from('buildings')
+      .select('id, name, code, floor_count')
+      .eq('is_active', true)
+      .order('name')
 
-  // Build query with filters - fetch ALL rooms for export functionality
-  let query = sb
-    .from('rooms')
-    .select('id, name, room_code, floor_number, capacity, rate_per_hour, current_condition, is_active, is_for_rent, photo_url, room_type, description, building_id, floor, buildings(id, name, code)')
-    .order('name')
+    if (buildingsError) {
+      console.error('Error fetching buildings:', buildingsError)
+    }
 
-  // Apply building filter
-  if (buildingFilter) {
-    query = query.eq('building_id', buildingFilter)
+    // Build query with filters - fetch ALL rooms for export functionality
+    // Fix: Separate query for rooms to avoid join issues
+    let roomsQuery = sb
+      .from('rooms')
+      .select('*')
+      .order('name')
+
+    // Apply building filter
+    if (buildingFilter) {
+      roomsQuery = roomsQuery.eq('building_id', buildingFilter)
+    }
+
+    // Apply floor filter
+    if (floorFilter) {
+      roomsQuery = roomsQuery.eq('floor', parseInt(floorFilter))
+    }
+
+    // Apply rent filter
+    if (for_rent === 'true')  roomsQuery = roomsQuery.eq('is_for_rent', true)
+    if (for_rent === 'false') roomsQuery = roomsQuery.eq('is_for_rent', false)
+
+    const { data: rooms, error: roomsError } = await roomsQuery as {
+      data: Array<{
+        id: string; name: string; room_code: string | null; floor_number: number | null
+        capacity: number | null; rate_per_hour: number | null; current_condition: string
+        is_active: boolean; is_for_rent?: boolean; photo_url: string | null
+        room_type?: string; description?: string | null; building_id?: string | null
+        floor?: number | null
+      }> | null
+      error: any
+    }
+
+    if (roomsError) {
+      console.error('Error fetching rooms:', roomsError)
+      return (
+        <div className="p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h2 className="text-red-800 font-semibold">Error Loading Rooms</h2>
+            <p className="text-red-600 mt-1">{roomsError.message}</p>
+          </div>
+        </div>
+      )
+    }
+
+    // Get building info separately
+    const roomsWithBuildings = rooms?.map(room => {
+      const building = buildings?.find((b: { id: string }) => b.id === room.building_id)
+      return {
+        ...room,
+        buildings: building || null
+      }
+    }) || []
+
+    return (
+      <RoomsPageClient 
+        rooms={roomsWithBuildings} 
+        buildings={buildings} 
+        for_rent={for_rent}
+        buildingFilter={buildingFilter}
+        floorFilter={floorFilter}
+      />
+    )
+  } catch (error) {
+    console.error('Error in RoomsPage:', error)
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h2 className="text-red-800 font-semibold">Terjadi Kesalahan</h2>
+          <p className="text-red-600 mt-1">Mohon refresh halaman atau hubungi admin</p>
+        </div>
+      </div>
+    )
   }
-
-  // Apply floor filter
-  if (floorFilter) {
-    query = query.eq('floor_number', parseInt(floorFilter))
-  }
-
-  // Apply rent filter
-  if (for_rent === 'true')  query = query.eq('is_for_rent', true)
-  if (for_rent === 'false') query = query.eq('is_for_rent', false)
-
-  const { data: rooms } = await query as {
-    data: Array<{
-      id: string; name: string; room_code: string | null; floor_number: number | null
-      capacity: number | null; rate_per_hour: number | null; current_condition: string
-      is_active: boolean; is_for_rent?: boolean; photo_url: string | null
-      room_type?: string; description?: string | null; building_id?: string | null
-      floor?: number | null
-      buildings: { id: string; name: string; code: string } | null
-    }> | null
-  }
-
-  return (
-    <RoomsPageClient 
-      rooms={rooms} 
-      buildings={buildings} 
-      for_rent={for_rent}
-      buildingFilter={buildingFilter}
-      floorFilter={floorFilter}
-    />
-  )
 }

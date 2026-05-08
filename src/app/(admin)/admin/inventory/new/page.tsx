@@ -28,18 +28,33 @@ export default async function NewInventoryPage({
     redirect('/admin/dashboard')
   }
 
+  // Get all buildings
+  const { data: buildingsData } = await supabase
+    .from('buildings')
+    .select('id, name, code')
+    .eq('is_active', true)
+    .order('name')
+
   // Get all rooms with building info
   const { data: roomsData } = await supabase
     .from('rooms')
-    .select('id, name, room_code, buildings(name, code)')
+    .select('id, name, room_code, building_id, buildings(name, code)')
     .eq('is_active', true)
     .order('name')
+
+  // Transform buildings data
+  const buildings = buildingsData?.map((b: any) => ({
+    id: b.id,
+    name: b.name,
+    code: b.code,
+  })) ?? []
 
   // Transform rooms data
   const rooms = roomsData?.map((room: any) => ({
     id: room.id,
     name: room.name,
     room_code: room.room_code,
+    building_id: room.building_id,
     building_name: room.buildings?.name || 'Unknown',
     building_code: room.buildings?.code || '',
   })) ?? []
@@ -47,6 +62,7 @@ export default async function NewInventoryPage({
   return (
     <div className="p-6">
       <InventoryForm 
+        buildings={buildings}
         rooms={rooms}
         preselectedRoomId={roomId}
       />

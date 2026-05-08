@@ -85,6 +85,7 @@ export function ImportDialog({
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: error instanceof Error ? error.message : 'Unknown error' }]
       })
     } finally {

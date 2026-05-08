@@ -36,10 +36,17 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+interface Building {
+  id: string
+  name: string
+  code: string
+}
+
 interface Room {
   id: string
   name: string
   room_code: string | null
+  building_id: string | null
   building_name: string
   building_code: string
 }
@@ -57,15 +64,23 @@ interface InventoryItem {
 
 export function InventoryForm({ 
   item, 
+  buildings,
   rooms,
   preselectedRoomId
 }: { 
   item?: InventoryItem
+  buildings: Building[]
   rooms: Room[]
   preselectedRoomId?: string
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  
+  // Get preselected building from preselected room
+  const preselectedRoom = rooms.find(r => r.id === preselectedRoomId)
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string>(
+    preselectedRoom?.building_id || ''
+  )
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,6 +102,11 @@ export function InventoryForm({
 
   const selectedRoomId = watch('room_asset_id')
   const selectedRoom = rooms.find(r => r.id === selectedRoomId)
+  
+  // Filter rooms by selected building
+  const filteredRooms = selectedBuildingId
+    ? rooms.filter(r => r.building_id === selectedBuildingId)
+    : rooms
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -176,52 +196,105 @@ export function InventoryForm({
       </Alert>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Pilih Ruangan */}
+        {/* Pilih Gedung & Ruangan */}
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="p-8">
             <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
               <DoorOpen className="h-5 w-5 text-purple-500" />
-              Pilih Ruangan
+              Pilih Lokasi
             </h2>
             
-            <div className="space-y-2">
-              <Label className="text-slate-700 font-medium">
-                Ruangan <span className="text-red-500">*</span>
-              </Label>
-              <Select 
-                value={watch('room_asset_id')} 
-                onValueChange={(v) => setValue('room_asset_id', v ?? '')}
-              >
-                <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500/20">
-                  {selectedRoom ? (
-                    <span className="flex items-center gap-2 text-slate-900">
-                      <Building2 className="h-3 w-3 text-slate-400" />
-                      {selectedRoom.building_name} → {selectedRoom.name}
-                      {selectedRoom.room_code && (
-                        <span className="text-xs text-slate-400">({selectedRoom.room_code})</span>
-                      )}
-                    </span>
-                  ) : (
-                    <SelectValue placeholder="Pilih ruangan..." />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms.map((room) => (
-                    <SelectItem key={room.id} value={room.id}>
-                      <span className="flex items-center gap-2">
-                        <Building2 className="h-3 w-3 text-slate-400" />
-                        {room.building_name} → {room.name}
-                        {room.room_code && (
-                          <span className="text-xs text-slate-400">({room.room_code})</span>
+            <div className="space-y-4">
+              {/* Step 1: Pilih Gedung */}
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-medium">
+                  <span className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-slate-500" />
+                    Langkah 1: Pilih Gedung
+                  </span>
+                </Label>
+                <Select 
+                  value={selectedBuildingId} 
+                  onValueChange={(v) => {
+                    setSelectedBuildingId(v ?? '')
+                    // Reset room selection when building changes
+                    if (!item) {
+                      setValue('room_asset_id', '')
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                    {selectedBuildingId ? (
+                      <span className="flex items-center gap-2 text-slate-900">
+                        {buildings.find(b => b.id === selectedBuildingId)?.name}
+                        <span className="text-xs text-slate-400">
+                          ({buildings.find(b => b.id === selectedBuildingId)?.code})
+                        </span>
+                      </span>
+                    ) : (
+                      <SelectValue placeholder="Pilih gedung terlebih dahulu..." />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {buildings.map((building) => (
+                      <SelectItem key={building.id} value={building.id}>
+                        <span className="flex items-center gap-2">
+                          {building.name}
+                          <span className="text-xs text-slate-400">({building.code})</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Step 2: Pilih Ruangan */}
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-medium">
+                  <span className="flex items-center gap-2">
+                    <DoorOpen className="h-4 w-4 text-slate-500" />
+                    Langkah 2: Pilih Ruangan
+                    {selectedBuildingId && (
+                      <span className="text-xs text-slate-400 font-normal">
+                        ({filteredRooms.length} ruangan tersedia)
+                      </span>
+                    )}
+                  </span>
+                </Label>
+                <Select 
+                  value={watch('room_asset_id')} 
+                  onValueChange={(v) => setValue('room_asset_id', v ?? '')}
+                  disabled={!selectedBuildingId}
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500/20">
+                    {selectedRoom ? (
+                      <span className="flex items-center gap-2 text-slate-900">
+                        {selectedRoom.name}
+                        {selectedRoom.room_code && (
+                          <span className="text-xs text-slate-400">({selectedRoom.room_code})</span>
                         )}
                       </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.room_asset_id && (
-                <p className="text-sm text-red-500 font-medium">{errors.room_asset_id.message}</p>
-              )}
+                    ) : (
+                      <SelectValue placeholder={selectedBuildingId ? "Pilih ruangan..." : "Pilih gedung terlebih dahulu"} />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredRooms.map((room) => (
+                      <SelectItem key={room.id} value={room.id}>
+                        <span className="flex items-center gap-2">
+                          {room.name}
+                          {room.room_code && (
+                            <span className="text-xs text-slate-400">({room.room_code})</span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.room_asset_id && (
+                  <p className="text-sm text-red-500 font-medium">{errors.room_asset_id.message}</p>
+                )}
+              </div>
 
               {/* Selected Room Info */}
               {selectedRoom && (

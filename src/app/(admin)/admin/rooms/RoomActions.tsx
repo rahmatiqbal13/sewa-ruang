@@ -7,7 +7,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, ToggleLeft, ToggleRight, Tag, EyeOff } from 'lucide-react'
+import { MoreHorizontal, Pencil, ToggleLeft, ToggleRight, Tag, EyeOff, Eye, Package } from 'lucide-react'
 
 interface Props { id: string; isActive: boolean; isForRent: boolean }
 
@@ -38,8 +38,15 @@ export function RoomActions({ id, isActive, isForRent }: Props) {
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => router.push(`/admin/rooms/${id}`)} className="flex items-center gap-2 cursor-pointer">
+          <Eye className="h-4 w-4" /> Lihat Detail
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push(`/admin/inventory/${id}`)} className="flex items-center gap-2 cursor-pointer">
+          <Package className="h-4 w-4" /> Kelola Inventaris
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push(`/admin/rooms/${id}/edit`)} className="flex items-center gap-2 cursor-pointer">
-          <Pencil className="h-4 w-4" /> Edit
+          <Pencil className="h-4 w-4" /> Edit Ruangan
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={toggleForRent} className="gap-2 cursor-pointer">

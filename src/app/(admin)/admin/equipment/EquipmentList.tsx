@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle, Download, FileUp } from 'lucide-react'
+import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle, Download, FileUp, LayoutGrid, Table2 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { SafeImage } from '@/components/shared/SafeImage'
@@ -113,6 +113,7 @@ export function EquipmentList({
 
   const [isExporting, setIsExporting] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
 
   const handleExport = () => {
     setIsExporting(true)
@@ -279,8 +280,38 @@ export function EquipmentList({
         </div>
       </div>
 
-      {/* Filters */}
-      <EquipmentFilters categories={uniqueCategories} />
+      {/* Filters & View Toggle */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <EquipmentFilters categories={uniqueCategories} />
+        </div>
+        <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-lg">
+          <button
+            onClick={() => setViewMode('card')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+              viewMode === 'card'
+                ? 'bg-white text-zinc-900 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-700'
+            )}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            <span className="hidden sm:inline">Card</span>
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+              viewMode === 'table'
+                ? 'bg-white text-zinc-900 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-700'
+            )}
+          >
+            <Table2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Tabel</span>
+          </button>
+        </div>
+      </div>
 
       {/* Selection Header */}
       {equipment.length > 0 && (
@@ -315,8 +346,9 @@ export function EquipmentList({
         </div>
       )}
 
-      {/* Equipment Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {/* Equipment Display */}
+      {viewMode === 'card' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {equipment.map((item) => {
           const lowestRate = getDisplayRate(item.equipment_rates)
           const baseName = item.name.replace(/\s*\(\d+\)$/, '').toLowerCase().trim()
@@ -490,7 +522,185 @@ export function EquipmentList({
             </div>
           )
         })}
-      </div>
+        </div>
+      ) : (
+        /* Table View */
+        <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-zinc-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600 w-10">
+                    <SelectAllCheckbox
+                      checked={isAllSelected}
+                      onCheckedChange={toggleAll}
+                      disabled={equipment.length === 0}
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kode</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Nama Alat</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kategori</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kondisi</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Lokasi</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Tarif/Hari</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-zinc-600">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {equipment.map((item) => {
+                  const lowestRate = getDisplayRate(item.equipment_rates)
+                  const baseName = item.name.replace(/\s*\(\d+\)$/, '').toLowerCase().trim()
+                  const isDuplicate = duplicateBaseNames.has(baseName)
+
+                  return (
+                    <tr
+                      key={item.id}
+                      className={cn(
+                        'hover:bg-zinc-50 transition-colors',
+                        isDuplicate && 'bg-amber-50/50',
+                        !item.is_active && 'opacity-60'
+                      )}
+                    >
+                      <td className="px-4 py-3">
+                        <ItemCheckbox
+                          checked={isSelected(item.id)}
+                          onCheckedChange={() => toggleSelection(item.id)}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        {item.equipment_code ? (
+                          <span className="text-xs font-mono bg-zinc-100 px-2 py-0.5 rounded">
+                            {item.equipment_code}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-zinc-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {item.photo_url ? (
+                            <SafeImage
+                              src={item.photo_url}
+                              alt={item.name}
+                              className="w-10 h-10 object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center">
+                              <Package className="h-4 w-4 text-zinc-300" />
+                            </div>
+                          )}
+                          <div>
+                            <Link
+                              href={`/admin/equipment/${createSlug(item.name)}`}
+                              className={cn(
+                                'font-medium text-sm text-zinc-900 hover:text-blue-600 transition-colors',
+                                !item.is_active && 'line-through'
+                              )}
+                            >
+                              {item.name}
+                            </Link>
+                            {item.merk && (
+                              <p className="text-xs text-zinc-500">{item.merk}</p>
+                            )}
+                            {isDuplicate && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 mt-0.5">
+                                <AlertTriangle className="h-3 w-3" /> Duplikat
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {item.category ? (
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                            {CATEGORY_LABELS[item.category] || item.category}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-zinc-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <ConditionBadge condition={item.current_condition} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          <span className={cn('text-xs px-2 py-0.5 rounded-full border', getKetersediaanColor(item.ketersediaan))}>
+                            {getKetersediaanLabel(item.ketersediaan)}
+                          </span>
+                          {item.status_tindakan !== 'normal' && (
+                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                              {item.status_tindakan === 'perawatan' ? 'Perawatan' :
+                               item.status_tindakan === 'menunggu_part' ? 'Menunggu Part' : 'Afkir'}
+                            </span>
+                          )}
+                          {!item.is_active && (
+                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+                              Nonaktif
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-zinc-600 truncate max-w-[120px] block">
+                          {item.current_location || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {lowestRate ? (
+                          <div>
+                            <span className="text-sm font-semibold text-emerald-600">
+                              {formatRupiah(lowestRate.rate_per_day)}
+                            </span>
+                            {lowestRate.rate_per_hour && (
+                              <p className="text-[10px] text-zinc-400">
+                                {formatRupiah(lowestRate.rate_per_hour)}/jam
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-zinc-400 italic">Belum diatur</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Link
+                            href={`/admin/equipment/${createSlug(item.name)}`}
+                            className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium"
+                          >
+                            Detail
+                          </Link>
+                          <Link
+                            href={`/admin/equipment/${createSlug(item.name)}/edit`}
+                            className="text-xs px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 transition-colors"
+                          >
+                            Edit
+                          </Link>
+                          {item.is_active ? (
+                            <SoftDeleteButton
+                              equipmentId={item.id}
+                              equipmentName={item.name}
+                              variant="outline"
+                              size="sm"
+                            />
+                          ) : (
+                            <RestoreButton
+                              equipmentId={item.id}
+                              equipmentName={item.name}
+                              variant="outline"
+                              size="sm"
+                            />
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
