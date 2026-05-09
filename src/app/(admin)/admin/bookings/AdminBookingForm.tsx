@@ -25,6 +25,7 @@ const schema = z.object({
   borrower_phone: z.string().optional(),
   borrower_institution: z.string().min(2, 'Instansi wajib diisi'),
   borrower_class: z.string().optional(),
+  member_type: z.enum(['mahasiswa_s1', 'mahasiswa_s2', 'dosen_karyawan', 'umum', 'kerjasama']).default('mahasiswa_s1'),
   purpose: z.string().min(5, 'Tujuan peminjaman wajib diisi'),
   start_datetime: z.string().min(1, 'Tanggal mulai wajib diisi'),
   end_datetime: z.string().min(1, 'Tanggal selesai wajib diisi'),
@@ -71,6 +72,7 @@ export function AdminBookingForm() {
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      member_type: 'mahasiswa_s1',
       items: [{ item_type: 'room', room_id: '', equipment_id: '', quantity: 1 }],
       start_datetime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       end_datetime: format(addHours(new Date(), 2), "yyyy-MM-dd'T'HH:mm"),
@@ -222,6 +224,7 @@ export function AdminBookingForm() {
           borrower_phone: data.borrower_phone || null,
           borrower_institution: data.borrower_institution,
           borrower_class: data.borrower_class || null,
+          member_type: data.member_type,
           purpose: data.purpose,
           start_datetime: data.start_datetime,
           end_datetime: data.end_datetime,
@@ -311,9 +314,29 @@ export function AdminBookingForm() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Kelas/Divisi</Label>
-              <Input placeholder="Contoh: Kelas A / Divisi IT" {...register('borrower_class')} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Jenis Member <span className="text-red-500">*</span></Label>
+                <Select
+                  value={watch('member_type') || 'mahasiswa_s1'}
+                  onValueChange={(v) => setValue('member_type', v as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih jenis member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mahasiswa_s1">Mahasiswa Sarjana (S1)</SelectItem>
+                    <SelectItem value="mahasiswa_s2">Mahasiswa Pasca Sarjana (S2/S3)</SelectItem>
+                    <SelectItem value="dosen_karyawan">Dosen/Karyawan</SelectItem>
+                    <SelectItem value="umum">Umum</SelectItem>
+                    <SelectItem value="kerjasama">Kerjasama/MoU</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Kelas/Divisi</Label>
+                <Input placeholder="Contoh: Kelas A / Divisi IT" {...register('borrower_class')} />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -383,7 +406,9 @@ export function AdminBookingForm() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue>
+                            {currentItem?.item_type === 'room' ? 'Ruang' : 'Alat'}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="room">Ruang</SelectItem>
@@ -405,7 +430,18 @@ export function AdminBookingForm() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={`Pilih ${currentItem?.item_type === 'room' ? 'ruang' : 'alat'}...`} />
+                          <SelectValue placeholder={`Pilih ${currentItem?.item_type === 'room' ? 'ruang' : 'alat'}...`}>
+                            {(() => {
+                              if (currentItem?.item_type === 'room' && currentItem?.room_id) {
+                                const room = rooms.find(r => r.id === currentItem.room_id)
+                                return room ? `${room.name} (${room.room_code || 'Tanpa Kode'})` : 'Pilih ruang...'
+                              } else if (currentItem?.item_type === 'equipment' && currentItem?.equipment_id) {
+                                const eq = equipment.find(e => e.id === currentItem.equipment_id)
+                                return eq ? `${eq.name} (${eq.equipment_code || 'Tanpa Kode'})` : 'Pilih alat...'
+                              }
+                              return `Pilih ${currentItem?.item_type === 'room' ? 'ruang' : 'alat'}...`
+                            })()}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {(currentItem?.item_type === 'room' ? rooms : equipment).map((item: any) => (
