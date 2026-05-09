@@ -70,7 +70,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
   // Update rates when room data changes (fixes rates showing 0 on edit)
   useEffect(() => {
-    if (room?.room_rates) {
+    if (room?.id && room?.room_rates) {
       const updatedRates: RateState = {}
       USAGE_CATEGORIES.forEach(cat => {
         const existing = room.room_rates?.find(r => r.usage_category === cat.value)
@@ -81,7 +81,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
       })
       setRates(updatedRates)
     }
-  }, [room?.room_rates])
+  }, [room?.id, JSON.stringify(room?.room_rates)])
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
