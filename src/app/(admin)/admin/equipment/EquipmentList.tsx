@@ -4,12 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle, Download, FileUp, LayoutGrid, Table2 } from 'lucide-react'
+import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle, Download, FileUp, LayoutGrid, Table2, ShieldCheck } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { EquipmentFilters } from './EquipmentFilters'
 import { SoftDeleteButton, RestoreButton } from './SoftDeleteButtons'
+import { DeleteEquipmentButton } from './DeleteEquipmentButton'
 import { useBulkActions, BulkActionsBar, ItemCheckbox, SelectAllCheckbox } from './BulkActions'
 import { exportEquipmentToExcel } from './exportEquipment'
 import { importEquipmentFromExcel, undoImportEquipment, deleteAllEquipment } from './importEquipment'
@@ -84,6 +85,7 @@ interface EquipmentListProps {
     search?: string
     todayOnly?: string
   }
+  isSuperAdmin?: boolean
 }
 
 const ITEMS_PER_PAGE = 10
@@ -98,7 +100,8 @@ export function EquipmentList({
   duplicateBaseNames,
   uniqueCategories,
   hasDuplicates,
-  searchParams
+  searchParams,
+  isSuperAdmin = false,
 }: EquipmentListProps) {
   const {
     selectedIds,
@@ -216,8 +219,15 @@ export function EquipmentList({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Alat & Peralatan (Asset)</h1>
-          <p className="text-muted-foreground text-sm">Alat yang dapat disewakan dengan tarif per kategori pengguna</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            Alat & Peralatan (Asset)
+            {isSuperAdmin && <ShieldCheck className="h-6 w-6 text-purple-600" />}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {isSuperAdmin 
+              ? 'Kelola alat yang dapat disewakan — Super Admin mode aktif' 
+              : 'Alat yang dapat disewakan dengan tarif per kategori pengguna'}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {/* Export Selected Button */}
@@ -516,6 +526,12 @@ export function EquipmentList({
                         size="sm"
                       />
                     )}
+                    {isSuperAdmin && !item.is_active && (
+                      <DeleteEquipmentButton
+                        id={item.id}
+                        equipmentName={item.name}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -689,6 +705,12 @@ export function EquipmentList({
                               equipmentName={item.name}
                               variant="outline"
                               size="sm"
+                            />
+                          )}
+                          {isSuperAdmin && !item.is_active && (
+                            <DeleteEquipmentButton
+                              id={item.id}
+                              equipmentName={item.name}
                             />
                           )}
                         </div>

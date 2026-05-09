@@ -2,8 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Building2, Layers, MapPin, ArrowUpRight } from 'lucide-react'
+import { Plus, Building2, Layers, MapPin, ArrowUpRight, ShieldCheck } from 'lucide-react'
 import { BuildingActions } from './BuildingActions'
+import { DeleteBuildingButton } from './DeleteBuildingButton'
 import { cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 
@@ -20,6 +21,17 @@ interface Building {
 
 export default async function BuildingsPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Check if user is super admin
+  const { data: userProfile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user!.id)
+    .single()
+  
+  const isSuperAdmin = userProfile?.role === 'super_admin'
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: buildings } = await (supabase as any)
     .from('buildings')
@@ -31,8 +43,13 @@ export default async function BuildingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Gedung</h1>
-          <p className="text-slate-500 mt-1">Kelola data gedung dan lantai</p>
+          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+            Gedung
+            {isSuperAdmin && <ShieldCheck className="h-6 w-6 text-purple-600" />}
+          </h1>
+          <p className="text-slate-500 mt-1">
+            {isSuperAdmin ? 'Kelola data gedung — Super Admin mode aktif' : 'Kelola data gedung dan lantai'}
+          </p>
         </div>
         <Link 
           href="/admin/buildings/new" 
@@ -141,7 +158,11 @@ export default async function BuildingsPage() {
                     Lihat Ruangan 
                     <ArrowUpRight className="h-4 w-4 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
                   </Link>
-                  <BuildingActions id={building.id} isActive={building.is_active} />
+                  <BuildingActions 
+                    id={building.id} 
+                    isActive={building.is_active}
+                    deleteButton={isSuperAdmin ? <DeleteBuildingButton id={building.id} buildingName={building.name} /> : undefined}
+                  />
                 </div>
               </div>
             </div>

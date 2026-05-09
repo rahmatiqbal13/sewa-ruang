@@ -21,6 +21,17 @@ export default async function EquipmentPage({
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Check if user is super admin
+  const { data: userProfile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user!.id)
+    .single()
+  
+  const isSuperAdmin = userProfile?.role === 'super_admin'
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
@@ -166,16 +177,17 @@ export default async function EquipmentPage({
 
   return (
     <EquipmentList
-      equipment={equipment || []}
-      allEquipment={allEquipmentForExport || []}
-      totalItems={totalItems}
+      equipment={data || []}
+      allEquipment={allEquipment || []}
+      totalItems={totalCount || 0}
       currentPage={currentPage}
-      totalPages={totalPages}
+      totalPages={Math.ceil((totalCount || 0) / ITEMS_PER_PAGE)}
       availabilityCounts={availabilityCounts}
       duplicateBaseNames={duplicateBaseNames}
       uniqueCategories={uniqueCategories}
       hasDuplicates={hasDuplicates}
       searchParams={{ ketersediaan, category, search, todayOnly }}
+      isSuperAdmin={isSuperAdmin}
     />
   )
 }

@@ -10,7 +10,7 @@ import {
 import { MoreHorizontal, Pencil, Power, PowerOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface Props { id: string; isActive: boolean }
+interface Props { id: string; isActive: boolean; deleteButton?: React.ReactNode }
 
 export function BuildingActions({ id, isActive }: Props) {
   const router = useRouter()
@@ -68,6 +68,13 @@ export function BuildingActions({ id, isActive }: Props) {
           </div>
           <span className="font-medium">{isActive ? 'Nonaktifkan' : 'Aktifkan'}</span>
         </DropdownMenuItem>
+        
+        {deleteButton && (
+          <>
+            <DropdownMenuSeparator className="my-2" />
+            {deleteButton}
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )
