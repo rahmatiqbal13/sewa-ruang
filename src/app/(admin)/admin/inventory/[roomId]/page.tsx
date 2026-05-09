@@ -21,7 +21,7 @@ export default async function InventoryPage({ params }: { params: Promise<{ room
   // Get paginated items (for display)
   const { data: items } = await sb
     .from('room_inventory_items')
-    .select('*, users:last_updated_by(name)')
+    .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name)')
     .eq('room_asset_id', roomId)
     .eq('is_active', true)
     .order('name')
@@ -29,7 +29,7 @@ export default async function InventoryPage({ params }: { params: Promise<{ room
   // Get ALL items for export (without pagination)
   const { data: allItems } = await sb
     .from('room_inventory_items')
-    .select('*, users:last_updated_by(name)')
+    .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name)')
     .eq('room_asset_id', roomId)
     .eq('is_active', true)
     .order('name')

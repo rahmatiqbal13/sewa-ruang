@@ -11,70 +11,96 @@ export default async function InventoryIndexPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
-  // Query paginated items (for display)
+  // Query items dengan join manual ke rooms dan buildings
   let query = sb
     .from('room_inventory_items')
-    .select('*, assets:room_asset_id(id, name, room_code, buildings(name, code))')
+    .select(`
+      id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_asset_id
+    `)
     .eq('is_active', true)
     .order('name')
 
   if (condition) query = query.eq('condition', condition)
 
-  const { data: items } = await query as {
-    data: Array<{
-      id: string; name: string; quantity: number; condition: string
-      inventory_code: string | null; notes: string | null
-      room_asset_id: string
-      assets: {
-        id: string; name: string; room_code: string | null
-        buildings: { name: string; code: string } | null
-      } | null
-    }> | null
+  const { data: itemsData } = await query
+
+  // Get all room_ids from items
+  const roomIds = [...new Set((itemsData || []).map((item: { room_asset_id: string }) => item.room_asset_id).filter(Boolean))]
+
+  // Fetch rooms data
+  let roomsData: any[] = []
+  if (roomIds.length > 0) {
+    const { data: rooms } = await sb
+      .from('rooms')
+      .select(`
+        id, name, room_code, building_id,
+        buildings!inner(name, code)
+      `)
+      .in('id', roomIds)
+    
+    roomsData = rooms || []
   }
 
-  // Query ALL items for export (without pagination)
+  // Create rooms lookup map
+  const roomsMap = new Map()
+  roomsData.forEach((room: any) => {
+    roomsMap.set(room.id, {
+      id: room.id,
+      name: room.name,
+      room_code: room.room_code,
+      buildings: room.buildings
+    })
+  })
+
+  // Merge items with rooms data
+  const items = (itemsData || []).map((item: any) => ({
+    ...item,
+    rooms: roomsMap.get(item.room_asset_id) || null
+  }))
+
+  // Query ALL items for export
   let allItemsQuery = sb
     .from('room_inventory_items')
-    .select('*, assets:room_asset_id(id, name, room_code, buildings(name, code))')
+    .select(`id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_asset_id`)
     .eq('is_active', true)
     .order('name')
 
   if (condition) allItemsQuery = allItemsQuery.eq('condition', condition)
 
-  const { data: allItems } = await allItemsQuery as {
-    data: Array<{
-      id: string; name: string; quantity: number; condition: string
-      inventory_code: string | null; notes: string | null
-      room_asset_id: string
-      assets: {
-        id: string; name: string; room_code: string | null
-        buildings: { name: string; code: string } | null
-      } | null
-    }> | null
-  }
+  const { data: allItemsData } = await allItemsQuery
+  
+  // Merge all items with rooms data (reuse roomsMap)
+  const allItems = (allItemsData || []).map((item: any) => ({
+    ...item,
+    rooms: roomsMap.get(item.room_asset_id) || null
+  }))
 
-  // Count per condition (always from full set)
+  // Count per condition
   const { data: allConditionItems } = await sb
     .from('room_inventory_items')
     .select('condition')
-    .eq('is_active', true) as { data: Array<{ condition: string }> | null }
+    .eq('is_active', true)
 
   const condCounts: Record<string, number> = {}
   for (const i of allConditionItems ?? []) condCounts[i.condition] = (condCounts[i.condition] ?? 0) + 1
 
+  // Build rooms summary for filter cards
   type RoomInfo = { id: string; name: string; room_code: string | null; buildings: { name: string; code: string } | null }
   const rooms = new Map<string, { room: RoomInfo; count: number; id: string }>()
-  for (const item of items ?? []) {
-    if (item.assets && !rooms.has(item.room_asset_id)) {
-      rooms.set(item.room_asset_id, { room: item.assets, count: 0, id: item.room_asset_id })
+  for (const item of items) {
+    if (item.rooms && !rooms.has(item.room_asset_id)) {
+      rooms.set(item.room_asset_id, { room: item.rooms, count: 0, id: item.room_asset_id })
     }
-    if (rooms.has(item.room_asset_id)) rooms.get(item.room_asset_id)!.count++
+    if (rooms.has(item.room_asset_id)) {
+      const current = rooms.get(item.room_asset_id)!
+      current.count++
+    }
   }
 
   return (
     <InventoryList
-      items={items || []}
-      allItems={allItems || []}
+      items={items}
+      allItems={allItems}
       rooms={Array.from(rooms.values())}
       condCounts={condCounts}
       totalCount={allConditionItems?.length || 0}

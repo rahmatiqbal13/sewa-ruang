@@ -62,16 +62,18 @@ interface InventoryItem {
   room_asset_id: string
 }
 
-export function InventoryForm({ 
-  item, 
+export function InventoryForm({
+  item,
   buildings,
   rooms,
-  preselectedRoomId
-}: { 
+  preselectedRoomId,
+  nextCode
+}: {
   item?: InventoryItem
   buildings: Building[]
   rooms: Room[]
   preselectedRoomId?: string
+  nextCode?: string
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -97,6 +99,7 @@ export function InventoryForm({
       quantity: 1,
       condition: 'good',
       room_asset_id: preselectedRoomId || '',
+      inventory_code: nextCode || '',
     }
   })
 
@@ -380,13 +383,20 @@ export function InventoryForm({
                   <Label htmlFor="inventory_code" className="text-slate-700 font-medium flex items-center gap-2">
                     <Hash className="h-4 w-4 text-slate-400" />
                     Kode Inventaris
+                    <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                      Tidak dapat diubah
+                    </span>
                   </Label>
-                  <Input 
+                  <Input
                     id="inventory_code"
-                    placeholder="INV-001 (opsional)" 
-                    className="h-12 rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500/20"
-                    {...register('inventory_code')} 
+                    placeholder="INV-001"
+                    className="h-12 rounded-xl border-slate-200 bg-slate-100 text-slate-600 cursor-not-allowed"
+                    {...register('inventory_code')}
+                    readOnly
                   />
+                  <p className="text-xs text-slate-400">
+                    {item ? 'Kode inventaris tidak dapat diubah setelah dibuat.' : 'Kode dibuat otomatis berdasarkan urutan terakhir.'}
+                  </p>
                 </div>
               </div>
 

@@ -20,7 +20,7 @@ interface InventoryItem {
   id: string
   name: string
   quantity: number
-  condition: string
+  condition: 'good' | 'needs_repair' | 'damaged'
   inventory_code: string | null
   notes: string | null
   last_updated_at: string
@@ -267,6 +267,7 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
                       <div className="flex items-center gap-2">
                         {item.photo_url && (
                           <div className="h-8 w-8 rounded bg-gray-100 overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img 
                               src={item.photo_url} 
                               alt={item.name}
@@ -287,7 +288,15 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
                       )}
                     </TableCell>
                     <TableCell>
-                      <InventoryItemActions item={item} />
+                      <InventoryItemActions item={{
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity,
+                        condition: item.condition,
+                        inventory_code: item.inventory_code,
+                        notes: item.notes,
+                        photo_url: item.photo_url,
+                      }} />
                     </TableCell>
                   </TableRow>
                 )

@@ -2,31 +2,46 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Boxes, ChevronRight, Building2, DoorOpen, Package, Plus, Download, FileUp, CheckSquare } from 'lucide-react'
+import { 
+  Boxes, ChevronRight, Building2, DoorOpen, Package, Plus, Download, 
+  FileUp, CheckSquare, Pencil, MoreHorizontal, Trash2, LayoutGrid, 
+  Table2, ChevronLeft, ChevronRightIcon, AlertTriangle 
+} from 'lucide-react'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { cn } from '@/lib/utils'
 import { exportInventoryToExcel, downloadInventoryTemplate } from './exportInventory'
 import { ImportDialog } from '../equipment/ImportDialog'
+import { EditInventoryItemDialog } from './[roomId]/EditInventoryItemDialog'
 import type { ImportResult } from '../equipment/importEquipment'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { SafeImage } from '@/components/shared/SafeImage'
 
 const CONDITIONS = [
-  { value: '',             label: 'Semua',        color: 'bg-zinc-800 text-white' },
-  { value: 'good',         label: 'Baik',         color: 'bg-green-600 text-white' },
-  { value: 'needs_repair', label: 'Perlu Perbaikan', color: 'bg-yellow-500 text-white' },
-  { value: 'damaged',      label: 'Rusak',           color: 'bg-red-600 text-white' },
+  { value: '', label: 'Semua', color: 'bg-slate-800 text-white', bg: 'bg-slate-50 border-slate-200' },
+  { value: 'good', label: 'Baik', color: 'bg-green-600 text-white', bg: 'bg-green-50 border-green-200' },
+  { value: 'needs_repair', label: 'Perlu Perbaikan', color: 'bg-yellow-600 text-white', bg: 'bg-yellow-50 border-yellow-200' },
+  { value: 'damaged', label: 'Rusak', color: 'bg-red-600 text-white', bg: 'bg-red-50 border-red-200' },
 ]
 
 interface InventoryItem {
   id: string
   name: string
   quantity: number
-  condition: string
+  condition: 'good' | 'needs_repair' | 'damaged'
   inventory_code: string | null
   notes: string | null
+  photo_url: string | null
+  last_updated_at?: string
   room_asset_id: string
-  assets: {
+  rooms: {
     id: string
     name: string
     room_code: string | null
@@ -54,6 +69,8 @@ interface InventoryListProps {
   currentCondition: string
 }
 
+const ITEMS_PER_PAGE = 12
+
 export function InventoryList({
   items,
   allItems,
@@ -62,45 +79,43 @@ export function InventoryList({
   totalCount,
   currentCondition
 }: InventoryListProps) {
+  const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isExporting, setIsExporting] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
   const toggleSelection = (id: string) => {
     const newSelected = new Set(selectedIds)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
     setSelectedIds(newSelected)
   }
 
   const toggleAll = () => {
-    if (selectedIds.size === items.length) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(items.map(item => item.id)))
-    }
+    if (selectedIds.size === paginatedItems.length) setSelectedIds(new Set())
+    else setSelectedIds(new Set(paginatedItems.map(i => i.id)))
   }
 
-  const clearSelection = () => {
-    setSelectedIds(new Set())
-  }
+  const clearSelection = () => setSelectedIds(new Set())
 
   const isSelected = (id: string) => selectedIds.has(id)
-  const isAllSelected = selectedIds.size === items.length && items.length > 0
+  const isAllSelected = selectedIds.size === paginatedItems.length && paginatedItems.length > 0
   const hasSelection = selectedIds.size > 0
 
   const handleExport = () => {
     setIsExporting(true)
     const selectedArray = Array.from(selectedIds)
-    // Use allItems for export, but filter by selected if any
     const inventoryToExport = selectedArray.length > 0
       ? allItems.filter(item => selectedArray.includes(item.id))
       : allItems
     
-    // Transform data for export
     const exportData = inventoryToExport.map(item => ({
       id: item.id,
       item_name: item.name,
@@ -115,27 +130,46 @@ export function InventoryList({
     clearSelection()
   }
 
-  const handleImport = async (formData: FormData): Promise<ImportResult> => {
-    // For the main inventory page, we need to redirect to a room first
-    // This is handled differently - show an alert to select a room first
-    return {
-      success: false,
-      message: 'Silakan pilih ruangan terlebih dahulu untuk mengimport inventaris. Pergi ke halaman detail ruangan untuk import.',
-      totalRows: 0,
-      successCount: 0,
-      errorCount: 1,
-      errors: [{ row: 0, message: 'Pilih ruangan terlebih dahulu' }]
+  const handleImport = async (): Promise<ImportResult> => ({
+    success: false,
+    message: 'Silakan pilih ruangan terlebih dahulu untuk mengimport inventaris.',
+    totalRows: 0,
+    successCount: 0,
+    errorCount: 1,
+    errors: [{ row: 0, message: 'Pilih ruangan terlebih dahulu' }]
+  })
+
+  async function softDelete(item: InventoryItem) {
+    const supabase = createClient()
+    const { error } = await (supabase.from('room_inventory_items') as any)
+      .update({ is_active: false })
+      .eq('id', item.id)
+    
+    if (error) {
+      toast.error('Gagal menghapus: ' + error.message)
+      return
     }
+    
+    toast.success('Item dihapus')
+    router.refresh()
   }
 
-  const conditionCardClass: Record<string, string> = {
-    good: 'bg-emerald-50 border-emerald-200',
-    needs_repair: 'bg-amber-50 border-amber-200',
-    damaged: 'bg-red-50 border-red-200',
+  const buildQueryString = (newCondition: string) => {
+    if (newCondition) return `?condition=${newCondition}`
+    return ''
   }
 
   return (
     <div className="p-6 space-y-6">
+      {/* Edit Dialog */}
+      {editingItem && (
+        <EditInventoryItemDialog
+          item={editingItem}
+          open={true}
+          onOpenChange={(open) => !open && setEditingItem(null)}
+        />
+      )}
+
       {/* Import Dialog */}
       <ImportDialog
         isOpen={isImportDialogOpen}
@@ -148,7 +182,7 @@ export function InventoryList({
       />
 
       {/* Info Banner */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <Boxes className="h-5 w-5 text-amber-600 mt-0.5" />
           <div>
@@ -169,7 +203,6 @@ export function InventoryList({
           <p className="text-muted-foreground text-sm">Barang-barang di dalam ruangan (tidak untuk disewakan)</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Export Selected Button */}
           {hasSelection && (
             <Button
               variant="outline"
@@ -182,7 +215,6 @@ export function InventoryList({
             </Button>
           )}
           
-          {/* Export All Button */}
           <Button
             variant="outline"
             onClick={handleExport}
@@ -193,7 +225,6 @@ export function InventoryList({
             {isExporting ? 'Mengekspor...' : 'Export Semua'}
           </Button>
           
-          {/* Import Button - disabled on main page, shows info */}
           <Button
             variant="outline"
             onClick={() => setIsImportDialogOpen(true)}
@@ -203,185 +234,405 @@ export function InventoryList({
             Import
           </Button>
           
-          <Button asChild className="bg-amber-600 hover:bg-amber-700">
-            <Link href="/admin/inventory/new">
-              <Plus className="h-4 w-4 mr-1" /> Tambah Item
-            </Link>
-          </Button>
+          <Link 
+            href="/admin/inventory/new" 
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-amber-600 text-white hover:bg-amber-700 h-10 px-4 py-2"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Tambah Item
+          </Link>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-sm text-zinc-500 bg-white border rounded-lg px-3 py-1.5">
-          <Boxes className="h-4 w-4 text-teal-500" />
-          {totalCount} item · {rooms.length} ruangan
+      {/* Info Cards - Like Equipment Page */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <p className="text-slate-600 text-sm font-medium">Total Item</p>
+          <p className="text-2xl font-bold text-slate-900">{totalCount}</p>
         </div>
-        {hasSelection && (
-          <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
-            <CheckSquare className="h-4 w-4" />
-            {selectedIds.size} dipilih
-            <button 
-              onClick={clearSelection}
-              className="text-xs underline hover:text-blue-800 ml-1"
-            >
-              Batal
-            </button>
-          </div>
-        )}
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <p className="text-green-600 text-sm font-medium">Kondisi Baik</p>
+          <p className="text-2xl font-bold text-green-900">{condCounts['good'] ?? 0}</p>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <p className="text-yellow-600 text-sm font-medium">Perlu Perbaikan</p>
+          <p className="text-2xl font-bold text-yellow-900">{condCounts['needs_repair'] ?? 0}</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-red-600 text-sm font-medium">Rusak</p>
+          <p className="text-2xl font-bold text-red-900">{condCounts['damaged'] ?? 0}</p>
+        </div>
       </div>
 
-      {/* Condition filter */}
-      <div className="flex gap-2 flex-wrap">
-        {CONDITIONS.map(tab => {
-          const isActive = currentCondition === tab.value
-          const count = tab.value ? (condCounts[tab.value] ?? 0) : totalCount
-          return (
-            <Link
-              key={tab.value}
-              href={tab.value ? `/admin/inventory?condition=${tab.value}` : '/admin/inventory'}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all',
-                isActive ? tab.color : 'bg-white border text-zinc-600 hover:bg-zinc-50'
-              )}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span className={cn('text-xs rounded-full px-1.5 py-0.5 font-bold', isActive ? 'bg-white/20' : 'bg-zinc-100')}>
+      {/* Filters & View Toggle */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex flex-wrap gap-2">
+          {CONDITIONS.map(tab => {
+            const isActive = currentCondition === tab.value
+            const count = tab.value ? (condCounts[tab.value] ?? 0) : totalCount
+            return (
+              <Link
+                key={tab.value}
+                href={`/admin/inventory${buildQueryString(tab.value)}`}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                  isActive ? tab.color : 'bg-white border text-slate-600 hover:bg-slate-50'
+                )}
+              >
+                {tab.label}
+                <span className={cn(
+                  'text-xs rounded-full px-1.5 py-0.5 font-bold',
+                  isActive ? 'bg-white/20' : 'bg-slate-100'
+                )}>
                   {count}
                 </span>
-              )}
-            </Link>
-          )
-        })}
+              </Link>
+            )
+          })}
+        </div>
+        
+        <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-lg">
+          <button
+            onClick={() => setViewMode('card')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+              viewMode === 'card'
+                ? 'bg-white text-zinc-900 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-700'
+            )}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            <span className="hidden sm:inline">Card</span>
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+              viewMode === 'table'
+                ? 'bg-white text-zinc-900 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-700'
+            )}
+          >
+            <Table2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Tabel</span>
+          </button>
+        </div>
       </div>
 
-      {/* Room summary cards (only when no filter) */}
-      {!currentCondition && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-          {rooms.map(({ room, count, id }) => (
-            <Link
-              key={id}
-              href={`/admin/inventory/${id}`}
-              className="bg-white rounded-xl border shadow-sm p-3 hover:shadow-md hover:border-teal-300 transition-all group"
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <DoorOpen className="h-4 w-4 text-purple-400 shrink-0" />
-                <span className="text-xs font-mono text-zinc-400">{room.room_code ?? '—'}</span>
-              </div>
-              <p className="text-sm font-semibold text-zinc-800 truncate group-hover:text-teal-700">{room.name}</p>
-              {room.buildings && (
-                <p className="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
-                  <Building2 className="h-3 w-3 text-orange-400 shrink-0" />
-                  {room.buildings.name}
-                </p>
-              )}
-              <div className="mt-2 flex items-center justify-between">
-                <Badge variant="secondary" className="text-xs">{count} item</Badge>
-                <ChevronRight className="h-3 w-3 text-zinc-300 group-hover:text-teal-500 transition-colors" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
       {/* Selection Header */}
-      {items.length > 0 && (
+      {paginatedItems.length > 0 && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={isAllSelected}
               onChange={toggleAll}
-              className="h-5 w-5 rounded border-2 border-slate-300 text-blue-600 focus:ring-blue-500"
+              className="h-5 w-5 rounded border-2 border-slate-300 text-blue-600"
             />
             <span className="text-sm text-slate-600">
               {hasSelection ? `${selectedIds.size} dipilih` : 'Pilih semua'}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Menampilkan {items.length} dari {totalCount} item
+            Menampilkan {paginatedItems.length} dari {items.length} item
+            {totalPages > 1 && ` (Halaman ${currentPage} dari ${totalPages})`}
           </p>
         </div>
       )}
 
-      {/* All items grid */}
-      <div>
-        <h2 className="text-base font-semibold text-zinc-700 mb-3">
-          {currentCondition ? `Item kondisi — ${CONDITIONS.find(c => c.value === currentCondition)?.label}` : 'Semua Item Inventaris'}
-        </h2>
-        {items.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-xl">
-            <Package className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p>Tidak ada item {currentCondition ? 'dengan kondisi ini' : 'inventaris'}</p>
-          </div>
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {items.map((item) => {
-            const room = item.assets
-            const cardClass = conditionCardClass[item.condition] ?? 'bg-zinc-50 border-zinc-200'
+      {/* Empty State */}
+      {items.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-xl">
+          <Package className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p>Tidak ada item {currentCondition ? 'dengan kondisi ini' : 'inventaris'}</p>
+          <Link href="/admin/inventory/new" className="text-amber-600 hover:underline"> Tambah sekarang</Link>
+        </div>
+      )}
+
+      {/* CARD VIEW */}
+      {viewMode === 'card' && paginatedItems.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {paginatedItems.map((item) => {
+            const room = item.rooms
             const selected = isSelected(item.id)
             
             return (
               <div 
                 key={item.id} 
                 className={cn(
-                  `rounded-xl border p-3 transition-shadow hover:shadow-md ${cardClass}`,
-                  selected && 'ring-2 ring-blue-500'
+                  "rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow group",
+                  item.condition === 'good' && "bg-white border-green-200",
+                  item.condition === 'needs_repair' && "bg-yellow-50/50 border-yellow-300",
+                  item.condition === 'damaged' && "bg-red-50/50 border-red-300",
                 )}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2 min-w-0 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={selected}
-                      onChange={() => toggleSelection(item.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 mt-0.5"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-sm text-zinc-900 truncate">{item.name}</p>
-                      {item.inventory_code && (
-                        <span className="text-xs font-mono text-zinc-400">{item.inventory_code}</span>
+                {/* Photo Section */}
+                <div className="relative h-44 bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-2">
+                  {item.photo_url ? (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <SafeImage
+                        src={item.photo_url}
+                        alt={item.name}
+                        className="object-contain w-full h-full max-h-40"
+                        fallbackClassName="w-full h-full rounded-lg"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                      <Package className="h-12 w-12 mb-2" />
+                      <span className="text-xs">Belum ada foto</span>
+                    </div>
+                  )}
+                  
+                  {/* Inventory Code Badge */}
+                  {item.inventory_code && (
+                    <div className="absolute top-2 left-2">
+                      <span className="bg-white/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded-lg font-mono text-amber-700 border border-amber-200">
+                        {item.inventory_code}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Condition Badge */}
+                  <div className="absolute top-2 right-2">
+                    <ConditionBadge condition={item.condition} />
+                  </div>
+                  
+                  {/* Checkbox */}
+                  <div className="absolute bottom-2 right-2">
+                    <div
+                      className="bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleSelection(item.id)}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <h3 className="font-semibold text-slate-900 text-sm truncate group-hover:text-amber-600 transition-colors">
+                    {item.name}
+                  </h3>
+                  
+                  {/* Location */}
+                  <div className="mt-2 space-y-1">
+                    {room ? (
+                      <>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <DoorOpen className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                          <span className="truncate">{room.name}</span>
+                          {room.room_code && <span className="font-mono text-slate-400">({room.room_code})</span>}
+                        </div>
+                        {room.buildings && (
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <Building2 className="h-3.5 w-3.5 text-orange-400 shrink-0" />
+                            <span className="truncate">{room.buildings.name}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">Lokasi tidak diketahui</p>
+                    )}
+                  </div>
+
+                  {/* Quantity */}
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-slate-400">Jumlah</p>
+                        <p className="text-lg font-bold text-slate-700">{item.quantity} <span className="text-sm font-normal">unit</span></p>
+                      </div>
+                      {item.notes && (
+                        <p className="text-xs text-slate-400 truncate max-w-[120px]" title={item.notes}>
+                          {item.notes}
+                        </p>
                       )}
                     </div>
                   </div>
-                  <ConditionBadge condition={item.condition} />
-                </div>
 
-                <div className="mt-2 space-y-1 text-xs text-zinc-500">
-                  {room && (
-                    <>
-                      <p className="flex items-center gap-1">
-                        <DoorOpen className="h-3 w-3 text-purple-400 shrink-0" />
-                        {room.name}
-                        {room.room_code && <span className="font-mono">({room.room_code})</span>}
-                      </p>
-                      {room.buildings && (
-                        <p className="flex items-center gap-1">
-                          <Building2 className="h-3 w-3 text-orange-400 shrink-0" />
-                          {room.buildings.name}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-black/5">
-                  <span className="text-xs text-zinc-600 font-medium">{item.quantity} unit</span>
-                  {room && (
-                    <Link
-                      href={`/admin/inventory/${item.room_asset_id}`}
-                      className="text-xs px-2 py-1 rounded bg-white/50 hover:bg-white text-zinc-600 hover:text-zinc-900 transition-colors font-medium"
+                  {/* Actions */}
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                    <button
+                      onClick={() => setEditingItem(item)}
+                      className="text-xs px-3 py-1.5 rounded-md bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors font-medium"
                     >
-                      Detail <ChevronRight className="h-3 w-3 inline ml-0.5" />
-                    </Link>
-                  )}
+                      Edit
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 transition-colors">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditingItem(item)} className="gap-2 cursor-pointer">
+                            <Pencil className="h-4 w-4" /> Edit Detail
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => softDelete(item)} className="gap-2 cursor-pointer text-red-600">
+                            <Trash2 className="h-4 w-4" /> Hapus
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      
+                      {room && (
+                        <Link
+                          href={`/admin/inventory/${item.room_asset_id}`}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )
           })}
         </div>
-      </div>
+      )}
+
+      {/* TABLE VIEW */}
+      {viewMode === 'table' && paginatedItems.length > 0 && (
+        <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-zinc-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600 w-10">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={toggleAll}
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Foto</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kode</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Nama Item</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Lokasi</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-600">Jumlah</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kondisi</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-zinc-600">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedItems.map((item) => {
+                  const room = item.rooms
+                  const selected = isSelected(item.id)
+                  
+                  return (
+                    <tr key={item.id} className={cn(selected && 'bg-blue-50/50', 'hover:bg-slate-50')}>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleSelection(item.id)}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-10 w-10 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center">
+                          {item.photo_url ? (
+                            <SafeImage src={item.photo_url} alt={item.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <Package className="h-5 w-5 text-slate-300" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-sm text-slate-500">
+                        {item.inventory_code ?? '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-900">{item.name}</p>
+                        {item.notes && <p className="text-xs text-slate-400 truncate max-w-[200px]">{item.notes}</p>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {room ? (
+                          <div>
+                            <p className="text-sm font-medium text-slate-700">{room.name}</p>
+                            <p className="text-xs text-slate-400">{room.buildings?.name}</p>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="font-semibold">{item.quantity}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <ConditionBadge condition={item.condition} />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setEditingItem(item)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-amber-600"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditingItem(item)} className="gap-2 cursor-pointer">
+                                <Pencil className="h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => softDelete(item)} className="gap-2 cursor-pointer text-red-600">
+                                <Trash2 className="h-4 w-4" /> Hapus
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+
+                          {room && (
+                            <Link
+                              href={`/admin/inventory/${item.room_asset_id}`}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" /> Sebelumnya
+          </Button>
+          <span className="text-sm text-slate-600">
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Selanjutnya <ChevronRightIcon className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
