@@ -8,10 +8,10 @@ import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { ApprovalButtons } from './ApprovalButtons'
 import { RecordPaymentButton } from '../../payments/RecordPaymentButton'
 import { SendMessageButton } from './SendMessageButton'
-import { formatDateTime, formatRupiah } from '@/lib/utils'
+import { formatDateTime, formatRupiah, calculateDuration, calculateItemPrice } from '@/lib/utils'
 import { 
   ArrowLeft, User, Mail, Phone, Building2, 
-  Calendar, Package, CreditCard
+  Calendar, Package, CreditCard, FileText, Receipt, Clock
 } from 'lucide-react'
 
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -87,6 +87,23 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     .order('created_at', { ascending: false })
 
   const borrower = booking.users
+  
+  // Calculate duration
+  const startDate = new Date(booking.start_datetime)
+  const endDate = new Date(booking.end_datetime)
+  const durationMs = endDate.getTime() - startDate.getTime()
+  const durationHours = Math.ceil(durationMs / (1000 * 60 * 60))
+  const durationDays = Math.ceil(durationHours / 24)
+  
+  // Calculate price per item
+  const bookingItemsWithPrice = bookingItems.map((item: any) => {
+    const itemTotal = booking.total_amount / bookingItems.length
+    return {
+      ...item,
+      unitPrice: itemTotal / item.quantity,
+      itemTotal: itemTotal
+    }
+  })
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -228,52 +245,78 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             </CardContent>
           </Card>
 
-          {/* Items */}
+          {/* Invoice / Price Breakdown */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Item yang Dipinjam ({bookingItems.length})
+                <Receipt className="h-4 w-4" />
+                Invoice & Rincian Harga
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Duration Info */}
+              <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg mb-4">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm text-blue-900">
+                    <span className="font-semibold">Durasi:</span>{' '}
+                    {durationDays > 1 
+                      ? `${durationDays} hari (${durationHours} jam)` 
+                      : `${durationHours} jam`
+                    }
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    {formatDateTime(booking.start_datetime)} - {formatDateTime(booking.end_datetime)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Items with Price */}
               <div className="space-y-3">
-                {bookingItems.map((item: any, index: number) => (
+                {bookingItemsWithPrice.map((item: any, index: number) => (
                   <div 
                     key={index} 
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
+                    className="p-4 border rounded-lg hover:bg-slate-50"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className="font-medium">
-                          {item.item_type === 'room' 
-                            ? item.room?.name 
-                            : item.equipment?.name
-                          }
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <span className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600 flex-shrink-0">
+                          {index + 1}
+                        </span>
+                        <div>
+                          <p className="font-medium">
+                            {item.item_type === 'room' 
+                              ? item.room?.name 
+                              : item.equipment?.name
+                            }
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {item.item_type === 'room' ? (
+                              <>
+                                Ruang {item.room?.room_code && `(${item.room.room_code})`} - {item.room?.buildings?.name}
+                              </>
+                            ) : (
+                              <>
+                                Alat {item.equipment?.equipment_code && `(${item.equipment.equipment_code})`}
+                              </>
+                            )}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant={item.item_type === 'room' ? 'default' : 'secondary'} className="text-xs">
+                              {item.item_type === 'room' ? 'Ruang' : 'Alat'}
+                            </Badge>
+                            <span className="text-xs text-slate-400">× {item.quantity} unit</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-slate-900">
+                          {formatRupiah(item.itemTotal)}
                         </p>
                         <p className="text-xs text-slate-500">
-                          {item.item_type === 'room' ? (
-                            <>
-                              Ruang {item.room?.room_code && `(${item.room.room_code})`} - {item.room?.buildings?.name}
-                            </>
-                          ) : (
-                            <>
-                              Alat {item.equipment?.equipment_code && `(${item.equipment.equipment_code})`}
-                            </>
-                          )}
+                          {formatRupiah(item.unitPrice)} / unit
                         </p>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant={item.item_type === 'room' ? 'default' : 'secondary'}>
-                        {item.item_type === 'room' ? 'Ruang' : 'Alat'}
-                      </Badge>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Qty: {item.quantity}
-                      </p>
                     </div>
                   </div>
                 ))}
@@ -281,9 +324,42 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
               <Separator className="my-4" />
 
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Total Tagihan</span>
-                <span className="text-2xl font-bold">{formatRupiah(booking.total_amount)}</span>
+              {/* Total Summary */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Subtotal</span>
+                  <span className="font-medium">{formatRupiah(booking.total_amount)}</span>
+                </div>
+                
+                {payments && payments.length > 0 && (
+                  <>
+                    {payments.filter((p: any) => p.status === 'paid').map((payment: any) => (
+                      <div key={payment.id} className="flex items-center justify-between text-sm">
+                        <span className="text-green-600">
+                          {payment.method === 'manual_cash' ? 'Bayar Tunai' : 
+                           payment.method === 'manual_transfer' ? 'Transfer' : 'Pembayaran'}
+                        </span>
+                        <span className="font-medium text-green-600">-{formatRupiah(payment.amount)}</span>
+                      </div>
+                    ))}
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Sisa Pembayaran</span>
+                      <span className="text-xl font-bold">
+                        {formatRupiah(booking.total_amount - (payments || [])
+                          .filter((p: any) => p.status === 'paid')
+                          .reduce((sum: number, p: any) => sum + p.amount, 0))}
+                      </span>
+                    </div>
+                  </>
+                )}
+                
+                {(!payments || payments.filter((p: any) => p.status === 'paid').length === 0) && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Total Tagihan</span>
+                    <span className="text-2xl font-bold">{formatRupiah(booking.total_amount)}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
