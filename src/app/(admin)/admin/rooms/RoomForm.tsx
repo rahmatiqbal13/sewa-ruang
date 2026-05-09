@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -67,6 +67,21 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
     })
     return initial
   })
+
+  // Update rates when room data changes (fixes rates showing 0 on edit)
+  useEffect(() => {
+    if (room?.room_rates) {
+      const updatedRates: RateState = {}
+      USAGE_CATEGORIES.forEach(cat => {
+        const existing = room.room_rates?.find(r => r.usage_category === cat.value)
+        updatedRates[cat.value] = {
+          rate_per_hour: existing?.rate_per_hour?.toString() ?? '',
+          rate_per_day: existing?.rate_per_day?.toString() ?? '',
+        }
+      })
+      setRates(updatedRates)
+    }
+  }, [room?.room_rates])
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
