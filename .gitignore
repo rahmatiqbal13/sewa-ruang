@@ -30,12 +30,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — jangan commit .env.local (berisi secrets)
+# env files — jangan commit file yang berisi secrets
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-# .env.local.example BOLEH di-commit (template tanpa nilai rahasia)
+.env.local.example
+.env.local.example.production
+*.env.backup
 
 # vercel
 .vercel
