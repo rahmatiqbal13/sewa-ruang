@@ -340,3 +340,191 @@ Folder lama `[id]/edit/page.tsx` dihapus.
 6. `supabase/migrations/20250507_fix_get_user_role_function.sql`
 
 ### Status Build: ✅ Sukses
+
+---
+
+## 9 Mei 2026
+
+### 1. Fix Room Rates Loading Issue
+**File**: `src/app/(admin)/admin/rooms/RoomForm.tsx`
+
+**Masalah**: Tarif ruangan selalu menampilkan 0 setelah refresh halaman, meskipun data sudah tersimpan
+
+**Solusi**:
+- Query `room_rates` secara terpisah dari query rooms utama
+- Merge data room_rates ke room data secara manual
+- Gunakan `useEffect` dengan `reset()` dari react-hook-form untuk mengisi form setelah data tersedia
+- Fix Zod schema untuk rates dengan struktur eksplisit per kategori
+
+**Hasil**: Tarif ruangan sekarang tampil dengan benar (50K, 500K, 100K, 1.5M)
+
+---
+
+### 2. Admin Booking Form - Member Type & Dynamic Rates
+**File**: `src/app/(admin)/admin/bookings/AdminBookingForm.tsx`
+
+**Fitur Baru**:
+- Field **Jenis Member** dengan opsi:
+  - Mahasiswa Sarjana (S1)
+  - Mahasiswa Pasca Sarjana (S2/S3)
+  - Dosen/Karyawan
+  - Umum
+  - Kerjasama/MoU
+- **Tarif Dinamis** berdasarkan jenis member:
+  - Equipment: `mahasiswa_s1`, `mahasiswa_s2`, `dosen`, `umum`, `mou_unesa`
+  - Rooms: `mahasiswa`, `pascasarjana`, `dosen`, `umum`, `kerjasama`
+- Search functionality untuk rooms dan equipment
+- Display foto dan detail item saat dipilih
+- Perhitungan total otomatis berdasarkan tarif member
+
+---
+
+### 3. Fix Select Label & UUID Display
+**File**: `src/app/(admin)/admin/bookings/AdminBookingForm.tsx`
+
+**Perbaikan**:
+- Label tipe item: "Ruang" dan "Alat" (bukan "room", "equipment")
+- Fix Select trigger menampilkan nama item + kode (bukan UUID)
+- Contoh: "Aula Lt.1 (A101)" bukan "c4b347a9-38df-46ce..."
+
+---
+
+### 4. Early Return Functionality
+**Files**:
+- `src/app/(admin)/admin/returns/[id]/CompleteReturnForm.tsx` (baru)
+- `src/app/(admin)/admin/returns/page.tsx` (update)
+- `src/app/(admin)/admin/returns/[id]/page.tsx` (update)
+
+**Fitur**:
+- Tombol "Pengembalian Lebih Cepat" untuk booking yang masih aktif
+- **Perhitungan refund otomatis** berdasarkan waktu tidak terpakai
+- Formula: `(Waktu tidak terpakai / Total waktu) × Total tagihan`
+- Pencatatan kondisi aset saat pengembalian (Baik/Rusak Ringan/Rusak Berat/Hilang)
+- Upload foto kondisi aset
+- Integrasi dengan tabel `booking_early_returns`
+
+**Migration**: `20250509_add_early_returns_table.sql`
+- Tabel `booking_early_returns` untuk tracking pengembalian cepat
+- Kolom `actual_end_datetime` di tabel `bookings`
+- Kolom `is_early_return` dan `refund_amount` di tabel `returns`
+
+---
+
+### 5. Integrasi Bookings - Payments - Returns Workflow
+
+#### Bookings Page (`/admin/bookings/[id]/page.tsx`)
+- Hanya untuk **Approve/Reject** pengajuan
+- Setelah disetujui, booking muncul di menu Payments dan Returns
+- Link "Catat Pengembalian" mengarah ke Returns page
+- **Invoice & Rincian Harga** di detail booking:
+  - Durasi peminjaman (hari & jam)
+  - Harga per item dengan unit price
+  - Subtotal, pembayaran, dan sisa tagihan
+
+#### Payments Page (`/admin/payments/page.tsx`)
+- Menampilkan semua booking status `approved` (menunggu bayar)
+- Tombol "Catat Pembayaran" dengan upload bukti transfer
+- Setelah pembayaran tercatat, status booking → `paid`
+- Riwayat pembayaran lengkap
+
+#### Returns Page (`/admin/returns/page.tsx`)
+- Menampilkan semua booking status `approved` atau `paid`
+- **Tiga kategori**:
+  - Disetujui - Menunggu Pembayaran (bisa bayar langsung)
+  - Lunas - Aktif (siap diproses pengembalian)
+  - Lewat Jadwal (highlight merah)
+- **Stats Dashboard**:
+  - Menunggu Pengembalian
+  - Disetujui (Belum Bayar)
+  - Lunas (Aktif)
+  - Selesai Hari Ini
+
+**Alur Kerja**:
+```
+Bookings (Approve/Reject) → Payments (Bayar) → Returns (Proses Kembali)
+```
+
+---
+
+### 6. Super Admin CRUD Permissions
+**Super Admin** sekarang dapat **menambah, mengedit, dan menghapus** data:
+
+#### Gedung (Buildings)
+- **Tambah**: Tombol "Tambah Gedung"
+- **Edit**: Menu dropdown "Edit Gedung"
+- **Hapus**: Menu dropdown "Hapus Gedung" (Super Admin only)
+  - Validasi: Gedung hanya bisa dihapus jika tidak memiliki ruangan
+
+#### Ruangan (Rooms)
+- **Tambah**: Tombol "Tambah Ruangan"
+- **Edit**: Tombol "Edit" di detail ruangan
+- **Hapus**: Tombol "Hapus" di detail ruangan (Super Admin only)
+  - Validasi: Ruangan hanya bisa dihapus jika tidak memiliki riwayat peminjaman
+
+#### Alat/Equipment
+- **Tambah**: Tombol "Tambah Alat"
+- **Edit**: Tombol "Edit" di list/grid view
+- **Hapus**: Tombol "Hapus Alat" di dropdown menu (Super Admin only)
+  - Validasi: Alat hanya bisa dihapus jika status nonaktif & tidak ada riwayat peminjaman
+  - Otomatis menghapus tarif dan foto terkait
+
+#### Pengguna (Users)
+- **Tambah**: Dialog "Tambah Pengguna"
+- **Edit**: Dialog "Edit Pengguna"
+- **Hapus**: Tombol "Hapus"
+- **Ganti Role**: Dropdown ganti role
+- **Reset Password**: Tombol reset password
+
+**Badge**: Super Admin badge ditampilkan di header setiap halaman manajemen
+
+---
+
+### 7. Database Migrations
+
+#### `20250509_add_booking_columns.sql`
+- Kolom untuk admin booking form:
+  - `borrower_name`, `borrower_email`, `borrower_phone`
+  - `borrower_institution`, `borrower_class`, `member_type`
+  - `created_by_admin`
+
+#### `20250509_add_early_returns_table.sql`
+- Tabel `booking_early_returns`
+- Kolom `actual_end_datetime` di `bookings`
+- Kolom `is_early_return` dan `refund_amount` di `returns`
+- RLS policies untuk early returns
+
+#### `20250509_update_returns_workflow.sql`
+- Update struktur returns table
+- Policies untuk admin access
+
+#### `20250509_fix_returns_columns.sql`
+- Fix missing columns di returns table
+- Alter table untuk menambahkan kolom yang diperlukan
+
+---
+
+### Files Baru Hari Ini:
+1. `src/app/(admin)/admin/bookings/AdminBookingForm.tsx` - Form peminjaman admin
+2. `src/app/(admin)/admin/returns/[id]/CompleteReturnForm.tsx` - Form pengembalian
+3. `src/app/(admin)/admin/buildings/DeleteBuildingButton.tsx` - Hapus gedung
+4. `src/app/(admin)/admin/rooms/DeleteRoomButton.tsx` - Hapus ruangan
+5. `src/app/(admin)/admin/equipment/DeleteEquipmentButton.tsx` - Hapus alat
+6. `supabase/migrations/20250509_*.sql` - Multiple migration files
+
+### Files Modified:
+1. `src/app/(admin)/admin/rooms/RoomForm.tsx` - Fix rates loading
+2. `src/app/(admin)/admin/rooms/[id]/edit/page.tsx` - Query rates terpisah
+3. `src/app/(admin)/admin/bookings/[id]/page.tsx` - Invoice & price breakdown
+4. `src/app/(admin)/admin/returns/page.tsx` - Workflow integration
+5. `src/app/(admin)/admin/buildings/page.tsx` - Super admin delete
+6. `src/app/(admin)/admin/buildings/BuildingActions.tsx` - Delete button support
+7. `src/app/(admin)/admin/equipment/page.tsx` & `EquipmentList.tsx` - Super admin
+
+### Bug Fixes:
+1. ✅ Duplicate Link import error
+2. ✅ CompleteReturnForm file location
+3. ✅ Missing columns in returns table (`recorded_by`, `is_early_return`)
+4. ✅ Room rates showing 0 after refresh
+5. ✅ Zod schema validation for rates
+
+### Status Build: ✅ Sukses
