@@ -120,75 +120,96 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
 
   async function onSubmit(data: FormData) {
+    console.log('onSubmit called with data:', data)
     setLoading(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      console.log('Current user:', user?.id)
 
-    if (!user) {
-      toast.error('Unauthorized')
-      setLoading(false)
-      return
-    }
-
-    const roomPayload = {
-      name: data.name.trim(),
-      building_id: data.building_id,
-      floor_number: data.floor_number,
-      room_sequence: data.room_sequence,
-      description: data.description?.trim() || null,
-      capacity: data.capacity || null,
-      is_for_rent: data.is_for_rent,
-      photo_url: data.photo_url || null,
-    }
-
-    let roomId = room?.id
-    if (room) {
-      const { error } = await (supabase.from('rooms') as any)
-        .update(roomPayload)
-        .eq('id', room.id)
-      if (error) { 
-        toast.error(error.message) 
-        setLoading(false) 
-        return 
+      if (!user) {
+        toast.error('Unauthorized - Anda harus login')
+        setLoading(false)
+        return
       }
-    } else {
-      const { data: newRoom, error } = await (supabase.from('rooms') as any)
-        .insert({ ...roomPayload, created_by: user.id })
-        .select('id')
-        .single()
-      if (error || !newRoom) { 
-        toast.error(error?.message ?? 'Gagal membuat ruangan') 
-        setLoading(false) 
-        return 
-      }
-      roomId = newRoom.id
-    }
 
-    if (data.is_for_rent && roomId) {
-      for (const cat of USAGE_CATEGORIES) {
-        const hourVal = data.rates[cat.value]?.rate_per_hour ?? ''
-        const dayVal = data.rates[cat.value]?.rate_per_day ?? ''
-        const rateHour = hourVal === '' ? null : parseFloat(hourVal)
-        const rateDay = dayVal === '' ? null : parseFloat(dayVal)
-        
-        const { error: rateError } = await (supabase.from('room_rates') as any).upsert(
-          { room_id: roomId, usage_category: cat.value, rate_per_hour: rateHour, rate_per_day: rateDay },
-          { onConflict: 'room_id,usage_category' }
-        )
-        
-        if (rateError) {
-          console.error('Error saving rate for', cat.value, rateError)
-          toast.error(`Gagal menyimpan tarif ${cat.label}: ${rateError.message}`)
+      const roomPayload = {
+        name: data.name.trim(),
+        building_id: data.building_id,
+        floor_number: data.floor_number,
+        room_sequence: data.room_sequence,
+        description: data.description?.trim() || null,
+        capacity: data.capacity || null,
+        is_for_rent: data.is_for_rent,
+        photo_url: data.photo_url || null,
+      }
+      console.log('Room payload:', roomPayload)
+
+      let roomId = room?.id
+      if (room) {
+        console.log('Updating existing room:', room.id)
+        const { error } = await (supabase.from('rooms') as any)
+          .update(roomPayload)
+          .eq('id', room.id)
+        if (error) { 
+          console.error('Error updating room:', error)
+          toast.error('Gagal update ruangan: ' + error.message) 
+          setLoading(false) 
+          return 
+        }
+        console.log('Room updated successfully')
+      } else {
+        console.log('Creating new room')
+        const { data: newRoom, error } = await (supabase.from('rooms') as any)
+          .insert({ ...roomPayload, created_by: user.id })
+          .select('id')
+          .single()
+        if (error || !newRoom) {
+          console.error('Error creating room:', error)
+          toast.error(error?.message ?? 'Gagal membuat ruangan')
           setLoading(false)
           return
         }
+        roomId = newRoom.id
+        console.log('New room created:', roomId)
       }
-    }
 
-    toast.success(room ? 'Ruangan berhasil diperbarui' : 'Ruangan berhasil ditambahkan')
-    router.push('/admin/rooms')
-    router.refresh()
-    setLoading(false)
+      if (data.is_for_rent && roomId) {
+        console.log('Saving rates for room:', roomId)
+        for (const cat of USAGE_CATEGORIES) {
+          const hourVal = data.rates[cat.value]?.rate_per_hour ?? ''
+          const dayVal = data.rates[cat.value]?.rate_per_day ?? ''
+          const rateHour = hourVal === '' ? null : parseFloat(hourVal)
+          const rateDay = dayVal === '' ? null : parseFloat(dayVal)
+          
+          console.log(`Saving rate for ${cat.value}:`, { rateHour, rateDay })
+          
+          const { error: rateError } = await (supabase.from('room_rates') as any).upsert(
+            { room_id: roomId, usage_category: cat.value, rate_per_hour: rateHour, rate_per_day: rateDay },
+            { onConflict: 'room_id,usage_category' }
+          )
+          
+          if (rateError) {
+            console.error('Error saving rate for', cat.value, rateError)
+            toast.error(`Gagal menyimpan tarif ${cat.label}: ${rateError.message}`)
+            setLoading(false)
+            return
+          }
+        }
+        console.log('All rates saved successfully')
+      }
+
+      toast.success(room ? 'Ruangan berhasil diperbarui' : 'Ruangan berhasil ditambahkan')
+      console.log('Form submission completed successfully')
+      router.push('/admin/rooms')
+      router.refresh()
+      setLoading(false)
+    } catch (err: any) {
+      console.error('Unexpected error in onSubmit:', err)
+      toast.error('Terjadi kesalahan: ' + (err.message || 'Unknown error'))
+      setLoading(false)
+    }
   }
 
   return (
