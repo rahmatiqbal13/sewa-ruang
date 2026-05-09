@@ -60,10 +60,12 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
   // Debug: Log room data received
   console.log('Client - Room:', room?.id)
-  console.log('Client - Room rates:', JSON.stringify(room?.room_rates, null, 2))
+  console.log('Client - Room rates raw:', room?.room_rates)
+  console.log('Client - Room rates count:', room?.room_rates?.length)
 
   // Build default rates from room data
   const buildDefaultRates = (): Record<string, { rate_per_hour: string; rate_per_day: string }> => {
+    console.log('Building default rates from:', room?.room_rates)
     const defaultRates: Record<string, { rate_per_hour: string; rate_per_day: string }> = {}
     USAGE_CATEGORIES.forEach(cat => {
       const existing = room?.room_rates?.find(r => r.usage_category === cat.value)
@@ -144,17 +146,24 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
       roomId = newRoom.id
     }
 
-    if (data.is_for_rent) {
+    if (data.is_for_rent && roomId) {
       for (const cat of USAGE_CATEGORIES) {
         const hourVal = data.rates[cat.value]?.rate_per_hour ?? ''
         const dayVal = data.rates[cat.value]?.rate_per_day ?? ''
         const rateHour = hourVal === '' ? null : parseFloat(hourVal)
         const rateDay = dayVal === '' ? null : parseFloat(dayVal)
         
-        await (supabase.from('room_rates') as any).upsert(
+        const { error: rateError } = await (supabase.from('room_rates') as any).upsert(
           { room_id: roomId, usage_category: cat.value, rate_per_hour: rateHour, rate_per_day: rateDay },
           { onConflict: 'room_id,usage_category' }
         )
+        
+        if (rateError) {
+          console.error('Error saving rate for', cat.value, rateError)
+          toast.error(`Gagal menyimpan tarif ${cat.label}: ${rateError.message}`)
+          setLoading(false)
+          return
+        }
       }
     }
 
