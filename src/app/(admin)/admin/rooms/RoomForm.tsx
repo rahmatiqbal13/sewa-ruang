@@ -81,7 +81,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
     return defaultRates
   }
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors, isValid, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
@@ -212,8 +212,19 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
     }
   }
 
+  // Log form state for debugging
+  console.log('Form errors:', errors)
+  console.log('Form isValid:', isValid)
+  console.log('Form isDirty:', isDirty)
+  console.log('Loading state:', loading)
+
+  const onError = (err: any) => {
+    console.error('Form validation errors:', err)
+    toast.error('Form tidak valid. Periksa field yang bertanda merah.')
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
       {/* Informasi Dasar */}
       <Card className="border-slate-200 shadow-sm">
         <CardContent className="p-8">
