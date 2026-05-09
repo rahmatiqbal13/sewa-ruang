@@ -29,6 +29,11 @@ const COLOR_STYLES: Record<string, { bg: string; border: string; text: string }>
   orange: { bg: 'bg-orange-50/50', border: 'border-orange-200', text: 'text-orange-800' },
 }
 
+const rateSchema = z.object({
+  rate_per_hour: z.string().optional().default(''),
+  rate_per_day: z.string().optional().default(''),
+})
+
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
   building_id: z.string().min(1, 'Gedung wajib dipilih'),
@@ -38,10 +43,15 @@ const schema = z.object({
   is_for_rent: z.boolean(),
   description: z.string().optional(),
   photo_url: z.string().optional(),
-  rates: z.record(z.object({
-    rate_per_hour: z.string(),
-    rate_per_day: z.string(),
-  })).default({}),
+  rates: z.object({
+    perkuliahan: rateSchema.optional().default({ rate_per_hour: '', rate_per_day: '' }),
+    event_mahasiswa: rateSchema.optional().default({ rate_per_hour: '', rate_per_day: '' }),
+    event_umum: rateSchema.optional().default({ rate_per_hour: '', rate_per_day: '' }),
+  }).optional().default({
+    perkuliahan: { rate_per_hour: '', rate_per_day: '' },
+    event_mahasiswa: { rate_per_hour: '', rate_per_day: '' },
+    event_umum: { rate_per_hour: '', rate_per_day: '' },
+  }),
 })
 
 type FormData = z.infer<typeof schema>
@@ -64,18 +74,19 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   console.log('Client - Room rates count:', room?.room_rates?.length)
 
   // Build default rates from room data
-  const buildDefaultRates = (): Record<string, { rate_per_hour: string; rate_per_day: string }> => {
+  const buildDefaultRates = () => {
     console.log('Building default rates from:', room?.room_rates)
-    const defaultRates: Record<string, { rate_per_hour: string; rate_per_day: string }> = {}
-    USAGE_CATEGORIES.forEach(cat => {
-      const existing = room?.room_rates?.find(r => r.usage_category === cat.value)
-      defaultRates[cat.value] = {
-        rate_per_hour: existing?.rate_per_hour !== null && existing?.rate_per_hour !== undefined 
-          ? existing.rate_per_hour.toString() 
-          : '',
-        rate_per_day: existing?.rate_per_day !== null && existing?.rate_per_day !== undefined 
-          ? existing.rate_per_day.toString() 
-          : '',
+    const defaultRates: Record<string, { rate_per_hour: string; rate_per_day: string }> = {
+      perkuliahan: { rate_per_hour: '', rate_per_day: '' },
+      event_mahasiswa: { rate_per_hour: '', rate_per_day: '' },
+      event_umum: { rate_per_hour: '', rate_per_day: '' },
+    }
+    room?.room_rates?.forEach(rate => {
+      if (defaultRates[rate.usage_category]) {
+        defaultRates[rate.usage_category] = {
+          rate_per_hour: rate.rate_per_hour?.toString() ?? '',
+          rate_per_day: rate.rate_per_day?.toString() ?? '',
+        }
       }
     })
     return defaultRates
@@ -92,7 +103,11 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
       is_for_rent: true,
       description: '',
       photo_url: '',
-      rates: {},
+      rates: {
+        perkuliahan: { rate_per_hour: '', rate_per_day: '' },
+        event_mahasiswa: { rate_per_hour: '', rate_per_day: '' },
+        event_umum: { rate_per_hour: '', rate_per_day: '' },
+      },
     }
   })
 
