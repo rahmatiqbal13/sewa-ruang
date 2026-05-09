@@ -70,6 +70,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
   // Update rates when room data changes (fixes rates showing 0 on edit)
   useEffect(() => {
+    console.log('Room data:', room?.id, room?.room_rates)
     if (room?.id && room?.room_rates) {
       const updatedRates: RateState = {}
       USAGE_CATEGORIES.forEach(cat => {
@@ -79,6 +80,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
           rate_per_day: existing?.rate_per_day?.toString() ?? '',
         }
       })
+      console.log('Setting rates:', updatedRates)
       setRates(updatedRates)
     }
   }, [room?.id, JSON.stringify(room?.room_rates)])
@@ -157,14 +159,17 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
     if (data.is_for_rent) {
       for (const cat of USAGE_CATEGORIES) {
-        const rateHour = parseFloat(rates[cat.value].rate_per_hour) || null
-        const rateDay = parseFloat(rates[cat.value].rate_per_day) || null
-        if (rateHour || rateDay) {
-          await (supabase.from('room_rates') as any).upsert(
-            { room_id: roomId, usage_category: cat.value, rate_per_hour: rateHour, rate_per_day: rateDay },
-            { onConflict: 'room_id,usage_category' }
-          )
-        }
+        // Parse rates - treat empty string as null, but 0 as 0
+        const hourVal = rates[cat.value].rate_per_hour
+        const dayVal = rates[cat.value].rate_per_day
+        const rateHour = hourVal === '' ? null : parseFloat(hourVal)
+        const rateDay = dayVal === '' ? null : parseFloat(dayVal)
+        
+        // Save rate even if 0 (to preserve explicit 0 values)
+        await (supabase.from('room_rates') as any).upsert(
+          { room_id: roomId, usage_category: cat.value, rate_per_hour: rateHour, rate_per_day: rateDay },
+          { onConflict: 'room_id,usage_category' }
+        )
       }
     }
 
