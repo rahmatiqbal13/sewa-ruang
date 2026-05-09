@@ -8,8 +8,9 @@ import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { ApprovalButtons } from './ApprovalButtons'
 import { RecordPaymentButton } from '../../payments/RecordPaymentButton'
 import { SendMessageButton } from './SendMessageButton'
-import { EarlyReturnButton } from './EarlyReturnButton'
 import { formatDateTime, formatRupiah } from '@/lib/utils'
+import Link from 'next/link'
+import { buttonVariants } from '@/components/ui/button'
 import { 
   ArrowLeft, User, Mail, Phone, Building2, 
   Calendar, Package, CreditCard, FileText, Receipt, Clock
@@ -209,16 +210,24 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             />
           )}
 
-          {/* Early Return Button - Show for paid bookings that haven't ended */}
-          {booking.status === 'paid' && new Date() < new Date(booking.end_datetime) && (
-            <EarlyReturnButton 
-              bookingId={id}
-              booking={booking}
-              items={bookingItems}
-              totalPaid={(payments || [])
-                .filter((p: any) => p.status === 'paid')
-                .reduce((sum: number, p: any) => sum + p.amount, 0)}
-            />
+          {/* Link to Process Return for approved/paid bookings */}
+          {(booking.status === 'approved' || booking.status === 'paid') && (
+            <Card className="border-blue-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-blue-800">Proses Pengembalian</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-600 mb-3">
+                  Proses pengembalian aset dan selesaikan peminjaman
+                </p>
+                <Link 
+                  href={`/admin/returns/${id}`}
+                  className={buttonVariants({ className: 'w-full' })}
+                >
+                  Catat Pengembalian
+                </Link>
+              </CardContent>
+            </Card>
           )}
         </div>
 
