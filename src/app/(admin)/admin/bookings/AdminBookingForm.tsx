@@ -262,23 +262,60 @@ export function AdminBookingForm() {
       const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase()
       const referenceNo = `BK${dateStr}-${randomStr}`
 
+      // Get rate snapshot for first item (for metadata)
+      let snapshotRate: Record<string, unknown> = {}
+      if (data.items.length > 0) {
+        const firstItem = data.items[0]
+        if (firstItem.item_type === 'room' && firstItem.room_id) {
+          const room = rooms.find(r => r.id === firstItem.room_id)
+          if (room) {
+            const rate = getRoomRate(room, data.member_type)
+            snapshotRate = { 
+              item_type: 'room',
+              item_name: room.name,
+              rate_per_hour: rate.rate_per_hour,
+              rate_per_day: rate.rate_per_day,
+              member_type: data.member_type
+            }
+          }
+        } else if (firstItem.item_type === 'equipment' && firstItem.equipment_id) {
+          const eq = equipment.find(e => e.id === firstItem.equipment_id)
+          if (eq) {
+            const rate = getEquipmentRate(eq, data.member_type)
+            snapshotRate = { 
+              item_type: 'equipment',
+              item_name: eq.name,
+              rate_per_hour: rate.rate_per_hour,
+              rate_per_day: rate.rate_per_day,
+              member_type: data.member_type
+            }
+          }
+        }
+      }
+
+      // Include borrower info in snapshot_rate until new columns are added
+      snapshotRate = {
+        ...snapshotRate,
+        borrower_name: data.borrower_name,
+        borrower_email: data.borrower_email,
+        borrower_phone: data.borrower_phone,
+        borrower_institution: data.borrower_institution,
+        borrower_class: data.borrower_class,
+        member_type: data.member_type,
+        created_by_admin: true,
+      }
+
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           reference_no: referenceNo,
           user_id: user.id,
-          borrower_name: data.borrower_name,
-          borrower_email: data.borrower_email || null,
-          borrower_phone: data.borrower_phone || null,
-          borrower_institution: data.borrower_institution,
-          borrower_class: data.borrower_class || null,
-          member_type: data.member_type,
-          purpose: data.purpose,
+          purpose: `${data.borrower_name} - ${data.borrower_institution}: ${data.purpose}`,
           start_datetime: data.start_datetime,
           end_datetime: data.end_datetime,
           total_amount: totalAmount,
           status: 'approved',
-          created_by_admin: true,
+          snapshot_rate: snapshotRate,
         })
         .select()
         .single()
