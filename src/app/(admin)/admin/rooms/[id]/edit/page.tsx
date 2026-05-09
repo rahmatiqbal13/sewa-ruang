@@ -10,23 +10,32 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
-  const [roomRes, buildingsRes] = await Promise.all([
+  const [roomRes, buildingsRes, ratesRes] = await Promise.all([
     sb.from('rooms')
-      .select('id, name, building_id, floor_number, room_sequence, description, capacity, is_for_rent, photo_url, room_rates(usage_category, rate_per_hour, rate_per_day)')
+      .select('id, name, building_id, floor_number, room_sequence, description, capacity, is_for_rent, photo_url')
       .eq('id', id)
       .single(),
     sb.from('buildings')
       .select('id, name, code, floor_count')
       .eq('is_active', true)
       .order('name'),
+    sb.from('room_rates')
+      .select('usage_category, rate_per_hour, rate_per_day')
+      .eq('room_id', id),
   ])
 
   if (!roomRes.data) notFound()
 
+  // Merge room_rates into room data
+  const roomData = {
+    ...roomRes.data,
+    room_rates: ratesRes.data || []
+  }
+
   // Debug: Log room_rates data
   console.log('Server - Room ID:', id)
-  console.log('Server - Room data:', JSON.stringify(roomRes.data, null, 2))
-  console.log('Server - Room rates:', JSON.stringify(roomRes.data.room_rates, null, 2))
+  console.log('Server - Room rates query result:', ratesRes.data)
+  console.log('Server - Merged room_rates:', roomData.room_rates)
 
   return (
     <div className="p-6 max-w-3xl">
@@ -50,8 +59,8 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
       </div>
 
       <RoomForm 
-        key={roomRes.data.id} 
-        room={roomRes.data} 
+        key={roomData.id} 
+        room={roomData} 
         buildings={buildingsRes.data ?? []} 
       />
     </div>
