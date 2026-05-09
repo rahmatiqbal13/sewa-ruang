@@ -39,6 +39,30 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+// Map member type to equipment_rates user_category
+const memberTypeToEquipmentCategory: Record<string, string> = {
+  'mahasiswa_s1': 'mahasiswa_s1',
+  'mahasiswa_s2': 'mahasiswa_s2',
+  'dosen_karyawan': 'dosen',
+  'umum': 'umum',
+  'kerjasama': 'mou_unesa',
+}
+
+// Map member type to room_rates usage_category  
+const memberTypeToRoomCategory: Record<string, string> = {
+  'mahasiswa_s1': 'mahasiswa',
+  'mahasiswa_s2': 'pascasarjana',
+  'dosen_karyawan': 'dosen',
+  'umum': 'umum',
+  'kerjasama': 'kerjasama',
+}
+
+interface RoomRate {
+  usage_category: string
+  rate_per_hour: number | null
+  rate_per_day: number | null
+}
+
 interface Room {
   id: string
   name: string
@@ -46,8 +70,14 @@ interface Room {
   building_name: string
   capacity: number | null
   photo_url: string | null
+  rates: RoomRate[]
+}
+
+interface EquipmentRate {
+  user_category: string
   rate_per_hour: number | null
   rate_per_day: number | null
+  requires_supervision: boolean
 }
 
 interface Equipment {
@@ -56,8 +86,7 @@ interface Equipment {
   equipment_code: string | null
   merk: string | null
   photo_url: string | null
-  rate_per_hour: number | null
-  rate_per_day: number | null
+  rates: EquipmentRate[]
   ketersediaan: string
 }
 
@@ -87,16 +116,20 @@ export function AdminBookingForm() {
   const watchItems = watch('items')
   const watchStart = watch('start_datetime')
   const watchEnd = watch('end_datetime')
+  const watchMemberType = watch('member_type')
 
-  // Load rooms and equipment
+  // Load rooms and equipment with their rates
   useEffect(() => {
     async function loadData() {
       const supabase = createClient()
       
-      // Load rooms with photos
-      const { data: roomsData } = await supabase
-        .from('rooms')
-        .select('id, name, room_code, capacity, photo_url, rate_per_hour, rate_per_day, buildings(name)')
+      // Load rooms with rates
+      const { data: roomsData } = await (supabase.from('rooms') as any)
+        .select(`
+          id, name, room_code, capacity, photo_url,
+          buildings(name),
+          room_rates(usage_category, rate_per_hour, rate_per_day)
+        `)
         .eq('is_active', true)
         .eq('is_for_rent', true)
         .order('name')
@@ -109,15 +142,16 @@ export function AdminBookingForm() {
           capacity: r.capacity,
           photo_url: r.photo_url,
           building_name: r.buildings?.name || '-',
-          rate_per_hour: r.rate_per_hour,
-          rate_per_day: r.rate_per_day,
+          rates: r.room_rates || [],
         })))
       }
 
-      // Load equipment with photos
-      const { data: equipmentData } = await supabase
-        .from('equipment')
-        .select('id, name, equipment_code, merk, photo_url, rate_per_hour, rate_per_day, ketersediaan')
+      // Load equipment with rates
+      const { data: equipmentData } = await (supabase.from('equipment') as any)
+        .select(`
+          id, name, equipment_code, merk, photo_url, ketersediaan,
+          equipment_rates(user_category, rate_per_hour, rate_per_day, requires_supervision)
+        `)
         .eq('is_active', true)
         .eq('ketersediaan', 'tersedia')
         .order('name')
@@ -129,9 +163,8 @@ export function AdminBookingForm() {
           equipment_code: e.equipment_code,
           merk: e.merk,
           photo_url: e.photo_url,
-          rate_per_hour: e.rate_per_hour,
-          rate_per_day: e.rate_per_day,
           ketersediaan: e.ketersediaan,
+          rates: e.equipment_rates || [],
         })))
       }
     }
@@ -139,9 +172,22 @@ export function AdminBookingForm() {
     loadData()
   }, [])
 
-  // Calculate total
+  // Get rate for specific member type
+  const getRoomRate = (room: Room, memberType: string) => {
+    const category = memberTypeToRoomCategory[memberType]
+    const rate = room.rates.find(r => r.usage_category === category)
+    return rate || room.rates[0] || { rate_per_hour: null, rate_per_day: null }
+  }
+
+  const getEquipmentRate = (eq: Equipment, memberType: string) => {
+    const category = memberTypeToEquipmentCategory[memberType]
+    const rate = eq.rates.find(r => r.user_category === category)
+    return rate || eq.rates[0] || { rate_per_hour: null, rate_per_day: null }
+  }
+
+  // Calculate total based on member type rates
   useEffect(() => {
-    if (!watchStart || !watchEnd) return
+    if (!watchStart || !watchEnd || !watchMemberType) return
     
     const start = new Date(watchStart)
     const end = new Date(watchEnd)
@@ -154,26 +200,28 @@ export function AdminBookingForm() {
       if (item.item_type === 'room' && item.room_id) {
         const room = rooms.find(r => r.id === item.room_id)
         if (room) {
-          if (hours > 12 && room.rate_per_day) {
-            total += room.rate_per_day * days * item.quantity
-          } else if (room.rate_per_hour) {
-            total += room.rate_per_hour * hours * item.quantity
+          const rate = getRoomRate(room, watchMemberType)
+          if (hours > 12 && rate.rate_per_day) {
+            total += rate.rate_per_day * days * item.quantity
+          } else if (rate.rate_per_hour) {
+            total += rate.rate_per_hour * hours * item.quantity
           }
         }
       } else if (item.item_type === 'equipment' && item.equipment_id) {
         const eq = equipment.find(e => e.id === item.equipment_id)
         if (eq) {
-          if (hours > 12 && eq.rate_per_day) {
-            total += eq.rate_per_day * days * item.quantity
-          } else if (eq.rate_per_hour) {
-            total += eq.rate_per_hour * hours * item.quantity
+          const rate = getEquipmentRate(eq, watchMemberType)
+          if (hours > 12 && rate.rate_per_day) {
+            total += rate.rate_per_day * days * item.quantity
+          } else if (rate.rate_per_hour) {
+            total += rate.rate_per_hour * hours * item.quantity
           }
         }
       }
     })
     
     setTotalAmount(total)
-  }, [watchItems, watchStart, watchEnd, rooms, equipment])
+  }, [watchItems, watchStart, watchEnd, watchMemberType, rooms, equipment])
 
   // Filter items based on search
   const getFilteredItems = (type: 'room' | 'equipment') => {
@@ -382,6 +430,10 @@ export function AdminBookingForm() {
               const currentItem = watchItems?.[index]
               const selectedRoom = currentItem?.room_id ? getSelectedRoom(currentItem.room_id) : null
               const selectedEquipment = currentItem?.equipment_id ? getSelectedEquipment(currentItem.equipment_id) : null
+              
+              // Get rates for selected member type
+              const roomRate = selectedRoom ? getRoomRate(selectedRoom, watchMemberType) : null
+              const equipmentRate = selectedEquipment ? getEquipmentRate(selectedEquipment, watchMemberType) : null
 
               return (
                 <div key={field.id} className="p-4 border rounded-lg space-y-4">
@@ -444,11 +496,23 @@ export function AdminBookingForm() {
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {(currentItem?.item_type === 'room' ? rooms : equipment).map((item: any) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {item.name} {item.room_code || item.equipment_code ? `(${item.room_code || item.equipment_code})` : ''}
-                            </SelectItem>
-                          ))}
+                          {(currentItem?.item_type === 'room' ? rooms : equipment).map((item: any) => {
+                            const rate = currentItem?.item_type === 'room' 
+                              ? getRoomRate(item, watchMemberType)
+                              : getEquipmentRate(item, watchMemberType)
+                            const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
+                            
+                            return (
+                              <SelectItem key={item.id} value={item.id}>
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{item.name} {item.room_code || item.equipment_code ? `(${item.room_code || item.equipment_code})` : ''}</span>
+                                  <span className="text-xs text-slate-500 ml-2">
+                                    Rp {displayRate.toLocaleString('id-ID')}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
                         </SelectContent>
                       </Select>
                     </div>
@@ -467,40 +531,47 @@ export function AdminBookingForm() {
                       className="mb-2"
                     />
                     <div className="max-h-40 overflow-y-auto border rounded-lg">
-                      {getFilteredItems(currentItem?.item_type || 'room').slice(0, 5).map((item: any) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            if (currentItem?.item_type === 'room') {
-                              setValue(`items.${index}.room_id`, item.id)
-                            } else {
-                              setValue(`items.${index}.equipment_id`, item.id)
-                            }
-                            setSearchQuery('')
-                          }}
-                          className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 border-b last:border-b-0 text-left"
-                        >
-                          {item.photo_url ? (
-                            <img src={item.photo_url} alt={item.name} className="w-12 h-12 object-cover rounded-lg" />
-                          ) : (
-                            <div className="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center">
-                              <Package className="h-6 w-6 text-slate-400" />
+                      {getFilteredItems(currentItem?.item_type || 'room').slice(0, 5).map((item: any) => {
+                        const rate = currentItem?.item_type === 'room' 
+                          ? getRoomRate(item, watchMemberType)
+                          : getEquipmentRate(item, watchMemberType)
+                        const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
+                        
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              if (currentItem?.item_type === 'room') {
+                                setValue(`items.${index}.room_id`, item.id)
+                              } else {
+                                setValue(`items.${index}.equipment_id`, item.id)
+                              }
+                              setSearchQuery('')
+                            }}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 border-b last:border-b-0 text-left"
+                          >
+                            {item.photo_url ? (
+                              <img src={item.photo_url} alt={item.name} className="w-12 h-12 object-cover rounded-lg" />
+                            ) : (
+                              <div className="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center">
+                                <Package className="h-6 w-6 text-slate-400" />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{item.name}</p>
+                              <p className="text-xs text-slate-500">
+                                {item.room_code || item.equipment_code ? `Kode: ${item.room_code || item.equipment_code}` : ''}
+                                {item.building_name ? ` • ${item.building_name}` : ''}
+                                {item.merk ? ` • ${item.merk}` : ''}
+                              </p>
                             </div>
-                          )}
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{item.name}</p>
-                            <p className="text-xs text-slate-500">
-                              {item.room_code || item.equipment_code ? `Kode: ${item.room_code || item.equipment_code}` : ''}
-                              {item.building_name ? ` • ${item.building_name}` : ''}
-                              {item.merk ? ` • ${item.merk}` : ''}
-                            </p>
-                          </div>
-                          <Badge variant="secondary" className="text-xs">
-                            Rp {(item.rate_per_day || item.rate_per_hour || 0).toLocaleString('id-ID')}
-                          </Badge>
-                        </button>
-                      ))}
+                            <Badge variant="secondary" className="text-xs">
+                              Rp {displayRate.toLocaleString('id-ID')}
+                            </Badge>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
 
@@ -539,8 +610,18 @@ export function AdminBookingForm() {
                             </>
                           )}
                           <p className="text-sm font-medium text-blue-600 mt-1">
-                            Tarif: Rp {(selectedRoom?.rate_per_day || selectedEquipment?.rate_per_day || selectedRoom?.rate_per_hour || selectedEquipment?.rate_per_hour || 0).toLocaleString('id-ID')}
-                            /{(selectedRoom?.rate_per_day || selectedEquipment?.rate_per_day) ? 'hari' : 'jam'}
+                            Tarif {(() => {
+                              const labels: Record<string, string> = {
+                                'mahasiswa_s1': '(Mahasiswa S1)',
+                                'mahasiswa_s2': '(Mahasiswa S2/S3)',
+                                'dosen_karyawan': '(Dosen/Karyawan)',
+                                'umum': '(Umum)',
+                                'kerjasama': '(Kerjasama/MoU)',
+                              }
+                              return labels[watchMemberType] || ''
+                            })()}:
+                            {' '}Rp {(roomRate?.rate_per_day || equipmentRate?.rate_per_day || roomRate?.rate_per_hour || equipmentRate?.rate_per_hour || 0).toLocaleString('id-ID')}
+                            /{(roomRate?.rate_per_day || equipmentRate?.rate_per_day) ? 'hari' : 'jam'}
                           </p>
                         </div>
                       </div>
@@ -578,7 +659,21 @@ export function AdminBookingForm() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-600">Estimasi Total</p>
+                <p className="text-sm text-blue-600">
+                  Estimasi Total 
+                  <span className="ml-1 text-xs">
+                    {(() => {
+                      const labels: Record<string, string> = {
+                        'mahasiswa_s1': '(Mahasiswa S1)',
+                        'mahasiswa_s2': '(Mahasiswa S2/S3)',
+                        'dosen_karyawan': '(Dosen/Karyawan)',
+                        'umum': '(Umum)',
+                        'kerjasama': '(Kerjasama/MoU)',
+                      }
+                      return labels[watchMemberType] || ''
+                    })()}
+                  </span>
+                </p>
                 <p className="text-3xl font-bold text-blue-900">
                   Rp {totalAmount.toLocaleString('id-ID')}
                 </p>
