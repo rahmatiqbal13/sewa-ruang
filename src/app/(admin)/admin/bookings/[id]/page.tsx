@@ -8,7 +8,8 @@ import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { ApprovalButtons } from './ApprovalButtons'
 import { RecordPaymentButton } from '../../payments/RecordPaymentButton'
 import { SendMessageButton } from './SendMessageButton'
-import { formatDateTime, formatRupiah, calculateDuration, calculateItemPrice } from '@/lib/utils'
+import { EarlyReturnButton } from './EarlyReturnButton'
+import { formatDateTime, formatRupiah } from '@/lib/utils'
 import { 
   ArrowLeft, User, Mail, Phone, Building2, 
   Calendar, Package, CreditCard, FileText, Receipt, Clock
@@ -203,6 +204,18 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               bookingId={id} 
               totalAmount={booking.total_amount} 
               paidAmount={(payments || [])
+                .filter((p: any) => p.status === 'paid')
+                .reduce((sum: number, p: any) => sum + p.amount, 0)}
+            />
+          )}
+
+          {/* Early Return Button - Show for paid bookings that haven't ended */}
+          {booking.status === 'paid' && new Date() < new Date(booking.end_datetime) && (
+            <EarlyReturnButton 
+              bookingId={id}
+              booking={booking}
+              items={bookingItems}
+              totalPaid={(payments || [])
                 .filter((p: any) => p.status === 'paid')
                 .reduce((sum: number, p: any) => sum + p.amount, 0)}
             />
