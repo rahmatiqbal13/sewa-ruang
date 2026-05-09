@@ -73,64 +73,41 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
     const supabase = createClient()
 
     try {
-      // 1. Record the return (try with new columns first)
-      let returnError
-      try {
-        const { error } = await supabase
-          .from('returns')
-          .insert({
-            booking_id: bookingId,
-            returned_at: new Date(actualEndDate).toISOString(),
-            condition: condition,
-            notes: notes || null,
-            photo_url: photoUrl || null,
-            is_early_return: isEarlyReturn,
-            refund_amount: refundAmount > 0 ? refundAmount : null,
-          })
-        returnError = error
-      } catch (e) {
-        // If columns don't exist, try without them
-        const { error } = await supabase
-          .from('returns')
-          .insert({
-            booking_id: bookingId,
-            returned_at: new Date(actualEndDate).toISOString(),
-            condition: condition,
-            notes: notes || null,
-            photo_url: photoUrl || null,
-          })
-        returnError = error
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('Anda harus login untuk mencatat pengembalian')
+        setLoading(false)
+        return
       }
+
+      // 1. Record the return
+      const { error: returnError } = await supabase
+        .from('returns')
+        .insert({
+          booking_id: bookingId,
+          returned_at: new Date(actualEndDate).toISOString(),
+          condition: condition,
+          notes: notes || null,
+          photo_url: photoUrl || null,
+          recorded_by: user.id,
+          is_early_return: isEarlyReturn,
+          refund_amount: refundAmount > 0 ? refundAmount : null,
+        })
 
       if (returnError) throw returnError
 
-      // 2. Update booking status to completed (try with new column first)
-      let bookingError
-      try {
-        const { error } = await supabase
-          .from('bookings')
-          .update({
-            status: 'completed',
-            actual_end_datetime: actualEndDate,
-            admin_notes: notes 
-              ? `Pengembalian: ${notes}${isEarlyReturn ? ' (Pengembalian lebih cepat)' : ''}`
-              : isEarlyReturn ? 'Pengembalian lebih cepat' : null
-          })
-          .eq('id', bookingId)
-        bookingError = error
-      } catch (e) {
-        // If column doesn't exist, update without it
-        const { error } = await supabase
-          .from('bookings')
-          .update({
-            status: 'completed',
-            admin_notes: notes 
-              ? `Pengembalian: ${notes}${isEarlyReturn ? ' (Pengembalian lebih cepat)' : ''}`
-              : isEarlyReturn ? 'Pengembalian lebih cepat' : null
-          })
-          .eq('id', bookingId)
-        bookingError = error
-      }
+      // 2. Update booking status to completed
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .update({
+          status: 'completed',
+          actual_end_datetime: actualEndDate,
+          admin_notes: notes 
+            ? `Pengembalian: ${notes}${isEarlyReturn ? ' (Pengembalian lebih cepat)' : ''}`
+            : isEarlyReturn ? 'Pengembalian lebih cepat' : null
+        })
+        .eq('id', bookingId)
 
       if (bookingError) throw bookingError
 
