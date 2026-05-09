@@ -58,6 +58,10 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
+  // Debug: Log room data received
+  console.log('Client - Room:', room?.id)
+  console.log('Client - Room rates:', JSON.stringify(room?.room_rates, null, 2))
+
   // Build default rates from room data
   const buildDefaultRates = (): Record<string, { rate_per_hour: string; rate_per_day: string }> => {
     const defaultRates: Record<string, { rate_per_hour: string; rate_per_day: string }> = {}

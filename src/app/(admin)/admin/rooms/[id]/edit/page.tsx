@@ -23,6 +23,11 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
 
   if (!roomRes.data) notFound()
 
+  // Debug: Log room_rates data
+  console.log('Server - Room ID:', id)
+  console.log('Server - Room data:', JSON.stringify(roomRes.data, null, 2))
+  console.log('Server - Room rates:', JSON.stringify(roomRes.data.room_rates, null, 2))
+
   return (
     <div className="p-6 max-w-3xl">
       {/* Back Button */}
