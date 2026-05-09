@@ -44,7 +44,11 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      <RoomForm room={roomRes.data} buildings={buildingsRes.data ?? []} />
+      <RoomForm 
+        key={roomRes.data.id} 
+        room={roomRes.data} 
+        buildings={buildingsRes.data ?? []} 
+      />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,7 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Loader2, Camera, Tag, Building2, Layers, Users, DoorOpen } from 'lucide-react'
 import { PhotoUpload } from '@/components/shared/PhotoUpload'
-import { cn } from '@/lib/utils'
 
 const USAGE_CATEGORIES = [
   { value: 'perkuliahan',     label: 'Perkuliahan',     color: 'blue' },
@@ -39,6 +38,10 @@ const schema = z.object({
   is_for_rent: z.boolean(),
   description: z.string().optional(),
   photo_url: z.string().optional(),
+  rates: z.record(z.object({
+    rate_per_hour: z.string(),
+    rate_per_day: z.string(),
+  })).default({}),
 })
 
 type FormData = z.infer<typeof schema>
@@ -51,66 +54,46 @@ interface Room {
   photo_url: string | null; room_rates: RoomRate[]
 }
 
-type RateState = Record<string, { rate_per_hour: string; rate_per_day: string }>
-
 export function RoomForm({ room, buildings }: { room?: Room; buildings: Building[] }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [rates, setRates] = useState<RateState>(() => {
-    const initial: RateState = {}
+
+  // Build default rates from room data
+  const buildDefaultRates = (): Record<string, { rate_per_hour: string; rate_per_day: string }> => {
+    const defaultRates: Record<string, { rate_per_hour: string; rate_per_day: string }> = {}
     USAGE_CATEGORIES.forEach(cat => {
       const existing = room?.room_rates?.find(r => r.usage_category === cat.value)
-      initial[cat.value] = {
-        rate_per_hour: existing?.rate_per_hour?.toString() ?? '',
-        rate_per_day: existing?.rate_per_day?.toString() ?? '',
+      defaultRates[cat.value] = {
+        rate_per_hour: existing?.rate_per_hour !== null && existing?.rate_per_hour !== undefined 
+          ? existing.rate_per_hour.toString() 
+          : '',
+        rate_per_day: existing?.rate_per_day !== null && existing?.rate_per_day !== undefined 
+          ? existing.rate_per_day.toString() 
+          : '',
       }
     })
-    return initial
-  })
-
-  // Update rates when room data changes (fixes rates showing 0 on edit)
-  useEffect(() => {
-    console.log('Room data:', room?.id, room?.room_rates)
-    if (room?.id && room?.room_rates) {
-      const updatedRates: RateState = {}
-      USAGE_CATEGORIES.forEach(cat => {
-        const existing = room.room_rates?.find(r => r.usage_category === cat.value)
-        updatedRates[cat.value] = {
-          rate_per_hour: existing?.rate_per_hour?.toString() ?? '',
-          rate_per_day: existing?.rate_per_day?.toString() ?? '',
-        }
-      })
-      console.log('Setting rates:', updatedRates)
-      setRates(updatedRates)
-    }
-  }, [room?.id, JSON.stringify(room?.room_rates)])
+    return defaultRates
+  }
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema) as any,
-    defaultValues: room ? {
-      name: room.name,
-      building_id: room.building_id,
-      floor_number: room.floor_number,
-      room_sequence: room.room_sequence,
-      capacity: room.capacity || undefined,
-      is_for_rent: room.is_for_rent,
-      description: room.description || '',
-      photo_url: room.photo_url || '',
-    } : {
-      is_for_rent: true,
-      floor_number: 1,
-      room_sequence: 1,
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: room?.name ?? '',
+      building_id: room?.building_id ?? '',
+      floor_number: room?.floor_number ?? 1,
+      room_sequence: room?.room_sequence ?? 1,
+      capacity: room?.capacity ?? undefined,
+      is_for_rent: room?.is_for_rent ?? true,
+      description: room?.description ?? '',
+      photo_url: room?.photo_url ?? '',
+      rates: buildDefaultRates(),
     }
   })
 
   const selectedBuildingId = watch('building_id')
   const isForRent = watch('is_for_rent')
+  const rates = watch('rates')
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
-
-  function updateRate(category: string, field: 'rate_per_hour' | 'rate_per_day', value: string) {
-    setRates(prev => ({ ...prev, [category]: { ...prev[category], [field]: value } }))
-  }
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -159,13 +142,11 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
     if (data.is_for_rent) {
       for (const cat of USAGE_CATEGORIES) {
-        // Parse rates - treat empty string as null, but 0 as 0
-        const hourVal = rates[cat.value].rate_per_hour
-        const dayVal = rates[cat.value].rate_per_day
+        const hourVal = data.rates[cat.value]?.rate_per_hour ?? ''
+        const dayVal = data.rates[cat.value]?.rate_per_day ?? ''
         const rateHour = hourVal === '' ? null : parseFloat(hourVal)
         const rateDay = dayVal === '' ? null : parseFloat(dayVal)
         
-        // Save rate even if 0 (to preserve explicit 0 values)
         await (supabase.from('room_rates') as any).upsert(
           { room_id: roomId, usage_category: cat.value, rate_per_hour: rateHour, rate_per_day: rateDay },
           { onConflict: 'room_id,usage_category' }
@@ -352,12 +333,13 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
       {isForRent && (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="p-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-2">Tarif Sewa per Kategori</h2>
-            <p className="text-slate-500 mb-6">Atur harga per kategori penggunaan (kosongkan jika tidak tersedia)</p>
-            
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">Tarif Sewa per Kategori</h2>
+          <p className="text-slate-500 mb-6">Atur harga per kategori penggunaan (kosongkan jika tidak tersedia)</p>
+          
             <div className="space-y-4">
               {USAGE_CATEGORIES.map(cat => {
                 const colors = COLOR_STYLES[cat.color]
+                const rateValue = rates?.[cat.value] || { rate_per_hour: '', rate_per_day: '' }
                 return (
                   <div key={cat.value} className={`border rounded-xl p-4 ${colors.bg} ${colors.border}`}>
                     <h4 className={`font-semibold mb-3 ${colors.text}`}>{cat.label}</h4>
@@ -368,8 +350,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                           type="number" 
                           min={0} 
                           placeholder="0"
-                          value={rates[cat.value].rate_per_hour}
-                          onChange={(e) => updateRate(cat.value, 'rate_per_hour', e.target.value)}
+                          value={rateValue.rate_per_hour}
+                          onChange={(e) => setValue(`rates.${cat.value}.rate_per_hour`, e.target.value)}
                           className="h-10 rounded-lg border-slate-200"
                         />
                       </div>
@@ -379,8 +361,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                           type="number" 
                           min={0} 
                           placeholder="0"
-                          value={rates[cat.value].rate_per_day}
-                          onChange={(e) => updateRate(cat.value, 'rate_per_day', e.target.value)}
+                          value={rateValue.rate_per_day}
+                          onChange={(e) => setValue(`rates.${cat.value}.rate_per_day`, e.target.value)}
                           className="h-10 rounded-lg border-slate-200"
                         />
                       </div>
