@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -81,20 +81,38 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
     return defaultRates
   }
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: room?.name ?? '',
-      building_id: room?.building_id ?? '',
-      floor_number: room?.floor_number ?? 1,
-      room_sequence: room?.room_sequence ?? 1,
-      capacity: room?.capacity ?? undefined,
-      is_for_rent: room?.is_for_rent ?? true,
-      description: room?.description ?? '',
-      photo_url: room?.photo_url ?? '',
-      rates: buildDefaultRates(),
+      name: '',
+      building_id: '',
+      floor_number: 1,
+      room_sequence: 1,
+      capacity: undefined,
+      is_for_rent: true,
+      description: '',
+      photo_url: '',
+      rates: {},
     }
   })
+
+  // Reset form with room data when it becomes available
+  useEffect(() => {
+    if (room?.id) {
+      console.log('Resetting form with room data:', room.id)
+      reset({
+        name: room.name,
+        building_id: room.building_id,
+        floor_number: room.floor_number,
+        room_sequence: room.room_sequence,
+        capacity: room.capacity || undefined,
+        is_for_rent: room.is_for_rent,
+        description: room.description || '',
+        photo_url: room.photo_url || '',
+        rates: buildDefaultRates(),
+      })
+    }
+  }, [room?.id, reset])
 
   const selectedBuildingId = watch('building_id')
   const isForRent = watch('is_for_rent')
