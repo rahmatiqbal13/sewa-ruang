@@ -32,11 +32,6 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
     room_rates: ratesRes.data || []
   }
 
-  // Debug: Log room_rates data
-  console.log('Server - Room ID:', id)
-  console.log('Server - Room rates query result:', ratesRes.data)
-  console.log('Server - Merged room_rates:', roomData.room_rates)
-
   return (
     <div className="p-6 max-w-3xl">
       {/* Back Button */}

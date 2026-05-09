@@ -68,14 +68,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  // Debug: Log room data received
-  console.log('Client - Room:', room?.id)
-  console.log('Client - Room rates raw:', room?.room_rates)
-  console.log('Client - Room rates count:', room?.room_rates?.length)
-
   // Build default rates from room data
   const buildDefaultRates = () => {
-    console.log('Building default rates from:', room?.room_rates)
     const defaultRates: Record<string, { rate_per_hour: string; rate_per_day: string }> = {
       perkuliahan: { rate_per_hour: '', rate_per_day: '' },
       event_mahasiswa: { rate_per_hour: '', rate_per_day: '' },
@@ -92,7 +86,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
     return defaultRates
   }
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors, isValid, isDirty } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
@@ -114,7 +108,6 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   // Reset form with room data when it becomes available
   useEffect(() => {
     if (room?.id) {
-      console.log('Resetting form with room data:', room.id)
       reset({
         name: room.name,
         building_id: room.building_id,
@@ -135,13 +128,11 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
 
   async function onSubmit(data: FormData) {
-    console.log('onSubmit called with data:', data)
     setLoading(true)
     
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      console.log('Current user:', user?.id)
 
       if (!user) {
         toast.error('Unauthorized - Anda harus login')
@@ -159,46 +150,36 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
         is_for_rent: data.is_for_rent,
         photo_url: data.photo_url || null,
       }
-      console.log('Room payload:', roomPayload)
 
       let roomId = room?.id
       if (room) {
-        console.log('Updating existing room:', room.id)
         const { error } = await (supabase.from('rooms') as any)
           .update(roomPayload)
           .eq('id', room.id)
         if (error) { 
-          console.error('Error updating room:', error)
           toast.error('Gagal update ruangan: ' + error.message) 
           setLoading(false) 
           return 
         }
-        console.log('Room updated successfully')
       } else {
-        console.log('Creating new room')
         const { data: newRoom, error } = await (supabase.from('rooms') as any)
           .insert({ ...roomPayload, created_by: user.id })
           .select('id')
           .single()
         if (error || !newRoom) {
-          console.error('Error creating room:', error)
           toast.error(error?.message ?? 'Gagal membuat ruangan')
           setLoading(false)
           return
         }
         roomId = newRoom.id
-        console.log('New room created:', roomId)
       }
 
       if (data.is_for_rent && roomId) {
-        console.log('Saving rates for room:', roomId)
         for (const cat of USAGE_CATEGORIES) {
           const hourVal = data.rates[cat.value]?.rate_per_hour ?? ''
           const dayVal = data.rates[cat.value]?.rate_per_day ?? ''
           const rateHour = hourVal === '' ? null : parseFloat(hourVal)
           const rateDay = dayVal === '' ? null : parseFloat(dayVal)
-          
-          console.log(`Saving rate for ${cat.value}:`, { rateHour, rateDay })
           
           const { error: rateError } = await (supabase.from('room_rates') as any).upsert(
             { room_id: roomId, usage_category: cat.value, rate_per_hour: rateHour, rate_per_day: rateDay },
@@ -206,35 +187,24 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
           )
           
           if (rateError) {
-            console.error('Error saving rate for', cat.value, rateError)
             toast.error(`Gagal menyimpan tarif ${cat.label}: ${rateError.message}`)
             setLoading(false)
             return
           }
         }
-        console.log('All rates saved successfully')
       }
 
       toast.success(room ? 'Ruangan berhasil diperbarui' : 'Ruangan berhasil ditambahkan')
-      console.log('Form submission completed successfully')
       router.push('/admin/rooms')
       router.refresh()
       setLoading(false)
     } catch (err: any) {
-      console.error('Unexpected error in onSubmit:', err)
       toast.error('Terjadi kesalahan: ' + (err.message || 'Unknown error'))
       setLoading(false)
     }
   }
 
-  // Log form state for debugging
-  console.log('Form errors:', errors)
-  console.log('Form isValid:', isValid)
-  console.log('Form isDirty:', isDirty)
-  console.log('Loading state:', loading)
-
-  const onError = (err: any) => {
-    console.error('Form validation errors:', err)
+  const onError = () => {
     toast.error('Form tidak valid. Periksa field yang bertanda merah.')
   }
 
