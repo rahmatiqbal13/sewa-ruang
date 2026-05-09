@@ -9,7 +9,7 @@ export default async function AdminBookingsPage({
   const { status } = await searchParams
   const supabase = await createClient()
 
-  // Query bookings with users
+  // Fetch bookings
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase.from('bookings') as any)
     .select(`
@@ -23,28 +23,61 @@ export default async function AdminBookingsPage({
 
   const { data: bookingsData } = await query
 
-  // Get all booking IDs
+  // Get booking items for all bookings
   const bookingIds = (bookingsData || []).map((b: any) => b.id)
-
-  // Fetch booking items separately
+  
   let bookingItemsData: any[] = []
   if (bookingIds.length > 0) {
     const { data: items } = await (supabase.from('booking_items') as any)
       .select(`
-        id, booking_id, item_type, quantity,
-        room:room_id(id, name, room_code, building_id),
-        equipment:equipment_id(id, name, equipment_code)
+        id, booking_id, item_type, quantity, room_id, equipment_id
       `)
       .in('booking_id', bookingIds)
     
     bookingItemsData = items || []
   }
 
-  // Merge bookings with items
-  const bookings = (bookingsData || []).map((booking: any) => ({
-    ...booking,
-    booking_items: bookingItemsData.filter((item: any) => item.booking_id === booking.id)
-  }))
+  // Get rooms data
+  const roomIds = bookingItemsData
+    .filter((item: any) => item.room_id)
+    .map((item: any) => item.room_id)
+  
+  let roomsData: any[] = []
+  if (roomIds.length > 0) {
+    const { data: rooms } = await (supabase.from('rooms') as any)
+      .select('id, name, room_code')
+      .in('id', roomIds)
+    roomsData = rooms || []
+  }
+
+  // Get equipment data
+  const equipmentIds = bookingItemsData
+    .filter((item: any) => item.equipment_id)
+    .map((item: any) => item.equipment_id)
+  
+  let equipmentData: any[] = []
+  if (equipmentIds.length > 0) {
+    const { data: equipment } = await (supabase.from('equipment') as any)
+      .select('id, name, equipment_code')
+      .in('id', equipmentIds)
+    equipmentData = equipment || []
+  }
+
+  // Merge data
+  const bookings = (bookingsData || []).map((booking: any) => {
+    const items = bookingItemsData
+      .filter((item: any) => item.booking_id === booking.id)
+      .map((item: any) => {
+        if (item.item_type === 'room' && item.room_id) {
+          return { ...item, room: roomsData.find((r: any) => r.id === item.room_id) }
+        } else if (item.item_type === 'equipment' && item.equipment_id) {
+          return { ...item, equipment: equipmentData.find((e: any) => e.id === item.equipment_id) }
+        }
+        return item
+      })
+    
+    return { ...booking, booking_items: items }
+  })
 
   // Get counts for each status
   const { data: allBookings } = await (supabase.from('bookings') as any)
