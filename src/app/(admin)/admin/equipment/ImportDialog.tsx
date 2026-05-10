@@ -44,6 +44,8 @@ export function ImportDialog({
   const [isUndoing, setIsUndoing] = useState(false)
   const [isDeletingAll, setIsDeletingAll] = useState(false)
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
+  const [deleteAllError, setDeleteAllError] = useState<string | null>(null)
+  const [deleteAllSuccess, setDeleteAllSuccess] = useState<string | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [isUndone, setIsUndone] = useState(false)
 
@@ -125,15 +127,25 @@ export function ImportDialog({
     if (!onDeleteAll) return
 
     setIsDeletingAll(true)
+    setDeleteAllError(null)
     try {
+      console.log('ImportDialog - Calling onDeleteAll...')
       const deleteResult = await onDeleteAll()
+      console.log('ImportDialog - Delete result:', deleteResult)
+      
       if (deleteResult.success) {
         setShowDeleteAllConfirm(false)
-        // Refresh the page to show empty state
-        window.location.reload()
+        setDeleteAllSuccess(`Berhasil menghapus ${deleteResult.deletedCount || 0} data`)
+        // Refresh the page to show empty state after a short delay
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      } else {
+        setDeleteAllError(deleteResult.message || 'Gagal menghapus data')
       }
     } catch (error) {
       console.error('Delete all error:', error)
+      setDeleteAllError(error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus data')
     } finally {
       setIsDeletingAll(false)
     }

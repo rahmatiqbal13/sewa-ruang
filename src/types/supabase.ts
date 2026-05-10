@@ -1,9 +1,9 @@
-export type UserRole = 'admin' | 'staff' | 'borrower'
+export type UserRole = 'admin' | 'staff' | 'borrower' | 'super_admin'
 export type AssetCategory = 'room' | 'equipment'
 export type AssetCondition = 'good' | 'needs_repair' | 'damaged' | 'lost'
 export type BookingStatus = 'pending' | 'approved' | 'rejected' | 'paid' | 'completed' | 'cancelled'
-export type PaymentMethod = 'online' | 'manual_cash' | 'manual_transfer'
-export type PaymentStatus = 'pending' | 'paid' | 'failed'
+export type PaymentMethod = 'online' | 'manual_cash' | 'manual_transfer' | 'refund'
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled'
 export type ReturnCondition = 'good' | 'minor_damage' | 'major_damage' | 'lost'
 export type InventoryCondition = 'good' | 'needs_repair' | 'damaged'
 export type NotificationChannel = 'email' | 'whatsapp' | 'telegram'
@@ -47,6 +47,63 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['buildings']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['buildings']['Insert']>
       }
+      rooms: {
+        Row: {
+          id: string
+          name: string
+          room_code: string
+          building_id: string
+          floor: number
+          capacity: number
+          room_type: string
+          base_price: number
+          is_active: boolean
+          is_for_rent: boolean
+          photo_url: string | null
+          description: string | null
+          facilities: string[] | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['rooms']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['rooms']['Insert']>
+      }
+      equipment: {
+        Row: {
+          id: string
+          name: string
+          equipment_code: string
+          category: string
+          merk: string | null
+          description: string | null
+          current_condition: string
+          ketersediaan: string
+          status_tindakan: string
+          storage_room_id: string | null
+          current_location: string | null
+          sumber: string | null
+          is_active: boolean
+          photo_url: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['equipment']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['equipment']['Insert']>
+      }
+      room_inventories: {
+        Row: {
+          id: string
+          name: string
+          inventory_code: string
+          category: string
+          room_id: string
+          quantity: number
+          condition: string
+          is_active: boolean
+          notes: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['room_inventories']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['room_inventories']['Insert']>
+      }
       assets: {
         Row: {
           id: string
@@ -78,9 +135,11 @@ export interface Database {
           purpose: string
           start_datetime: string
           end_datetime: string
+          actual_end_datetime: string | null
           total_amount: number
           snapshot_rate: Record<string, unknown>
           extension_count: number
+          admin_notes: string | null
           created_at: string
         }
         Insert: Omit<Database['public']['Tables']['bookings']['Row'], 'id' | 'reference_no' | 'created_at'>
@@ -90,6 +149,35 @@ export interface Database {
         Row: { id: string; booking_id: string; asset_id: string }
         Insert: Omit<Database['public']['Tables']['booking_assets']['Row'], 'id'>
         Update: never
+      }
+      booking_items: {
+        Row: {
+          id: string
+          booking_id: string
+          item_type: 'room' | 'equipment'
+          room_id: string | null
+          equipment_id: string | null
+          quantity: number
+          rate_per_hour: number | null
+          rate_per_day: number | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['booking_items']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['booking_items']['Insert']>
+      }
+      booking_early_returns: {
+        Row: {
+          id: string
+          booking_id: string
+          planned_end_datetime: string
+          actual_end_datetime: string
+          refund_amount: number
+          notes: string | null
+          status: 'pending' | 'refund_pending' | 'completed' | 'cancelled'
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['booking_early_returns']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['booking_early_returns']['Insert']>
       }
       booking_agreements: {
         Row: {
@@ -159,6 +247,9 @@ export interface Database {
           condition: ReturnCondition
           notes: string | null
           recorded_by: string
+          is_early_return: boolean
+          refund_amount: number | null
+          photo_url: string | null
           created_at: string
         }
         Insert: Omit<Database['public']['Tables']['returns']['Row'], 'id' | 'created_at'>

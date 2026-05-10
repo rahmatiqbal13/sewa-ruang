@@ -583,21 +583,38 @@ export async function undoImportEquipment(equipmentIds: string[]) {
 export async function deleteAllEquipment() {
   try {
     const supabase = await createClient()
+    // Create direct service role client to bypass RLS
+    const serviceRoleClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const serviceSb = serviceRoleClient as any
 
     // Get count first for confirmation message
     const { count } = await sb
       .from('equipment')
       .select('*', { count: 'exact', head: true })
 
-    // Delete all equipment_rates first (foreign key constraint)
-    await sb.from('equipment_rates').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    // Delete all equipment_rates first (foreign key constraint) using service role
+    const { error: ratesError } = await serviceSb.from('equipment_rates').delete().gte('created_at', '1970-01-01')
+    
+    if (ratesError) {
+      console.error('Error deleting equipment_rates:', ratesError)
+      return { 
+        success: false, 
+        message: `Gagal menghapus tarif: ${ratesError.message}`,
+        deletedCount: 0 
+      }
+    }
 
-    // Delete all equipment
-    const { error } = await sb.from('equipment').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    // Delete all equipment using service role
+    const { error } = await serviceSb.from('equipment').delete().gte('created_at', '1970-01-01')
 
     if (error) {
+      console.error('Error deleting equipment:', error)
       return { 
         success: false, 
         message: `Gagal menghapus data: ${error.message}`,
@@ -611,6 +628,7 @@ export async function deleteAllEquipment() {
       deletedCount: count || 0 
     }
   } catch (error) {
+    console.error('Delete all error:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return { 
       success: false, 

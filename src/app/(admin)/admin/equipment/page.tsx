@@ -144,12 +144,12 @@ export default async function EquipmentPage({
   if (todayOnly === 'true') {
     availabilityQuery = availabilityQuery.gte('created_at', todayIso)
   }
-  const { data: allEquipment } = await availabilityQuery
+  const { data: availabilityData } = await availabilityQuery
 
   const availabilityCounts = {
-    'tersedia': (allEquipment as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'tersedia').length ?? 0,
-    'digunakan': (allEquipment as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'digunakan').length ?? 0,
-    'hilang': (allEquipment as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'hilang').length ?? 0,
+    'tersedia': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'tersedia').length ?? 0,
+    'digunakan': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'digunakan').length ?? 0,
+    'hilang': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'hilang').length ?? 0,
   }
 
   // Check for duplicate names (from all equipment)
@@ -177,8 +177,8 @@ export default async function EquipmentPage({
 
   return (
     <EquipmentList
-      equipment={data || []}
-      allEquipment={allEquipment || []}
+      equipment={equipment || []}
+      allEquipment={allEquipmentForExport || []}
       totalItems={totalCount || 0}
       currentPage={currentPage}
       totalPages={Math.ceil((totalCount || 0) / ITEMS_PER_PAGE)}
