@@ -1,12 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Settings, BellRing, CreditCard, Shield } from 'lucide-react'
+import { Settings, BellRing, CreditCard, Shield, Building2 } from 'lucide-react'
+import { InstitutionProfileForm } from './InstitutionProfileForm'
+import { getInstitutionProfile } from './institutionActions'
 
-const sections = [
+const otherSections = [
   {
     icon: BellRing,
     title: 'Notifikasi',
     description: 'Konfigurasi channel notifikasi (Email, WhatsApp, Telegram) dan template pesan otomatis.',
-    status: 'Segera Hadir',
+    status: 'Aktif',
+    href: '/admin/notifications',
   },
   {
     icon: CreditCard,
@@ -22,7 +25,9 @@ const sections = [
   },
 ]
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const institutionProfile = await getInstitutionProfile()
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -30,24 +35,39 @@ export default function SettingsPage() {
         <p className="text-muted-foreground text-sm">Konfigurasi sistem Sewa Ruang & Alat</p>
       </div>
 
-      <div className="grid gap-4">
-        {sections.map((s) => (
-          <Card key={s.title} className="opacity-70">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <s.icon className="h-4 w-4" />
-                {s.title}
-                <span className="ml-auto text-xs font-normal text-muted-foreground border rounded px-2 py-0.5">
-                  {s.status}
-                </span>
-              </CardTitle>
-              <CardDescription>{s.description}</CardDescription>
-            </CardHeader>
-            <CardContent />
-          </Card>
-        ))}
+      {/* Institution Profile Section */}
+      <InstitutionProfileForm initialData={institutionProfile} />
+
+      {/* Other Settings Sections */}
+      <div className="space-y-4 pt-6 border-t">
+        <h2 className="text-lg font-semibold">Pengaturan Lainnya</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {otherSections.map((s) => (
+            <Card 
+              key={s.title} 
+              className={s.href ? "cursor-pointer hover:shadow-md transition-shadow" : "opacity-70"}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <s.icon className="h-4 w-4" />
+                  {s.title}
+                  <span className={`ml-auto text-xs font-normal border rounded px-2 py-0.5 ${
+                    s.status === 'Aktif' 
+                      ? 'bg-green-100 text-green-700 border-green-200' 
+                      : 'text-muted-foreground'
+                  }`}>
+                    {s.status}
+                  </span>
+                </CardTitle>
+                <CardDescription>{s.description}</CardDescription>
+              </CardHeader>
+              <CardContent />
+            </Card>
+          ))}
+        </div>
       </div>
 
+      {/* System Info */}
       <Card className="border-zinc-200 bg-zinc-50">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">

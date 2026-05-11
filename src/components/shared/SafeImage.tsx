@@ -1,19 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, ReactNode } from 'react'
 import { ImageIcon } from 'lucide-react'
 
-interface SafeImageProps {
-  src: string
+export interface SafeImageProps {
+  src: string | null | undefined
   alt: string
   className?: string
   fallbackClassName?: string
+  fallback?: ReactNode
 }
 
-export function SafeImage({ src, alt, className = '', fallbackClassName = '' }: SafeImageProps) {
+export function SafeImage({ src, alt, className = '', fallbackClassName = '', fallback }: SafeImageProps) {
   const [error, setError] = useState(false)
 
-  if (error) {
+  if (error || !src) {
+    if (fallback) {
+      return <>{fallback}</>
+    }
     return (
       <div className={`flex items-center justify-center bg-slate-100 ${fallbackClassName || className}`}>
         <ImageIcon className="h-8 w-8 text-slate-300" />

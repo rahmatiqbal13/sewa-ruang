@@ -4,17 +4,33 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { AdminSidebar } from './AdminSidebar'
 import { NotificationBell } from './NotificationBell'
-import { Building2, Menu, ChevronDown, User, Shield } from 'lucide-react'
+import { Building2, Menu, ChevronDown, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SafeImage } from '@/components/shared/SafeImage'
+
+interface InstitutionProfile {
+  id?: string
+  name: string
+  short_name: string
+  logo_url: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  description: string | null
+  operating_hours: string | null
+}
 
 export function AdminShell({
   children,
   userName,
   userRole,
+  institution,
 }: {
   children: React.ReactNode
   userName?: string
   userRole?: string
+  institution?: InstitutionProfile | null
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
@@ -33,6 +49,8 @@ export function AdminShell({
     staff: 'bg-blue-100 text-blue-700 border-blue-200',
   }
 
+  const displayName = institution?.short_name || institution?.name || 'RentSpace'
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Mobile Overlay */}
@@ -48,7 +66,11 @@ export function AdminShell({
         'fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out lg:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
-        <AdminSidebar onClose={() => setSidebarOpen(false)} userRole={userRole} />
+        <AdminSidebar 
+          onClose={() => setSidebarOpen(false)} 
+          userRole={userRole}
+          institution={institution}
+        />
       </div>
 
       {/* Main area */}
@@ -63,22 +85,46 @@ export function AdminShell({
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-3 font-bold text-lg flex-1">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg blur opacity-40" />
-              <div className="relative h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Building2 className="h-4 w-4 text-white" />
+            {institution?.logo_url ? (
+              <SafeImage
+                src={institution.logo_url}
+                alt={institution.name}
+                className="h-8 w-auto"
+                fallback={
+                  <div className="h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <Building2 className="h-4 w-4 text-white" />
+                  </div>
+                }
+              />
+            ) : (
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg blur opacity-40" />
+                <div className="relative h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-white" />
+                </div>
               </div>
-            </div>
-            RentSpace
+            )}
+            <span className="truncate">{displayName}</span>
           </div>
           <NotificationBell />
         </header>
 
         {/* Desktop top bar */}
         <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between px-8 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-sm text-slate-500 font-medium">Sistem aktif dan berjalan normal</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-sm text-slate-500 font-medium">Sistem aktif dan berjalan normal</span>
+            </div>
+            {institution && (
+              <div className="h-4 w-px bg-slate-300 mx-2" />
+            )}
+            {institution && (
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <Building2 className="h-4 w-4 text-slate-400" />
+                <span className="font-medium">{institution.name}</span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-4">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import * as nodemailer from 'nodemailer'
+import { getInstitutionProfile } from '@/lib/institution'
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,6 +57,9 @@ export async function POST(req: NextRequest) {
 
     const cfg = emailConfig.config
 
+    // Get institution profile
+    const institution = await getInstitutionProfile()
+
     // Create email transporter dengan config dari database
     const transporter = nodemailer.createTransport({
       host: cfg.smtp_host,
@@ -70,9 +74,30 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    // Send email
-    const fromName = cfg.from_name || 'Sport Center UNESA'
+    // Build email header with institution info
+    const fromName = cfg.from_name || institution?.name || 'Sport Center UNESA'
     const fromEmail = cfg.from_email || cfg.smtp_user
+    
+    // Build institution header HTML
+    const logoHtml = institution?.logo_url 
+      ? `<img src="${institution.logo_url}" alt="${institution.name}" style="max-height: 60px; max-width: 200px;" />`
+      : `<h1 style="color: #1e40af; margin: 0; font-size: 24px;">${institution?.name || 'Sport Center UNESA'}</h1>`
+    
+    // Build footer with contact info
+    const contactParts = []
+    if (institution?.address) contactParts.push(institution.address)
+    if (institution?.phone) contactParts.push(`Telp: ${institution.phone}`)
+    if (institution?.email) contactParts.push(`Email: ${institution.email}`)
+    if (institution?.website) contactParts.push(`Web: ${institution.website}`)
+    
+    const footerHtml = contactParts.length > 0 
+      ? `<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; line-height: 1.6;">
+          <strong>${institution?.name || 'Sport Center UNESA'}</strong><br/>
+          ${contactParts.join('<br/>')}
+         </div>`
+      : `<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px;">
+          Email ini dikirim dari sistem ${fromName}. Jika Anda memiliki pertanyaan, silakan hubungi admin.
+         </div>`
 
     await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
@@ -80,15 +105,27 @@ export async function POST(req: NextRequest) {
       subject,
       text: message,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1e40af;">${fromName}</h2>
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <pre style="white-space: pre-wrap; font-family: inherit;">${message}</pre>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+          <!-- Header -->
+          <div style="background: #f8fafc; padding: 20px; border-bottom: 3px solid #1e40af; text-align: center;">
+            ${logoHtml}
+            ${institution?.short_name ? `<p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">${institution.short_name}</p>` : ''}
           </div>
-          <p style="color: #64748b; font-size: 12px;">
-            Email ini dikirim dari sistem ${fromName}. Jika Anda memiliki pertanyaan, 
-            silakan hubungi admin.
-          </p>
+          
+          <!-- Content -->
+          <div style="padding: 25px; background: #ffffff;">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1e40af;">
+              <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; color: #334155;">${message}</pre>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div style="background: #f8fafc; padding: 20px; border-top: 1px solid #e2e8f0;">
+            ${footerHtml}
+            <p style="color: #94a3b8; font-size: 11px; margin-top: 15px; text-align: center;">
+              © ${new Date().getFullYear()} ${institution?.name || 'Sport Center UNESA'}. All rights reserved.
+            </p>
+          </div>
         </div>
       `,
     })

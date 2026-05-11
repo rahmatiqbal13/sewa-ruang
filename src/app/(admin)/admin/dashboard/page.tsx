@@ -1,21 +1,30 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { 
   CalendarDays, CreditCard, Package, Clock, 
   TrendingUp, Users, ArrowUpRight, ArrowDownRight,
-  Activity
+  Activity, Building2
 } from 'lucide-react'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { formatDateTime, formatRupiah } from '@/lib/utils'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { SafeImage } from '@/components/shared/SafeImage'
+import { getInstitutionProfile } from '@/lib/institution'
 
 export const revalidate = 60
 
+// Server-side fetch institution profile
+async function getInstitution() {
+  return await getInstitutionProfile()
+}
+
 export default async function AdminDashboard() {
   const supabase = await createClient()
+  const institution = await getInstitution()
 
   const today = new Date()
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
@@ -98,6 +107,48 @@ export default async function AdminDashboard() {
 
   return (
     <div className="p-6 space-y-8">
+      {/* Institution Banner */}
+      {institution && (
+        <div className="bg-gradient-to-r from-blue-950 to-blue-800 rounded-xl p-6 text-white">
+          <div className="flex items-center gap-4">
+            {institution.logo_url ? (
+              <SafeImage
+                src={institution.logo_url}
+                alt={institution.name}
+                className="h-16 w-auto rounded-lg bg-white/10 p-2"
+                fallback={
+                  <div className="h-16 w-16 bg-white/20 rounded-lg flex items-center justify-center">
+                    <Building2 className="h-8 w-8 text-white" />
+                  </div>
+                }
+              />
+            ) : (
+              <div className="h-16 w-16 bg-white/20 rounded-lg flex items-center justify-center">
+                <Building2 className="h-8 w-8 text-white" />
+              </div>
+            )}
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold">{institution.name}</h2>
+              {institution.short_name && institution.short_name !== institution.name && (
+                <p className="text-blue-200">{institution.short_name}</p>
+              )}
+              {institution.description && (
+                <p className="text-sm text-blue-200 mt-1 max-w-2xl">{institution.description}</p>
+              )}
+            </div>
+            <Link 
+              href="/admin/settings"
+              className={cn(
+                buttonVariants({ variant: 'outline', size: 'sm' }),
+                'border-white/30 text-white hover:bg-white/10 bg-transparent'
+              )}
+            >
+              Edit Profil
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

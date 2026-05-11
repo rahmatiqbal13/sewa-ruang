@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Mail, MessageSquare, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { saveTemplate } from './templateActions'
 
 type Channel = 'email' | 'whatsapp' | 'telegram'
 
@@ -136,24 +136,21 @@ export function TemplateEditor({ templates }: { templates: Template[] }) {
 
   async function save() {
     setLoading(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
     const current = data[selectedEvent][activeChannel]
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('notification_templates') as any).upsert(
-      {
-        event_type: selectedEvent,
-        channel: activeChannel,
-        subject: activeChannel === 'email' ? current.subject : null,
-        body: current.body,
-        is_active: true,
-        updated_at: new Date().toISOString(),
-        updated_by: user?.id,
-      },
-      { onConflict: 'event_type,channel' }
-    )
-    if (error) toast.error('Gagal menyimpan: ' + error.message)
-    else toast.success('Template disimpan')
+    
+    const result = await saveTemplate({
+      event_type: selectedEvent,
+      channel: activeChannel,
+      subject: activeChannel === 'email' ? current.subject : null,
+      body: current.body,
+    })
+    
+    if (result.error) {
+      toast.error('Gagal menyimpan: ' + result.error)
+    } else {
+      toast.success('Template disimpan')
+    }
+    
     setLoading(false)
   }
 

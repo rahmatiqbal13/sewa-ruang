@@ -23,6 +23,7 @@ interface Props {
   value?: string | null
   onChange: (url: string | null) => void
   folder?: string
+  aspectRatio?: 'square' | 'video' | 'portrait' | 'auto'
 }
 
 // Helper function to extract path from Supabase storage URL
@@ -39,7 +40,13 @@ function extractStoragePath(url: string): string | null {
   }
 }
 
-export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
+export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio = 'auto' }: Props) {
+  const aspectRatioClass = {
+    square: 'aspect-square',
+    video: 'aspect-video',
+    portrait: 'aspect-[3/4]',
+    auto: 'h-52'
+  }
   const [uploading, setUploading] = useState(false)
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [urlValue, setUrlValue] = useState('')
@@ -202,7 +209,7 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
     <div className="space-y-2">
       {/* Preview */}
       {value && isValidUrl(value) ? (
-        <div className="relative w-full h-52 rounded-xl overflow-hidden border bg-zinc-50 flex items-center justify-center">
+        <div className={`relative w-full ${aspectRatioClass[aspectRatio]} rounded-xl overflow-hidden border bg-zinc-50 flex items-center justify-center`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="Foto" className="object-contain w-full h-full p-3" />
           <button
@@ -214,7 +221,7 @@ export function PhotoUpload({ value, onChange, folder = 'general' }: Props) {
           </button>
         </div>
       ) : (
-        <div className="w-full h-44 rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+        <div className={`w-full ${aspectRatio === 'auto' ? 'h-44' : aspectRatioClass[aspectRatio]} rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50 flex flex-col items-center justify-center gap-2 text-muted-foreground`}>
           {uploading ? (
             <>
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />

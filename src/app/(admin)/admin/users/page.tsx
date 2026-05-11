@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -9,6 +10,7 @@ import { DeleteUserButton } from './DeleteUserButton'
 import { ResetPasswordButton } from './ResetPasswordButton'
 import { AddUserDialog } from './AddUserDialog'
 import { formatDateTime } from '@/lib/utils'
+import { isSuperAdmin } from '@/lib/permissions'
 
 const ROLE_BADGE: Record<string, { label: string; className: string }> = {
   super_admin: { label: 'Super Admin', className: 'bg-purple-100 text-purple-800 border border-purple-200' },
@@ -20,12 +22,14 @@ const ROLE_BADGE: Record<string, { label: string; className: string }> = {
 export default async function UsersPage() {
   const supabase = await createClient()
   const { data: { user: currentUser } } = await supabase.auth.getUser()
+  
+  if (!currentUser) redirect('/login')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
   const [{ data: currentProfile }, { data: users }] = await Promise.all([
-    sb.from('users').select('role').eq('id', currentUser!.id).single() as Promise<{ data: { role: string } | null }>,
+    sb.from('users').select('role').eq('id', currentUser.id).single() as Promise<{ data: { role: string } | null }>,
     sb.from('users')
       .select('id, name, email, role, phone, institution, class_division, identity_number, telegram_username, created_at')
       .order('role').order('name') as Promise<{
@@ -37,7 +41,12 @@ export default async function UsersPage() {
       }>,
   ])
 
-  const isSuperAdmin = currentProfile?.role === 'super_admin'
+  // Only super_admin can access user management
+  if (!isSuperAdmin(currentProfile?.role)) {
+    redirect('/admin/dashboard')
+  }
+
+  const userIsSuperAdmin = true
 
   return (
     <div className="p-6 space-y-6">
@@ -45,13 +54,13 @@ export default async function UsersPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             Pengguna
-            {isSuperAdmin && <ShieldCheck className="h-5 w-5 text-purple-600" />}
+            {userIsSuperAdmin && <ShieldCheck className="h-5 w-5 text-purple-600" />}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {isSuperAdmin ? 'Kelola semua akun — Super Admin mode aktif' : 'Kelola akun dan peran pengguna sistem'}
+            {userIsSuperAdmin ? 'Kelola semua akun — Super Admin mode aktif' : 'Kelola akun dan peran pengguna sistem'}
           </p>
         </div>
-        {isSuperAdmin && <AddUserDialog />}
+        {userIsSuperAdmin && <AddUserDialog />}
       </div>
 
       <Card>
@@ -69,11 +78,11 @@ export default async function UsersPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>WhatsApp</TableHead>
                 <TableHead>Instansi / Kelas</TableHead>
-                {isSuperAdmin && <TableHead>No. Identitas</TableHead>}
-                {isSuperAdmin && <TableHead>Telegram</TableHead>}
+                {userIsSuperAdmin && <TableHead>No. Identitas</TableHead>}
+                {userIsSuperAdmin && <TableHead>Telegram</TableHead>}
                 <TableHead>Terdaftar</TableHead>
                 <TableHead>Role</TableHead>
-                {isSuperAdmin && <TableHead className="text-right">Aksi</TableHead>}
+                {userIsSuperAdmin && <TableHead className="text-right">Aksi</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -99,12 +108,12 @@ export default async function UsersPage() {
                       {u.institution ?? '-'}
                       {u.class_division && <span className="block text-xs">{u.class_division}</span>}
                     </TableCell>
-                    {isSuperAdmin && (
+                    {userIsSuperAdmin && (
                       <TableCell className="text-sm font-mono">
                         {u.identity_number ?? <span className="text-muted-foreground">-</span>}
                       </TableCell>
                     )}
-                    {isSuperAdmin && (
+                    {userIsSuperAdmin && (
                       <TableCell className="text-sm">
                         {u.telegram_username ?? <span className="text-muted-foreground">-</span>}
                       </TableCell>
@@ -118,10 +127,10 @@ export default async function UsersPage() {
                           {badge?.label ?? u.role}
                         </span>
                       ) : (
-                        <ChangeRoleButton userId={u.id} currentRole={u.role} isSuperAdmin={isSuperAdmin} />
+                        <ChangeRoleButton userId={u.id} currentRole={u.role} isSuperAdmin={userIsSuperAdmin} />
                       )}
                     </TableCell>
-                    {isSuperAdmin && (
+                    {userIsSuperAdmin && (
                       <TableCell>
                         {!isSelf && (
                           <div className="flex items-center gap-1 justify-end">

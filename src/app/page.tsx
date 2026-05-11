@@ -3,9 +3,11 @@ import { buttonVariants } from '@/components/ui/button'
 import {
   Building2, CalendarDays, CreditCard, QrCode,
   Shield, Users, ArrowRight, CheckCircle2, ChevronRight,
-  Sparkles, BarChart3, Clock, Zap
+  Sparkles, BarChart3, Clock, Zap, Phone, Mail, MapPin
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@supabase/supabase-js'
+import { SafeImage } from '@/components/shared/SafeImage'
 
 const features = [
   { 
@@ -66,21 +68,72 @@ const stats = [
   { value: '3', label: 'Peran Pengguna', icon: Users },
 ]
 
-export default function HomePage() {
+// Server-side fetch institution profile
+async function getInstitutionProfile() {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return null
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+    
+    const { data, error } = await supabase
+      .from('institution_profile')
+      .select('*')
+      .single()
+    
+    if (error || !data) {
+      return null
+    }
+    
+    return data
+  } catch (error) {
+    console.error('Error fetching institution profile:', error)
+    return null
+  }
+}
+
+export default async function HomePage() {
+  const institution = await getInstitutionProfile()
+  const currentYear = new Date().getFullYear()
+  
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl blur-lg opacity-40" />
-              <div className="relative h-9 w-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Building2 className="h-4 w-4 text-white" />
+          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            {institution?.logo_url ? (
+              <SafeImage
+                src={institution.logo_url}
+                alt={institution.name}
+                className="h-9 w-auto"
+                fallback={
+                  <div className="h-9 w-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-white" />
+                  </div>
+                }
+              />
+            ) : (
+              <div className="h-9 w-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <Building2 className="h-5 w-5 text-white" />
               </div>
+            )}
+            <div className="hidden sm:block">
+              <span className="font-bold text-lg text-slate-900">{institution?.short_name || institution?.name || 'RentSpace'}</span>
+              {institution?.short_name && institution?.name && institution.short_name !== institution.name && (
+                <p className="text-xs text-slate-500 -mt-1">{institution.name}</p>
+              )}
             </div>
-            <span className="font-bold text-xl text-slate-900">RentSpace</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-2">
             <Link href="/catalog" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-slate-600 hover:text-slate-900')}>
               Katalog
@@ -113,7 +166,9 @@ export default function HomePage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-white/80 border border-indigo-100 shadow-sm shadow-indigo-500/10 text-indigo-600 text-sm px-4 py-2 rounded-full mb-8 fade-in">
               <Sparkles className="h-4 w-4" />
-              <span className="font-medium">Sistem Manajemen Aset Terintegrasi</span>
+              <span className="font-medium">
+                {institution?.short_name ? `Sistem ${institution.short_name}` : 'Sistem Manajemen Aset Terintegrasi'}
+              </span>
             </div>
             
             {/* Title */}
@@ -127,8 +182,7 @@ export default function HomePage() {
             
             {/* Subtitle */}
             <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed slide-up" style={{ animationDelay: '0.1s' }}>
-              Ganti catatan manual dan grup WhatsApp dengan sistem digital terpusat.
-              Kelola aset, proses peminjaman, dan pantau penggunaan dalam satu platform modern.
+              {institution?.description || 'Ganti catatan manual dan grup WhatsApp dengan sistem digital terpusat. Kelola aset, proses peminjaman, dan pantau penggunaan dalam satu platform modern.'}
             </p>
             
             {/* CTA Buttons */}
@@ -177,7 +231,7 @@ export default function HomePage() {
         <section className="relative py-16 bg-white border-y border-slate-100">
           <div className="max-w-7xl mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat, i) => (
+              {stats.map((stat) => (
                 <div key={stat.label} className="text-center group">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 mb-4 group-hover:scale-110 transition-transform">
                     <stat.icon className="h-6 w-6 text-indigo-600" />
@@ -206,7 +260,7 @@ export default function HomePage() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((f, i) => (
+              {features.map((f) => (
                 <div 
                   key={f.title} 
                   className={cn(
@@ -321,26 +375,85 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-300 py-12">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <span className="font-bold text-lg text-white">RentSpace</span>
-                <p className="text-sm text-slate-400">Sistem Manajemen Peminjaman</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            {/* Institution Info */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                {institution?.logo_url ? (
+                  <SafeImage
+                    src={institution.logo_url}
+                    alt={institution.name}
+                    className="h-10 w-auto"
+                    fallback={
+                      <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <Building2 className="h-5 w-5 text-white" />
+                      </div>
+                    }
+                  />
+                ) : (
+                  <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-white" />
+                  </div>
+                )}
+                <div>
+                  <span className="font-bold text-lg text-white">{institution?.name || 'RentSpace'}</span>
+                  <p className="text-sm text-slate-400">Sistem Manajemen Peminjaman</p>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-6 text-sm">
-              <Link href="/catalog" className="hover:text-white transition-colors">Katalog</Link>
-              <Link href="/login" className="hover:text-white transition-colors">Masuk</Link>
-              <Link href="/register" className="hover:text-white transition-colors">Daftar</Link>
+            {/* Contact Info */}
+            <div>
+              <h4 className="font-semibold text-white mb-3">Kontak Kami</h4>
+              <div className="space-y-2 text-sm">
+                {institution?.address && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 mt-0.5 text-indigo-400 shrink-0" />
+                    <span>{institution.address}</span>
+                  </div>
+                )}
+                {institution?.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-indigo-400 shrink-0" />
+                    <a href={`tel:${institution.phone}`} className="hover:text-white transition-colors">
+                      {institution.phone}
+                    </a>
+                  </div>
+                )}
+                {institution?.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-indigo-400 shrink-0" />
+                    <a href={`mailto:${institution.email}`} className="hover:text-white transition-colors">
+                      {institution.email}
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
-            
-            <p className="text-sm text-slate-500">
-              &copy; {new Date().getFullYear()} RentSpace. All rights reserved.
-            </p>
+
+            {/* Navigation */}
+            <div>
+              <h4 className="font-semibold text-white mb-3">Navigasi</h4>
+              <div className="flex flex-col gap-2 text-sm">
+                <Link href="/catalog" className="hover:text-white transition-colors">Katalog</Link>
+                <Link href="/login" className="hover:text-white transition-colors">Masuk</Link>
+                <Link href="/register" className="hover:text-white transition-colors">Daftar</Link>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-slate-800 pt-6 text-center text-sm text-slate-500">
+            <p>&copy; {currentYear} {institution?.name || 'RentSpace'}. All rights reserved.</p>
+            {institution?.website && (
+              <a 
+                href={institution.website}
+                target="_blank"
+                rel="noopener noreferrer" 
+                className="text-indigo-400 hover:text-indigo-300 transition-colors mt-1 inline-block"
+              >
+                {institution.website}
+              </a>
+            )}
           </div>
         </div>
       </footer>

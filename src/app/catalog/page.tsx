@@ -1,15 +1,62 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { CatalogClient } from './CatalogClient'
+import { PublicHeader, PublicFooter } from '@/components/shared/PublicLayout'
 
 export const revalidate = 30
 
+// Server-side fetch institution profile
+async function getInstitutionProfile() {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return null
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+    
+    const { data, error } = await supabase
+      .from('institution_profile')
+      .select('*')
+      .single()
+    
+    if (error || !data) {
+      return null
+    }
+    
+    return data
+  } catch (error) {
+    console.error('Error fetching institution profile:', error)
+    return null
+  }
+}
+
 export default async function CatalogPage() {
-  const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase configuration')
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+  
   const sb = supabase as any
 
-  // Query dari tabel rooms (baru) dan equipment (baru)
-  const [{ data: buildingsData }, { data: roomsData }, { data: equipmentData }] = await Promise.all([
+  // Fetch institution profile and data in parallel
+  const [institution, { data: buildingsData }, { data: roomsData }, { data: equipmentData }] = await Promise.all([
+    getInstitutionProfile(),
     sb.from('buildings')
       .select('id, name, code')
       .eq('is_active', true)
@@ -30,26 +77,27 @@ export default async function CatalogPage() {
       .order('name') as Promise<{ data: any[] | null }>,
   ])
 
-  console.log('Buildings data:', buildingsData?.length || 0, 'items')
-  console.log('Rooms data:', roomsData?.length || 0, 'items')
-  console.log('Equipment data:', equipmentData?.length || 0, 'items')
-
   // Transform data buildings untuk compatibility dengan CatalogClient
-  // Gabungkan buildings dengan rooms
-  const transformedBuildings = buildingsData?.map(building => ({
+  const transformedBuildings = buildingsData?.map((building: any) => ({
     id: building.id,
     name: building.name,
     code: building.code,
-    assets: roomsData?.filter(room => room.building_id === building.id) || []
-  })).filter(b => b.assets.length > 0) || []
-
-  console.log('Transformed buildings:', transformedBuildings.length, 'items')
-  console.log('Sample building:', transformedBuildings[0])
+    assets: roomsData?.filter((room: any) => room.building_id === building.id) || []
+  })).filter((b: any) => b.assets.length > 0) || []
 
   return (
-    <CatalogClient
-      buildings={transformedBuildings}
-      equipment={equipmentData ?? []}
-    />
+    <div className="min-h-screen bg-zinc-50 flex flex-col">
+      <PublicHeader />
+      
+      <main className="flex-1">
+        <CatalogClient
+          buildings={transformedBuildings}
+          equipment={equipmentData ?? []}
+          institution={institution}
+        />
+      </main>
+      
+      <PublicFooter />
+    </div>
   )
 }

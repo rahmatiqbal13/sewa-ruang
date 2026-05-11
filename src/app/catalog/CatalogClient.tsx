@@ -32,7 +32,24 @@ interface EquipmentRow {
   equipment_rates: EquipmentRate[] | null
 }
 
-interface Props { buildings: BuildingRow[]; equipment: EquipmentRow[] }
+interface InstitutionProfile {
+  id?: string
+  name: string
+  short_name: string
+  logo_url: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  description: string | null
+  operating_hours: string | null
+}
+
+interface Props { 
+  buildings: BuildingRow[]
+  equipment: EquipmentRow[]
+  institution: InstitutionProfile | null
+}
 
 // Helper untuk mendapatkan harga per kategori
 function getRateByCategory(rates: EquipmentRate[] | null | undefined, category: string): number | null {
@@ -99,7 +116,7 @@ function Paginator({ page, total, onChange }: { page: number; total: number; onC
   )
 }
 
-export function CatalogClient({ buildings, equipment }: Props) {
+export function CatalogClient({ buildings, equipment, institution }: Props) {
   const [roomSearch, setRoomSearch] = useState('')
   const [roomBuilding, setRoomBuilding] = useState('all')
   const [equipSearch, setEquipSearch] = useState('')
@@ -169,25 +186,15 @@ export function CatalogClient({ buildings, equipment }: Props) {
 
   return (
     <div className="min-h-screen bg-zinc-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-primary">
-            <Building2 className="h-5 w-5" />
-            Sewa Ruang & Alat
-          </div>
-          <div className="flex gap-2">
-            <Link href="/login" className={buttonVariants({ variant: 'outline' })}>Masuk</Link>
-            <Link href="/register" className={buttonVariants()}>Daftar</Link>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Stats */}
       <div className="bg-gradient-to-br from-blue-950 to-blue-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-10">
-          <h1 className="text-3xl font-bold mb-1">Katalog Ruang & Alat</h1>
-          <p className="text-blue-200 mb-8">Temukan dan pesan ruang atau alat yang tersedia</p>
+          <h1 className="text-3xl font-bold mb-1">
+            {institution?.name || 'Katalog Ruang & Alat'}
+          </h1>
+          <p className="text-blue-200 mb-8">
+            {institution?.description || 'Temukan dan pesan ruang atau alat yang tersedia'}
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { label: 'Gedung', value: stats.gedung, icon: Building2, bg: 'bg-blue-700/50' },
