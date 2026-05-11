@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react' // useRef dipakai di printRef (print preview)
 import QRCode from 'react-qr-code'
 import { Button } from '@/components/ui/button'
 import { Printer, DoorOpen, Package, Boxes, CheckSquare, Square } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/client'
+import { PRINT_FORMATS, PrintFormat, buildPrintHtml, executePrint } from '../printUtils'
 
 interface Room {
   id: string
@@ -39,6 +40,7 @@ export default function BatchQRClientPage() {
   const [loading, setLoading] = useState(true)
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState('rooms')
+  const [printFormat, setPrintFormat] = useState<PrintFormat>('a4-3col')
   const printRef = useRef<HTMLDivElement>(null)
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
@@ -191,92 +193,7 @@ export default function BatchQRClientPage() {
   function handlePrint() {
     const items = getSelectedItems()
     if (items.length === 0) return
-
-    const htmlContent = `<!DOCTYPE html>
-<html>
-  <head>
-    <title>Label QR Code - ${items.length} Item</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: 'Segoe UI', Arial, sans-serif; background: white; padding: 20px; }
-      .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
-      .header h1 { font-size: 28px; color: #1e293b; margin-bottom: 8px; }
-      .header p { color: #64748b; font-size: 14px; }
-      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-      .label { border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; page-break-inside: avoid; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-      .label-type { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; display: inline-block; }
-      .label-type.room { background: #f3e8ff; color: #7c3aed; }
-      .label-type.equipment { background: #dbeafe; color: #2563eb; }
-      .label-type.inventory { background: #fef3c7; color: #d97706; }
-      .label-qr { background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 16px; display: inline-block; }
-      .label-qr img { width: 120px; height: 120px; }
-      .label-code { font-family: 'Courier New', monospace; font-size: 13px; color: #64748b; background: #f8fafc; padding: 4px 12px; border-radius: 4px; margin-bottom: 8px; display: inline-block; font-weight: 600; }
-      .label-name { font-size: 15px; font-weight: 700; color: #1e293b; line-height: 1.4; margin-bottom: 4px; min-height: 42px; display: flex; align-items: center; justify-content: center; }
-      .label-meta { font-size: 12px; color: #94a3b8; font-style: italic; }
-      @media print {
-        @page { size: A4; margin: 15mm; }
-        body { padding: 0; }
-        .header { margin-bottom: 20px; border-bottom-color: #000; }
-        .grid { grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .label { box-shadow: none; border-color: #000; break-inside: avoid; }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="header">
-      <h1>Label QR Code</h1>
-      <p>Total: ${items.length} item | RentSpace System</p>
-    </div>
-    <div class="grid">
-      ${items.map(item => `
-        <div class="label">
-          <div class="label-type ${item.type}">
-            ${item.type === 'room' ? 'Ruangan' : item.type === 'equipment' ? 'Alat' : 'Inventaris'}
-          </div>
-          <div class="label-qr">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(item.url)}&size=120x120" alt="QR" />
-          </div>
-          ${item.code ? `<div class="label-code">${item.code}</div>` : ''}
-          <div class="label-name">${item.name}</div>
-          ${item.meta ? `<div class="label-meta">${item.meta}</div>` : ''}
-        </div>
-      `).join('')}
-    </div>
-  </body>
-</html>`
-
-    // Gunakan hidden iframe — tidak memerlukan izin popup
-    const iframe = document.createElement('iframe')
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;'
-    document.body.appendChild(iframe)
-
-    const doc = iframe.contentDocument!
-    doc.open()
-    doc.write(htmlContent)
-    doc.close()
-
-    // Tunggu semua gambar QR selesai dimuat sebelum print
-    const images = Array.from(doc.querySelectorAll('img'))
-    const printAndCleanup = () => {
-      iframe.contentWindow?.focus()
-      iframe.contentWindow?.print()
-      setTimeout(() => {
-        if (document.body.contains(iframe)) document.body.removeChild(iframe)
-      }, 2000)
-    }
-
-    if (images.length === 0) {
-      printAndCleanup()
-    } else {
-      let loaded = 0
-      const onDone = () => { if (++loaded === images.length) printAndCleanup() }
-      images.forEach(img => {
-        if (img.complete) onDone()
-        else { img.onload = onDone; img.onerror = onDone }
-      })
-      // Fallback: cetak paksa setelah 8 detik jika gambar lambat
-      setTimeout(printAndCleanup, 8000)
-    }
+    executePrint(buildPrintHtml(items, printFormat))
   }
 
   const selectedCount = getSelectedItems().length
@@ -295,21 +212,40 @@ export default function BatchQRClientPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Cetak Label QR Massal</h1>
           <p className="text-muted-foreground text-sm">
             Pilih item untuk generate QR Code sekaligus
           </p>
         </div>
-        <Button 
-          onClick={handlePrint} 
-          disabled={selectedCount === 0}
-          className="gap-2"
-        >
-          <Printer className="h-4 w-4" />
-          Cetak {selectedCount > 0 && `(${selectedCount})`}
-        </Button>
+        <div className="flex flex-col gap-3 items-end">
+          {/* Format selector */}
+          <div className="flex flex-wrap gap-1.5">
+            {PRINT_FORMATS.map(f => (
+              <button
+                key={f.id}
+                onClick={() => setPrintFormat(f.id)}
+                title={f.desc}
+                className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
+                  printFormat === f.id
+                    ? 'bg-primary text-primary-foreground border-primary font-semibold'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <Button
+            onClick={handlePrint}
+            disabled={selectedCount === 0}
+            className="gap-2"
+          >
+            <Printer className="h-4 w-4" />
+            Cetak {selectedCount > 0 && `(${selectedCount})`}
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

@@ -1,13 +1,14 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import QRCode from 'react-qr-code'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Download, Printer, ExternalLink, DoorOpen, Package, Boxes } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { PRINT_FORMATS, PrintFormat, buildPrintHtml, executePrint } from './printUtils'
 
-interface Props { 
+interface Props {
   url: string
   name: string
   code: string | null
@@ -17,13 +18,14 @@ interface Props {
 }
 
 const typeConfig = {
-  room: { icon: DoorOpen, label: 'Ruangan', color: 'bg-purple-100 text-purple-800', badgeColor: 'bg-purple-600' },
-  equipment: { icon: Package, label: 'Alat', color: 'bg-blue-100 text-blue-800', badgeColor: 'bg-blue-600' },
-  inventory: { icon: Boxes, label: 'Inventaris', color: 'bg-amber-100 text-amber-800', badgeColor: 'bg-amber-600' },
+  room:      { icon: DoorOpen, label: 'Ruangan',    color: 'bg-purple-100 text-purple-800', badgeColor: 'bg-purple-600' },
+  equipment: { icon: Package,  label: 'Alat',        color: 'bg-blue-100 text-blue-800',    badgeColor: 'bg-blue-600' },
+  inventory: { icon: Boxes,    label: 'Inventaris',  color: 'bg-amber-100 text-amber-800',  badgeColor: 'bg-amber-600' },
 }
 
 export function QRCodeDisplay({ url, name, code, type, location, category }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [printFormat, setPrintFormat] = useState<PrintFormat>('a4-3col')
   const config = typeConfig[type]
   const Icon = config.icon
 
@@ -51,159 +53,42 @@ export function QRCodeDisplay({ url, name, code, type, location, category }: Pro
       ctx.fillStyle = 'white'
       ctx.fillRect(0, 0, 600, 700)
       ctx.drawImage(img, 100, 80, 400, 400)
-      
-      // Header
       ctx.fillStyle = '#1e293b'
       ctx.font = 'bold 28px sans-serif'
       ctx.textAlign = 'center'
       ctx.fillText(config.label.toUpperCase(), 300, 50)
-      
-      // Name
       ctx.font = 'bold 24px sans-serif'
       ctx.fillText(name, 300, 520)
-      
-      // Code
       if (code) {
         ctx.font = '20px monospace'
         ctx.fillStyle = '#64748b'
         ctx.fillText(code, 300, 550)
       }
-      
-      // Location/Category
       if (location || category) {
         ctx.font = '16px sans-serif'
         ctx.fillStyle = '#94a3b8'
         ctx.fillText(location || category || '', 300, 580)
       }
-      
-      // URL
       ctx.font = '12px monospace'
       ctx.fillStyle = '#cbd5e1'
       ctx.fillText(url.slice(0, 50) + (url.length > 50 ? '...' : ''), 300, 630)
-      
       const link = document.createElement('a')
       link.href = canvas.toDataURL('image/png')
       link.download = `qr-${code || name.replace(/\s/g, '-')}.png`
       link.click()
     }
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData)
+    img.src = 'data:image/svg+xml;base64,' + btoa(new XMLSerializer().serializeToString(svg))
   }
 
   function handlePrint() {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
-
     const svg = containerRef.current?.querySelector('svg')
-    const svgData = svg ? new XMLSerializer().serializeToString(svg) : ''
-    const svgBase64 = btoa(svgData)
+    const svgBase64 = svg ? btoa(new XMLSerializer().serializeToString(svg)) : undefined
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>QR Code - ${name}</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: Arial, sans-serif; 
-              background: white;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              padding: 20px;
-            }
-            .label {
-              width: 400px;
-              border: 3px solid #e2e8f0;
-              border-radius: 16px;
-              padding: 32px;
-              text-align: center;
-              background: white;
-              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-              background: ${type === 'room' ? '#9333ea' : type === 'equipment' ? '#2563eb' : '#d97706'};
-              color: white;
-              padding: 12px 24px;
-              border-radius: 8px;
-              font-weight: bold;
-              font-size: 18px;
-              margin-bottom: 24px;
-              display: inline-block;
-              text-transform: uppercase;
-              letter-spacing: 1px;
-            }
-            .qr-container {
-              background: white;
-              padding: 20px;
-              border-radius: 12px;
-              border: 2px solid #e2e8f0;
-              margin-bottom: 24px;
-              display: inline-block;
-            }
-            .qr-container img {
-              width: 280px;
-              height: 280px;
-            }
-            .name {
-              font-size: 28px;
-              font-weight: bold;
-              color: #1e293b;
-              margin-bottom: 8px;
-              line-height: 1.3;
-            }
-            .code {
-              font-family: monospace;
-              font-size: 20px;
-              color: #64748b;
-              margin-bottom: 8px;
-              background: #f1f5f9;
-              padding: 6px 16px;
-              border-radius: 6px;
-              display: inline-block;
-            }
-            .meta {
-              font-size: 16px;
-              color: #94a3b8;
-              margin-top: 8px;
-            }
-            .footer {
-              margin-top: 24px;
-              padding-top: 16px;
-              border-top: 1px solid #e2e8f0;
-              font-size: 12px;
-              color: #cbd5e1;
-              word-break: break-all;
-            }
-            @media print {
-              body { padding: 0; }
-              .label { 
-                box-shadow: none; 
-                border: 3px solid #000;
-                page-break-inside: avoid;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="label">
-            <div class="header">${config.label}</div>
-            <div class="qr-container">
-              <img src="data:image/svg+xml;base64,${svgBase64}" alt="QR Code" />
-            </div>
-            <div class="name">${name}</div>
-            ${code ? `<div class="code">${code}</div>` : ''}
-            ${location || category ? `<div class="meta">${location || category}</div>` : ''}
-            <div class="footer">${url}</div>
-          </div>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
-    printWindow.onload = () => {
-      printWindow.print()
-    }
+    const html = buildPrintHtml(
+      [{ id: '', name, code, type, url, meta: location || category, svgBase64 }],
+      printFormat,
+    )
+    executePrint(html)
   }
 
   return (
@@ -230,28 +115,39 @@ export function QRCodeDisplay({ url, name, code, type, location, category }: Pro
             </Badge>
           )}
           {(location || category) && (
-            <p className="text-muted-foreground text-sm">
-              {location || category}
-            </p>
+            <p className="text-muted-foreground text-sm">{location || category}</p>
           )}
         </div>
 
         {/* QR Code */}
-        <div 
-          ref={containerRef} 
-          className="p-8 bg-white border-2 border-zinc-200 rounded-xl shadow-inner"
-        >
-          <QRCode
-            value={url}
-            size={280}
-            level="M"
-            style={{ height: '280px', width: '280px' }}
-          />
+        <div ref={containerRef} className="p-8 bg-white border-2 border-zinc-200 rounded-xl shadow-inner">
+          <QRCode value={url} size={280} level="M" style={{ height: '280px', width: '280px' }} />
         </div>
 
         {/* URL */}
         <div className="text-center text-xs text-muted-foreground max-w-sm break-all bg-slate-50 p-3 rounded-lg">
           {url}
+        </div>
+
+        {/* Format selector */}
+        <div className="w-full">
+          <p className="text-xs font-medium text-muted-foreground mb-2">Format Cetak</p>
+          <div className="flex flex-wrap gap-1.5">
+            {PRINT_FORMATS.map(f => (
+              <button
+                key={f.id}
+                onClick={() => setPrintFormat(f.id)}
+                title={f.desc}
+                className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
+                  printFormat === f.id
+                    ? 'bg-primary text-primary-foreground border-primary font-semibold'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Actions */}
