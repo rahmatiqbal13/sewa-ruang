@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 
 interface Props { id: string; isActive: boolean; deleteButton?: React.ReactNode }
 
-export function BuildingActions({ id, isActive }: Props) {
+export function BuildingActions({ id, isActive, deleteButton }: Props) {
   const router = useRouter()
 
   async function toggleActive() {

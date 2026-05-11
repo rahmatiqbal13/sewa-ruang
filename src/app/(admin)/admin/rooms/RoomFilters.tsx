@@ -11,7 +11,7 @@ interface Building {
   id: string
   name: string
   code: string
-  floor_count: number
+  floor_count?: number
 }
 
 interface RoomFiltersProps {

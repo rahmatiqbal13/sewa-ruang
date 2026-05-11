@@ -17,6 +17,7 @@ export async function importRoomsFromExcel(formData: FormData): Promise<ImportRe
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'File tidak ditemukan' }]
       }
     }
@@ -34,6 +35,7 @@ export async function importRoomsFromExcel(formData: FormData): Promise<ImportRe
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'File Excel kosong' }]
       }
     }
@@ -51,6 +53,7 @@ export async function importRoomsFromExcel(formData: FormData): Promise<ImportRe
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'Unauthorized' }]
       }
     }
@@ -192,12 +195,13 @@ export async function importRoomsFromExcel(formData: FormData): Promise<ImportRe
 
     return {
       success: errors.length === 0,
-      message: errors.length === 0 
-        ? `Berhasil mengimport ${successCount} ruangan` 
+      message: errors.length === 0
+        ? `Berhasil mengimport ${successCount} ruangan`
         : `Berhasil mengimport ${successCount} ruangan, ${errors.length} gagal`,
       totalRows: rows.length,
       successCount,
       errorCount: errors.length,
+      importedIds: [],
       errors
     }
   } catch (error) {
@@ -208,6 +212,7 @@ export async function importRoomsFromExcel(formData: FormData): Promise<ImportRe
       totalRows: 0,
       successCount: 0,
       errorCount: 1,
+      importedIds: [],
       errors: [{ row: 0, message: errorMessage }]
     }
   }

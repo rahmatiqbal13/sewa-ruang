@@ -82,24 +82,23 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
       }
 
       // 1. Record the return
-      const { error: returnError } = await supabase
-        .from('returns')
-        .insert({
-          booking_id: bookingId,
-          returned_at: new Date(actualEndDate).toISOString(),
-          condition: condition,
-          notes: notes || null,
-          photo_url: photoUrl || null,
-          recorded_by: user.id,
-          is_early_return: isEarlyReturn,
-          refund_amount: refundAmount > 0 ? refundAmount : null,
-        })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: returnError } = await (supabase.from('returns') as any).insert({
+        booking_id: bookingId,
+        returned_at: new Date(actualEndDate).toISOString(),
+        condition: condition,
+        notes: notes || null,
+        photo_url: photoUrl || null,
+        recorded_by: user.id,
+        is_early_return: isEarlyReturn,
+        refund_amount: refundAmount > 0 ? refundAmount : null,
+      })
 
       if (returnError) throw returnError
 
       // 2. Update booking status to completed
-      const { error: bookingError } = await supabase
-        .from('bookings')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: bookingError } = await (supabase.from('bookings') as any)
         .update({
           status: 'completed',
           actual_end_datetime: actualEndDate,
@@ -113,15 +112,14 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
 
       // 3. Create refund record if applicable
       if (refundAmount > 0) {
-        const { error: refundError } = await supabase
-          .from('payments')
-          .insert({
-            booking_id: bookingId,
-            amount: -refundAmount,
-            method: 'refund',
-            status: 'pending',
-            notes: `Refund pengembalian lebih cepat - Kondisi: ${conditionLabel[condition].label}`,
-          })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: refundError } = await (supabase.from('payments') as any).insert({
+          booking_id: bookingId,
+          amount: -refundAmount,
+          method: 'refund',
+          status: 'pending',
+          notes: `Refund pengembalian lebih cepat - Kondisi: ${conditionLabel[condition].label}`,
+        })
 
         if (refundError) throw refundError
       }
@@ -189,7 +187,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
         {/* Condition */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Kondisi Aset</Label>
-          <Select value={condition} onValueChange={setCondition}>
+          <Select value={condition} onValueChange={(v) => setCondition(v || 'good')}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -243,7 +241,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
           <Label className="text-sm font-medium">Foto Kondisi</Label>
           <PhotoUpload
             value={photoUrl}
-            onChange={setPhotoUrl}
+            onChange={(url) => setPhotoUrl(url || '')}
             folder="returns"
           />
         </div>

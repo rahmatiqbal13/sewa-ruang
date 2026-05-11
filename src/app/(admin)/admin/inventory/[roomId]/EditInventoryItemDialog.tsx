@@ -133,7 +133,8 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
         
         if (roomsData) {
           // Create a map of building names for lookup
-          const buildingMap = new Map(buildingsData?.map(b => [b.id, b.name]) || [])
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const buildingMap = new Map((buildingsData as any[])?.map(b => [b.id, b.name]) || [])
           
           const formattedRooms = roomsData.map((room: { id: string; name: string; room_code: string | null; building_id: string }) => ({
             id: room.id,
@@ -252,7 +253,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                 <Select
                   value={selectedBuildingId}
                   onValueChange={(value) => {
-                    setSelectedBuildingId(value)
+                    setSelectedBuildingId(value || '')
                     // Reset room selection when building changes
                     const roomsInBuilding = rooms.filter(r => r.building_id === value)
                     if (roomsInBuilding.length > 0 && !roomsInBuilding.find(r => r.id === watch('room_asset_id'))) {
@@ -287,7 +288,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                 </Label>
                 <Select
                   value={watch('room_asset_id')}
-                  onValueChange={(value) => setValue('room_asset_id', value)}
+                  onValueChange={(value) => setValue('room_asset_id', value || '')}
                   disabled={!selectedBuildingId}
                 >
                   <SelectTrigger className="w-full">

@@ -24,8 +24,8 @@ export default async function BuildingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   
   // Check if user is super admin
-  const { data: userProfile } = await supabase
-    .from('users')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userProfile } = await (supabase.from('users') as any)
     .select('role')
     .eq('id', user!.id)
     .single()

@@ -6,8 +6,8 @@ export default async function BatchQRPage() {
   const { data: { user } } = await supabase.auth.getUser()
   
   // Check if super admin
-  const { data: userProfile } = await supabase
-    .from('users')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userProfile } = await (supabase.from('users') as any)
     .select('role')
     .eq('id', user!.id)
     .single()
@@ -43,14 +43,16 @@ export default async function BatchQRPage() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
   // Transform data
-  const rooms = (roomsData || []).map(r => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rooms = (roomsData as any[] || []).map(r => ({
     id: r.id,
     name: r.name,
     room_code: r.room_code,
-    building_name: (r as any).buildings?.name || '-'
+    building_name: r.buildings?.name || '-'
   }))
 
-  const equipment = (equipmentData || []).map(e => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const equipment = (equipmentData as any[] || []).map(e => ({
     id: e.id,
     name: e.name,
     equipment_code: e.equipment_code,

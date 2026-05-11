@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (!['admin', 'super_admin'].includes(userData?.role)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!['admin', 'super_admin'].includes((userData as any)?.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -51,40 +52,48 @@ export async function POST(req: NextRequest) {
     const results: Record<string, any> = {}
 
     // Send Email
-    if (channels.includes('email') && booking.users?.email) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (channels.includes('email') && (booking as any).users?.email) {
       const emailTemplate = emailService.generateBookingConfirmationEmail(booking)
       const result = await emailService.sendEmail({
-        to: booking.users.email,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        to: (booking as any).users.email,
         subject: emailTemplate.subject,
         html: customMessage || emailTemplate.html,
       })
       results.email = result
 
       // Log notification
-      await supabase.from('notifications').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('notifications') as any).insert({
         booking_id: bookingId,
         user_id: user.id,
         channel: 'email',
-        recipient: booking.users.email,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recipient: (booking as any).users.email,
         status: result.success ? 'sent' : 'failed',
         error_message: result.error || null,
       })
     }
 
     // Send WhatsApp
-    if (channels.includes('whatsapp') && booking.users?.phone) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (channels.includes('whatsapp') && (booking as any).users?.phone) {
       const message = customMessage || whatsappService.generateBookingConfirmationMessage(booking)
       const result = await whatsappService.sendMessage({
-        to: booking.users.phone,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        to: (booking as any).users.phone,
         message: message,
       })
       results.whatsapp = result
 
-      await supabase.from('notifications').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('notifications') as any).insert({
         booking_id: bookingId,
         user_id: user.id,
         channel: 'whatsapp',
-        recipient: booking.users.phone,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recipient: (booking as any).users.phone,
         status: result.success ? 'sent' : 'failed',
         error_message: result.error || null,
       })
@@ -101,7 +110,8 @@ export async function POST(req: NextRequest) {
         })
         results.telegram = result
 
-        await supabase.from('notifications').insert({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from('notifications') as any).insert({
           booking_id: bookingId,
           user_id: user.id,
           channel: 'telegram',

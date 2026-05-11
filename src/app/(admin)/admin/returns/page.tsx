@@ -6,7 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { formatDateTime, cn } from '@/lib/utils'
 import { Package, DoorOpen, Clock, CheckCircle, CreditCard } from 'lucide-react'
-import { CompleteReturnForm } from './CompleteReturnForm'
 
 export default async function ReturnsPage({
   searchParams,

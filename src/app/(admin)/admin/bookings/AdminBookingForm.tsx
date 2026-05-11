@@ -25,15 +25,15 @@ const schema = z.object({
   borrower_phone: z.string().optional(),
   borrower_institution: z.string().min(2, 'Instansi wajib diisi'),
   borrower_class: z.string().optional(),
-  member_type: z.enum(['mahasiswa_s1', 'mahasiswa_s2', 'dosen_karyawan', 'umum', 'kerjasama']).default('mahasiswa_s1'),
+  member_type: z.enum(['mahasiswa_s1', 'mahasiswa_s2', 'dosen_karyawan', 'umum', 'kerjasama']),
   purpose: z.string().min(5, 'Tujuan peminjaman wajib diisi'),
   start_datetime: z.string().min(1, 'Tanggal mulai wajib diisi'),
   end_datetime: z.string().min(1, 'Tanggal selesai wajib diisi'),
   items: z.array(z.object({
     item_type: z.enum(['room', 'equipment']),
-    room_id: z.string().default(''),
-    equipment_id: z.string().default(''),
-    quantity: z.number().min(1).default(1),
+    room_id: z.string(),
+    equipment_id: z.string(),
+    quantity: z.number().min(1),
   })).min(1, 'Minimal 1 item yang dipinjam'),
 })
 
@@ -305,8 +305,8 @@ export function AdminBookingForm() {
         created_by_admin: true,
       }
 
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: booking, error: bookingError } = await (supabase.from('bookings') as any)
         .insert({
           reference_no: referenceNo,
           user_id: user.id,
@@ -330,8 +330,8 @@ export function AdminBookingForm() {
         quantity: item.quantity,
       }))
 
-      const { error: itemsError } = await supabase
-        .from('booking_items')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: itemsError } = await (supabase.from('booking_items') as any)
         .insert(bookingItems)
 
       if (itemsError) throw itemsError
@@ -403,8 +403,8 @@ export function AdminBookingForm() {
               <div className="space-y-2">
                 <Label>Jenis Member <span className="text-red-500">*</span></Label>
                 <Select
-                  value={watch('member_type') || 'mahasiswa_s1'}
-                  onValueChange={(v) => setValue('member_type', v as any)}
+                  value={watch('member_type')}
+                  onValueChange={(v) => setValue('member_type', v as FormData['member_type'])}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih jenis member" />
@@ -512,9 +512,9 @@ export function AdminBookingForm() {
                         value={currentItem?.item_type === 'room' ? currentItem?.room_id || '' : currentItem?.equipment_id || ''}
                         onValueChange={(v) => {
                           if (currentItem?.item_type === 'room') {
-                            setValue(`items.${index}.room_id`, v)
+                            setValue(`items.${index}.room_id`, v || '')
                           } else {
-                            setValue(`items.${index}.equipment_id`, v)
+                            setValue(`items.${index}.equipment_id`, v || '')
                           }
                         }}
                       >
@@ -619,7 +619,7 @@ export function AdminBookingForm() {
                       <div className="flex gap-4">
                         {(selectedRoom?.photo_url || selectedEquipment?.photo_url) ? (
                           <img 
-                            src={selectedRoom?.photo_url || selectedEquipment?.photo_url} 
+                            src={selectedRoom?.photo_url || selectedEquipment?.photo_url || ''} 
                             alt="Selected" 
                             className="w-24 h-24 object-cover rounded-lg"
                           />

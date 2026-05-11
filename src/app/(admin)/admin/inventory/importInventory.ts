@@ -17,6 +17,7 @@ export async function importInventoryFromExcel(formData: FormData, roomId: strin
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'File tidak ditemukan' }]
       }
     }
@@ -34,6 +35,7 @@ export async function importInventoryFromExcel(formData: FormData, roomId: strin
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'File Excel kosong' }]
       }
     }
@@ -51,6 +53,7 @@ export async function importInventoryFromExcel(formData: FormData, roomId: strin
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'Unauthorized' }]
       }
     }
@@ -69,6 +72,7 @@ export async function importInventoryFromExcel(formData: FormData, roomId: strin
         totalRows: 0,
         successCount: 0,
         errorCount: 1,
+        importedIds: [],
         errors: [{ row: 0, message: 'Ruangan tidak ditemukan' }]
       }
     }
@@ -156,6 +160,7 @@ export async function importInventoryFromExcel(formData: FormData, roomId: strin
       totalRows: rows.length,
       successCount,
       errorCount: errors.length,
+      importedIds: [],
       errors
     }
   } catch (error) {
@@ -166,6 +171,7 @@ export async function importInventoryFromExcel(formData: FormData, roomId: strin
       totalRows: 0,
       successCount: 0,
       errorCount: 1,
+      importedIds: [],
       errors: [{ row: 0, message: errorMessage }]
     }
   }

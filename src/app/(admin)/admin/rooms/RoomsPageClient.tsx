@@ -27,6 +27,7 @@ interface Building {
   id: string
   name: string
   code: string
+  floor_count?: number
 }
 
 interface Room {
@@ -138,7 +139,7 @@ export function RoomsPageClient({
     return result
   }
 
-  const isAllSelected = rooms && rooms.length > 0 && selectedIds.length === rooms.length
+  const isAllSelected = !!rooms && rooms.length > 0 && selectedIds.length === rooms.length
   const isIndeterminate = selectedIds.length > 0 && selectedIds.length < (rooms?.length ?? 0)
 
   return (

@@ -61,7 +61,7 @@ export function DeleteRoomButton({ id, roomName }: DeleteRoomButtonProps) {
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
+      <AlertDialogTrigger>
         <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
           <Trash2 className="h-4 w-4 mr-1" />
           Hapus

@@ -23,6 +23,7 @@ interface Item {
   inventory_code: string | null
   notes: string | null
   photo_url: string | null
+  room_asset_id: string
 }
 
 interface InventoryItemActionsProps {

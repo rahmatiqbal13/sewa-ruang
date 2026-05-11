@@ -15,8 +15,8 @@ export default async function QRPage({
   const { data: { user } } = await supabase.auth.getUser()
   
   // Check if super admin
-  const { data: userProfile } = await supabase
-    .from('users')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userProfile } = await (supabase.from('users') as any)
     .select('role')
     .eq('id', user!.id)
     .single()
@@ -57,10 +57,12 @@ export default async function QRPage({
   
   if (id && type) {
     if (type === 'room') {
-      selectedItem = rooms?.find(r => r.id === id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      selectedItem = (rooms as any[] | null)?.find(r => r.id === id)
       url = selectedItem ? `${baseUrl}/rooms/${selectedItem.id}` : null
     } else if (type === 'equipment') {
-      selectedItem = equipment?.find(e => e.id === id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      selectedItem = (equipment as any[] | null)?.find(e => e.id === id)
       url = selectedItem ? `${baseUrl}/equipment/${selectedItem.id}/scan` : null
     } else if (type === 'inventory' && isSuperAdmin) {
       selectedItem = inventory.find(i => i.id === id)
@@ -108,9 +110,10 @@ export default async function QRPage({
         <TabsContent value="rooms" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-2">
-              <p className="text-sm font-medium">Pilih Ruangan ({rooms?.length ?? 0})</p>
+              <p className="text-sm font-medium">Pilih Ruangan ({(rooms as any[] | null)?.length ?? 0})</p>
               <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-                {rooms?.map((room) => (
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {(rooms as any[] | null)?.map((room: any) => (
                   <a
                     key={room.id}
                     href={`/admin/qr?id=${room.id}&type=room&itemType=rooms`}
@@ -149,9 +152,10 @@ export default async function QRPage({
         <TabsContent value="equipment" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-2">
-              <p className="text-sm font-medium">Pilih Alat ({equipment?.length ?? 0})</p>
+              <p className="text-sm font-medium">Pilih Alat ({(equipment as any[] | null)?.length ?? 0})</p>
               <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-                {equipment?.map((item) => (
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {(equipment as any[] | null)?.map((item: any) => (
                   <a
                     key={item.id}
                     href={`/admin/qr?id=${item.id}&type=equipment&itemType=equipment`}

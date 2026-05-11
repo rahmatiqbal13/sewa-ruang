@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (!['admin', 'super_admin'].includes(userData?.role)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!['admin', 'super_admin'].includes((userData as any)?.role)) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -70,7 +71,8 @@ export async function POST(req: NextRequest) {
     })
 
     // Log notification in database
-    await supabase.from('notifications').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('notifications') as any).insert({
       user_id: user.id,
       type: 'email_sent',
       title: 'Email Terkirim',

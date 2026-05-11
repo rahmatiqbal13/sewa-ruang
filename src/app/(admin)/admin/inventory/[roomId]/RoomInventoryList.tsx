@@ -26,6 +26,7 @@ interface InventoryItem {
   last_updated_at: string
   users: { name: string } | null
   photo_url: string | null
+  room_asset_id: string
 }
 
 interface Room {
@@ -296,6 +297,7 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
                         inventory_code: item.inventory_code,
                         notes: item.notes,
                         photo_url: item.photo_url,
+                        room_asset_id: item.room_asset_id,
                       }} />
                     </TableCell>
                   </TableRow>

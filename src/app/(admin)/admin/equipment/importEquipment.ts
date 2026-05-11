@@ -598,9 +598,44 @@ export async function deleteAllEquipment() {
       .from('equipment')
       .select('*', { count: 'exact', head: true })
 
-    // Delete all equipment_rates first (foreign key constraint) using service role
+    // Delete equipment_booking_slots first (foreign key constraint)
+    const { error: slotsError } = await serviceSb.from('equipment_booking_slots').delete().gte('created_at', '1970-01-01')
+
+    if (slotsError) {
+      console.error('Error deleting equipment_booking_slots:', slotsError)
+      return {
+        success: false,
+        message: `Gagal menghapus booking slots: ${slotsError.message}`,
+        deletedCount: 0
+      }
+    }
+
+    // Delete booking_items that reference equipment (foreign key constraint)
+    const { error: bookingItemsError } = await serviceSb.from('booking_items').delete().eq('item_type', 'equipment').gte('created_at', '1970-01-01')
+
+    if (bookingItemsError) {
+      console.error('Error deleting booking_items:', bookingItemsError)
+      return {
+        success: false,
+        message: `Gagal menghapus booking items: ${bookingItemsError.message}`,
+        deletedCount: 0
+      }
+    }
+
+    // Try to delete booking_waitlists that reference equipment (if column exists)
+    const { error: waitlistsError } = await serviceSb.from('booking_waitlists').delete().not('equipment_id', 'is', null)
+    if (waitlistsError && !waitlistsError.message?.includes('does not exist')) {
+      console.error('Error deleting booking_waitlists:', waitlistsError)
+      return {
+        success: false,
+        message: `Gagal menghapus waitlists: ${waitlistsError.message}`,
+        deletedCount: 0
+      }
+    }
+
+    // Delete all equipment_rates (foreign key constraint) using service role
     const { error: ratesError } = await serviceSb.from('equipment_rates').delete().gte('created_at', '1970-01-01')
-    
+
     if (ratesError) {
       console.error('Error deleting equipment_rates:', ratesError)
       return { 

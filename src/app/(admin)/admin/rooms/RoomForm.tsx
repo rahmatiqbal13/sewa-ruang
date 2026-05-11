@@ -87,7 +87,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   }
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       name: '',
       building_id: '',
@@ -124,7 +125,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
   const selectedBuildingId = watch('building_id')
   const isForRent = watch('is_for_rent')
-  const rates = watch('rates')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rates = watch('rates') as any
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
 
   async function onSubmit(data: FormData) {
@@ -176,8 +178,10 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
       if (data.is_for_rent && roomId) {
         for (const cat of USAGE_CATEGORIES) {
-          const hourVal = data.rates[cat.value]?.rate_per_hour ?? ''
-          const dayVal = data.rates[cat.value]?.rate_per_day ?? ''
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const rates = data.rates as any
+          const hourVal = rates[cat.value]?.rate_per_hour ?? ''
+          const dayVal = rates[cat.value]?.rate_per_day ?? ''
           const rateHour = hourVal === '' ? null : parseFloat(hourVal)
           const rateDay = dayVal === '' ? null : parseFloat(dayVal)
           
@@ -399,7 +403,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                           min={0} 
                           placeholder="0"
                           value={rateValue.rate_per_hour}
-                          onChange={(e) => setValue(`rates.${cat.value}.rate_per_hour`, e.target.value)}
+                          onChange={(e) => setValue(`rates.${cat.value}.rate_per_hour` as any, e.target.value)}
                           className="h-10 rounded-lg border-slate-200"
                         />
                       </div>
@@ -410,7 +414,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                           min={0} 
                           placeholder="0"
                           value={rateValue.rate_per_day}
-                          onChange={(e) => setValue(`rates.${cat.value}.rate_per_day`, e.target.value)}
+                          onChange={(e) => setValue(`rates.${cat.value}.rate_per_day` as any, e.target.value)}
                           className="h-10 rounded-lg border-slate-200"
                         />
                       </div>

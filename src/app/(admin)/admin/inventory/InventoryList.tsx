@@ -136,6 +136,7 @@ export function InventoryList({
     totalRows: 0,
     successCount: 0,
     errorCount: 1,
+    importedIds: [],
     errors: [{ row: 0, message: 'Pilih ruangan terlebih dahulu' }]
   })
 

@@ -94,8 +94,8 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
 
     try {
       // Create early return record
-      const { error: returnError } = await supabase
-        .from('booking_early_returns')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: returnError } = await (supabase.from('booking_early_returns') as any)
         .insert({
           booking_id: bookingId,
           planned_end_datetime: booking.end_datetime,
@@ -108,21 +108,22 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
       if (returnError) throw returnError
 
       // Update booking status to completed
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .update({
-          status: 'completed',
-          actual_end_datetime: actualEndDate,
-          admin_notes: notes ? `Pengembalian lebih cepat: ${notes}` : 'Pengembalian lebih cepat dari peminjam'
-        })
+      const updateData = {
+        status: 'completed',
+        actual_end_datetime: actualEndDate,
+        admin_notes: notes ? `Pengembalian lebih cepat: ${notes}` : 'Pengembalian lebih cepat dari peminjam'
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: bookingError } = await (supabase.from('bookings') as any)
+        .update(updateData)
         .eq('id', bookingId)
 
       if (bookingError) throw bookingError
 
       // If there's a refund, create refund record
       if (refundAmount > 0) {
-        const { error: refundError } = await supabase
-          .from('payments')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: refundError } = await (supabase.from('payments') as any)
           .insert({
             booking_id: bookingId,
             amount: -refundAmount,

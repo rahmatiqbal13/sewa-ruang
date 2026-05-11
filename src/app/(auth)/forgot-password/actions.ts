@@ -116,7 +116,8 @@ export async function sendPasswordResetEmail(
     // Send custom email using SMTP
     await sendCustomResetEmail({
       to: email,
-      name: userData.name || email.split('@')[0],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: (userData as any).name || email.split('@')[0],
       resetLink,
     })
 
