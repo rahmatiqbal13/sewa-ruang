@@ -7,7 +7,7 @@ import { Printer, DoorOpen, Package, Boxes, CheckSquare, Square } from 'lucide-r
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/client'
-import { PRINT_FORMATS, PrintFormat, buildPrintHtml, executePrint } from '../printUtils'
+import { PRINT_FORMATS, PrintFormat, PrintItem, buildPrintHtml, executePrint } from '../printUtils'
 
 interface Room {
   id: string
@@ -144,7 +144,7 @@ export default function BatchQRClientPage() {
   }
 
   const getSelectedItems = () => {
-    const items: Array<{ id: string; name: string; code: string | null; type: string; url: string; meta?: string }> = []
+    const items: PrintItem[] = []
     
     rooms.forEach(r => {
       if (selectedItems.has(r.id)) {
