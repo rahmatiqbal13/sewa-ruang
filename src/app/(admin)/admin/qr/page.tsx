@@ -1,73 +1,96 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { QRCodeDisplay } from './QRCodeDisplay'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DoorOpen, Package, Boxes, ShieldCheck } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
-export default async function QRPage({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ id?: string; type?: string; itemType?: string }> 
-}) {
-  const { id, type, itemType = 'rooms' } = await searchParams
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  // Check if super admin
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: userProfile } = await (supabase.from('users') as any)
-    .select('role')
-    .eq('id', user!.id)
-    .single()
-  
-  const isSuperAdmin = userProfile?.role === 'super_admin'
-
-  // Fetch rooms
-  const { data: rooms } = await supabase
-    .from('rooms')
-    .select('id, name, room_code, buildings(name)')
-    .eq('is_active', true)
-    .eq('is_for_rent', true)
-    .order('name')
-
-  // Fetch equipment
-  const { data: equipment } = await supabase
-    .from('equipment')
-    .select('id, name, equipment_code, category')
-    .eq('is_active', true)
-    .order('name')
-
-  // Fetch inventory (only for super admin)
-  let inventory: any[] = []
-  if (isSuperAdmin) {
-    const { data: inv } = await supabase
-      .from('room_inventories')
-      .select('id, name, inventory_code, category, rooms(name, room_code)')
-      .eq('is_active', true)
-      .order('name')
-    inventory = inv || []
-  }
+export default function QRPage() {
+  const [rooms, setRooms] = useState<any[]>([])
+  const [equipment, setEquipment] = useState<any[]>([])
+  const [inventory, setInventory] = useState<any[]>([])
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [selectedRoom, setSelectedRoom] = useState<any>(null)
+  const [selectedEquipment, setSelectedEquipment] = useState<any>(null)
+  const [selectedInventory, setSelectedInventory] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState('rooms')
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  
-  // Get selected item based on type
-  let selectedItem: any = null
-  let url: string | null = null
-  
-  if (id && type) {
-    if (type === 'room') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      selectedItem = (rooms as any[] | null)?.find(r => r.id === id)
-      url = selectedItem ? `${baseUrl}/rooms/${selectedItem.id}` : null
-    } else if (type === 'equipment') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      selectedItem = (equipment as any[] | null)?.find(e => e.id === id)
-      url = selectedItem ? `${baseUrl}/equipment/${selectedItem.id}/scan` : null
-    } else if (type === 'inventory' && isSuperAdmin) {
-      selectedItem = inventory.find(i => i.id === id)
-      url = selectedItem ? `${baseUrl}/inventory/${selectedItem.id}` : null
+
+  useEffect(() => {
+    async function loadData() {
+      const supabase = createClient()
+      
+      // Check if super admin
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: userProfile } = await (supabase.from('users') as any)
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        setIsSuperAdmin(userProfile?.role === 'super_admin')
+      }
+
+      // Fetch rooms - all active rooms (no is_for_rent filter)
+      const { data: roomsData, error: roomsError } = await (supabase as any)
+        .from('rooms')
+        .select('id, name, room_code, is_for_rent, is_active, buildings(name)')
+        .eq('is_active', true)
+        .order('name')
+      
+      console.log('Client QR Page - Rooms:', { 
+        count: roomsData?.length || 0, 
+        error: roomsError?.message,
+        data: roomsData
+      })
+
+      setRooms(roomsData || [])
+
+      // Fetch equipment
+      const { data: equipmentData } = await (supabase as any)
+        .from('equipment')
+        .select('id, name, equipment_code, category')
+        .eq('is_active', true)
+        .order('name')
+
+      setEquipment(equipmentData || [])
+
+      // Fetch inventory
+      if (user) {
+        const { data: userProfile } = await (supabase.from('users') as any)
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        
+        if (userProfile?.role === 'super_admin') {
+          const { data: inv } = await (supabase as any)
+            .from('room_inventories')
+            .select('id, name, inventory_code, category, rooms(name, room_code)')
+            .eq('is_active', true)
+            .order('name')
+          setInventory(inv || [])
+        }
+      }
+
+      setLoading(false)
     }
+
+    loadData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Memuat data...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -88,7 +111,7 @@ export default async function QRPage({
         </Link>
       </div>
 
-      <Tabs defaultValue={itemType} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="rooms" className="flex items-center gap-2">
             <DoorOpen className="h-4 w-4" />
@@ -110,34 +133,40 @@ export default async function QRPage({
         <TabsContent value="rooms" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-2">
-              <p className="text-sm font-medium">Pilih Ruangan ({(rooms as any[] | null)?.length ?? 0})</p>
+              <p className="text-sm font-medium">Pilih Ruangan ({rooms.length})</p>
               <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {(rooms as any[] | null)?.map((room: any) => (
-                  <a
+                {rooms.map((room: any) => (
+                  <div
                     key={room.id}
-                    href={`/admin/qr?id=${room.id}&type=room&itemType=rooms`}
-                    className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors ${
-                      id === room.id && type === 'room' ? 'bg-primary/10 border-l-2 border-l-primary' : ''
+                    onClick={() => setSelectedRoom(room)}
+                    className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors cursor-pointer ${
+                      selectedRoom?.id === room.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
                     }`}
                   >
-                    <span className="font-medium">{room.name}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{room.name}</span>
+                      {room.is_for_rent ? (
+                        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Sewa</span>
+                      ) : (
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Inventaris</span>
+                      )}
+                    </div>
                     <span className="text-muted-foreground text-xs">
-                      {room.room_code} — {(room as any).buildings?.name}
+                      {room.room_code} — {room.buildings?.name}
                     </span>
-                  </a>
+                  </div>
                 ))}
               </div>
             </div>
 
             <div className="lg:col-span-2">
-              {selectedItem && type === 'room' && url ? (
+              {selectedRoom ? (
                 <QRCodeDisplay
-                  url={url}
-                  name={selectedItem.name}
-                  code={selectedItem.room_code}
+                  url={`${baseUrl}/rooms/${selectedRoom.id}`}
+                  name={selectedRoom.name}
+                  code={selectedRoom.room_code}
                   type="room"
-                  location={(selectedItem as any).buildings?.name}
+                  location={selectedRoom.buildings?.name}
                 />
               ) : (
                 <div className="flex items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">
@@ -152,34 +181,33 @@ export default async function QRPage({
         <TabsContent value="equipment" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-2">
-              <p className="text-sm font-medium">Pilih Alat ({(equipment as any[] | null)?.length ?? 0})</p>
+              <p className="text-sm font-medium">Pilih Alat ({equipment.length})</p>
               <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {(equipment as any[] | null)?.map((item: any) => (
-                  <a
+                {equipment.map((item: any) => (
+                  <div
                     key={item.id}
-                    href={`/admin/qr?id=${item.id}&type=equipment&itemType=equipment`}
-                    className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors ${
-                      id === item.id && type === 'equipment' ? 'bg-primary/10 border-l-2 border-l-primary' : ''
+                    onClick={() => setSelectedEquipment(item)}
+                    className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors cursor-pointer ${
+                      selectedEquipment?.id === item.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
                     }`}
                   >
                     <span className="font-medium">{item.name}</span>
                     <span className="text-muted-foreground text-xs">
                       {item.equipment_code} — {item.category}
                     </span>
-                  </a>
+                  </div>
                 ))}
               </div>
             </div>
 
             <div className="lg:col-span-2">
-              {selectedItem && type === 'equipment' && url ? (
+              {selectedEquipment ? (
                 <QRCodeDisplay
-                  url={url}
-                  name={selectedItem.name}
-                  code={selectedItem.equipment_code}
+                  url={`${baseUrl}/equipment/${selectedEquipment.id}/scan`}
+                  name={selectedEquipment.name}
+                  code={selectedEquipment.equipment_code}
                   type="equipment"
-                  category={selectedItem.category}
+                  category={selectedEquipment.category}
                 />
               ) : (
                 <div className="flex items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">
@@ -197,31 +225,31 @@ export default async function QRPage({
               <div className="lg:col-span-1 space-y-2">
                 <p className="text-sm font-medium">Pilih Inventaris ({inventory.length})</p>
                 <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-                  {inventory.map((item) => (
-                    <a
+                  {inventory.map((item: any) => (
+                    <div
                       key={item.id}
-                      href={`/admin/qr?id=${item.id}&type=inventory&itemType=inventory`}
-                      className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors ${
-                        id === item.id && type === 'inventory' ? 'bg-primary/10 border-l-2 border-l-primary' : ''
+                      onClick={() => setSelectedInventory(item)}
+                      className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors cursor-pointer ${
+                        selectedInventory?.id === item.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
                       }`}
                     >
                       <span className="font-medium">{item.name}</span>
                       <span className="text-muted-foreground text-xs">
-                        {item.inventory_code} — {(item as any).rooms?.name}
+                        {item.inventory_code} — {item.rooms?.name}
                       </span>
-                    </a>
+                    </div>
                   ))}
                 </div>
               </div>
 
               <div className="lg:col-span-2">
-                {selectedItem && type === 'inventory' && url ? (
+                {selectedInventory ? (
                   <QRCodeDisplay
-                    url={url}
-                    name={selectedItem.name}
-                    code={selectedItem.inventory_code}
+                    url={`${baseUrl}/inventory/${selectedInventory.id}`}
+                    name={selectedInventory.name}
+                    code={selectedInventory.inventory_code}
                     type="inventory"
-                    location={(selectedItem as any).rooms?.name}
+                    location={selectedInventory.rooms?.name}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">

@@ -750,3 +750,47 @@ const isAllSelected = !!rooms && rooms.length > 0 && selectedIds.length === room
 | Import/Export | 3 files |
 
 ### Status Build: ✅ Sukses (Vercel Ready)
+
+---
+
+## 12 Mei 2026
+
+### Fix QR Page - Tampilkan Semua Ruangan
+**Files**: 
+- `src/app/(admin)/admin/qr/page.tsx`
+- `src/app/(admin)/admin/qr/batch/page.tsx`
+
+**Masalah**: Halaman QR hanya menampilkan ruangan dengan `is_for_rent = true`, padahal auditor perlu scan QR untuk semua ruangan (termasuk yang tidak disewakan) untuk melihat inventaris.
+
+**Solusi**: 
+1. Hapus filter `.eq('is_for_rent', true)` dari query rooms
+2. Tambahkan type assertion untuk Supabase query
+3. Tambahkan badge indikator untuk membedakan ruangan:
+   - **"Sewa"** (hijau) - Ruangan bisa disewakan
+   - **"Inventaris"** (abu-abu) - Ruangan hanya untuk inventaris
+
+**Sebelum**:
+```typescript
+const { data: rooms } = await supabase
+  .from('rooms')
+  .select('id, name, room_code, buildings(name)')
+  .eq('is_active', true)
+  .eq('is_for_rent', true)  // ← Filter ini menyebabkan hanya 1 ruangan muncul
+  .order('name')
+```
+
+**Sesudah**:
+```typescript
+const { data: rooms } = await (supabase as any)
+  .from('rooms')
+  .select('id, name, room_code, is_for_rent, is_active, buildings(name)')
+  .eq('is_active', true)
+  // .eq('is_for_rent', true)  // ← Filter dihapus
+  .order('name')
+```
+
+**Tampilan Badge**:
+- Ruangan disewakan: Badge hijau "Sewa"
+- Ruangan inventaris saja: Badge abu-abu "Inventaris"
+
+### Status Build: ✅ Sukses

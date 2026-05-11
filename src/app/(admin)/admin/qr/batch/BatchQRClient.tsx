@@ -44,6 +44,14 @@ export function BatchQRClient({
   baseUrl,
   isSuperAdmin 
 }: BatchQRClientProps) {
+  // Debug log
+  console.log('BatchQRClient - Props received:', {
+    roomsCount: rooms.length,
+    roomsList: rooms.map(r => ({ id: r.id, name: r.name })),
+    equipmentCount: equipment.length,
+    inventoryCount: inventory.length
+  })
+  
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState('rooms')
   const printRef = useRef<HTMLDivElement>(null)
