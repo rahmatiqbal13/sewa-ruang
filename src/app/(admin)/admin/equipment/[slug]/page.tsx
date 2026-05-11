@@ -37,6 +37,7 @@ const KETERSEDIAAN_CONFIG = {
   tersedia: { label: 'Tersedia', color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle2 },
   digunakan: { label: 'Sedang Digunakan', color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock },
   hilang: { label: 'Hilang', color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle },
+  tidak_tersedia: { label: 'Tidak Tersedia', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: AlertCircle },
 }
 
 const STATUS_TINDAKAN_CONFIG = {

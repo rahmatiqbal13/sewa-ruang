@@ -29,6 +29,7 @@ const KETERSEDIAAN_OPTIONS = [
   { value: 'tersedia', label: 'Tersedia', icon: CheckCircle2, color: 'text-green-600' },
   { value: 'digunakan', label: 'Sedang Digunakan', icon: Clock, color: 'text-orange-600' },
   { value: 'hilang', label: 'Hilang/Rusak', icon: AlertTriangle, color: 'text-red-600' },
+  { value: 'tidak_tersedia', label: 'Tidak Tersedia', icon: EyeOff, color: 'text-gray-600' },
 ]
 
 const CONDITION_OPTIONS = [

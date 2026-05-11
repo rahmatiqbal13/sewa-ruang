@@ -23,6 +23,7 @@ const AVAILABILITY_TABS = [
   { value: 'tersedia',   label: 'Tersedia',      color: 'bg-green-600 text-white' },
   { value: 'digunakan',  label: 'Digunakan',     color: 'bg-orange-600 text-white' },
   { value: 'hilang',     label: 'Hilang',        color: 'bg-red-600 text-white' },
+  { value: 'tidak_tersedia', label: 'Tidak Tersedia', color: 'bg-gray-600 text-white' },
 ]
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -82,6 +83,7 @@ interface EquipmentListProps {
   searchParams: {
     ketersediaan?: string
     category?: string
+    condition?: string
     search?: string
     todayOnly?: string
   }
@@ -139,6 +141,7 @@ export function EquipmentList({
       case 'tersedia': return 'bg-green-100 text-green-700 border-green-200'
       case 'digunakan': return 'bg-orange-100 text-orange-700 border-orange-200'
       case 'hilang': return 'bg-red-100 text-red-700 border-red-200'
+      case 'tidak_tersedia': return 'bg-gray-100 text-gray-700 border-gray-200'
       default: return 'bg-gray-100 text-gray-700'
     }
   }
@@ -148,6 +151,7 @@ export function EquipmentList({
       case 'tersedia': return 'Tersedia'
       case 'digunakan': return 'Digunakan'
       case 'hilang': return 'Hilang'
+      case 'tidak_tersedia': return 'Tidak Tersedia'
       default: return status
     }
   }
@@ -162,6 +166,7 @@ export function EquipmentList({
     const params = new URLSearchParams()
     if (searchParams.ketersediaan) params.set('ketersediaan', searchParams.ketersediaan)
     if (searchParams.category) params.set('category', searchParams.category)
+    if (searchParams.condition) params.set('condition', searchParams.condition)
     if (searchParams.search) params.set('search', searchParams.search)
     if (searchParams.todayOnly) params.set('todayOnly', searchParams.todayOnly)
     params.set('page', newPage.toString())

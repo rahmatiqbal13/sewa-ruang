@@ -15,7 +15,7 @@ export default async function AdminBookingsPage({
     .select(`
       id, reference_no, status, start_datetime, end_datetime, 
       total_amount, purpose, created_at,
-      users(name, email, phone, institution, class_division)
+      users(name, email, phone, telegram_username, institution, class_division)
     `)
     .order('created_at', { ascending: false })
 

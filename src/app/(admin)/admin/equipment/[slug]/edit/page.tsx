@@ -412,11 +412,13 @@ export default async function EditEquipmentPage({ params }: Props) {
                       {equipment.ketersediaan === 'tersedia' && <span>Tersedia</span>}
                       {equipment.ketersediaan === 'digunakan' && <span>Digunakan</span>}
                       {equipment.ketersediaan === 'hilang' && <span>Hilang</span>}
+                      {equipment.ketersediaan === 'tidak_tersedia' && <span>Tidak Tersedia</span>}
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="tersedia">Tersedia</SelectItem>
                       <SelectItem value="digunakan">Digunakan</SelectItem>
                       <SelectItem value="hilang">Hilang</SelectItem>
+                      <SelectItem value="tidak_tersedia">Tidak Tersedia</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Mail, MessageSquare, Send, Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { saveChannelConfig } from './actions'
 
 interface ChannelData {
   id?: string
@@ -41,7 +42,7 @@ function SecretInput({ value, onChange, placeholder }: { value: string; onChange
 
 const DEFAULTS: Record<string, Record<string, string>> = {
   email: { smtp_host: '', smtp_port: '587', smtp_user: '', smtp_pass: '', from_name: 'Sewa Ruang & Alat', from_email: '' },
-  whatsapp: { api_url: 'https://api.fonnte.com/send', api_token: '', sender_number: '' },
+  whatsapp: { use_wame: 'true', admin_number: '', default_message: 'Halo, saya ingin bertanya tentang peminjaman ruangan/alat di Sport Center UNESA.' },
   telegram: { bot_token: '', admin_chat_id: '' },
 }
 
@@ -81,16 +82,76 @@ export function ChannelConfig({ configs }: { configs: ChannelData[] }) {
 
   async function save(channel: string) {
     setLoading(p => ({ ...p, [channel]: true }))
-    const supabase = createClient()
     const d = states[channel]
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('notification_channel_configs') as any).upsert(
-      { channel: d.channel, is_enabled: d.is_enabled, config: d.config, updated_at: new Date().toISOString() },
-      { onConflict: 'channel' }
-    )
-    if (error) toast.error('Gagal menyimpan: ' + error.message)
-    else toast.success(`Konfigurasi ${CHANNEL_META[channel as keyof typeof CHANNEL_META].label} disimpan`)
+    
+    const result = await saveChannelConfig({
+      channel: d.channel,
+      is_enabled: d.is_enabled,
+      config: d.config
+    })
+    
+    if (result.error) {
+      toast.error('Gagal menyimpan: ' + result.error)
+    } else {
+      toast.success(`Konfigurasi ${CHANNEL_META[channel as keyof typeof CHANNEL_META].label} disimpan`)
+    }
+    
     setLoading(p => ({ ...p, [channel]: false }))
+  }
+
+  async function testChannel(channel: string) {
+    const cfg = states[channel].config
+    
+    if (channel === 'email') {
+      if (!cfg.smtp_host || !cfg.smtp_user || !cfg.smtp_pass) {
+        toast.error('Lengkapi konfigurasi email terlebih dahulu')
+        return
+      }
+
+      setLoading(p => ({ ...p, [`${channel}_test`]: true }))
+      
+      try {
+        const response = await fetch('/api/notifications/test-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            config: {
+              host: cfg.smtp_host,
+              port: parseInt(cfg.smtp_port) || 587,
+              user: cfg.smtp_user,
+              pass: cfg.smtp_pass,
+              from: cfg.from_email || cfg.smtp_user,
+              fromName: cfg.from_name || 'Sport Center UNESA'
+            },
+            testTo: cfg.smtp_user
+          })
+        })
+
+        const result = await response.json()
+        
+        if (response.ok) {
+          toast.success('Email test berhasil dikirim! Cek inbox Anda.')
+        } else {
+          toast.error('Gagal kirim email: ' + (result.error || 'Unknown error'))
+        }
+      } catch (err: any) {
+        toast.error('Error: ' + err.message)
+      }
+      
+      setLoading(p => ({ ...p, [`${channel}_test`]: false }))
+    }
+    
+    if (channel === 'whatsapp') {
+      if (!cfg.admin_number) {
+        toast.error('Masukkan nomor WhatsApp admin terlebih dahulu')
+        return
+      }
+
+      // Buka wa.me link di tab baru
+      const waLink = `https://wa.me/${cfg.admin_number}?text=${encodeURIComponent(cfg.default_message || '')}`
+      window.open(waLink, '_blank')
+      toast.success('WhatsApp Web/App dibuka! Pesan sudah terisi otomatis.')
+    }
   }
 
   return (
@@ -160,21 +221,34 @@ export function ChannelConfig({ configs }: { configs: ChannelData[] }) {
 
                 {ch === 'whatsapp' && (
                   <>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                      <p className="text-xs text-green-700">
+                        <strong>Mode Gratis:</strong> Menggunakan wa.me link. Pengguna akan diarahkan ke WhatsApp Web/App dengan pesan otomatis.
+                        Tidak perlu API key atau biaya.
+                      </p>
+                    </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">API URL Provider</Label>
-                      <Input placeholder="https://api.fonnte.com/send" value={cfg.api_url} onChange={e => set(ch, 'api_url', e.target.value)} />
-                      <p className="text-xs text-muted-foreground">Mendukung Fonnte, WaBlas, atau endpoint custom.</p>
+                      <Label className="text-xs text-muted-foreground">Nomor Admin WhatsApp</Label>
+                      <Input placeholder="6281234567890" value={cfg.admin_number} onChange={e => set(ch, 'admin_number', e.target.value)} />
+                      <p className="text-xs text-muted-foreground">Format: 62xxxxxxxxxx (tanpa tanda + atau spasi)</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">API Token</Label>
-                        <SecretInput value={cfg.api_token} onChange={v => set(ch, 'api_token', v)} placeholder="token..." />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Nomor Pengirim</Label>
-                        <Input placeholder="6281234567890" value={cfg.sender_number} onChange={e => set(ch, 'sender_number', e.target.value)} />
-                      </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Pesan Default</Label>
+                      <Input placeholder="Halo, saya ingin bertanya..." value={cfg.default_message} onChange={e => set(ch, 'default_message', e.target.value)} />
+                      <p className="text-xs text-muted-foreground">Pesan yang akan muncul otomatis saat membuka WhatsApp.</p>
                     </div>
+                    {cfg.admin_number && (
+                      <div className="pt-2">
+                        <a 
+                          href={`https://wa.me/${cfg.admin_number}?text=${encodeURIComponent(cfg.default_message || '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-green-600 hover:text-green-700 underline"
+                        >
+                          Test link: Klik untuk preview →
+                        </a>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -193,10 +267,34 @@ export function ChannelConfig({ configs }: { configs: ChannelData[] }) {
                   </>
                 )}
 
-                <Button size="sm" onClick={() => save(ch)} disabled={loading[ch]}>
-                  {loading[ch] && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-                  Simpan Konfigurasi
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => save(ch)} disabled={loading[ch]}>
+                    {loading[ch] && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                    Simpan Konfigurasi
+                  </Button>
+                  {ch === 'email' && (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => testChannel(ch)}
+                      disabled={loading[`${ch}_test`]}
+                    >
+                      {loading[`${ch}_test`] && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                      Test Kirim Email
+                    </Button>
+                  )}
+                  {ch === 'whatsapp' && (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => testChannel(ch)}
+                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                    >
+                      <MessageSquare className="mr-2 h-3.5 w-3.5" />
+                      Test Buka WhatsApp
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             )}
           </Card>

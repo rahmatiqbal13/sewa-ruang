@@ -104,7 +104,11 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE TYPE availability_status AS ENUM ('tersedia', 'digunakan', 'hilang');
+  CREATE TYPE availability_status AS ENUM ('tersedia', 'digunakan', 'hilang', 'tidak_tersedia');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TYPE availability_status ADD VALUE 'tidak_tersedia';
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
@@ -664,11 +668,11 @@ CREATE POLICY "tracking_logs_read" ON public.asset_tracking_logs FOR SELECT USIN
 CREATE POLICY "tracking_logs_insert" ON public.asset_tracking_logs FOR INSERT WITH CHECK (true);
 
 -- Notifications
-CREATE POLICY "notifications_own" ON public.notifications FOR ALL USING (user_id = auth.uid() OR public.get_user_role() = 'admin');
+CREATE POLICY "notifications_own" ON public.notifications FOR ALL USING (user_id = auth.uid() OR public.get_user_role() IN ('admin', 'super_admin'));
 CREATE POLICY "notif_prefs_own" ON public.notification_preferences FOR ALL USING (user_id = auth.uid());
-CREATE POLICY "admin_manage_channel_configs" ON public.notification_channel_configs FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "admin_manage_channel_configs" ON public.notification_channel_configs FOR ALL USING (public.get_user_role() IN ('admin', 'super_admin'));
 CREATE POLICY "staff_read_channel_configs" ON public.notification_channel_configs FOR SELECT USING (public.is_admin_or_staff());
-CREATE POLICY "admin_manage_templates" ON public.notification_templates FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "admin_manage_templates" ON public.notification_templates FOR ALL USING (public.get_user_role() IN ('admin', 'super_admin'));
 CREATE POLICY "staff_read_templates" ON public.notification_templates FOR SELECT USING (public.is_admin_or_staff());
 
 -- Agreement Templates

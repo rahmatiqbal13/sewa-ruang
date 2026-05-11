@@ -14,9 +14,9 @@ function createSlug(name: string): string {
 export default async function EquipmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ketersediaan?: string; category?: string; page?: string; search?: string; showInactive?: string; todayOnly?: string }>
+  searchParams: Promise<{ ketersediaan?: string; category?: string; condition?: string; page?: string; search?: string; showInactive?: string; todayOnly?: string }>
 }) {
-  const { ketersediaan, category, page, search, showInactive, todayOnly } = await searchParams
+  const { ketersediaan, category, condition, page, search, showInactive, todayOnly } = await searchParams
   const currentPage = parseInt(page || '1', 10)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
@@ -49,6 +49,10 @@ export default async function EquipmentPage({
   
   if (category) {
     countQuery = countQuery.eq('category', category)
+  }
+
+  if (condition) {
+    countQuery = countQuery.eq('current_condition', condition)
   }
 
   if (search) {
@@ -92,6 +96,10 @@ export default async function EquipmentPage({
     query = query.eq('category', category)
   }
 
+  if (condition) {
+    query = query.eq('current_condition', condition)
+  }
+
   if (search) {
     query = query.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
   }
@@ -122,6 +130,9 @@ export default async function EquipmentPage({
   if (category) {
     allEquipmentQuery = allEquipmentQuery.eq('category', category)
   }
+  if (condition) {
+    allEquipmentQuery = allEquipmentQuery.eq('current_condition', condition)
+  }
   if (search) {
     allEquipmentQuery = allEquipmentQuery.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
   }
@@ -150,6 +161,7 @@ export default async function EquipmentPage({
     'tersedia': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'tersedia').length ?? 0,
     'digunakan': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'digunakan').length ?? 0,
     'hilang': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'hilang').length ?? 0,
+    'tidak_tersedia': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'tidak_tersedia').length ?? 0,
   }
 
   // Check for duplicate names (from all equipment)
@@ -186,7 +198,7 @@ export default async function EquipmentPage({
       duplicateBaseNames={duplicateBaseNames}
       uniqueCategories={uniqueCategories}
       hasDuplicates={hasDuplicates}
-      searchParams={{ ketersediaan, category, search, todayOnly }}
+      searchParams={{ ketersediaan, category, condition, search, todayOnly }}
       isSuperAdmin={isSuperAdmin}
     />
   )

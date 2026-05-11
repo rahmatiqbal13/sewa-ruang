@@ -14,6 +14,7 @@ import {
   ArrowLeft, User, Mail, Phone, Building2, 
   Calendar, Package, CreditCard, FileText, Receipt, Clock
 } from 'lucide-react'
+import { ContactButtons } from '@/components/shared/ContactButtons'
 
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,7 +26,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     .select(`
       id, reference_no, status, start_datetime, end_datetime,
       total_amount, purpose, created_at, admin_notes,
-      users(id, name, email, phone, institution, class_division, role)
+      users(id, name, email, phone, telegram_username, institution, class_division, role)
     `)
     .eq('id', id)
     .single()
@@ -185,9 +186,34 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
                 <div className="flex items-start gap-3">
                   <Phone className="h-4 w-4 text-slate-400 mt-0.5" />
-                  <div>
-                    <p className="text-slate-500">WhatsApp/Telepon</p>
-                    <p className="font-medium">{borrower?.phone || '-'}</p>
+                  <div className="flex-1">
+                    <p className="text-slate-500">Kontak</p>
+                    <div className="flex items-center gap-2 flex-wrap mt-1">
+                      <p className="font-medium">{borrower?.phone || borrower?.email || '-'}</p>
+                      {(borrower?.phone || borrower?.email) && (
+                        <ContactButtons 
+                          booking={{
+                            id: booking.id,
+                            reference_no: booking.reference_no,
+                            status: booking.status,
+                            start_datetime: booking.start_datetime,
+                            end_datetime: booking.end_datetime,
+                            users: { 
+                              name: borrower.name,
+                              email: borrower.email,
+                              phone: borrower.phone,
+                              telegram_username: borrower.telegram_username
+                            },
+                            booking_items: bookingItems.map((item: any) => ({
+                              item_type: item.item_type,
+                              room: item.room,
+                              equipment: item.equipment
+                            })),
+                            admin_notes: booking.admin_notes
+                          }}
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

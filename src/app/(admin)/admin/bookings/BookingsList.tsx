@@ -15,6 +15,7 @@ import { cn, formatDateTime, formatRupiah } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { SendMessageDialog } from './SendMessageDialog'
+import { ContactButtons } from '@/components/shared/ContactButtons'
 
 const STATUS_TABS = [
   { value: '', label: 'Semua', color: 'bg-slate-800 text-white', bg: 'bg-slate-50' },
@@ -39,6 +40,7 @@ interface Booking {
     name: string
     email: string
     phone: string | null
+    telegram_username: string | null
     institution: string
     class_division: string
   } | null
@@ -298,30 +300,26 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                       <BookingStatusBadge status={booking.status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          href={`/admin/bookings/${booking.id}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                        
-                        {booking.users?.phone && (
-                          <button
-                            onClick={() => {
-                              setSelectedBooking(booking)
-                              setMessageDialogOpen(true)
+                      <div className="flex items-center justify-end gap-2">
+                        {(booking.users?.email || booking.users?.phone) && (
+                          <ContactButtons 
+                            booking={{
+                              id: booking.id,
+                              reference_no: booking.reference_no,
+                              status: booking.status,
+                              start_datetime: booking.start_datetime,
+                              end_datetime: booking.end_datetime,
+                              users: booking.users,
+                              booking_items: booking.booking_items,
+                              admin_notes: booking.admin_notes
                             }}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-green-600 hover:bg-green-50"
-                            title="Kirim pesan"
-                          >
-                            <Send className="h-4 w-4" />
-                          </button>
+                          />
                         )}
                         
                         <Link
                           href={`/admin/bookings/${booking.id}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                          title="Lihat detail"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </Link>
@@ -384,23 +382,27 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                   <div className="mt-3 pt-3 border-t flex items-center justify-between">
                     <span className="font-semibold text-lg">{formatRupiah(booking.total_amount)}</span>
                     <div className="flex gap-1">
+                      {(booking.users?.email || booking.users?.phone) && (
+                        <ContactButtons 
+                          booking={{
+                            id: booking.id,
+                            reference_no: booking.reference_no,
+                            status: booking.status,
+                            start_datetime: booking.start_datetime,
+                            end_datetime: booking.end_datetime,
+                            users: booking.users,
+                            booking_items: booking.booking_items,
+                            admin_notes: booking.admin_notes
+                          }}
+                        />
+                      )}
+                      
                       <Link
                         href={`/admin/bookings/${booking.id}`}
                         className="text-xs px-3 py-1.5 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200"
                       >
                         Detail
                       </Link>
-                      {booking.users?.phone && (
-                        <button
-                          onClick={() => {
-                            setSelectedBooking(booking)
-                            setMessageDialogOpen(true)
-                          }}
-                          className="text-xs px-3 py-1.5 rounded-md bg-green-100 text-green-700 hover:bg-green-200"
-                        >
-                          Kirim Pesan
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>

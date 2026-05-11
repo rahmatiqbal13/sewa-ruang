@@ -27,6 +27,7 @@ interface Equipment {
   ketersediaan: string
   status_tindakan: string
   description: string | null
+  is_active: boolean
   rooms?: { name: string } | null
 }
 
@@ -38,6 +39,7 @@ interface Inventory {
   quantity: number
   condition: string
   notes: string | null
+  is_active: boolean
   rooms?: { name: string } | null
 }
 
@@ -90,9 +92,11 @@ export default async function ReportsPage({
     tab?: string;
     equipmentCondition?: string;
     inventoryCondition?: string;
+    showInactive?: string;
   }> 
 }) {
-  const { from, to, tab = 'bookings', equipmentCondition, inventoryCondition } = await searchParams
+  const { from, to, tab = 'bookings', equipmentCondition, inventoryCondition, showInactive } = await searchParams
+  const showInactiveItems = showInactive === 'true'
   const supabase = await createClient()
 
   const fromDate = from ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
@@ -121,8 +125,12 @@ export default async function ReportsPage({
   let equipmentQuery = sb
     .from('equipment')
     .select('*, rooms(name)')
-    .eq('is_active', true)
     .order('name')
+
+  // Only show active items by default, unless showInactive=true
+  if (!showInactiveItems) {
+    equipmentQuery = equipmentQuery.eq('is_active', true)
+  }
 
   if (equipmentCondition) {
     equipmentQuery = equipmentQuery.eq('current_condition', equipmentCondition)
@@ -134,8 +142,12 @@ export default async function ReportsPage({
   let inventoryQuery = sb
     .from('room_inventories')
     .select('*, rooms(name)')
-    .eq('is_active', true)
     .order('name')
+
+  // Only show active items by default, unless showInactive=true
+  if (!showInactiveItems) {
+    inventoryQuery = inventoryQuery.eq('is_active', true)
+  }
 
   if (inventoryCondition) {
     inventoryQuery = inventoryQuery.eq('condition', inventoryCondition)
@@ -189,7 +201,7 @@ export default async function ReportsPage({
         <h1 className="text-2xl font-bold">Laporan</h1>
       </div>
 
-      <Tabs defaultValue={tab} className="w-full">
+      <Tabs defaultValue={tab || 'bookings'} key={tab} className="w-full">
         <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="bookings" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -341,84 +353,96 @@ export default async function ReportsPage({
                 <option value="lost">Hilang</option>
               </select>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="showInactive"
+                value="true"
+                defaultChecked={showInactiveItems}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-700">Tampilkan alat non-aktif</span>
+            </label>
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90">
               Filter
             </button>
-            {equipmentCondition && (
+            {(equipmentCondition || showInactiveItems) && (
               <Link href="/admin/reports?tab=equipment" className="px-4 py-2 border rounded text-sm hover:bg-gray-50">
                 Reset
               </Link>
             )}
           </form>
 
-          {/* Daftar Alat Bermasalah */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                Alat Perlu Perhatian
-              </CardTitle>
-              <CardDescription>
-                Daftar alat dengan kondisi perlu perbaikan, rusak, atau hilang
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Kode</TableHead>
-                    <TableHead>Nama Alat</TableHead>
-                    <TableHead>Kategori</TableHead>
-                    <TableHead>Kondisi</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Lokasi</TableHead>
-                    <TableHead>Deskripsi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {problematicEquipment.length === 0 ? (
+          {/* Daftar Alat Bermasalah - Hanya tampil jika tidak ada filter aktif */}
+          {!equipmentCondition && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  Alat Perlu Perhatian
+                </CardTitle>
+                <CardDescription>
+                  Daftar alat dengan kondisi perlu perbaikan, rusak, atau hilang
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Tidak ada alat dengan kondisi bermasalah
-                      </TableCell>
+                      <TableHead>Kode</TableHead>
+                      <TableHead>Nama Alat</TableHead>
+                      <TableHead>Kategori</TableHead>
+                      <TableHead>Kondisi</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Lokasi</TableHead>
+                      <TableHead>Deskripsi</TableHead>
                     </TableRow>
-                  ) : (
-                    problematicEquipment.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-xs">{item.equipment_code}</TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{item.category}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={getConditionColor(item.current_condition)}>
-                            {getConditionLabel(item.current_condition)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <Badge variant="secondary" className="text-xs">
-                              {getKetersediaanLabel(item.ketersediaan)}
-                            </Badge>
-                            {item.status_tindakan !== 'normal' && (
-                              <Badge variant="outline" className="text-xs">
-                                <Wrench className="h-3 w-3 mr-1" />
-                                {getStatusTindakanLabel(item.status_tindakan)}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {item.rooms?.name || item.current_location || '-'}
-                        </TableCell>
-                        <TableCell className="text-sm max-w-xs truncate" title={item.description || ''}>
-                          {item.description || '-'}
+                  </TableHeader>
+                  <TableBody>
+                    {problematicEquipment.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          Tidak ada alat dengan kondisi bermasalah
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                    ) : (
+                      problematicEquipment.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-mono text-xs">{item.equipment_code}</TableCell>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{item.category}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={getConditionColor(item.current_condition)}>
+                              {getConditionLabel(item.current_condition)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="secondary" className="text-xs">
+                                {getKetersediaanLabel(item.ketersediaan)}
+                              </Badge>
+                              {item.status_tindakan !== 'normal' && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Wrench className="h-3 w-3 mr-1" />
+                                  {getStatusTindakanLabel(item.status_tindakan)}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {item.rooms?.name || item.current_location || '-'}
+                          </TableCell>
+                          <TableCell className="text-sm max-w-xs truncate" title={item.description || ''}>
+                            {item.description || '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Semua Equipment (filtered) */}
           <Card>
@@ -450,7 +474,9 @@ export default async function ReportsPage({
                   {equipment?.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Tidak ada data alat
+                        {equipmentCondition 
+                          ? `Tidak ada alat dengan kondisi "${getConditionLabel(equipmentCondition)}"`
+                          : 'Tidak ada data alat'}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -524,27 +550,38 @@ export default async function ReportsPage({
                 <option value="damaged">Rusak</option>
               </select>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="showInactive"
+                value="true"
+                defaultChecked={showInactiveItems}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-700">Tampilkan inventaris non-aktif</span>
+            </label>
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90">
               Filter
             </button>
-            {inventoryCondition && (
+            {(inventoryCondition || showInactiveItems) && (
               <Link href="/admin/reports?tab=inventory" className="px-4 py-2 border rounded text-sm hover:bg-gray-50">
                 Reset
               </Link>
             )}
           </form>
 
-          {/* Daftar Inventaris Bermasalah */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                Inventaris Perlu Perhatian
-              </CardTitle>
-              <CardDescription>
-                Daftar inventaris dengan kondisi perlu perbaikan atau rusak
-              </CardDescription>
-            </CardHeader>
+          {/* Daftar Inventaris Bermasalah - Hanya tampil jika tidak ada filter aktif */}
+          {!inventoryCondition && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  Inventaris Perlu Perhatian
+                </CardTitle>
+                <CardDescription>
+                  Daftar inventaris dengan kondisi perlu perbaikan atau rusak
+                </CardDescription>
+              </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -593,6 +630,7 @@ export default async function ReportsPage({
               </Table>
             </CardContent>
           </Card>
+          )}
 
           {/* Semua Inventaris (filtered) */}
           <Card>
@@ -624,7 +662,9 @@ export default async function ReportsPage({
                   {inventory?.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Tidak ada data inventaris
+                        {inventoryCondition 
+                          ? `Tidak ada inventaris dengan kondisi "${getConditionLabel(inventoryCondition)}"`
+                          : 'Tidak ada data inventaris'}
                       </TableCell>
                     </TableRow>
                   ) : (

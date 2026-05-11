@@ -26,6 +26,7 @@ export default async function CatalogPage() {
       `)
       .eq('is_active', true)
       .eq('current_condition', 'good')
+      .neq('ketersediaan', 'tidak_tersedia')
       .order('name') as Promise<{ data: any[] | null }>,
   ])
 

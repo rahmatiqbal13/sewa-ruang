@@ -43,7 +43,11 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE TYPE availability_status AS ENUM ('tersedia', 'digunakan', 'hilang');
+  CREATE TYPE availability_status AS ENUM ('tersedia', 'digunakan', 'hilang', 'tidak_tersedia');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TYPE availability_status ADD VALUE 'tidak_tersedia';
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN

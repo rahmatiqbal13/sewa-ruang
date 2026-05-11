@@ -39,7 +39,11 @@ const CHANNELS: { key: Channel; label: string; icon: React.ElementType; color: s
 const VARIABLES = [
   { key: '{{nama}}', desc: 'Nama peminjam' },
   { key: '{{no_booking}}', desc: 'No. referensi booking' },
-  { key: '{{ruangan}}', desc: 'Nama ruangan/alat' },
+  { key: '{{ruangan}}', desc: 'Semua ruangan & alat (tergabung)' },
+  { key: '{{daftar_ruangan}}', desc: 'Daftar ruangan saja (dengan nomor)' },
+  { key: '{{daftar_alat}}', desc: 'Daftar alat saja (dengan nomor)' },
+  { key: '{{jumlah_ruangan}}', desc: 'Jumlah ruangan (angka)' },
+  { key: '{{jumlah_alat}}', desc: 'Jumlah alat (angka)' },
   { key: '{{tanggal_mulai}}', desc: 'Tanggal & jam mulai' },
   { key: '{{tanggal_selesai}}', desc: 'Tanggal & jam selesai' },
   { key: '{{status}}', desc: 'Status booking' },
@@ -49,51 +53,51 @@ const VARIABLES = [
 const DEFAULT_BODIES: Record<string, Record<Channel, { subject?: string; body: string }>> = {
   booking_submitted: {
     email: {
-      subject: 'Pengajuan Peminjaman #{{no_booking}} Diterima',
-      body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda untuk {{ruangan}} telah kami terima dan sedang dalam proses review.\n\nDetail Pengajuan:\n• No. Referensi: {{no_booking}}\n• Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n\nKami akan segera menghubungi Anda setelah pengajuan diproses.\n\nTerima kasih,\nTim Sewa Ruang & Alat',
+      subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima',
+      body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima dengan detail:\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nKami akan segera memproses pengajuan Anda.\n\nTerima kasih,\nSport Center UNESA',
     },
     whatsapp: { body: 'Halo {{nama}}! Pengajuan peminjaman *{{ruangan}}* (Ref: {{no_booking}}) untuk {{tanggal_mulai}} s/d {{tanggal_selesai}} telah kami terima dan sedang diproses. Kami akan segera memberikan konfirmasi. Terima kasih!' },
     telegram: { body: '📋 Halo {{nama}}!\n\nPengajuan peminjaman *{{ruangan}}* (Ref: `{{no_booking}}`) telah diterima dan sedang diproses.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nKami akan segera memberikan konfirmasi.' },
   },
   booking_approved: {
     email: {
-      subject: '✅ Pengajuan #{{no_booking}} Disetujui',
-      body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah *DISETUJUI*.\n\nDetail:\n• Ruangan/Alat: {{ruangan}}\n• No. Referensi: {{no_booking}}\n• Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk mengkonfirmasi peminjaman Anda.\n\nTerima kasih,\nTim Sewa Ruang & Alat',
+      subject: '{{nama}} - {{no_booking}} | ✅ Disetujui',
+      body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi peminjaman.\n\nTerima kasih,\nSport Center UNESA',
     },
-    whatsapp: { body: '✅ Selamat {{nama}}!\n\nPengajuan peminjaman *{{ruangan}}* (Ref: {{no_booking}}) untuk {{tanggal_mulai}} s/d {{tanggal_selesai}} telah *DISETUJUI*.\n\nSilakan lakukan pembayaran untuk konfirmasi. Terima kasih!' },
-    telegram: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{ruangan}}* (Ref: `{{no_booking}}`) untuk {{tanggal_mulai}} — {{tanggal_selesai}} telah *DISETUJUI*.\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
+    whatsapp: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah DISETUJUI.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
+    telegram: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah *DISETUJUI*.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
   },
   booking_rejected: {
     email: {
-      subject: 'Pengajuan #{{no_booking}} Tidak Dapat Diproses',
-      body: 'Halo {{nama}},\n\nMohon maaf, pengajuan peminjaman Anda untuk {{ruangan}} tidak dapat disetujui.\n\nAlasan: {{catatan_admin}}\n\nAnda dapat mengajukan kembali di waktu lain atau menghubungi admin untuk informasi lebih lanjut.\n\nTerima kasih,\nTim Sewa Ruang & Alat',
+      subject: '{{nama}} - {{no_booking}} | Ditolak',
+      body: 'Halo {{nama}},\n\nMohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n\n{{catatan_admin}}\n\nSilakan hubungi kami untuk informasi lebih lanjut.\n\nTerima kasih,\nSport Center UNESA',
     },
-    whatsapp: { body: 'Halo {{nama}}, mohon maaf pengajuan peminjaman *{{ruangan}}* (Ref: {{no_booking}}) tidak dapat disetujui.\n\nAlasan: {{catatan_admin}}\n\nSilakan hubungi admin untuk informasi lebih lanjut.' },
-    telegram: { body: '❌ Halo {{nama}},\n\nPengajuan *{{ruangan}}* (Ref: `{{no_booking}}`) tidak dapat disetujui.\n\nAlasan: {{catatan_admin}}' },
+    whatsapp: { body: 'Halo {{nama}}, mohon maaf pengajuan *{{no_booking}}* tidak dapat disetujui.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n\nSilakan hubungi admin untuk informasi lebih lanjut.' },
+    telegram: { body: '❌ Halo {{nama}},\n\nPengajuan *{{no_booking}}* tidak dapat disetujui.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}' },
   },
   booking_cancelled: {
     email: {
-      subject: 'Pengajuan #{{no_booking}} Dibatalkan',
-      body: 'Halo {{nama}},\n\nPeminjaman {{ruangan}} (Ref: {{no_booking}}) untuk {{tanggal_mulai}} s/d {{tanggal_selesai}} telah dibatalkan.\n\nJika Anda memerlukan bantuan, silakan hubungi admin.\n\nTerima kasih,\nTim Sewa Ruang & Alat',
+      subject: '{{nama}} - {{no_booking}} | Dibatalkan',
+      body: 'Halo {{nama}},\n\nPeminjaman Anda telah dibatalkan.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n\nJika Anda memiliki pertanyaan, silakan hubungi kami.\n\nTerima kasih,\nSport Center UNESA',
     },
-    whatsapp: { body: 'Halo {{nama}}, peminjaman *{{ruangan}}* (Ref: {{no_booking}}) untuk {{tanggal_mulai}} s/d {{tanggal_selesai}} telah dibatalkan.' },
-    telegram: { body: '🚫 Peminjaman *{{ruangan}}* (Ref: `{{no_booking}}`) untuk {{tanggal_mulai}} — {{tanggal_selesai}} telah dibatalkan.' },
+    whatsapp: { body: 'Halo {{nama}}, peminjaman *{{no_booking}}* telah dibatalkan.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}' },
+    telegram: { body: '🚫 Peminjaman *{{no_booking}}* telah dibatalkan.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}' },
   },
   payment_received: {
     email: {
-      subject: '💳 Pembayaran #{{no_booking}} Diterima',
-      body: 'Halo {{nama}},\n\nPembayaran untuk peminjaman {{ruangan}} (Ref: {{no_booking}}) telah kami terima.\n\nPeminjaman Anda dikonfirmasi untuk:\n• Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n\nHarap datang tepat waktu sesuai jadwal.\n\nTerima kasih,\nTim Sewa Ruang & Alat',
+      subject: '{{nama}} - {{no_booking}} | 💳 Lunas',
+      body: 'Halo {{nama}},\n\nPembayaran untuk peminjaman Anda telah kami terima.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n💳 Status: LUNAS & DIKONFIRMASI\n\nPeminjaman Anda telah dikonfirmasi. Harap datang tepat waktu.\n\nTerima kasih,\nSport Center UNESA',
     },
-    whatsapp: { body: '💳 Halo {{nama}}! Pembayaran untuk peminjaman *{{ruangan}}* (Ref: {{no_booking}}) telah diterima. Peminjaman dikonfirmasi untuk {{tanggal_mulai}} s/d {{tanggal_selesai}}. Harap datang tepat waktu!' },
-    telegram: { body: '💳 Pembayaran untuk *{{ruangan}}* (Ref: `{{no_booking}}`) telah diterima.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nHarap datang tepat waktu.' },
+    whatsapp: { body: '💳 Halo {{nama}}! Pembayaran untuk *{{no_booking}}* telah diterima.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nPeminjaman dikonfirmasi. Harap datang tepat waktu!' },
+    telegram: { body: '💳 Halo {{nama}}!\n\nPembayaran *{{no_booking}}* telah diterima.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\n✅ Peminjaman dikonfirmasi.' },
   },
   booking_reminder: {
     email: {
-      subject: '⏰ Pengingat: Peminjaman {{ruangan}} Besok',
-      body: 'Halo {{nama}},\n\nIni adalah pengingat bahwa peminjaman Anda akan segera dimulai:\n\n• Ruangan/Alat: {{ruangan}}\n• No. Referensi: {{no_booking}}\n• Mulai: {{tanggal_mulai}}\n• Selesai: {{tanggal_selesai}}\n\nHarap datang tepat waktu.\n\nTerima kasih,\nTim Sewa Ruang & Alat',
+      subject: '{{nama}} - {{no_booking}} | ⏰ Pengingat',
+      body: 'Halo {{nama}},\n\nIni adalah pengingat bahwa peminjaman Anda akan segera dimulai:\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Mulai: {{tanggal_mulai}}\n📅 Selesai: {{tanggal_selesai}}\n\nHarap datang tepat waktu sesuai jadwal.\n\nTerima kasih,\nSport Center UNESA',
     },
-    whatsapp: { body: '⏰ *Pengingat Peminjaman*\n\nHalo {{nama}}! Peminjaman *{{ruangan}}* (Ref: {{no_booking}}) Anda akan dimulai pada {{tanggal_mulai}}. Harap datang tepat waktu!' },
-    telegram: { body: '⏰ *Pengingat Peminjaman*\n\nHalo {{nama}}! Peminjaman *{{ruangan}}* (Ref: `{{no_booking}}`) dimulai pada {{tanggal_mulai}}. Harap datang tepat waktu!' },
+    whatsapp: { body: '⏰ *Pengingat Peminjaman*\n\nHalo {{nama}}! Peminjaman *{{no_booking}}* akan dimulai:\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}}\n\nHarap datang tepat waktu!' },
+    telegram: { body: '⏰ *Pengingat Peminjaman*\n\nHalo {{nama}}!\n\nPeminjaman *{{no_booking}}* dimulai {{tanggal_mulai}}.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n\nHarap datang tepat waktu!' },
   },
 }
 

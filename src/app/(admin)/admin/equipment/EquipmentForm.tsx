@@ -43,6 +43,7 @@ const KETERSEDIAAN_LABELS: Record<string, string> = {
   tersedia: 'Tersedia',
   digunakan: 'Sedang Digunakan',
   hilang: 'Hilang',
+  tidak_tersedia: 'Tidak Tersedia',
 }
 
 const STATUS_TINDAKAN_LABELS: Record<string, string> = {
@@ -61,7 +62,7 @@ const schema = z.object({
   category: z.string().min(1, 'Kategori wajib dipilih'),
   description: z.string().optional(),
   current_condition: z.enum(['good', 'needs_repair', 'damaged', 'lost']),
-  ketersediaan: z.enum(['tersedia', 'digunakan', 'hilang']),
+  ketersediaan: z.enum(['tersedia', 'digunakan', 'hilang', 'tidak_tersedia']),
   status_tindakan: z.enum(['normal', 'perawatan', 'menunggu_part', 'afkir']),
   sumber: z.string().optional(),
   building_id: z.string().optional(),
@@ -461,6 +462,7 @@ export function EquipmentForm({
                     <SelectItem value="tersedia">Tersedia</SelectItem>
                     <SelectItem value="digunakan">Sedang Digunakan</SelectItem>
                     <SelectItem value="hilang">Hilang</SelectItem>
+                    <SelectItem value="tidak_tersedia">Tidak Tersedia</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
