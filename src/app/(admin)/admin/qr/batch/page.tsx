@@ -41,7 +41,7 @@ export default function BatchQRClientPage() {
   const [activeTab, setActiveTab] = useState('rooms')
   const printRef = useRef<HTMLDivElement>(null)
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
 
   useEffect(() => {
     async function loadData() {
@@ -192,156 +192,71 @@ export default function BatchQRClientPage() {
     const items = getSelectedItems()
     if (items.length === 0) return
 
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
+    const htmlContent = `<!DOCTYPE html>
+<html>
+  <head>
+    <title>Label QR Code - ${items.length} Item</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Segoe UI', Arial, sans-serif; background: white; padding: 20px; }
+      .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+      .header h1 { font-size: 28px; color: #1e293b; margin-bottom: 8px; }
+      .header p { color: #64748b; font-size: 14px; }
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+      .label { border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; page-break-inside: avoid; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+      .label-type { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; display: inline-block; }
+      .label-type.room { background: #f3e8ff; color: #7c3aed; }
+      .label-type.equipment { background: #dbeafe; color: #2563eb; }
+      .label-type.inventory { background: #fef3c7; color: #d97706; }
+      .label-qr { background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 16px; display: inline-block; }
+      .label-qr img { width: 120px; height: 120px; }
+      .label-code { font-family: 'Courier New', monospace; font-size: 13px; color: #64748b; background: #f8fafc; padding: 4px 12px; border-radius: 4px; margin-bottom: 8px; display: inline-block; font-weight: 600; }
+      .label-name { font-size: 15px; font-weight: 700; color: #1e293b; line-height: 1.4; margin-bottom: 4px; min-height: 42px; display: flex; align-items: center; justify-content: center; }
+      .label-meta { font-size: 12px; color: #94a3b8; font-style: italic; }
+      @media print {
+        @page { size: A4; margin: 15mm; }
+        body { padding: 0; }
+        .header { margin-bottom: 20px; border-bottom-color: #000; }
+        .grid { grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .label { box-shadow: none; border-color: #000; break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Label QR Code</h1>
+      <p>Total: ${items.length} item | RentSpace System</p>
+    </div>
+    <div class="grid">
+      ${items.map(item => `
+        <div class="label">
+          <div class="label-type ${item.type}">
+            ${item.type === 'room' ? 'Ruangan' : item.type === 'equipment' ? 'Alat' : 'Inventaris'}
+          </div>
+          <div class="label-qr">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(item.url)}&size=120x120" alt="QR" />
+          </div>
+          ${item.code ? `<div class="label-code">${item.code}</div>` : ''}
+          <div class="label-name">${item.name}</div>
+          ${item.meta ? `<div class="label-meta">${item.meta}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+    <script>window.onload = function() { window.print(); }<\/script>
+  </body>
+</html>`
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Label QR Code - ${items.length} Item</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Arial, sans-serif; 
-              background: white;
-              padding: 20px;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-              padding-bottom: 20px;
-              border-bottom: 2px solid #e2e8f0;
-            }
-            .header h1 {
-              font-size: 28px;
-              color: #1e293b;
-              margin-bottom: 8px;
-            }
-            .header p {
-              color: #64748b;
-              font-size: 14px;
-            }
-            .grid { 
-              display: grid; 
-              grid-template-columns: repeat(3, 1fr); 
-              gap: 20px; 
-            }
-            .label { 
-              border: 2px solid #e2e8f0; 
-              border-radius: 12px; 
-              padding: 20px; 
-              text-align: center; 
-              page-break-inside: avoid;
-              background: white;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            }
-            .label-type {
-              font-size: 11px;
-              font-weight: bold;
-              text-transform: uppercase;
-              letter-spacing: 1px;
-              padding: 4px 12px;
-              border-radius: 20px;
-              margin-bottom: 12px;
-              display: inline-block;
-            }
-            .label-type.room { background: #f3e8ff; color: #7c3aed; }
-            .label-type.equipment { background: #dbeafe; color: #2563eb; }
-            .label-type.inventory { background: #fef3c7; color: #d97706; }
-            .label-qr {
-              background: white;
-              padding: 16px;
-              border-radius: 8px;
-              border: 1px solid #e2e8f0;
-              margin-bottom: 16px;
-              display: inline-block;
-            }
-            .label-qr img {
-              width: 120px;
-              height: 120px;
-            }
-            .label-code {
-              font-family: 'Courier New', monospace;
-              font-size: 13px;
-              color: #64748b;
-              background: #f8fafc;
-              padding: 4px 12px;
-              border-radius: 4px;
-              margin-bottom: 8px;
-              display: inline-block;
-              font-weight: 600;
-            }
-            .label-name {
-              font-size: 15px;
-              font-weight: 700;
-              color: #1e293b;
-              line-height: 1.4;
-              margin-bottom: 4px;
-              min-height: 42px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            }
-            .label-meta {
-              font-size: 12px;
-              color: #94a3b8;
-              font-style: italic;
-            }
-            @media print {
-              @page { 
-                size: A4; 
-                margin: 15mm;
-              }
-              body { padding: 0; }
-              .header { 
-                margin-bottom: 20px;
-                border-bottom-color: #000;
-              }
-              .grid { 
-                grid-template-columns: repeat(3, 1fr);
-                gap: 15px;
-              }
-              .label {
-                box-shadow: none;
-                border-color: #000;
-                break-inside: avoid;
-              }
-            }
-            @media (max-width: 768px) {
-              .grid {
-                grid-template-columns: repeat(2, 1fr);
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Label QR Code</h1>
-            <p>Total: ${items.length} item | RentSpace System</p>
-          </div>
-          <div class="grid">
-            ${items.map(item => `
-              <div class="label">
-                <div class="label-type ${item.type}">
-                  ${item.type === 'room' ? 'Ruangan' : item.type === 'equipment' ? 'Alat' : 'Inventaris'}
-                </div>
-                <div class="label-qr">
-                  <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(item.url)}&size=120x120" alt="QR" />
-                </div>
-                ${item.code ? `<div class="label-code">${item.code}</div>` : ''}
-                <div class="label-name">${item.name}</div>
-                ${item.meta ? `<div class="label-meta">${item.meta}</div>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
-    printWindow.onload = () => {
-      printWindow.print()
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
+    const blobUrl = URL.createObjectURL(blob)
+    const printWindow = window.open(blobUrl, '_blank')
+
+    if (!printWindow) {
+      URL.revokeObjectURL(blobUrl)
+      alert('Popup diblokir oleh browser.\n\nIzinkan popup untuk situs ini:\n• Chrome: klik ikon kunci/popup di address bar\n• Firefox: klik "Options" di notifikasi popup\n• Safari: Preferences > Websites > Pop-up Windows')
+      return
     }
+
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000)
   }
 
   const selectedCount = getSelectedItems().length
