@@ -242,21 +242,41 @@ export default function BatchQRClientPage() {
         </div>
       `).join('')}
     </div>
-    <script>window.onload = function() { window.print(); }<\/script>
   </body>
 </html>`
 
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
-    const blobUrl = URL.createObjectURL(blob)
-    const printWindow = window.open(blobUrl, '_blank')
+    // Gunakan hidden iframe — tidak memerlukan izin popup
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;'
+    document.body.appendChild(iframe)
 
-    if (!printWindow) {
-      URL.revokeObjectURL(blobUrl)
-      alert('Popup diblokir oleh browser.\n\nIzinkan popup untuk situs ini:\n• Chrome: klik ikon kunci/popup di address bar\n• Firefox: klik "Options" di notifikasi popup\n• Safari: Preferences > Websites > Pop-up Windows')
-      return
+    const doc = iframe.contentDocument!
+    doc.open()
+    doc.write(htmlContent)
+    doc.close()
+
+    // Tunggu semua gambar QR selesai dimuat sebelum print
+    const images = Array.from(doc.querySelectorAll('img'))
+    const printAndCleanup = () => {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+      setTimeout(() => {
+        if (document.body.contains(iframe)) document.body.removeChild(iframe)
+      }, 2000)
     }
 
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000)
+    if (images.length === 0) {
+      printAndCleanup()
+    } else {
+      let loaded = 0
+      const onDone = () => { if (++loaded === images.length) printAndCleanup() }
+      images.forEach(img => {
+        if (img.complete) onDone()
+        else { img.onload = onDone; img.onerror = onDone }
+      })
+      // Fallback: cetak paksa setelah 8 detik jika gambar lambat
+      setTimeout(printAndCleanup, 8000)
+    }
   }
 
   const selectedCount = getSelectedItems().length
