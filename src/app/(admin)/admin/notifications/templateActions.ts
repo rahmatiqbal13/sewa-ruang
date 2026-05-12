@@ -15,8 +15,9 @@ export async function saveTemplate(data: TemplateData) {
     const supabase = await createClient()
 
     // Insert/Update template (RLS sudah disabled, jadi bisa langsung)
-    const { error } = await supabase
-      .from('notification_templates')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase
+      .from('notification_templates') as any)
       .upsert(
         {
           event_type: data.event_type,
