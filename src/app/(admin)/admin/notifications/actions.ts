@@ -21,8 +21,9 @@ export async function saveChannelConfig(data: ChannelConfig) {
     }
 
     // Check user role
-    const { data: userData, error: userError } = await supabase
-      .from('users')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userData, error: userError } = await (supabase
+      .from('users') as any)
       .select('role')
       .eq('id', user.id)
       .single()
