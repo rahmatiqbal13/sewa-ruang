@@ -27,6 +27,7 @@ interface Equipment {
   ketersediaan: string
   status_tindakan: string
   description: string | null
+  current_location: string | null
   is_active: boolean
   rooms?: { name: string } | null
 }
