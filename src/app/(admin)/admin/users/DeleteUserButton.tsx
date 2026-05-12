@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Trash2, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export function DeleteUserButton({ userId, userName }: { userId: string; userName: string }) {
   const router = useRouter()
@@ -30,10 +31,13 @@ export function DeleteUserButton({ userId, userName }: { userId: string; userNam
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger>
-        <Button size="sm" variant="outline" className="text-destructive hover:text-destructive hover:border-destructive">
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+      <AlertDialogTrigger
+        className={cn(
+          buttonVariants({ variant: 'outline', size: 'sm' }),
+          'text-destructive hover:text-destructive hover:border-destructive'
+        )}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
