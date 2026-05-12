@@ -21,8 +21,9 @@ export async function saveChannelConfig(data: ChannelConfig) {
     }
 
     // Check user role
-    const { data: userData, error: userError } = await supabase
-      .from('users')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userData, error: userError } = await (supabase
+      .from('users') as any)
       .select('role')
       .eq('id', user.id)
       .single()
@@ -37,8 +38,9 @@ export async function saveChannelConfig(data: ChannelConfig) {
     }
 
     // Insert/Update using service role bypass RLS
-    const { error } = await supabase
-      .from('notification_channel_configs')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase
+      .from('notification_channel_configs') as any)
       .upsert(
         {
           channel: data.channel,

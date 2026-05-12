@@ -30,9 +30,9 @@ interface BookingData {
   end_datetime: string
   users?: {
     name: string
-    email?: string
-    phone?: string
-    telegram_username?: string
+    email?: string | null
+    phone?: string | null
+    telegram_username?: string | null
   } | null
   booking_items?: Array<{
     item_type: string
