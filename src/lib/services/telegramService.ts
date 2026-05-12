@@ -4,6 +4,31 @@ interface TelegramMessage {
   parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
 }
 
+interface BookingData {
+  id: string;
+  reference_no: string;
+  start_datetime: string;
+  end_datetime: string;
+  total_amount?: number;
+  users?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    institution?: string;
+  } | null;
+}
+
+interface TelegramUpdate {
+  update_id: number;
+  message?: {
+    message_id: number;
+    chat: {
+      id: number;
+    };
+    text?: string;
+  };
+}
+
 class TelegramService {
   private botToken: string;
   private apiUrl: string;
@@ -42,11 +67,12 @@ class TelegramService {
         success: true,
         messageId: data.result.message_id,
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Telegram sending failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -73,13 +99,14 @@ class TelegramService {
       }
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Telegram photo sending failed:', error);
-      return { success: false, error: error.message };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
     }
   }
 
-  async getUpdates(): Promise<any[]> {
+  async getUpdates(): Promise<TelegramUpdate[]> {
     try {
       const response = await fetch(`${this.apiUrl}/getUpdates`);
       const data = await response.json();
@@ -88,14 +115,14 @@ class TelegramService {
         throw new Error(data.description);
       }
       
-      return data.result;
+      return data.result as TelegramUpdate[];
     } catch (error) {
       console.error('Failed to get updates:', error);
       return [];
     }
   }
 
-  generateNotificationMessage(booking: any, type: 'new' | 'approved' | 'paid' | 'completed' | 'cancelled'): string {
+  generateNotificationMessage(booking: BookingData, type: 'new' | 'approved' | 'paid' | 'completed' | 'cancelled'): string {
     const statusEmojis: Record<string, string> = {
       new: '🆕',
       approved: '✅',
@@ -127,7 +154,7 @@ class TelegramService {
 <i>${new Date().toLocaleString('id-ID')}</i>`;
   }
 
-  generateAdminNotification(booking: any): string {
+  generateAdminNotification(booking: BookingData): string {
     return `🆕 <b>PENGAJUAN BARU MASUK</b>
 
 👤 <b>${booking.users?.name}</b>

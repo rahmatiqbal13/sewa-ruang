@@ -75,13 +75,13 @@ export async function POST(req: NextRequest) {
     })
 
     // Build email header with institution info
-    const fromName = cfg.from_name || institution?.name || 'Sport Center UNESA'
+    const fromName = cfg.from_name || institution?.name || 'Tim Admin USC'
     const fromEmail = cfg.from_email || cfg.smtp_user
     
     // Build institution header HTML
     const logoHtml = institution?.logo_url 
       ? `<img src="${institution.logo_url}" alt="${institution.name}" style="max-height: 60px; max-width: 200px;" />`
-      : `<h1 style="color: #1e40af; margin: 0; font-size: 24px;">${institution?.name || 'Sport Center UNESA'}</h1>`
+      : `<h1 style="color: #1e40af; margin: 0; font-size: 24px;">${institution?.name || 'Tim Admin USC'}</h1>`
     
     // Build footer with contact info
     const contactParts = []
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     
     const footerHtml = contactParts.length > 0 
       ? `<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; line-height: 1.6;">
-          <strong>${institution?.name || 'Sport Center UNESA'}</strong><br/>
+          <strong>${institution?.name || 'Tim Admin USC'}</strong><br/>
           ${contactParts.join('<br/>')}
          </div>`
       : `<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px;">
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
           <div style="background: #f8fafc; padding: 20px; border-top: 1px solid #e2e8f0;">
             ${footerHtml}
             <p style="color: #94a3b8; font-size: 11px; margin-top: 15px; text-align: center;">
-              © ${new Date().getFullYear()} ${institution?.name || 'Sport Center UNESA'}. All rights reserved.
+              © ${new Date().getFullYear()} ${institution?.name || 'Tim Admin USC'}. All rights reserved.
             </p>
           </div>
         </div>

@@ -31,7 +31,7 @@ export async function generatePDFHtml(options: PDFTemplateOptions): Promise<stri
 
   const logoHtml = institution?.logo_url
     ? `<img src="${institution.logo_url}" alt="${institution.name}" style="max-height: 50px; max-width: 150px;" />`
-    : `<h2 style="color: #1e40af; margin: 0; font-size: 20px;">${institution?.name || 'Sport Center UNESA'}</h2>`
+    : `<h2 style="color: #1e40af; margin: 0; font-size: 20px;">${institution?.name || 'Tim Admin USC'}</h2>`
 
   const contactHtml = []
   if (institution?.address) contactHtml.push(institution.address)
@@ -229,7 +229,7 @@ export async function generatePDFHtml(options: PDFTemplateOptions): Promise<stri
           : ''}
       </div>
       <div class="header-info">
-        <strong>${institution?.name || 'Sport Center UNESA'}</strong><br/>
+        <strong>${institution?.name || 'Tim Admin USC'}</strong><br/>
         ${contactHtml.join('<br/>')}
       </div>
     </header>
@@ -247,7 +247,7 @@ export async function generatePDFHtml(options: PDFTemplateOptions): Promise<stri
     ${showFooter ? `
     <footer class="footer">
       <div class="footer-institution">
-        <strong>${institution?.name || 'Sport Center UNESA'}</strong><br/>
+        <strong>${institution?.name || 'Tim Admin USC'}</strong><br/>
         Dokumen ini digenerate secara otomatis oleh sistem
       </div>
       <div class="footer-contact">
@@ -420,7 +420,7 @@ export async function generateAgreementHtml(data: {
         <tr style="border: none;">
           <td style="border: none; width: 50%; vertical-align: top;">
             <p><strong>Pihak Pertama:</strong></p>
-            <p>${institution?.name || 'Sport Center UNESA'}</p>
+            <p>${institution?.name || 'Tim Admin USC'}</p>
             <p class="text-small text-gray">${institution?.address || ''}</p>
           </td>
           <td style="border: none; width: 50%; vertical-align: top;">
@@ -458,7 +458,7 @@ export async function generateAgreementHtml(data: {
     <div class="signature-section">
       <div class="signature-box">
         <p class="text-small">Pihak Pertama,</p>
-        <p class="text-small text-gray">${institution?.name || 'Sport Center UNESA'}</p>
+        <p class="text-small text-gray">${institution?.name || 'Tim Admin USC'}</p>
         <div class="signature-line">
           <p class="text-small">(____________________)</p>
           <p class="text-small">Nama & Tanda Tangan</p>

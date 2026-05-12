@@ -42,7 +42,7 @@ function SecretInput({ value, onChange, placeholder }: { value: string; onChange
 
 const DEFAULTS: Record<string, Record<string, string>> = {
   email: { smtp_host: '', smtp_port: '587', smtp_user: '', smtp_pass: '', from_name: 'Sewa Ruang & Alat', from_email: '' },
-  whatsapp: { use_wame: 'true', admin_number: '', default_message: 'Halo, saya ingin bertanya tentang peminjaman ruangan/alat di Sport Center UNESA.' },
+  whatsapp: { use_wame: 'true', admin_number: '', default_message: 'Halo, saya ingin bertanya tentang peminjaman ruangan/alat di Tim Admin USC.' },
   telegram: { bot_token: '', admin_chat_id: '' },
 }
 
@@ -121,7 +121,7 @@ export function ChannelConfig({ configs }: { configs: ChannelData[] }) {
               user: cfg.smtp_user,
               pass: cfg.smtp_pass,
               from: cfg.from_email || cfg.smtp_user,
-              fromName: cfg.from_name || 'Sport Center UNESA'
+              fromName: cfg.from_name || 'Tim Admin USC'
             },
             testTo: cfg.smtp_user
           })

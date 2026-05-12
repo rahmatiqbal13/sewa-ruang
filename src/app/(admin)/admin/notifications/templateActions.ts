@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 interface TemplateData {
   event_type: string
   channel: 'email' | 'whatsapp' | 'telegram'
+  user_category: string
   subject?: string | null
   body: string
 }
@@ -21,12 +22,13 @@ export async function saveTemplate(data: TemplateData) {
         {
           event_type: data.event_type,
           channel: data.channel,
+          user_category: data.user_category,
           subject: data.channel === 'email' ? data.subject : null,
           body: data.body,
           is_active: true,
           updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'event_type,channel' }
+        } as any,
+        { onConflict: 'event_type,channel,user_category' }
       )
 
     if (error) {

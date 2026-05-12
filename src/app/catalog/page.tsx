@@ -2,6 +2,42 @@ import { createClient } from '@supabase/supabase-js'
 import { CatalogClient } from './CatalogClient'
 import { PublicHeader, PublicFooter } from '@/components/shared/PublicLayout'
 
+interface Building {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface RoomRate {
+  usage_category: string;
+  rate_per_hour: number | null;
+  rate_per_day: number;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  building_id: string;
+  capacity: number;
+  current_condition: string;
+  room_code: string;
+  is_active: boolean;
+  is_for_rent: boolean;
+  room_rates: RoomRate[];
+}
+
+// Equipment interface (for future use when filtering equipment)
+// interface Equipment {
+//   id: string;
+//   name: string;
+//   description: string;
+//   current_condition: string;
+//   ketersediaan: string;
+//   merk: string;
+//   is_active: boolean;
+//   photo_url: string;
+// }
+
 export const revalidate = 30
 
 // Server-side fetch institution profile
@@ -51,22 +87,23 @@ export default async function CatalogPage() {
       persistSession: false
     }
   })
-  
-  const sb = supabase as any
 
   // Fetch institution profile and data in parallel
   const [institution, { data: buildingsData }, { data: roomsData }, { data: equipmentData }] = await Promise.all([
     getInstitutionProfile(),
-    sb.from('buildings')
+    supabase
+      .from('buildings')
       .select('id, name, code')
       .eq('is_active', true)
-      .order('name') as Promise<{ data: any[] | null }>,
-    sb.from('rooms')
+      .order('name'),
+    supabase
+      .from('rooms')
       .select('id, name, building_id, capacity, current_condition, room_code, is_active, is_for_rent, room_rates(usage_category, rate_per_hour, rate_per_day)')
       .eq('is_active', true)
       .eq('is_for_rent', true)
-      .order('name') as Promise<{ data: any[] | null }>,
-    sb.from('equipment')
+      .order('name'),
+    supabase
+      .from('equipment')
       .select(`
         id, name, description, current_condition, ketersediaan, merk, is_active, photo_url,
         equipment_rates(user_category, rate_per_day, rate_per_hour, requires_supervision)
@@ -74,16 +111,16 @@ export default async function CatalogPage() {
       .eq('is_active', true)
       .eq('current_condition', 'good')
       .neq('ketersediaan', 'tidak_tersedia')
-      .order('name') as Promise<{ data: any[] | null }>,
-  ])
+      .order('name'),
+  ] as const)
 
   // Transform data buildings untuk compatibility dengan CatalogClient
-  const transformedBuildings = buildingsData?.map((building: any) => ({
+  const transformedBuildings = (buildingsData as unknown as Building[] | null)?.map((building) => ({
     id: building.id,
     name: building.name,
     code: building.code,
-    assets: roomsData?.filter((room: any) => room.building_id === building.id) || []
-  })).filter((b: any) => b.assets.length > 0) || []
+    assets: (roomsData as unknown as Room[] | null)?.filter((room) => room.building_id === building.id) || []
+  })).filter((b) => b.assets.length > 0) || []
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col">

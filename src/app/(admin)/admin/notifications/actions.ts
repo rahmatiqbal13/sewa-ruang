@@ -31,7 +31,8 @@ export async function saveChannelConfig(data: ChannelConfig) {
       return { error: 'Gagal verifikasi user' }
     }
 
-    if (!['admin', 'super_admin'].includes(userData.role)) {
+    const role = (userData as { role: string }).role
+    if (!['admin', 'super_admin'].includes(role)) {
       return { error: 'Forbidden - Hanya admin yang bisa mengubah konfigurasi' }
     }
 
@@ -45,7 +46,7 @@ export async function saveChannelConfig(data: ChannelConfig) {
           config: data.config,
           updated_at: new Date().toISOString(),
           updated_by: user.id
-        },
+        } as any,
         { onConflict: 'channel' }
       )
 

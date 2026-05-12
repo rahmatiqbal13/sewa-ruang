@@ -135,7 +135,7 @@ export default function RegisterPage() {
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label className="text-zinc-700">Kategori Peminjam <span className="text-destructive">*</span></Label>
-                  <Select onValueChange={(v) => v && setValue('borrower_category', v as FormData['borrower_category'])}>
+                  <Select onValueChange={(v: string | null) => { if (v) setValue('borrower_category', v as FormData['borrower_category']) }}>
                     <SelectTrigger className="h-10"><SelectValue placeholder="Pilih kategori Anda..." /></SelectTrigger>
                     <SelectContent>
                       {BORROWER_CATEGORIES.map(c => (

@@ -48,7 +48,7 @@ export async function getInstitutionProfile(): Promise<InstitutionProfile | null
       // Return default jika tidak ada data
       return {
         id: 'default',
-        name: 'Sport Center UNESA',
+        name: 'Tim Admin USC',
         short_name: 'SC UNESA',
         logo_url: null,
         address: null,
@@ -75,7 +75,7 @@ export async function getInstitutionProfile(): Promise<InstitutionProfile | null
 export function getDefaultInstitutionProfile(): InstitutionProfile {
   return {
     id: 'default',
-    name: 'Sport Center UNESA',
+    name: 'Tim Admin USC',
     short_name: 'SC UNESA',
     logo_url: null,
     address: null,

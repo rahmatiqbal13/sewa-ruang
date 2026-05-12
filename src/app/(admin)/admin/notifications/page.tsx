@@ -18,7 +18,7 @@ export default async function NotificationsPage({
 
   const [{ data: channelConfigs }, { data: templates }, { data: notifications }] = await Promise.all([
     sb.from('notification_channel_configs').select('*') as Promise<{ data: Array<{ id: string; channel: string; is_enabled: boolean; config: Record<string, string> }> | null }>,
-    sb.from('notification_templates').select('*') as Promise<{ data: Array<{ id: string; event_type: string; channel: string; subject: string | null; body: string; is_active: boolean }> | null }>,
+    sb.from('notification_templates').select('*') as Promise<{ data: Array<{ id: string; event_type: string; channel: string; user_category: string | null; subject: string | null; body: string; is_active: boolean }> | null }>,
     sb.from('notifications').select('*, users(name, email)').order('created_at', { ascending: false }).limit(50) as Promise<{ data: Array<{ id: string; title: string; body: string; type: string; is_read: boolean; created_at: string; users: { name: string; email: string } | null }> | null }>,
   ])
 

@@ -1,9 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { isSuperAdmin, isAdmin, UserRole } from './permissions'
+import type { User } from '@supabase/supabase-js'
+
+interface UserProfile {
+  role: UserRole;
+  name: string;
+}
 
 interface AuthCheckResult {
-  user: any | null
-  profile: { role: UserRole; name: string } | null
+  user: User | null
+  profile: UserProfile | null
   error: string | null
 }
 
@@ -15,10 +21,13 @@ export async function checkAuth(requireAdmin: boolean = false): Promise<AuthChec
     return { user: null, profile: null, error: 'Unauthorized' }
   }
 
-  const { data: profile } = await (supabase.from('users') as any)
+  const { data } = await supabase
+    .from('users')
     .select('role, name')
     .eq('id', user.id)
     .single()
+  
+  const profile = data as UserProfile | null
 
   if (!profile) {
     return { user, profile: null, error: 'Profile not found' }

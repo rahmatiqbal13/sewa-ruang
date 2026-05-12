@@ -18,7 +18,7 @@ interface InstitutionProfileFormProps {
 export function InstitutionProfileForm({ initialData }: InstitutionProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<InstitutionProfile>({
-    name: initialData?.name || 'Sport Center UNESA',
+    name: initialData?.name || 'Tim Admin USC',
     short_name: initialData?.short_name || 'SC UNESA',
     logo_url: initialData?.logo_url || '',
     address: initialData?.address || '',

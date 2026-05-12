@@ -78,6 +78,8 @@ export function WhatsAppButton({
     async function loadTemplate() {
       const supabase = createClient()
       
+      if (!booking) return
+      
       // Tentukan event_type berdasarkan status booking
       const eventType = STATUS_TO_TEMPLATE[booking.status] || 'booking_submitted'
       
@@ -122,7 +124,7 @@ export function WhatsAppButton({
       'completed': 'Selesai'
     }
 
-    let processed = templateStr
+    const processed = templateStr
       .replace(/{{nama}}/g, booking.users?.name || 'Peminjam')
       .replace(/{{no_booking}}/g, booking.reference_no)
       .replace(/{{ruangan}}/g, itemName)
@@ -160,14 +162,14 @@ export function WhatsAppButton({
         finalMessage = processTemplate(template)
       } else {
         // Fallback ke default
-        finalMessage = 'Halo, saya admin Sport Center UNESA. Ada yang bisa saya bantu?'
+        finalMessage = 'Halo, saya admin Tim Admin USC. Ada yang bisa saya bantu?'
       }
 
       // Buka wa.me link
       const waLink = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(finalMessage)}`
       window.open(waLink, '_blank')
       
-    } catch (error) {
+    } catch {
       toast.error('Gagal membuka WhatsApp')
     } finally {
       setIsLoading(false)

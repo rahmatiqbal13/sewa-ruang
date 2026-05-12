@@ -309,9 +309,13 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                               status: booking.status,
                               start_datetime: booking.start_datetime,
                               end_datetime: booking.end_datetime,
-                              users: booking.users,
-                              booking_items: booking.booking_items,
-                              admin_notes: booking.admin_notes
+                              users: booking.users ? {
+                                name: booking.users.name,
+                                email: booking.users.email || undefined,
+                                phone: booking.users.phone || undefined,
+                                telegram_username: booking.users.telegram_username || undefined
+                              } : null,
+                              booking_items: booking.booking_items
                             }}
                           />
                         )}
@@ -390,9 +394,13 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                             status: booking.status,
                             start_datetime: booking.start_datetime,
                             end_datetime: booking.end_datetime,
-                            users: booking.users,
-                            booking_items: booking.booking_items,
-                            admin_notes: booking.admin_notes
+                            users: booking.users ? {
+                              name: booking.users.name,
+                              email: booking.users.email || undefined,
+                              phone: booking.users.phone || undefined,
+                              telegram_username: booking.users.telegram_username || undefined
+                            } : null,
+                            booking_items: booking.booking_items
                           }}
                         />
                       )}

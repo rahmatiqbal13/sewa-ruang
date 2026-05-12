@@ -58,14 +58,14 @@ export default function LoginPage() {
       {/* Left branding panel */}
       <div className="hidden lg:flex flex-col w-[520px] shrink-0 relative overflow-hidden">
         {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-900" />
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
           <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl translate-y-1/4 -translate-x-1/4" />
         </div>
         
         {/* Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
         <div className="relative z-10 flex flex-col h-full p-12">
           <Link href="/" className="flex items-center gap-3 font-bold text-xl text-white mb-16">
@@ -75,14 +75,14 @@ export default function LoginPage() {
                 <Building2 className="h-6 w-6 text-white" />
               </div>
             </div>
-            <span>RentSpace</span>
+            <span>Sewa Ruang & Alat</span>
           </Link>
 
           <div className="flex-1">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-full mb-6">
               <Sparkles className="h-4 w-4" />
-              <span className="font-medium">Platform #1 untuk Manajemen Aset</span>
-            </div>
+              <span className="font-medium">Platform Manajemen Aset UNESA</span>
+          </div>
             
             <h2 className="text-4xl font-bold text-white mb-4 leading-tight">
               Kelola Aset Institusi dengan Mudah
@@ -107,7 +107,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-white/50 text-sm">
-            &copy; {new Date().getFullYear()} RentSpace. All rights reserved.
+            &copy; {new Date().getFullYear()} UNESA. All rights reserved.
           </p>
         </div>
       </div>
@@ -122,14 +122,14 @@ export default function LoginPage() {
         
         <div className="w-full max-w-md relative z-10">
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-3 font-bold text-xl text-slate-900 mb-8 justify-center">
+          <div className="lg:hidden flex items-center gap-3 font-bold text-xl text-blue-950 mb-8 justify-center">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl blur opacity-40" />
-              <div className="relative h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <div className="absolute inset-0 bg-blue-950 rounded-xl blur opacity-40" />
+              <div className="relative h-10 w-10 bg-blue-950 rounded-xl flex items-center justify-center">
                 <Building2 className="h-5 w-5 text-white" />
               </div>
             </div>
-            <span>RentSpace</span>
+            <span>Sewa Ruang & Alat</span>
           </div>
 
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-900/5 border border-slate-100 p-8">
@@ -145,7 +145,7 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="nama@email.com"
-                  className="h-12 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20"
+                  className="h-12 rounded-xl border-slate-200 focus:border-blue-600 focus:ring-blue-600/20"
                   {...register('email')}
                 />
                 {errors.email && <p className="text-xs text-red-500 font-medium">{errors.email.message}</p>}
@@ -154,7 +154,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
-                  <Link href="/forgot-password" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium hover:underline">
+                  <Link href="/forgot-password" className="text-xs text-blue-700 hover:text-blue-800 font-medium hover:underline">
                     Lupa password?
                   </Link>
                 </div>
@@ -162,7 +162,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  className="h-12 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20"
+                  className="h-12 rounded-xl border-slate-200 focus:border-blue-600 focus:ring-blue-600/20"
                   {...register('password')}
                 />
                 {errors.password && <p className="text-xs text-red-500 font-medium">{errors.password.message}</p>}
@@ -170,7 +170,7 @@ export default function LoginPage() {
               
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base font-semibold rounded-xl" 
+                className="w-full h-12 text-base font-semibold rounded-xl bg-blue-950 hover:bg-blue-900" 
                 disabled={loading}
               >
                 {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
@@ -181,7 +181,7 @@ export default function LoginPage() {
             <div className="mt-8 pt-6 border-t border-slate-100">
               <p className="text-center text-sm text-slate-600">
                 Belum punya akun?{' '}
-                <Link href="/register" className="text-indigo-600 hover:text-indigo-700 font-semibold hover:underline">
+                <Link href="/register" className="text-blue-700 hover:text-blue-800 font-semibold hover:underline">
                   Daftar sekarang
                 </Link>
               </p>

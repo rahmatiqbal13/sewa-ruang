@@ -25,7 +25,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const { data: booking } = await (supabase.from('bookings') as any)
     .select(`
       id, reference_no, status, start_datetime, end_datetime,
-      total_amount, purpose, created_at, admin_notes,
+      total_amount, purpose, created_at, admin_notes, snapshot_rate,
       users(id, name, email, phone, telegram_username, institution, class_division, role)
     `)
     .eq('id', id)
@@ -89,6 +89,24 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     .order('created_at', { ascending: false })
 
   const borrower = booking.users
+  
+  // Get borrower category from snapshot_rate or users table
+  const snapshotRate = booking.snapshot_rate || {}
+  const borrowerCategory = (snapshotRate as any).borrower_category || 
+                          (snapshotRate as any).member_type || 
+                          'mahasiswa_s1'
+  
+  // Helper to check if booking is free (Mahasiswa S1 + Perkuliahan)
+  const isFreeBooking = (category: string, purpose: string): boolean => {
+    const isMahasiswaS1 = category === 'mahasiswa_s1'
+    const isForKuliah = purpose.toLowerCase().includes('kuliah') || 
+                        purpose.toLowerCase().includes('perkuliahan') ||
+                        purpose.toLowerCase().includes('mata kuliah') ||
+                        purpose.toLowerCase().includes('kuliah semester')
+    return isMahasiswaS1 && isForKuliah
+  }
+  
+  const isGratis = isFreeBooking(borrowerCategory, booking.purpose || '')
   
   // Calculate duration
   const startDate = new Date(booking.start_datetime)
@@ -200,9 +218,9 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                             end_datetime: booking.end_datetime,
                             users: { 
                               name: borrower.name,
-                              email: borrower.email,
-                              phone: borrower.phone,
-                              telegram_username: borrower.telegram_username
+                              email: borrower.email || undefined,
+                              phone: borrower.phone || undefined,
+                              telegram_username: borrower.telegram_username || undefined
                             },
                             booking_items: bookingItems.map((item: any) => ({
                               item_type: item.item_type,
@@ -222,10 +240,17 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
           {/* Quick Actions */}
           {booking.status === 'pending' && (
-            <ApprovalButtons bookingId={id} />
+            <ApprovalButtons 
+              bookingId={id} 
+              borrowerCategory={borrowerCategory}
+              purpose={booking.purpose || ''}
+            />
           )}
 
-          {booking.status === 'approved' && (
+          {/* Show payment button only if approved AND not free booking AND has remaining amount */}
+          {booking.status === 'approved' && 
+           !isGratis && 
+           booking.total_amount > 0 && (
             <RecordPaymentButton 
               bookingId={id} 
               totalAmount={booking.total_amount} 
@@ -233,6 +258,20 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 .filter((p: any) => p.status === 'paid')
                 .reduce((sum: number, p: any) => sum + p.amount, 0)}
             />
+          )}
+
+          {/* Show info card for free bookings that are paid */}
+          {booking.status === 'paid' && isGratis && (
+            <Card className="border-green-200 bg-green-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-green-800">Peminjaman Gratis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-green-700">
+                  Peminjaman ini <strong>GRATIS</strong> karena dari Mahasiswa S1 untuk keperluan perkuliahan.
+                </p>
+              </CardContent>
+            </Card>
           )}
 
           {/* Link to Process Return for approved/paid bookings */}
@@ -403,8 +442,21 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 
                 {(!payments || payments.filter((p: any) => p.status === 'paid').length === 0) && (
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-medium">Total Tagihan</span>
-                    <span className="text-2xl font-bold">{formatRupiah(booking.total_amount)}</span>
+                    <span className="text-slate-500 font-medium">
+                      {isGratis ? 'Total (Gratis)' : 'Total Tagihan'}
+                    </span>
+                    <div className="text-right">
+                      {isGratis ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-400 line-through">{formatRupiah(booking.total_amount > 0 ? booking.total_amount : 100000)}</span>
+                          <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
+                            GRATIS
+                          </Badge>
+                        </div>
+                      ) : (
+                        <span className="text-2xl font-bold">{formatRupiah(booking.total_amount)}</span>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

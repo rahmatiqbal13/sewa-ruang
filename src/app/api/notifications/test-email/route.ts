@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     // Get institution profile
     const institution = await getInstitutionProfile()
-    const institutionName = institution?.name || 'Sport Center UNESA'
+    const institutionName = institution?.name || 'Tim Admin USC'
     const institutionShortName = institution?.short_name || institutionName
 
     // Create email transporter dengan konfigurasi dari database

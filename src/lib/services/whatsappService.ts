@@ -4,6 +4,22 @@ interface WhatsAppMessage {
   mediaUrl?: string;
 }
 
+interface BookingData {
+  reference_no: string;
+  start_datetime: string;
+  end_datetime: string;
+  total_amount?: number;
+  users?: {
+    name?: string;
+  } | null;
+}
+
+interface PaymentData {
+  amount?: number;
+  method?: string;
+  paid_at?: string;
+}
+
 class WhatsAppService {
   private provider: string;
 
@@ -53,9 +69,10 @@ class WhatsAppService {
       }
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       console.error('WhatsApp Twilio sending failed:', error);
-      return { success: false, error: error.message };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
     }
   }
 
@@ -89,9 +106,10 @@ class WhatsAppService {
       }
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       console.error('WhatsApp Meta sending failed:', error);
-      return { success: false, error: error.message };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
     }
   }
 
@@ -102,13 +120,14 @@ class WhatsAppService {
       const link = `https://wa.me/${phone}?text=${encodedMessage}`;
       
       return { success: true, link };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
     }
   }
 
   // Template generators
-  generateBookingConfirmationMessage(booking: any): string {
+  generateBookingConfirmationMessage(booking: BookingData): string {
     return `Halo ${booking.users?.name},
 
 Terima kasih telah mengajukan peminjaman di RentSpace.
@@ -128,7 +147,7 @@ Terima kasih,
 *RentSpace Team*`;
   }
 
-  generateBookingApprovedMessage(booking: any): string {
+  generateBookingApprovedMessage(booking: BookingData): string {
     return `Halo ${booking.users?.name},
 
 Selamat! 🎉 Pengajuan peminjaman Anda telah *DISETUJUI*.
@@ -150,7 +169,7 @@ Terima kasih,
 *RentSpace Team*`;
   }
 
-  generatePaymentConfirmationMessage(booking: any, payment: any): string {
+  generatePaymentConfirmationMessage(booking: BookingData, payment: PaymentData): string {
     return `Halo ${booking.users?.name},
 
 ✅ *PEMBAYARAN BERHASIL!*
@@ -161,7 +180,7 @@ Pembayaran Anda telah kami terima dan terverifikasi.
 • No. Referensi: ${booking.reference_no}
 • Jumlah: Rp ${payment.amount?.toLocaleString('id-ID')}
 • Metode: ${payment.method?.toUpperCase()}
-• Waktu: ${new Date(payment.paid_at).toLocaleString('id-ID')}
+• Waktu: ${payment.paid_at ? new Date(payment.paid_at).toLocaleString('id-ID') : '-'}
 
 ✅ *STATUS: LUNAS*
 Peminjaman Anda sudah aktif.
@@ -172,7 +191,7 @@ Terima kasih,
 *RentSpace Team*`;
   }
 
-  generateReminderMessage(booking: any): string {
+  generateReminderMessage(booking: BookingData): string {
     return `Halo ${booking.users?.name},
 
 ⏰ *PENGINGAT PEMINJAMAN*

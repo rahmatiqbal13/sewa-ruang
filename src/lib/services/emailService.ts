@@ -12,6 +12,22 @@ interface EmailOptions {
   }>
 }
 
+interface BookingData {
+  reference_no: string
+  start_datetime: string
+  end_datetime: string
+  total_amount?: number
+  users?: {
+    name?: string
+  } | null
+}
+
+interface PaymentData {
+  amount?: number
+  method?: string
+  paid_at?: string
+}
+
 class EmailService {
   private transporter: nodemailer.Transporter
 
@@ -44,11 +60,12 @@ class EmailService {
         success: true,
         messageId: info.messageId,
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Email sending failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       }
     }
   }
@@ -64,7 +81,7 @@ class EmailService {
   }
 
   // Template generators
-  generateBookingConfirmationEmail(booking: any): { subject: string; html: string } {
+  generateBookingConfirmationEmail(booking: BookingData): { subject: string; html: string } {
     return {
       subject: `Konfirmasi Peminjaman - ${booking.reference_no}`,
       html: `
@@ -94,7 +111,7 @@ class EmailService {
     }
   }
 
-  generateBookingApprovedEmail(booking: any): { subject: string; html: string } {
+  generateBookingApprovedEmail(booking: BookingData): { subject: string; html: string } {
     return {
       subject: `Peminjaman Disetujui - ${booking.reference_no}`,
       html: `
@@ -132,7 +149,7 @@ class EmailService {
     }
   }
 
-  generatePaymentConfirmationEmail(booking: any, payment: any): { subject: string; html: string } {
+  generatePaymentConfirmationEmail(booking: BookingData, payment: PaymentData): { subject: string; html: string } {
     return {
       subject: `Pembayaran Berhasil - ${booking.reference_no}`,
       html: `
@@ -147,7 +164,7 @@ class EmailService {
               <tr><td style="padding: 8px 0; color: #64748b;">No. Referensi</td><td style="font-weight: bold;">${booking.reference_no}</td></tr>
               <tr><td style="padding: 8px 0; color: #64748b;">Jumlah Pembayaran</td><td style="font-weight: bold; color: #059669;">Rp ${payment.amount?.toLocaleString('id-ID')}</td></tr>
               <tr><td style="padding: 8px 0; color: #64748b;">Metode</td><td>${payment.method?.toUpperCase()}</td></tr>
-              <tr><td style="padding: 8px 0; color: #64748b;">Waktu</td><td>${new Date(payment.paid_at).toLocaleString('id-ID')}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Waktu</td><td>${payment.paid_at ? new Date(payment.paid_at).toLocaleString('id-ID') : '-'}</td></tr>
             </table>
           </div>
           

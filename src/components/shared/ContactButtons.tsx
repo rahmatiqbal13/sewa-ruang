@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
+// import { Button } from '@/components/ui/button'  // Unused - using custom dropdown trigger instead
 import { 
   Mail, 
   MessageSquare, 
@@ -12,13 +12,13 @@ import {
   CheckCircle,
   ExternalLink
 } from 'lucide-react'
+// Note: Button is imported but unused in dropdown-only variant
 import { toast } from 'sonner'
 import { formatDateTime } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -76,7 +76,7 @@ Pengajuan peminjaman Anda telah kami terima dengan detail:
 Kami akan segera memproses pengajuan Anda.
 
 Terima kasih,
-Sport Center UNESA`
+Tim Admin USC`
   },
   'booking_approved': {
     subject: '{{nama}} - {{no_booking}} | ✅ Pengajuan Disetujui',
@@ -93,7 +93,7 @@ Selamat! Pengajuan peminjaman Anda telah DISETUJUI.
 Silakan lakukan pembayaran untuk mengkonfirmasi peminjaman Anda.
 
 Terima kasih,
-Sport Center UNESA`
+Tim Admin USC`
   },
   'booking_rejected': {
     subject: '{{nama}} - {{no_booking}} | Pengajuan Ditolak',
@@ -111,7 +111,7 @@ Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
 Silakan hubungi kami untuk informasi lebih lanjut.
 
 Terima kasih,
-Sport Center UNESA`
+Tim Admin USC`
   },
   'booking_cancelled': {
     subject: '{{nama}} - {{no_booking}} | Peminjaman Dibatalkan',
@@ -127,7 +127,7 @@ Peminjaman Anda telah dibatalkan.
 Jika Anda memiliki pertanyaan, silakan hubungi kami.
 
 Terima kasih,
-Sport Center UNESA`
+Tim Admin USC`
   },
   'payment_received': {
     subject: '{{nama}} - {{no_booking}} | 💳 Pembayaran Diterima',
@@ -144,13 +144,14 @@ Pembayaran untuk peminjaman Anda telah kami terima.
 Peminjaman Anda telah dikonfirmasi. Harap datang tepat waktu sesuai jadwal.
 
 Terima kasih,
-Sport Center UNESA`
+Tim Admin USC`
   },
 }
 
 export function ContactButtons({ 
   booking, 
-  variant = 'compact',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  variant,
   className = ''
 }: ContactButtonsProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -160,6 +161,18 @@ export function ContactButtons({
     whatsapp?: string;
     telegram?: string;
   }>({})
+
+  interface NotificationTemplate {
+    channel: 'email' | 'whatsapp' | 'telegram';
+    subject?: string;
+    body: string;
+  }
+
+  interface TemplatesMap {
+    email?: { subject: string; body: string };
+    whatsapp?: string;
+    telegram?: string;
+  }
 
   const user = booking.users
   const hasEmail = user?.email && user.email.includes('@')
@@ -173,16 +186,17 @@ export function ContactButtons({
       const supabase = createClient()
       const eventType = STATUS_TO_TEMPLATE[booking.status] || 'booking_submitted'
       
-      const { data } = await (supabase.from('notification_templates') as any)
+      const { data } = await supabase
+        .from('notification_templates')
         .select('channel, subject, body')
         .eq('event_type', eventType)
         .eq('is_active', true)
         .in('channel', ['email', 'whatsapp', 'telegram'])
       
-      const loadedTemplates: any = {}
+      const loadedTemplates: TemplatesMap = {}
       
       if (data && data.length > 0) {
-        data.forEach((t: any) => {
+        (data as NotificationTemplate[]).forEach((t) => {
           if (t.channel === 'email') {
             loadedTemplates.email = {
               subject: t.subject || DEFAULT_TEMPLATES[eventType]?.subject || 'Info Peminjaman',
@@ -316,8 +330,9 @@ export function ContactButtons({
         const error = await response.json()
         toast.error('Gagal kirim email: ' + (error.error || 'Unknown error'))
       }
-    } catch (err: any) {
-      toast.error('Error: ' + err.message)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      toast.error('Error: ' + errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -332,7 +347,7 @@ export function ContactButtons({
 
     const message = templates.whatsapp 
       ? processTemplate(templates.whatsapp)
-      : `Halo ${user?.name}, saya admin Sport Center UNESA.`
+      : `Halo ${user?.name}, saya admin Tim Admin USC.`
 
     const formattedNumber = user?.phone?.replace(/\D/g, '') || ''
     const waLink = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`
@@ -343,7 +358,7 @@ export function ContactButtons({
   const handleTelegram = () => {
     const message = templates.telegram 
       ? processTemplate(templates.telegram)
-      : `Halo ${user?.name}, saya admin Sport Center UNESA.`
+      : `Halo ${user?.name}, saya admin Tim Admin USC.`
 
     let tgLink = ''
     

@@ -85,7 +85,7 @@ export function AddUserDialog() {
       setOpen(isOpen)
       if (!isOpen) resetForm()
     }}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button>
           <Plus className="mr-2 h-4 w-4" /> Tambah Pengguna
         </Button>
