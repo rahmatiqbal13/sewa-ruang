@@ -37,8 +37,9 @@ export async function saveChannelConfig(data: ChannelConfig) {
     }
 
     // Insert/Update using service role bypass RLS
-    const { error } = await supabase
-      .from('notification_channel_configs')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase
+      .from('notification_channel_configs') as any)
       .upsert(
         {
           channel: data.channel,
