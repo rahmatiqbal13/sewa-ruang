@@ -36,6 +36,7 @@ interface Booking {
   total_amount: number
   purpose: string
   created_at: string
+  admin_notes?: string | null
   users: {
     name: string
     email: string
