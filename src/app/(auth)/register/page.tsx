@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Building2, Loader2, CheckCircle2 } from 'lucide-react'
+import { Building2, Loader2, CheckCircle2, User } from 'lucide-react'
+import { ImageUpload } from '@/components/shared/ImageUpload'
 
 const BORROWER_CATEGORIES = [
   { value: 'mahasiswa',       label: 'Mahasiswa' },
@@ -38,6 +39,7 @@ type FormData = z.infer<typeof schema>
 export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [photoUrl, setPhotoUrl] = useState('')
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
@@ -59,6 +61,7 @@ export default function RegisterPage() {
         phone: data.phone, borrower_category: data.borrower_category,
         institution: data.institution, class_division: data.class_division,
         identity_number: data.identity_number || null, telegram_username: data.telegram_username || null,
+        photo_url: photoUrl || null,
       })
     }
     toast.success('Akun berhasil dibuat! Silakan masuk.')
@@ -112,6 +115,23 @@ export default function RegisterPage() {
             <p className="text-muted-foreground text-sm mb-7">Isi data diri untuk membuat akun peminjam</p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Photo Upload */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-zinc-700 flex items-center gap-1">
+                  <User className="h-4 w-4" />
+                  Foto Profil <span className="text-muted-foreground font-normal">(opsional)</span>
+                </Label>
+                <ImageUpload 
+                  value={photoUrl}
+                  onChange={setPhotoUrl}
+                  bucket="avatars"
+                  folder="users"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Upload foto profil Anda. Maksimal 5MB.
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label className="text-zinc-700">Nama Lengkap</Label>

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient as createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { BuildingForm } from '../../BuildingForm'
 

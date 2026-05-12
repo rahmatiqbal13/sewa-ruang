@@ -167,12 +167,75 @@ function createSlug(name: string): string {
 - Room codes are unique per building
 - URLs use slugs (not IDs) for better readability
 
+### RLS Policy Patterns (Critical)
+
+#### Users Table - Non-Recursive Policies
+**⚠️ NEVER create recursive policies on users table** - Policy that queries `public.users` inside USING clause causes infinite recursion → 500 error.
+
+**Correct Pattern:**
+```sql
+-- SELECT: Allow all authenticated (for login role check)
+CREATE POLICY "users_select_authenticated"
+  ON public.users FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- UPDATE/INSERT: Only own data
+CREATE POLICY "users_update_own"
+  ON public.users FOR UPDATE
+  TO authenticated
+  USING (id = auth.uid());
+
+-- Admin operations: Use service_role key (bypasses RLS)
+-- Do NOT create "FOR ALL" policy with EXISTS subquery to users table
+```
+
+#### Admin Data Fetching Pattern
+**All admin pages must use `createAdminClient` (service role)** to bypass RLS:
+
+```typescript
+// ❌ WRONG - Will fail with 500 if RLS blocks
+import { createClient } from '@/lib/supabase/server'
+
+// ✅ CORRECT - Bypasses RLS for admin data
+import { createAdminClient as createClient } from '@/lib/supabase/server'
+```
+
+**Files affected:** All `page.tsx` in `src/app/(admin)/admin/**`
+
+### Query Patterns
+
+#### Bookings with User Data (Ambiguous FK Fix)
+Table `bookings` has 2 FK to `users`: `user_id` and `payment_verified_by`
+
+```typescript
+// ❌ WRONG - Ambiguous which FK to use
+.select(`..., users(name, email, ...)`)
+
+// ✅ CORRECT - Explicit FK hint with !
+.select(`..., users!user_id(name, email, phone, telegram_username, institution, class_division)`)
+```
+
+#### Payments Query
+**Note:** Tabel `bookings` TIDAK punya kolom `payment_status` (itu type enum, bukan kolom). Gunakan `status` saja.
+
+```typescript
+// ❌ WRONG - Column doesn't exist
+.select(`..., status, payment_status, ...`)
+
+// ✅ CORRECT
+.select(`..., status, payment_code, ...`)
+```
+
 ### Known Issues & Solutions
 
 1. **Image Upload Errors**: Solved by using SafeImage wrapper (Client Component) instead of Next.js Image
 2. **Photo Cropping**: Fixed by using `object-contain` instead of `object-cover`
 3. **URL Readability**: Changed from UUID to slug-based URLs
 4. **Room Dropdown Display**: Shows room name only (not code) for better UX
+5. **RLS 500 Error on Users Table**: Fixed by using non-recursive policies (see RLS Pattern above)
+6. **Bookings Data Not Loading**: Fixed by adding FK hint `users!user_id(...)` to queries
+7. **Payments Data Not Loading**: Fixed by removing non-existent `payment_status` column from queries
 
 ### Next Steps / TODOs
 - Implement booking flow for equipment

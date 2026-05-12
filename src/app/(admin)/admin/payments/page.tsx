@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { Eye, CheckCircle, Clock, Wallet } from 'lucide-react'
 
 export default async function PaymentsPage() {
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
   
   // Get bookings with payment info (treat as pending transactions)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,11 +18,10 @@ export default async function PaymentsPage() {
       reference_no,
       total_amount,
       status,
-      payment_status,
       payment_code,
       payment_verified_at,
       created_at,
-      users:user_id(name, email)
+      users!user_id(name, email)
     `)
     .gt('total_amount', 0)  // Only bookings with payment amount
     .order('created_at', { ascending: false }) as { 
@@ -31,7 +30,6 @@ export default async function PaymentsPage() {
         reference_no:string;
         total_amount:number;
         status:string;
-        payment_status:string|null;
         payment_code:string|null;
         payment_verified_at:string|null;
         created_at:string;

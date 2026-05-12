@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient as createClient } from '@/lib/supabase/server'
 import { InventoryList } from './InventoryList'
 
 export default async function InventoryIndexPage({

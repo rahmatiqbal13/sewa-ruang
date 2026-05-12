@@ -79,9 +79,11 @@ export function BorrowerNav({ userName }: Props) {
                 <p className="text-sm font-medium">{userName}</p>
                 <p className="text-xs text-muted-foreground">Peminjam</p>
               </div>
-              <DropdownMenuItem className="gap-2 cursor-pointer mt-1">
-                <User className="h-4 w-4" /> Profil Saya
-              </DropdownMenuItem>
+              <Link href="/profile">
+                <DropdownMenuItem className="gap-2 cursor-pointer mt-1">
+                  <User className="h-4 w-4" /> Profil Saya
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} variant="destructive" className="gap-2 cursor-pointer">
                 <LogOut className="h-4 w-4" /> Keluar

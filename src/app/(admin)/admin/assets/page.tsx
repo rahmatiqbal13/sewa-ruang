@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient as createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { Plus, Package, User, MapPin } from 'lucide-react'

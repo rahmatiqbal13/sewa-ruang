@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient as createClient } from '@/lib/supabase/server'
 import { EquipmentList } from './EquipmentList'
 
 const ITEMS_PER_PAGE = 10

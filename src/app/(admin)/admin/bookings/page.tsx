@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { BookingsList } from './BookingsList'
 
 export default async function AdminBookingsPage({ 
@@ -7,15 +7,15 @@ export default async function AdminBookingsPage({
   searchParams: Promise<{ status?: string }> 
 }) {
   const { status } = await searchParams
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   // Fetch bookings
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase.from('bookings') as any)
     .select(`
-      id, reference_no, status, start_datetime, end_datetime, 
+      id, reference_no, status, start_datetime, end_datetime,
       total_amount, purpose, created_at,
-      users(name, email, phone, telegram_username, institution, class_division)
+      users!user_id(name, email, phone, telegram_username, institution, class_division)
     `)
     .order('created_at', { ascending: false })
 

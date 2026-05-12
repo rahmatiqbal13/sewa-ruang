@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient as createClient } from '@/lib/supabase/server'
 import { AssetForm } from '../AssetForm'
 
 export default async function NewAssetPage() {
