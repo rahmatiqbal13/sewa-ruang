@@ -15,8 +15,9 @@ export async function POST(req: Request) {
     const admin = await createAdminClient()
     
     // Check if current user is super_admin
-    const { data: profile, error: profileError } = await admin
-      .from('users')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile, error: profileError } = await (admin
+      .from('users') as any)
       .select('role')
       .eq('id', user.id)
       .single()
@@ -54,8 +55,9 @@ export async function POST(req: Request) {
     }
 
     // Check if email already exists in public.users table
-    const { data: existingProfile } = await admin
-      .from('users')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingProfile } = await (admin
+      .from('users') as any)
       .select('email')
       .eq('email', email.toLowerCase())
       .maybeSingle()
@@ -160,8 +162,9 @@ Please check your .env.local file and verify SUPABASE_SERVICE_ROLE_KEY is correc
     await new Promise(resolve => setTimeout(resolve, 1000))
 
     // Step 3: Check if user was created by trigger
-    const { data: existingUser, error: checkError } = await admin
-      .from('users')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingUser, error: checkError } = await (admin
+      .from('users') as any)
       .select('*')
       .eq('id', authData.user.id)
       .maybeSingle()
@@ -173,8 +176,9 @@ Please check your .env.local file and verify SUPABASE_SERVICE_ROLE_KEY is correc
     if (!existingUser) {
       console.log('User not found in public.users after trigger, inserting manually...')
       
-      const { error: insertError } = await admin
-        .from('users')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: insertError } = await (admin
+        .from('users') as any)
         .insert({
           id: authData.user.id,
           name: name || email.split('@')[0], 
@@ -212,8 +216,9 @@ Please check your .env.local file and verify SUPABASE_SERVICE_ROLE_KEY is correc
     } else {
       console.log('User was created by trigger, updating fields...')
       
-      const { error: updateError } = await admin
-        .from('users')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (admin
+        .from('users') as any)
         .update({
           phone: phone || existingUser.phone || '',
           borrower_category: borrower_category || existingUser.borrower_category || 'mahasiswa',
@@ -258,8 +263,9 @@ export async function GET() {
     const admin = await createAdminClient()
     
     // Check if current user is super_admin
-    const { data: profile } = await admin
-      .from('users')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (admin
+      .from('users') as any)
       .select('role')
       .eq('id', user.id)
       .single()
@@ -268,8 +274,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { data: users, error } = await admin
-      .from('users')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: users, error } = await (admin
+      .from('users') as any)
       .select('*')
       .order('created_at', { ascending: false })
 
