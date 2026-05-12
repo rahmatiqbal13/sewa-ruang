@@ -54,13 +54,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
     }
 
-<<<<<<< HEAD
-    // Check if email already exists in auth
-    const { data: existingUsers } = await admin.auth.admin.listUsers()
-    const emailExists = existingUsers?.users?.some(
-      (u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase()
-    )
-=======
     // Check if email already exists in public.users table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: existingProfile } = await (admin
@@ -68,33 +61,19 @@ export async function POST(req: Request) {
       .select('email')
       .eq('email', email.toLowerCase())
       .maybeSingle()
->>>>>>> 0489dd8eeb4404f3b0b4afd0feb68e33b6c3de12
     
-    if (emailExists) {
+    if (existingProfile) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
     }
 
-<<<<<<< HEAD
-    // Create auth user (email_confirm akan otomatis true jika disable di Supabase)
-    const { data: authData, error: authError } = await admin.auth.admin.createUser({
-      email: email.toLowerCase(),
-      password,
-      email_confirm: true, // Akan berhasil sekarang karena disable confirmation di Supabase
-      user_metadata: { name, role },
-=======
     // Get Supabase credentials
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     
-    console.log('Environment check:')
-    console.log('- NEXT_PUBLIC_SUPABASE_URL exists:', !!supabaseUrl)
-    console.log('- SUPABASE_SERVICE_ROLE_KEY exists:', !!supabaseServiceKey)
-    console.log('- URL starts with https:', supabaseUrl?.startsWith('https://'))
-    
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing environment variables!')
       return NextResponse.json({ 
-        error: 'Server configuration error: Missing Supabase credentials. Check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.' 
+        error: 'Server configuration error: Missing Supabase credentials' 
       }, { status: 500 })
     }
 
@@ -108,7 +87,7 @@ export async function POST(req: Request) {
 
     console.log('Creating auth user with email:', email.toLowerCase())
 
-    // Step 1: Create auth user
+    // Create auth user
     const { data: authData, error: authError } = await adminAuthClient.auth.admin.createUser({
       email: email.toLowerCase(),
       password,
@@ -123,68 +102,13 @@ export async function POST(req: Request) {
         identity_number: identity_number || '',
         telegram_username: telegram_username || ''
       },
->>>>>>> 0489dd8eeb4404f3b0b4afd0feb68e33b6c3de12
     })
     
-    // Log full auth response for debugging
-    console.log('Auth response:')
-    console.log('- Data:', authData ? 'exists' : 'null')
-    console.log('- Error:', authError ? JSON.stringify(authError, null, 2) : 'null')
-    
     if (authError) {
-<<<<<<< HEAD
-      console.error('Auth error:', authError)
-      return NextResponse.json({ 
-        error: 'Auth error: ' + authError.message 
-      }, { status: 400 })
-    }
-
-    if (!authData?.user) {
-      return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
-    }
-
-    // Insert into users table
-    const { error: insertError } = await admin
-      .from('users')
-      .insert({
-        id: authData.user.id,
-        name, 
-        email: email.toLowerCase(), 
-        role: role || 'borrower',
-        phone: phone || null,
-        borrower_category: borrower_category || null,
-        institution: institution || null,
-        class_division: class_division || null,
-        identity_number: identity_number || null,
-        telegram_username: telegram_username || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-
-    if (insertError) {
-      console.error('Database error:', insertError)
-      
-      // Cleanup auth user
-      try {
-        await admin.auth.admin.deleteUser(authData.user.id)
-      } catch (e) {
-        console.error('Failed to cleanup:', e)
-      }
-      
-      return NextResponse.json({ 
-        error: 'Database error: ' + insertError.message 
-=======
       console.error('Auth error occurred:', authError)
       
-      // Extract all possible error info
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errorDetails = authError as any
-      console.error('Error details:')
-      console.error('- message:', errorDetails.message)
-      console.error('- code:', errorDetails.code)
-      console.error('- status:', errorDetails.status)
-      console.error('- name:', errorDetails.name)
-      console.error('- full object:', JSON.stringify(errorDetails, Object.getOwnPropertyNames(errorDetails), 2))
-      
       let errorMessage = errorDetails.message || 'Auth service error'
       let errorCode = errorDetails.code || 'unknown'
       
@@ -192,19 +116,11 @@ export async function POST(req: Request) {
         errorMessage = 'Email already registered'
       } else if (errorCode === 'weak_password') {
         errorMessage = 'Password is too weak'
-      } else if (errorCode === 'unexpected_failure') {
-        errorMessage = `Auth service error (unexpected_failure). This usually means:
-1. SUPABASE_SERVICE_ROLE_KEY is invalid or expired
-2. The Supabase Auth service is temporarily unavailable
-3. Your Supabase project has restrictions on admin user creation
-
-Please check your .env.local file and verify SUPABASE_SERVICE_ROLE_KEY is correct.`
       }
       
       return NextResponse.json({ 
         error: errorMessage, 
         code: errorCode,
-        status: errorDetails.status,
       }, { status: 400 })
     }
 
@@ -212,16 +128,15 @@ Please check your .env.local file and verify SUPABASE_SERVICE_ROLE_KEY is correc
       console.error('No auth data returned despite no error')
       return NextResponse.json({ 
         error: 'Failed to create user - no user data returned from auth service' 
->>>>>>> 0489dd8eeb4404f3b0b4afd0feb68e33b6c3de12
       }, { status: 500 })
     }
 
     console.log('Auth user created successfully:', authData.user.id)
 
-    // Step 2: Wait for trigger to complete
+    // Wait for trigger to complete
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // Step 3: Check if user was created by trigger
+    // Check if user was created by trigger
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: existingUser, error: checkError } = await (admin
       .from('users') as any)
@@ -266,9 +181,6 @@ Please check your .env.local file and verify SUPABASE_SERVICE_ROLE_KEY is correc
         
         return NextResponse.json({ 
           error: `Database error: ${insertError.message}`,
-          code: insertError.code,
-          details: insertError.details,
-          hint: insertError.hint,
         }, { status: 500 })
       }
       
@@ -300,12 +212,11 @@ Please check your .env.local file and verify SUPABASE_SERVICE_ROLE_KEY is correc
       user: { id: authData.user.id, email, name, role }
     })
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Unexpected error in POST handler:', error)
-    console.error('Error stack:', error.stack)
+    const err = error as Error
     return NextResponse.json({ 
-      error: 'Internal server error: ' + (error.message || 'Unknown error'),
-      stack: error.stack
+      error: 'Internal server error: ' + (err.message || 'Unknown error'),
     }, { status: 500 })
   }
 }
@@ -322,15 +233,10 @@ export async function GET() {
 
     const admin = await createAdminClient()
     
-<<<<<<< HEAD
-    const { data: profile } = await admin
-      .from('users')
-=======
     // Check if current user is super_admin
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (admin
       .from('users') as any)
->>>>>>> 0489dd8eeb4404f3b0b4afd0feb68e33b6c3de12
       .select('role')
       .eq('id', user.id)
       .single()
@@ -351,7 +257,8 @@ export async function GET() {
 
     return NextResponse.json({ users })
     
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const err = error as Error
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

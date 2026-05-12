@@ -9,7 +9,7 @@ import {
   Building2, LayoutDashboard, Package, CalendarDays,
   CreditCard, RotateCcw, BarChart3, QrCode, Boxes,
   LogOut, Users, Settings, BellRing, DoorOpen, ShieldCheck,
-  ChevronRight, Database, FileText, Trash2
+  ChevronRight, Database, FileText, Trash2, Wallet
 } from 'lucide-react'
 import { useState } from 'react'
 import { SafeImage } from '@/components/shared/SafeImage'
@@ -38,18 +38,19 @@ interface InstitutionProfile {
 
 // Menu items with role requirements
 const mainMenuItems: NavItem[] = [
-  { label: 'Dashboard',    href: '/admin/dashboard',     icon: LayoutDashboard },
-  { label: 'Gedung',       href: '/admin/buildings',     icon: Building2 },
-  { label: 'Ruangan',      href: '/admin/rooms',         icon: DoorOpen },
-  { label: 'Alat',         href: '/admin/equipment',     icon: Package },
-  { label: 'Inventaris',   href: '/admin/inventory',     icon: Boxes },
-  { label: 'Pengajuan',    href: '/admin/bookings',      icon: CalendarDays },
-  { label: 'Pembayaran',   href: '/admin/payments',      icon: CreditCard },
-  { label: 'Pengembalian', href: '/admin/returns',       icon: RotateCcw },
-  { label: 'QR Code',      href: '/admin/qr',            icon: QrCode },
-  { label: 'Laporan',      href: '/admin/reports',       icon: BarChart3 },
-  { label: 'Notifikasi',   href: '/admin/notifications', icon: BellRing },
-  { label: 'Pengaturan',   href: '/admin/settings',      icon: Settings },
+  { label: 'Dashboard',           href: '/admin/dashboard',        icon: LayoutDashboard },
+  { label: 'Gedung',              href: '/admin/buildings',        icon: Building2 },
+  { label: 'Ruangan',             href: '/admin/rooms',            icon: DoorOpen },
+  { label: 'Alat',                href: '/admin/equipment',        icon: Package },
+  { label: 'Inventaris',          href: '/admin/inventory',        icon: Boxes },
+  { label: 'Pengajuan',           href: '/admin/bookings',         icon: CalendarDays },
+  { label: 'Pembayaran',          href: '/admin/payments',         icon: CreditCard },
+  { label: 'VA Payment Methods',  href: '/admin/payment-methods',  icon: Wallet },
+  { label: 'Pengembalian',        href: '/admin/returns',          icon: RotateCcw },
+  { label: 'QR Code',             href: '/admin/qr',               icon: QrCode },
+  { label: 'Laporan',             href: '/admin/reports',          icon: BarChart3 },
+  { label: 'Notifikasi',          href: '/admin/notifications',    icon: BellRing },
+  { label: 'Pengaturan',          href: '/admin/settings',         icon: Settings },
 ]
 
 // Super admin only menu items

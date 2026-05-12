@@ -1,0 +1,487 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { 
+  Loader2, 
+  ArrowLeft, 
+  CheckCircle, 
+  Upload,
+  Building2,
+  Package,
+  CreditCard,
+  AlertCircle,
+  Copy,
+  Check,
+  Home,
+  Box,
+  Landmark
+} from 'lucide-react'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import { formatRupiah } from '@/lib/utils'
+
+interface PaymentMethod {
+  id: string
+  bankName: string
+  bankCode: string
+  virtualAccountNumber: string
+  accountName: string
+  category: 'room' | 'equipment' | 'general'
+}
+
+interface BookingData {
+  id: string
+  reference_no: string
+  total_amount: number
+  status: string
+  payment_code: string | null
+  created_at: string
+}
+
+export default function PaymentPage() {
+  const params = useParams()
+  const bookingId = params.id as string
+  
+  const [booking, setBooking] = useState<BookingData | null>(null)
+  const [roomMethods, setRoomMethods] = useState<PaymentMethod[]>([])
+  const [equipmentMethods, setEquipmentMethods] = useState<PaymentMethod[]>([])
+  const [loading, setLoading] = useState(true)
+  const [gettingCode, setGettingCode] = useState(false)
+  const [copied, setCopied] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('room')
+
+  const supabase = createClient()
+
+  useEffect(() => {
+    fetchBookingAndPaymentMethods()
+  }, [bookingId])
+
+  const fetchBookingAndPaymentMethods = async () => {
+    try {
+      setLoading(true)
+      
+      // Get booking
+      const { data: bookingData, error: bookingError } = await supabase
+        .from('bookings')
+        .select('id, reference_no, total_amount, status, payment_code, created_at')
+        .eq('id', bookingId)
+        .single()
+
+      if (bookingError) throw bookingError
+      
+      setBooking(bookingData)
+
+      // Get booking items to determine type
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: itemsData } = await (supabase
+        .from('booking_items') as any)
+        .select('item_type')
+        .eq('booking_id', bookingId)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hasRoom = itemsData?.some((item: any) => item.item_type === 'room') || false
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hasEquipment = itemsData?.some((item: any) => item.item_type === 'equipment') || false
+      
+      // Set active tab based on booking type
+      if (hasRoom && !hasEquipment) {
+        setActiveTab('room')
+      } else if (hasEquipment && !hasRoom) {
+        setActiveTab('equipment')
+      }
+
+      // Get payment methods
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: methodsData, error: methodsError } = await (supabase
+        .from('bank_accounts') as any)
+        .select('id, bank_name, bank_code, virtual_account_number, account_name, category, is_primary')
+        .eq('is_active', true)
+        .order('category')
+        .order('is_primary', { ascending: false })
+
+      if (methodsError) throw methodsError
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formattedMethods = methodsData?.map((bank: any) => ({
+        id: bank.id,
+        bankName: bank.bank_name,
+        bankCode: bank.bank_code,
+        virtualAccountNumber: bank.virtual_account_number,
+        accountName: bank.account_name,
+        category: bank.category
+      })) || []
+
+      // Separate by category
+      setRoomMethods(formattedMethods.filter((m: PaymentMethod) => m.category === 'room'))
+      setEquipmentMethods(formattedMethods.filter((m: PaymentMethod) => m.category === 'equipment'))
+      
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      toast.error('Gagal memuat data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getPaymentCode = async () => {
+    try {
+      setGettingCode(true)
+      
+      const response = await fetch('/api/payments/get-va', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get payment info')
+      }
+
+      setBooking(prev => prev ? { ...prev, payment_code: data.paymentCode, status: 'pending_payment' } : null)
+      
+      if (data.paymentMethods) {
+        const allMethods = [
+          ...(data.paymentMethods.room || []),
+          ...(data.paymentMethods.equipment || [])
+        ]
+        setRoomMethods(allMethods.filter((m: PaymentMethod) => m.category === 'room'))
+        setEquipmentMethods(allMethods.filter((m: PaymentMethod) => m.category === 'equipment'))
+      }
+      
+      toast.success('Kode pembayaran berhasil dibuat')
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error('Gagal membuat kode pembayaran')
+    } finally {
+      setGettingCode(false)
+    }
+  }
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(label)
+    toast.success(`${label} disalin`)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, { label: string; color: string }> = {
+      pending: { label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800' },
+      approved: { label: 'Disetujui', color: 'bg-blue-100 text-blue-800' },
+      pending_payment: { label: 'Menunggu Pembayaran', color: 'bg-orange-100 text-orange-800' },
+      payment_uploaded: { label: 'Bukti Diupload', color: 'bg-purple-100 text-purple-800' },
+      paid: { label: 'Lunas', color: 'bg-green-100 text-green-800' },
+      rejected: { label: 'Ditolak', color: 'bg-red-100 text-red-800' },
+    }
+    
+    const variant = variants[status] || { label: status, color: 'bg-gray-100 text-gray-800' }
+    return <Badge className={variant.color}>{variant.label}</Badge>
+  }
+
+  const formatVA = (vaNumber: string) => {
+    // Format: 94220-022-022-04-0002
+    if (vaNumber.length === 20) {
+      return `${vaNumber.slice(0, 5)}-${vaNumber.slice(5, 8)}-${vaNumber.slice(8, 11)}-${vaNumber.slice(11, 13)}-${vaNumber.slice(13)}`
+    }
+    return vaNumber
+  }
+
+  const renderVAMethod = (method: PaymentMethod) => (
+    <Card key={method.id} className="overflow-hidden border-2">
+      <CardContent className="p-6">
+        <div className="space-y-6">
+          {/* Bank Header */}
+          <div className="flex items-center gap-3 pb-4 border-b">
+            <Landmark className="h-8 w-8 text-blue-600" />
+            <div>
+              <h3 className="font-bold text-xl">{method.bankName}</h3>
+              <p className="text-gray-600">{method.accountName}</p>
+            </div>
+          </div>
+
+          {/* VA Number - PROMINENT */}
+          <div className="bg-blue-50 p-6 rounded-lg text-center">
+            <p className="text-sm text-blue-700 mb-2">Nomor Virtual Account</p>
+            <div className="flex items-center justify-center gap-3">
+              <p className="text-3xl font-mono font-bold text-blue-900 tracking-wider">
+                {formatVA(method.virtualAccountNumber)}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(method.virtualAccountNumber, 'VA')}
+                className="h-10 px-3"
+              >
+                {copied === 'VA' ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+              </Button>
+            </div>
+            <p className="text-xs text-blue-600 mt-2">
+              Klik tombol copy untuk menyalin nomor VA
+            </p>
+          </div>
+
+          {/* Total Amount */}
+          <div className="bg-green-50 p-4 rounded-lg text-center">
+            <p className="text-sm text-green-700 mb-1">Total Pembayaran</p>
+            <p className="text-3xl font-bold text-green-900">
+              {booking && formatRupiah(booking.total_amount)}
+            </p>
+          </div>
+
+          {/* Instructions */}
+          <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-2">
+            <p className="font-semibold text-gray-900">Cara Pembayaran:</p>
+            <ol className="list-decimal list-inside space-y-1 text-gray-700">
+              <li>Buka aplikasi BTN Mobile / ATM BTN</li>
+              <li>Pilih menu <strong>Pembayaran</strong> {'>'} <strong>Virtual Account</strong></li>
+              <li>Masukkan nomor VA di atas</li>
+              <li>Pastikan nama tujuan: <strong>{method.accountName}</strong></li>
+              <li>Masukkan nominal: <strong>{booking && formatRupiah(booking.total_amount)}</strong></li>
+              <li>Ikuti instruksi hingga pembayaran berhasil</li>
+              <li>Simpan screenshot bukti pembayaran</li>
+            </ol>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+        <h1 className="text-xl font-semibold text-gray-900">Booking tidak ditemukan</h1>
+        <Link href="/bookings" className="mt-6">
+          <Button>Kembali ke Daftar Booking</Button>
+        </Link>
+      </div>
+    )
+  }
+
+  // Redirect if already paid
+  if (booking.status === 'paid') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-green-50">
+        <CheckCircle className="h-20 w-20 text-green-500 mb-4" />
+        <h1 className="text-2xl font-bold text-green-900">Pembayaran Lunas!</h1>
+        <p className="text-green-700 mt-2">Terima kasih, pembayaran Anda sudah diverifikasi</p>
+        <div className="mt-6 flex gap-4">
+          <Link href={`/bookings/${bookingId}`}>
+            <Button variant="outline">Lihat Detail Booking</Button>
+          </Link>
+          <Link href="/bookings">
+            <Button>Kembali</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <Link href={`/bookings/${bookingId}`} className="inline-flex items-center text-gray-600 hover:text-gray-900">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Kembali ke Booking
+          </Link>
+        </div>
+
+        {/* Status Card */}
+        <Card className="mb-6">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Status Pembayaran</p>
+                <div className="mt-1">{getStatusBadge(booking.status)}</div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Total Pembayaran</p>
+                <p className="text-2xl font-bold text-gray-900">{formatRupiah(booking.total_amount)}</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">No. Referensi</span>
+                <span className="font-mono font-medium">{booking.reference_no}</span>
+              </div>
+              {booking.payment_code && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Kode Pembayaran</span>
+                  <span className="font-mono font-medium text-blue-600">{booking.payment_code}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Generate Payment Code Button */}
+        {!booking.payment_code && (
+          <Card className="mb-6">
+            <CardContent className="p-8 text-center">
+              <Landmark className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Generate Kode Pembayaran</h3>
+              <p className="text-gray-600 mb-4">Klik tombol di bawah untuk mendapatkan instruksi pembayaran</p>
+              <Button 
+                onClick={getPaymentCode} 
+                disabled={gettingCode}
+                size="lg"
+              >
+                {gettingCode ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Membuat...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Tampilkan Instruksi Pembayaran
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* VA Payment Options */}
+        {booking.payment_code && (
+          <>
+            {(roomMethods.length > 0 || equipmentMethods.length > 0) ? (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Pembayaran via Virtual Account
+                  </CardTitle>
+                  <p className="text-sm text-gray-500">
+                    Pilih VA sesuai jenis pemesanan Anda
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      {roomMethods.length > 0 && (
+                        <TabsTrigger value="room" className="flex items-center gap-2">
+                          <Home className="h-4 w-4" />
+                          Sewa Gedung
+                        </TabsTrigger>
+                      )}
+                      {equipmentMethods.length > 0 && (
+                        <TabsTrigger value="equipment" className="flex items-center gap-2">
+                          <Box className="h-4 w-4" />
+                          Sewa Alat
+                        </TabsTrigger>
+                      )}
+                    </TabsList>
+
+                    {roomMethods.length > 0 && (
+                      <TabsContent value="room" className="mt-6 space-y-4">
+                        <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                          <h4 className="font-semibold text-blue-900 flex items-center gap-2">
+                            <Home className="h-5 w-5" />
+                            Virtual Account untuk Sewa Gedung
+                          </h4>
+                          <p className="text-sm text-blue-700 mt-1">
+                            Gunakan VA berikut untuk pembayaran sewa gedung/ruangan
+                          </p>
+                        </div>
+                        {roomMethods.map(renderVAMethod)}
+                      </TabsContent>
+                    )}
+
+                    {equipmentMethods.length > 0 && (
+                      <TabsContent value="equipment" className="mt-6 space-y-4">
+                        <div className="bg-green-50 p-4 rounded-lg mb-4">
+                          <h4 className="font-semibold text-green-900 flex items-center gap-2">
+                            <Box className="h-5 w-5" />
+                            Virtual Account untuk Sewa Alat
+                          </h4>
+                          <p className="text-sm text-green-700 mt-1">
+                            Gunakan VA berikut untuk pembayaran sewa alat/peralatan
+                          </p>
+                        </div>
+                        {equipmentMethods.map(renderVAMethod)}
+                      </TabsContent>
+                    )}
+                  </Tabs>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="mb-6">
+                <CardContent className="p-8 text-center">
+                  <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                  <p className="text-gray-600">Belum ada metode pembayaran yang tersedia</p>
+                  <p className="text-sm text-gray-500 mt-2">Silakan hubungi admin</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Upload Button */}
+            <Card className="mb-6">
+              <CardContent className="p-6 text-center">
+                <p className="text-gray-600 mb-4">
+                  Sudah transfer? Upload bukti pembayaran Anda
+                </p>
+                <Link href={`/booking/${bookingId}/upload-proof`}>
+                  <Button size="lg" className="w-full sm:w-auto">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Bukti Transfer
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {/* Help Section */}
+        <Card className="bg-gray-100 border-0">
+          <CardContent className="p-4">
+            <h4 className="font-medium text-gray-900 mb-2">Informasi Penting</h4>
+            <ul className="text-sm text-gray-600 space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600">•</span>
+                <span>Pastikan transfer sesuai nominal yang tertera</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600">•</span>
+                <span>Verifikasi nama tujuan sebelum konfirmasi pembayaran</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600">•</span>
+                <span>Simpan screenshot bukti pembayaran</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600">•</span>
+                <span>Verifikasi oleh admin membutuhkan waktu 1x24 jam</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600">•</span>
+                <span>Hubungi admin jika ada kendala pembayaran</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

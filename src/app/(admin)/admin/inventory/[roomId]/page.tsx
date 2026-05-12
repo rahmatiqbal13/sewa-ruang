@@ -2,44 +2,69 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { RoomInventoryList } from './RoomInventoryList'
 
-export default async function InventoryPage({ params }: { params: Promise<{ roomId: string }> }) {
+interface Room {
+  id: string
+  name: string
+  room_code: string | null
+  buildings: { name: string } | null
+}
+
+interface InventoryItem {
+  id: string
+  name: string
+  quantity: number
+  condition: 'good' | 'needs_repair' | 'damaged'
+  inventory_code: string | null
+  notes: string | null
+  photo_url: string | null
+  last_updated_at: string
+  users: { name: string } | null
+  room_asset_id: string
+}
+
+export default async function InventoryPage({ 
+  params 
+}: { 
+  params: Promise<{ roomId: string }> 
+}) {
   const { roomId } = await params
   const supabase = await createClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  try {
+    // Get room info from rooms table (not assets)
+    const { data: room, error: roomError } = await supabase
+      .from('rooms')
+      .select('id, name, room_code, buildings(name)')
+      .eq('id', roomId)
+      .single()
 
-  // Get room info
-  const { data: room } = await sb
-    .from('assets')
-    .select('id, name, room_code, buildings(name)')
-    .eq('id', roomId)
-    .single()
+    if (roomError || !room) {
+      console.error('Room fetch error:', roomError)
+      notFound()
+    }
 
-  if (!room) notFound()
+    // Get inventory items for this room
+    const { data: items, error: itemsError } = await supabase
+      .from('room_inventory_items')
+      .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name), room_asset_id')
+      .eq('room_asset_id', roomId)
+      .eq('is_active', true)
+      .order('name')
 
-  // Get paginated items (for display)
-  const { data: items } = await sb
-    .from('room_inventory_items')
-    .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name)')
-    .eq('room_asset_id', roomId)
-    .eq('is_active', true)
-    .order('name')
+    if (itemsError) {
+      console.error('Items fetch error:', itemsError)
+    }
 
-  // Get ALL items for export (without pagination)
-  const { data: allItems } = await sb
-    .from('room_inventory_items')
-    .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name)')
-    .eq('room_asset_id', roomId)
-    .eq('is_active', true)
-    .order('name')
-
-  return (
-    <RoomInventoryList
-      room={room}
-      items={items || []}
-      allItems={allItems || []}
-      roomId={roomId}
-    />
-  )
+    return (
+      <RoomInventoryList
+        room={room as Room}
+        items={(items || []) as InventoryItem[]}
+        allItems={(items || []) as InventoryItem[]}
+        roomId={roomId}
+      />
+    )
+  } catch (error) {
+    console.error('Inventory page error:', error)
+    notFound()
+  }
 }

@@ -52,6 +52,8 @@ const PERMISSIONS: Record<string, UserRole[]> = {
   'payments.view': ['super_admin', 'admin', 'staff'],
   'payments.manage': ['super_admin', 'admin'],
   'payments.refund': ['super_admin', 'admin'],
+  'payment_methods.view': ['super_admin', 'admin', 'staff'],
+  'payment_methods.manage': ['super_admin', 'admin'],
   
   // Returns
   'returns.view': ['super_admin', 'admin', 'staff'],

@@ -28,7 +28,6 @@ interface Equipment {
   status_tindakan: string
   current_location: string | null
   description: string | null
-  current_location: string | null
   is_active: boolean
   rooms?: { name: string } | null
 }
