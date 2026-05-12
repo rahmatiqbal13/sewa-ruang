@@ -62,78 +62,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
     }
 
-    if (password.length < 8) {
-      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+    if (password.length < 6) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
     }
 
-    // Check if email already exists
-    const { data: existingUser, error: checkError } = await admin.auth.admin.listUsers()
-    if (checkError) {
-      console.error('Error checking existing users:', checkError)
-    } else {
-      const emailExists = existingUser.users.some((u: { email?: string }) => 
-        u.email?.toLowerCase() === email.toLowerCase()
-      )
-      if (emailExists) {
-        return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
-      }
-    }
-
-    // Check if email exists in public.users table
-    const { data: existingProfile } = await admin
-      .from('users')
-      .select('email')
-      .eq('email', email.toLowerCase())
-      .single()
+    // Check if email already exists in auth
+    const { data: existingUsers } = await admin.auth.admin.listUsers()
+    const emailExists = existingUsers?.users?.some(
+      (u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase()
+    )
     
-    if (existingProfile) {
-      return NextResponse.json({ error: 'Email already exists in database' }, { status: 400 })
+    if (emailExists) {
+      return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
     }
 
-    // Create auth user
-    // Note: email_confirm dihapus karena untuk dummy email, 
-    // supaya tidak perlu verifikasi email
+    // Create auth user (email_confirm akan otomatis true jika disable di Supabase)
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email: email.toLowerCase(),
       password,
-      email_confirm: false, // Jangan auto-confirm untuk menghindari error email
+      email_confirm: true, // Akan berhasil sekarang karena disable confirmation di Supabase
       user_metadata: { name, role },
     })
     
     if (authError) {
       console.error('Auth error:', authError)
-      console.error('Auth error code:', (authError as any).code)
-      console.error('Auth error status:', (authError as any).status)
-      
-      // Provide better error messages
-      let errorMessage = authError.message
-      if ((authError as any).code === 'email_exists') {
-        errorMessage = 'Email already registered'
-      } else if ((authError as any).code === 'unexpected_failure') {
-        errorMessage = 'Auth service error. Please check Supabase dashboard or try again later.'
-      }
-      
-      return NextResponse.json({ error: errorMessage, code: (authError as any).code }, { status: 400 })
+      return NextResponse.json({ 
+        error: 'Auth error: ' + authError.message 
+      }, { status: 400 })
     }
 
-    if (!authData.user) {
+    if (!authData?.user) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
-    }
-
-    // Auto-confirm email supaya user bisa langsung login
-    // meskipun email tidak valid (untuk dummy email)
-    try {
-      const { error: confirmError } = await admin.auth.admin.updateUserById(
-        authData.user.id,
-        { email_confirm: true }
-      )
-      if (confirmError) {
-        console.error('Error confirming email:', confirmError)
-        // Continue anyway, tidak fatal
-      }
-    } catch (confirmErr) {
-      console.error('Exception confirming email:', confirmErr)
-      // Continue anyway
     }
 
     // Insert into users table
@@ -142,7 +101,7 @@ export async function POST(req: Request) {
       .insert({
         id: authData.user.id,
         name, 
-        email, 
+        email: email.toLowerCase(), 
         role: role || 'borrower',
         phone: phone || null,
         borrower_category: borrower_category || null,
@@ -157,16 +116,15 @@ export async function POST(req: Request) {
     if (insertError) {
       console.error('Database error:', insertError)
       
-      // Try to clean up auth user if database insert failed
+      // Cleanup auth user
       try {
         await admin.auth.admin.deleteUser(authData.user.id)
-      } catch (deleteError) {
-        console.error('Failed to cleanup auth user:', deleteError)
+      } catch (e) {
+        console.error('Failed to cleanup:', e)
       }
       
       return NextResponse.json({ 
-        error: 'Database error: ' + insertError.message,
-        details: insertError
+        error: 'Database error: ' + insertError.message 
       }, { status: 500 })
     }
 
@@ -195,7 +153,6 @@ export async function GET() {
 
     const admin = adminClient()
     
-    // Check if current user is super_admin
     const { data: profile } = await admin
       .from('users')
       .select('role')
@@ -212,14 +169,12 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching users:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ users })
     
   } catch (error: any) {
-    console.error('Unexpected error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

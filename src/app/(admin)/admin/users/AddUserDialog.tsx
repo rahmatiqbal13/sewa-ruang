@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Loader2, AlertCircle } from 'lucide-react'
+import { Plus, Loader2, AlertCircle, Mail, User } from 'lucide-react'
 
 export function AddUserDialog() {
   const router = useRouter()
@@ -24,7 +24,7 @@ export function AddUserDialog() {
 
   function set(field: string, value: string) {
     setForm(p => ({ ...p, [field]: value }))
-    setError(null) // Clear error when user types
+    setError(null)
   }
 
   function resetForm() {
@@ -39,21 +39,13 @@ export function AddUserDialog() {
   async function save() {
     setError(null)
     
-    // Validation
     if (!form.name || !form.email || !form.password) {
       setError('Nama, email, dan password wajib diisi')
       return
     }
     
-    if (form.password.length < 8) {
-      setError('Password minimal 8 karakter')
-      return
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(form.email)) {
-      setError('Format email tidak valid')
+    if (form.password.length < 6) {
+      setError('Password minimal 6 karakter')
       return
     }
 
@@ -70,7 +62,7 @@ export function AddUserDialog() {
       
       if (!res.ok) {
         console.error('Error response:', json)
-        const errorMsg = json.details?.message || json.error || 'Gagal membuat pengguna'
+        const errorMsg = json.error || 'Gagal membuat pengguna'
         setError(errorMsg)
         toast.error(errorMsg)
       } else {
@@ -93,8 +85,10 @@ export function AddUserDialog() {
       setOpen(isOpen)
       if (!isOpen) resetForm()
     }}>
-      <DialogTrigger render={<Button />}>
-        <Plus className="mr-2 h-4 w-4" /> Tambah Pengguna
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" /> Tambah Pengguna
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -111,7 +105,10 @@ export function AddUserDialog() {
           
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1 col-span-2">
-              <Label className="text-xs">Nama Lengkap <span className="text-destructive">*</span></Label>
+              <Label className="text-xs flex items-center gap-1">
+                <User className="h-3 w-3" />
+                Nama Lengkap <span className="text-destructive">*</span>
+              </Label>
               <Input 
                 value={form.name} 
                 onChange={e => set('name', e.target.value)} 
@@ -119,23 +116,31 @@ export function AddUserDialog() {
                 disabled={loading}
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Email <span className="text-destructive">*</span></Label>
+
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                Email <span className="text-destructive">*</span>
+              </Label>
               <Input 
                 type="email" 
                 value={form.email} 
                 onChange={e => set('email', e.target.value)} 
-                placeholder="email@domain.com"
+                placeholder="email@domain.com (bisa email dummy)"
                 disabled={loading}
               />
+              <p className="text-xs text-muted-foreground">
+                Bisa menggunakan email dummy seperti: alfina@usc.ac.id, test@example.com, dll
+              </p>
             </div>
+
             <div className="space-y-1">
               <Label className="text-xs">Password <span className="text-destructive">*</span></Label>
               <Input 
                 type="password" 
                 value={form.password} 
                 onChange={e => set('password', e.target.value)} 
-                placeholder="Min. 8 karakter"
+                placeholder="Min. 6 karakter"
                 disabled={loading}
               />
             </div>
