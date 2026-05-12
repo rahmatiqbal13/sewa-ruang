@@ -76,6 +76,8 @@ export function WhatsAppButton({
     if (!booking || message || customTemplate) return
 
     async function loadTemplate() {
+      if (!booking) return
+      
       const supabase = createClient()
       
       // Tentukan event_type berdasarkan status booking
