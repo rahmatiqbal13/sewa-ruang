@@ -118,11 +118,9 @@ export function EquipmentQRCode({ equipmentId, equipmentName, equipmentCode }: E
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger>
-        <Button variant="outline" size="sm" type="button">
-          <QrCode className="h-4 w-4 mr-2" />
-          QR Code
-        </Button>
+      <DialogTrigger render={<Button variant="outline" size="sm" type="button" />}>
+        <QrCode className="h-4 w-4 mr-2" />
+        QR Code
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
