@@ -309,7 +309,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
       equipment: selectedEquipmentList.map(e => ({ id: e.id, name: e.name, rate_per_day: getRateForEquipment(e), quantity: e.quantity })),
     }
 
-    // Insert booking
+    // Insert booking (reference_no akan di-generate otomatis oleh database)
     const { data: booking, error } = await sb.from('bookings').insert({
       user_id: profile!.id,
       status: 'pending',
@@ -318,7 +318,6 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
       end_datetime: end.toISOString(),
       total_amount: estimatedTotal,
       snapshot_rate: snapshotRate,
-      reference_no: '',
     }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
 
     if (error || !booking) {
@@ -349,10 +348,11 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
 
     toast.success('Pengajuan berhasil dikirim!')
     
-    fetch('/api/notifications/send', {
+    // Notifikasi ke admin (async, tidak block user)
+    fetch('/api/notifications/booking-submitted', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type: 'booking_submitted', booking_id: booking.id }),
+      body: JSON.stringify({ booking_id: booking.id }),
     }).catch(() => {/* Silent fail */})
 
     router.push('/bookings')
