@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,20 +34,26 @@ export function EditUserDialog({ user }: { user: User }) {
 
   async function save() {
     setLoading(true)
-    const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('users') as any).update({
-      name: form.name,
-      phone: form.phone || null,
-      institution: form.institution || null,
-      class_division: form.class_division || null,
-      identity_number: form.identity_number || null,
-      telegram_username: form.telegram_username || null,
-    }).eq('id', user.id)
-    if (error) { toast.error('Gagal menyimpan: ' + error.message); setLoading(false); return }
-    toast.success('Data pengguna diperbarui')
-    setOpen(false)
-    router.refresh()
+    const res = await fetch(`/api/super-admin/users/${user.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        phone: form.phone,
+        institution: form.institution,
+        class_division: form.class_division,
+        identity_number: form.identity_number,
+        telegram_username: form.telegram_username,
+      }),
+    })
+    const json = await res.json()
+    if (!res.ok) {
+      toast.error('Gagal menyimpan: ' + (json.error ?? 'Unknown error'))
+    } else {
+      toast.success('Data pengguna diperbarui')
+      setOpen(false)
+      router.refresh()
+    }
     setLoading(false)
   }
 

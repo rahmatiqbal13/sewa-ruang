@@ -110,7 +110,7 @@ export default async function ReportsPage({
   const [{ data: bookingsRaw }, { data: paymentsRaw }] = await Promise.all([
     sb
       .from('bookings')
-      .select('*, users(name, institution), booking_assets(assets(name, category))')
+      .select('*, users!user_id(name, institution), booking_items(item_type, rooms:room_id(name), equipment:equipment_id(name))')
       .gte('created_at', `${fromDate}T00:00:00`)
       .lte('created_at', `${toDate}T23:59:59`)
       .order('created_at', { ascending: false }),
@@ -285,7 +285,8 @@ export default async function ReportsPage({
                     </TableRow>
                   )}
                   {bookings?.map((b) => {
-                    const assetName = (b.booking_assets as Array<{assets:{name:string}|null}>)?.[0]?.assets?.name
+                    const firstItem = (b.booking_items as Array<{item_type:string; rooms:{name:string}|null; equipment:{name:string}|null}>)?.[0]
+                    const assetName = firstItem?.item_type === 'room' ? firstItem?.rooms?.name : firstItem?.equipment?.name
                     const user = b.users as {name:string;institution:string}|null
                     return (
                       <TableRow key={b.id}>

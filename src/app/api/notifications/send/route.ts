@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       .from('bookings')
       .select(`
         *,
-        users(name, email, phone, institution),
+        users!user_id(name, email, phone, institution),
         booking_items(item_type, room:room_id(name), equipment:equipment_id(name))
       `)
       .eq('id', bookingId)

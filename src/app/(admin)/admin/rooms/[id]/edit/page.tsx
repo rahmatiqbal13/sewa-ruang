@@ -4,11 +4,21 @@ import { RoomForm } from '../../RoomForm'
 import Link from 'next/link'
 import { ArrowLeft, DoorOpen } from 'lucide-react'
 
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 export default async function EditRoomPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+  const { id: slug } = await params
   const supabase = await createClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
+
+  // Find room by slug
+  const { data: allRooms } = await sb.from('rooms').select('id, name')
+  const matched = allRooms?.find((r: { id: string; name: string }) => createSlug(r.name) === slug)
+  if (!matched) notFound()
+  const id = matched.id
 
   const [roomRes, buildingsRes, ratesRes] = await Promise.all([
     sb.from('rooms')

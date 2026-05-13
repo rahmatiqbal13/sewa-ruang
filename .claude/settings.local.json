@@ -25,7 +25,18 @@
       "Bash(cd \"/c/Users/HYPE FLEX/Documents/Codex/sewa-ruang\" && grep -rn \"from '@/lib/supabase/server'\" src/app/\\\\\\(admin\\\\\\)/ --include=\"page.tsx\" | grep \"createClient\" | grep -v \"createAdminClient\")",
       "Read(//c/c/Users/HYPE FLEX/Documents/Codex/sewa-ruang/src/app/**)",
       "Bash(sed -n '14,25p' \"src/app/\\(admin\\)/admin/bookings/page.tsx\")",
-      "Bash(sed -n '14,42p' \"src/app/\\(admin\\)/admin/payments/page.tsx\")"
+      "Bash(sed -n '14,42p' \"src/app/\\(admin\\)/admin/payments/page.tsx\")",
+      "Bash(supabase --version)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\HYPE FLEX\\\\Documents\\\\Codex\\\\sewa-ruang\" -Force)",
+      "Bash(xargs cat)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\HYPE FLEX\\\\Documents\\\\Codex\\\\sewa-ruang\\\\src\\\\app\\\\equipment\\\\[id]\\\\scan\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\HYPE FLEX\\\\Documents\\\\Codex\\\\sewa-ruang\\\\src\\\\app\" -Directory -Recurse)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(del \"c:\\\\Users\\\\HYPE FLEX\\\\Documents\\\\Codex\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\admin\\\\fix-trigger\\\\route.ts\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\HYPE FLEX\\Documents\\Codex\\sewa-ruang\\src\\app\\equipment\\[id]"
     ]
   }
 }

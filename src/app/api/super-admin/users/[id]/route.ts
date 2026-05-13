@@ -13,10 +13,58 @@ async function verifySuperAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return false
-  // Read own profile — RLS allows users to read their own row
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase.from('users') as any).select('role').eq('id', user.id).single() as { data: { role: string } | null }
   return data?.role === 'super_admin'
+}
+
+// PATCH /api/super-admin/users/[id] — update profile, role, and/or password
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!await verifySuperAdmin()) {
+    return NextResponse.json({ error: 'Akses ditolak. Hanya Super Admin.' }, { status: 403 })
+  }
+
+  const admin = adminClient()
+  if (!admin) {
+    return NextResponse.json({ error: 'Konfigurasi server tidak lengkap.' }, { status: 500 })
+  }
+
+  const { id } = await params
+  const body = await req.json()
+  const { name, phone, institution, class_division, identity_number, telegram_username, role, password } = body
+
+  // Build profile update payload (exclude plain_password — handled separately)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profileUpdate: Record<string, any> = {}
+  if (name !== undefined) profileUpdate.name = name
+  if (phone !== undefined) profileUpdate.phone = phone || null
+  if (institution !== undefined) profileUpdate.institution = institution || null
+  if (class_division !== undefined) profileUpdate.class_division = class_division || null
+  if (identity_number !== undefined) profileUpdate.identity_number = identity_number || null
+  if (telegram_username !== undefined) profileUpdate.telegram_username = telegram_username || null
+  if (role !== undefined) profileUpdate.role = role
+
+  if (Object.keys(profileUpdate).length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: profileError } = await (admin.from('users') as any).update(profileUpdate).eq('id', id)
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 500 })
+    }
+  }
+
+  // Update password in Supabase Auth if provided
+  if (password && password !== '') {
+    const { error: authError } = await admin.auth.admin.updateUserById(id, { password })
+    if (authError) {
+      return NextResponse.json({ error: 'Gagal update password: ' + authError.message }, { status: 400 })
+    }
+
+    // Store plain_password separately — non-blocking (column may not exist if migration not yet run)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin.from('users') as any).update({ plain_password: password }).eq('id', id)
+  }
+
+  return NextResponse.json({ success: true })
 }
 
 // DELETE /api/super-admin/users/[id] — permanently delete user

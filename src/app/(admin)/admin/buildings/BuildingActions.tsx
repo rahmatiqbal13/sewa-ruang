@@ -10,9 +10,13 @@ import {
 import { MoreHorizontal, Pencil, Power, PowerOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface Props { id: string; isActive: boolean; deleteButton?: React.ReactNode }
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
 
-export function BuildingActions({ id, isActive, deleteButton }: Props) {
+interface Props { id: string; name: string; isActive: boolean; deleteButton?: React.ReactNode }
+
+export function BuildingActions({ id, name, isActive, deleteButton }: Props) {
   const router = useRouter()
 
   async function toggleActive() {
@@ -38,7 +42,7 @@ export function BuildingActions({ id, isActive, deleteButton }: Props) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem 
-          onClick={() => router.push(`/admin/buildings/${id}/edit`)} 
+          onClick={() => router.push(`/admin/buildings/${createSlug(name)}/edit`)}
           className="flex items-center gap-2 cursor-pointer py-2.5"
         >
           <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">

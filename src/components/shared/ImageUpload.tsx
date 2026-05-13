@@ -65,13 +65,24 @@ export function ImageUpload({ value, onChange, bucket = 'equipment-photos', fold
     setUploading(true)
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        alert('Anda harus login terlebih dahulu')
+        setUploading(false)
+        return
+      }
+
       // Create preview
       const objectUrl = URL.createObjectURL(file)
       setPreview(objectUrl)
 
       // Upload to Supabase Storage
+      // For avatars bucket, use path: users/{userId}/{filename}
       const fileExt = file.name.split('.').pop()
-      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const fileName = bucket === 'avatars' 
+        ? `${folder}/${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        : `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
 
       const { data, error } = await supabase.storage
         .from(bucket)

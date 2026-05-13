@@ -26,11 +26,11 @@ export default async function ReturnsPage({
     .select(`
       id, reference_no, status, start_datetime, end_datetime, 
       total_amount, actual_end_datetime,
-      users(name, email, phone),
+      users!user_id(name, email, phone),
       booking_items(
         id, item_type, quantity,
         room:rooms(id, name, room_code),
-        equipment:equipment(id, name, equipment_code)
+        equipment:equipment_id(id, name, equipment_code)
       ),
       payments(id, amount, status, method)
     `)
@@ -44,7 +44,7 @@ export default async function ReturnsPage({
       *,
       booking:bookings(
         id, reference_no, start_datetime, end_datetime,
-        users(name)
+        users!user_id(name)
       )
     `)
     .order('returned_at', { ascending: false })
@@ -56,8 +56,8 @@ export default async function ReturnsPage({
     .select(`
       *,
       booking:bookings(
-        id, reference_no, 
-        users(name)
+        id, reference_no,
+        users!user_id(name)
       )
     `)
     .order('created_at', { ascending: false })

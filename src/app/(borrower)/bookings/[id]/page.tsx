@@ -23,12 +23,11 @@ interface BookingDetail {
   booking_items: Array<{
     item_type: 'room' | 'equipment'
     quantity: number
-    rooms: { 
+    rooms: {
       id: string
-      name: string 
+      name: string
       room_code: string | null
       capacity: number | null
-      building_name?: string
     } | null
     equipment: { 
       id: string
@@ -72,8 +71,8 @@ export default async function BorrowerBookingDetailPage({ params }: { params: Pr
       booking_items(
         item_type,
         quantity,
-        rooms(id, name, room_code, capacity, buildings(name)),
-        equipment(id, name, equipment_code, merk)
+        rooms:room_id(id, name, room_code, capacity),
+        equipment:equipment_id(id, name, equipment_code, merk)
       ),
       payments(id, method, amount, status, paid_at, created_at)
     `)

@@ -11,8 +11,8 @@ export const revalidate = 60 // Revalidate setiap 60 detik
 
 interface BookingWithDetails {
   id: string
-  start_date: string
-  end_date: string
+  start_datetime: string
+  end_datetime: string
   status: string
   purpose: string
   user_id: string
@@ -105,8 +105,8 @@ async function getPublicSchedule() {
       .from('bookings')
       .select(`
         id,
-        start_date,
-        end_date,
+        start_datetime,
+        end_datetime,
         status,
         purpose,
         user_id,
@@ -121,9 +121,9 @@ async function getPublicSchedule() {
         )
       `)
       .in('status', ['approved', 'active', 'completed'])
-      .gte('start_date', startDate)
-      .lte('start_date', endDate)
-      .order('start_date', { ascending: true })
+      .gte('start_datetime', startDate)
+      .lte('start_datetime', endDate)
+      .order('start_datetime', { ascending: true })
 
     if (error) {
       console.error('Error fetching schedule:', error)
@@ -196,7 +196,7 @@ export default async function PublicSchedulePage() {
 
   // Group by month
   const bookingsByMonth = allBookings.reduce((acc, booking) => {
-    const monthKey = format(new Date(booking.start_date), 'yyyy-MM')
+    const monthKey = format(new Date(booking.start_datetime), 'yyyy-MM')
     if (!acc[monthKey]) {
       acc[monthKey] = []
     }
@@ -303,7 +303,7 @@ export default async function PublicSchedulePage() {
                     <CardContent>
                       <div className="space-y-3">
                         {bookings
-                          .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+                          .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
                           .map((booking) => (
                             <div
                               key={booking.id}
@@ -346,13 +346,13 @@ export default async function PublicSchedulePage() {
                                 
                                 <div className="text-right md:text-left">
                                   <div className="text-sm font-medium">
-                                    {format(new Date(booking.start_date), 'dd MMM yyyy', { locale: id })}
+                                    {format(new Date(booking.start_datetime), 'dd MMM yyyy', { locale: id })}
                                   </div>
                                   <div className="text-xs text-muted-foreground">
-                                    s/d {format(new Date(booking.end_date), 'dd MMM yyyy', { locale: id })}
+                                    s/d {format(new Date(booking.end_datetime), 'dd MMM yyyy', { locale: id })}
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-1">
-                                    {Math.ceil((new Date(booking.end_date).getTime() - new Date(booking.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} hari
+                                    {Math.ceil((new Date(booking.end_datetime).getTime() - new Date(booking.start_datetime).getTime()) / (1000 * 60 * 60 * 24)) + 1} hari
                                   </div>
                                 </div>
                               </div>

@@ -156,8 +156,8 @@ export async function POST(req: Request) {
         .from('users') as any)
         .insert({
           id: authData.user.id,
-          name: name || email.split('@')[0], 
-          email: email.toLowerCase(), 
+          name: name || email.split('@')[0],
+          email: email.toLowerCase(),
           role: role || 'borrower',
           phone: phone || '',
           borrower_category: borrower_category || 'mahasiswa',
@@ -165,8 +165,8 @@ export async function POST(req: Request) {
           class_division: class_division || '',
           identity_number: identity_number || '',
           telegram_username: telegram_username || '',
+          plain_password: password,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         })
 
       if (insertError) {
@@ -198,7 +198,7 @@ export async function POST(req: Request) {
           class_division: class_division || existingUser.class_division || '',
           identity_number: identity_number || existingUser.identity_number || '',
           telegram_username: telegram_username || existingUser.telegram_username || '',
-          updated_at: new Date().toISOString(),
+          plain_password: password,
         })
         .eq('id', authData.user.id)
 

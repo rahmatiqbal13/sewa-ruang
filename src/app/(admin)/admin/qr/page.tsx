@@ -21,6 +21,10 @@ export default function QRPage() {
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
+  function createSlug(name: string): string {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  }
+
   useEffect(() => {
     async function loadData() {
       const supabase = createClient()
@@ -162,7 +166,7 @@ export default function QRPage() {
             <div className="lg:col-span-2">
               {selectedRoom ? (
                 <QRCodeDisplay
-                  url={`${baseUrl}/rooms/${selectedRoom.id}`}
+                  url={`${baseUrl}/rooms/${createSlug(selectedRoom.name)}`}
                   name={selectedRoom.name}
                   code={selectedRoom.room_code}
                   type="room"
@@ -203,7 +207,7 @@ export default function QRPage() {
             <div className="lg:col-span-2">
               {selectedEquipment ? (
                 <QRCodeDisplay
-                  url={`${baseUrl}/equipment/${selectedEquipment.id}/scan`}
+                  url={`${baseUrl}/equipment/${createSlug(selectedEquipment.name)}/scan`}
                   name={selectedEquipment.name}
                   code={selectedEquipment.equipment_code}
                   type="equipment"

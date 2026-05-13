@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   User, 
@@ -44,7 +43,6 @@ const BORROWER_CATEGORIES = [
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
   phone: z.string().min(10, 'Nomor WhatsApp tidak valid'),
-  borrower_category: z.enum(['mahasiswa', 'pascasarjana', 'dosen_karyawan', 'kerjasama', 'umum']),
   institution: z.string().min(2, 'Instansi wajib diisi').max(100),
   class_division: z.string().min(1, 'Kelas/Divisi wajib diisi').max(50),
   identity_number: z.string().max(20).optional(),
@@ -72,8 +70,8 @@ interface Booking {
   id: string
   reference_no: string
   status: string
-  start_date: string
-  end_date: string
+  start_datetime: string
+  end_datetime: string
   total_amount: number
   purpose: string
   created_at: string
@@ -108,7 +106,8 @@ export default function ProfilePage() {
       }
 
       // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profileData, error: profileError } = await (supabase as any)
         .from('users')
         .select('*')
         .eq('id', user.id)
@@ -123,7 +122,6 @@ export default function ProfilePage() {
         // Set form values
         setValue('name', profileData.name)
         setValue('phone', profileData.phone)
-        setValue('borrower_category', profileData.borrower_category)
         setValue('institution', profileData.institution)
         setValue('class_division', profileData.class_division)
         setValue('identity_number', profileData.identity_number || '')
@@ -154,18 +152,17 @@ export default function ProfilePage() {
     
     setSaving(true)
     try {
-      const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
         .from('users')
         .update({
           name: data.name,
           phone: data.phone,
-          borrower_category: data.borrower_category,
           institution: data.institution,
           class_division: data.class_division,
           identity_number: data.identity_number || null,
           telegram_username: data.telegram_username || null,
           photo_url: photoUrl || null,
-          updated_at: new Date().toISOString(),
         })
         .eq('id', profile.id)
 
@@ -343,19 +340,10 @@ export default function ProfilePage() {
                           <GraduationCap className="h-4 w-4 text-slate-400" />
                           Kategori Peminjam
                         </Label>
-                        <Select 
-                          onValueChange={(v) => setValue('borrower_category', v as any)}
-                          defaultValue={profile.borrower_category}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {BORROWER_CATEGORIES.map(c => (
-                              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="h-11 px-3 flex items-center rounded-md border bg-slate-50 text-sm text-slate-700">
+                          {BORROWER_CATEGORIES.find(c => c.value === profile.borrower_category)?.label ?? profile.borrower_category}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Kategori tidak dapat diubah setelah pendaftaran</p>
                       </div>
 
                       <div className="space-y-2">
@@ -478,7 +466,7 @@ export default function ProfilePage() {
                           </div>
                           <p className="font-medium text-slate-900">{booking.purpose}</p>
                           <p className="text-sm text-slate-500">
-                            {format(new Date(booking.start_date), 'dd MMM yyyy', { locale: id })} - {format(new Date(booking.end_date), 'dd MMM yyyy', { locale: id })}
+                            {format(new Date(booking.start_datetime), 'dd MMM yyyy', { locale: id })} - {format(new Date(booking.end_datetime), 'dd MMM yyyy', { locale: id })}
                           </p>
                         </div>
                         <div className="text-right">

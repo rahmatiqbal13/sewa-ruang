@@ -158,8 +158,9 @@ export default async function BuildingsPage() {
                     Lihat Ruangan 
                     <ArrowUpRight className="h-4 w-4 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
                   </Link>
-                  <BuildingActions 
-                    id={building.id} 
+                  <BuildingActions
+                    id={building.id}
+                    name={building.name}
                     isActive={building.is_active}
                     deleteButton={isSuperAdmin ? <DeleteBuildingButton id={building.id} buildingName={building.name} /> : undefined}
                   />

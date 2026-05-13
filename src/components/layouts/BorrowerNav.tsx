@@ -10,10 +10,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 
-interface Props { userName: string }
+interface Props { userName: string; photoUrl?: string }
 
 const mobileNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
@@ -21,7 +21,7 @@ const mobileNav = [
   { href: '/bookings', icon: FileText, label: 'Pengajuan' },
 ]
 
-export function BorrowerNav({ userName }: Props) {
+export function BorrowerNav({ userName, photoUrl }: Props) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -68,6 +68,9 @@ export function BorrowerNav({ userName }: Props) {
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity rounded-xl px-2 py-1.5 hover:bg-zinc-50">
               <Avatar className="h-8 w-8">
+                {photoUrl ? (
+                  <AvatarImage src={photoUrl} alt={userName} className="object-cover" />
+                ) : null}
                 <AvatarFallback className="bg-blue-950 text-white text-xs font-bold">
                   {userName.charAt(0).toUpperCase()}
                 </AvatarFallback>

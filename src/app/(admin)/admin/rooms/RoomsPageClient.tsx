@@ -397,7 +397,7 @@ export function RoomsPageClient({
                       </span>
                     )}
                   </div>
-                  <RoomActions id={room.id} isActive={room.is_active} isForRent={isForRent} />
+                  <RoomActions id={room.id} name={room.name} isActive={room.is_active} isForRent={isForRent} />
                 </div>
               </div>
             </div>

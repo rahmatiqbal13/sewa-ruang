@@ -63,7 +63,7 @@ export default async function AssetsPage({
   if (borrowedIds.length > 0) {
     const { data: activeBorrows } = await sb
       .from('booking_assets')
-      .select('asset_id, bookings(users(name), status)')
+      .select('asset_id, bookings(users!user_id(name), status)')
       .in('asset_id', borrowedIds) as {
         data: Array<{ asset_id: string; bookings: { users: { name: string } | null; status: string } | null }> | null
       }

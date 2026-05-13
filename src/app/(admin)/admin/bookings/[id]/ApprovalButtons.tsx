@@ -9,19 +9,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, X, Loader2, GraduationCap } from 'lucide-react'
 
-async function sendNotif(event_type: string, booking_id: string) {
-  const res = await fetch('/api/notifications/send', {
+async function sendNotif(_event_type: string, booking_id: string) {
+  await fetch('/api/notifications/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ event_type, booking_id }),
+    body: JSON.stringify({ bookingId: booking_id, channels: ['email', 'whatsapp'] }),
+  }).catch(() => {
+    // Notifikasi gagal tidak memblokir alur approval
   })
-  const json = await res.json()
-  if (json.whatsapp_url) {
-    toast('Kirim notifikasi WhatsApp?', {
-      action: { label: 'Buka WhatsApp', onClick: () => window.open(json.whatsapp_url, '_blank') },
-      duration: 10000,
-    })
-  }
 }
 
 // Helper function to check if booking qualifies for free (auto-paid)
@@ -63,10 +58,11 @@ export function ApprovalButtons({ bookingId, borrowerCategory, purpose }: Approv
       })
       .eq('id', bookingId)
     
-    if (error) { 
-      toast.error('Gagal menyetujui'); 
-      setLoading(null); 
-      return 
+    if (error) {
+      console.error('Approval error detail:', error)
+      toast.error('Gagal menyetujui: ' + error.message);
+      setLoading(null);
+      return
     }
     
     if (isFree) {
@@ -99,7 +95,7 @@ export function ApprovalButtons({ bookingId, borrowerCategory, purpose }: Approv
     const { error } = await (supabase.from('bookings') as any)
       .update({ status: 'rejected', admin_notes: rejectionNotes })
       .eq('id', bookingId)
-    if (error) { toast.error('Gagal menolak'); setLoading(null); return }
+    if (error) { console.error('Rejection error detail:', error); toast.error('Gagal menolak: ' + error.message); setLoading(null); return }
     toast.success('Pengajuan ditolak')
     sendNotif('booking_rejected', bookingId)
     router.refresh()

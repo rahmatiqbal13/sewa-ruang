@@ -46,8 +46,8 @@ export default async function MyBookingsPage() {
       created_at,
       booking_items(
         item_type,
-        rooms(name, room_code),
-        equipment(name, equipment_code)
+        rooms:room_id(name, room_code),
+        equipment:equipment_id(name, equipment_code)
       )
     `)
     .eq('user_id', user.id)

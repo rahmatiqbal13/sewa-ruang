@@ -30,7 +30,7 @@ export async function POST(req: Request) {
         status,
         payment_code,
         user_id,
-        users(name, email),
+        users!user_id(name, email),
         booking_items(item_type)
       `)
       .eq('id', bookingId)

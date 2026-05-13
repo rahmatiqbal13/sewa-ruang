@@ -1,7 +1,7 @@
 export type UserRole = 'admin' | 'staff' | 'borrower' | 'super_admin'
 export type AssetCategory = 'room' | 'equipment'
 export type AssetCondition = 'good' | 'needs_repair' | 'damaged' | 'lost'
-export type BookingStatus = 'pending' | 'approved' | 'rejected' | 'paid' | 'completed' | 'cancelled'
+export type BookingStatus = 'pending' | 'approved' | 'rejected' | 'paid' | 'completed' | 'cancelled' | 'pending_payment' | 'payment_uploaded' | 'payment_rejected' | 'active'
 export type PaymentMethod = 'online' | 'manual_cash' | 'manual_transfer' | 'refund'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled'
 export type ReturnCondition = 'good' | 'minor_damage' | 'major_damage' | 'lost'

@@ -29,6 +29,10 @@ import { CalendarView } from '@/components/calendar/CalendarView'
 
 const PAGE_SIZE = 12
 
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 interface RoomRate { 
   usage_category: string
   rate_per_hour: number | null
@@ -259,13 +263,12 @@ function RoomCard({ room }: { room: Room & { buildingName: string; displayName: 
         {/* Actions */}
         <div className="flex gap-2">
           <Dialog>
-            <DialogTrigger>
-              <div className="flex-1">
-                <Button variant="outline" size="sm" className="w-full h-9">
-                  <CalendarDays className="h-4 w-4 mr-1.5" />
-                  Jadwal
-                </Button>
-              </div>
+            <DialogTrigger
+              className="flex-1"
+              render={<Button variant="outline" size="sm" className="w-full h-9" />}
+            >
+              <CalendarDays className="h-4 w-4 mr-1.5" />
+              Jadwal
             </DialogTrigger>
             <DialogContent className="max-w-md p-0">
               <DialogHeader className="p-4 pb-0">
@@ -278,7 +281,7 @@ function RoomCard({ room }: { room: Room & { buildingName: string; displayName: 
             </DialogContent>
           </Dialog>
           
-          <Link href={`/rooms/${room.id}/inventory`} className="flex-1">
+          <Link href={`/rooms/${createSlug(room.name)}/inventory`} className="flex-1">
             <Button variant="outline" size="sm" className="w-full h-9">
               <Info className="h-4 w-4 mr-1.5" />
               Detail
@@ -366,13 +369,12 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
         {/* Actions */}
         <div className="flex gap-2">
           <Dialog>
-            <DialogTrigger>
-              <div className="flex-1">
-                <Button variant="outline" size="sm" className="w-full h-9">
-                  <CalendarDays className="h-4 w-4 mr-1.5" />
-                  Jadwal
-                </Button>
-              </div>
+            <DialogTrigger
+              className="flex-1"
+              render={<Button variant="outline" size="sm" className="w-full h-9" />}
+            >
+              <CalendarDays className="h-4 w-4 mr-1.5" />
+              Jadwal
             </DialogTrigger>
             <DialogContent className="max-w-md p-0">
               <DialogHeader className="p-4 pb-0">

@@ -38,11 +38,21 @@ const CONDITION_COLORS: Record<string, string> = {
   damaged: 'bg-red-100 text-red-700',
 }
 
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 export default async function RoomDetailPage({ params }: Props) {
-  const { id } = await params
+  const { id: slug } = await params
   const supabase = await createClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
+
+  // Find room by slug
+  const { data: allRooms } = await sb.from('rooms').select('id, name')
+  const matched = allRooms?.find((r: { id: string; name: string }) => createSlug(r.name) === slug)
+  if (!matched) notFound()
+  const id = matched.id
 
   // Get room data with building
   const { data: room } = await sb
@@ -97,7 +107,7 @@ export default async function RoomDetailPage({ params }: Props) {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/admin/rooms/${id}/edit`}>
+            <Link href={`/admin/rooms/${slug}/edit`}>
               <Edit className="h-4 w-4 mr-2" /> Edit Ruangan
             </Link>
           </Button>
@@ -212,6 +222,7 @@ export default async function RoomDetailPage({ params }: Props) {
                   <Plus className="h-4 w-4 mr-1" /> Tambah
                 </Link>
               </Button>
+
             </CardHeader>
             <CardContent>
               {inventory && inventory.length > 0 ? (
@@ -250,7 +261,7 @@ export default async function RoomDetailPage({ params }: Props) {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <Button variant="ghost" size="sm" asChild>
-                              <Link href={`/admin/inventory/${id}/items/${item.id}/edit`}>
+                              <Link href={`/admin/inventory/${slug}/items/${item.id}/edit`}>
                                 Edit
                               </Link>
                             </Button>

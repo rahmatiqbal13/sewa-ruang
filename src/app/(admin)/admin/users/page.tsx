@@ -7,7 +7,7 @@ import { Users, ShieldCheck } from 'lucide-react'
 import { ChangeRoleButton } from './ChangeRoleButton'
 import { EditUserDialog } from './EditUserDialog'
 import { DeleteUserButton } from './DeleteUserButton'
-import { ResetPasswordButton } from './ResetPasswordButton'
+import { ChangePasswordDialog } from './ChangePasswordDialog'
 import { AddUserDialog } from './AddUserDialog'
 import { formatDateTime } from '@/lib/utils'
 import { isSuperAdmin } from '@/lib/permissions'
@@ -22,7 +22,7 @@ const ROLE_BADGE: Record<string, { label: string; className: string }> = {
 export default async function UsersPage() {
   const supabase = await createClient()
   const { data: { user: currentUser } } = await supabase.auth.getUser()
-  
+
   if (!currentUser) redirect('/login')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,22 +31,20 @@ export default async function UsersPage() {
   const [{ data: currentProfile }, { data: users }] = await Promise.all([
     sb.from('users').select('role').eq('id', currentUser.id).single() as Promise<{ data: { role: string } | null }>,
     sb.from('users')
-      .select('id, name, email, role, phone, institution, class_division, identity_number, telegram_username, created_at')
+      .select('id, name, email, role, phone, institution, class_division, identity_number, telegram_username, plain_password, created_at')
       .order('role').order('name') as Promise<{
         data: Array<{
           id: string; name: string; email: string; role: string
           phone: string | null; institution: string | null; class_division: string | null
-          identity_number: string | null; telegram_username: string | null; created_at: string
+          identity_number: string | null; telegram_username: string | null
+          plain_password: string | null; created_at: string
         }> | null
       }>,
   ])
 
-  // Only super_admin can access user management
   if (!isSuperAdmin(currentProfile?.role)) {
     redirect('/admin/dashboard')
   }
-
-  const userIsSuperAdmin = true
 
   return (
     <div className="p-6 space-y-6">
@@ -54,13 +52,11 @@ export default async function UsersPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             Pengguna
-            {userIsSuperAdmin && <ShieldCheck className="h-5 w-5 text-purple-600" />}
+            <ShieldCheck className="h-5 w-5 text-purple-600" />
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {userIsSuperAdmin ? 'Kelola semua akun — Super Admin mode aktif' : 'Kelola akun dan peran pengguna sistem'}
-          </p>
+          <p className="text-muted-foreground text-sm">Kelola semua akun — Super Admin mode aktif</p>
         </div>
-        {userIsSuperAdmin && <AddUserDialog />}
+        <AddUserDialog />
       </div>
 
       <Card>
@@ -78,11 +74,11 @@ export default async function UsersPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>WhatsApp</TableHead>
                 <TableHead>Instansi / Kelas</TableHead>
-                {userIsSuperAdmin && <TableHead>No. Identitas</TableHead>}
-                {userIsSuperAdmin && <TableHead>Telegram</TableHead>}
+                <TableHead>No. Identitas</TableHead>
+                <TableHead>Telegram</TableHead>
                 <TableHead>Terdaftar</TableHead>
                 <TableHead>Role</TableHead>
-                {userIsSuperAdmin && <TableHead className="text-right">Aksi</TableHead>}
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -108,16 +104,12 @@ export default async function UsersPage() {
                       {u.institution ?? '-'}
                       {u.class_division && <span className="block text-xs">{u.class_division}</span>}
                     </TableCell>
-                    {userIsSuperAdmin && (
-                      <TableCell className="text-sm font-mono">
-                        {u.identity_number ?? <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-                    )}
-                    {userIsSuperAdmin && (
-                      <TableCell className="text-sm">
-                        {u.telegram_username ?? <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-                    )}
+                    <TableCell className="text-sm font-mono">
+                      {u.identity_number ?? <span className="text-muted-foreground">-</span>}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {u.telegram_username ?? <span className="text-muted-foreground">-</span>}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                       {formatDateTime(u.created_at)}
                     </TableCell>
@@ -127,20 +119,22 @@ export default async function UsersPage() {
                           {badge?.label ?? u.role}
                         </span>
                       ) : (
-                        <ChangeRoleButton userId={u.id} currentRole={u.role} isSuperAdmin={userIsSuperAdmin} />
+                        <ChangeRoleButton userId={u.id} currentRole={u.role} isSuperAdmin={true} />
                       )}
                     </TableCell>
-                    {userIsSuperAdmin && (
-                      <TableCell>
-                        {!isSelf && (
-                          <div className="flex items-center gap-1 justify-end">
-                            <EditUserDialog user={u} />
-                            <ResetPasswordButton email={u.email} userName={u.name} />
-                            <DeleteUserButton userId={u.id} userName={u.name} />
-                          </div>
-                        )}
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      {!isSelf && (
+                        <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                          <EditUserDialog user={u} />
+                          <ChangePasswordDialog
+                            userId={u.id}
+                            userName={u.name}
+                            plainPassword={u.plain_password}
+                          />
+                          <DeleteUserButton userId={u.id} userName={u.name} />
+                        </div>
+                      )}
+                    </TableCell>
                   </TableRow>
                 )
               })}

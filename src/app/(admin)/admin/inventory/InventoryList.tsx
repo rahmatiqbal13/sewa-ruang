@@ -71,6 +71,10 @@ interface InventoryListProps {
 
 const ITEMS_PER_PAGE = 12
 
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 export function InventoryList({
   items,
   allItems,
@@ -483,7 +487,7 @@ export function InventoryList({
                       
                       {room && (
                         <Link
-                          href={`/admin/inventory/${item.room_asset_id}`}
+                          href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_asset_id}`}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                         >
                           <ChevronRight className="h-4 w-4" />
@@ -595,7 +599,7 @@ export function InventoryList({
 
                           {room && (
                             <Link
-                              href={`/admin/inventory/${item.room_asset_id}`}
+                              href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_asset_id}`}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                             >
                               <ChevronRight className="h-4 w-4" />

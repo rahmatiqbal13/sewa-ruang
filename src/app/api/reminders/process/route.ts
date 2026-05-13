@@ -61,16 +61,16 @@ export async function GET(req: NextRequest) {
         // Customize message based on type
         switch (reminder.reminder_type) {
           case 'before_start':
-            message = `Pengingat: Peminjaman Anda akan dimulai besok (${new Date(booking.start_date).toLocaleDateString('id-ID')}). Item: ${items}`
+            message = `Pengingat: Peminjaman Anda akan dimulai besok (${new Date((booking as any).start_datetime).toLocaleDateString('id-ID')}). Item: ${items}`
             break
           case 'after_start':
             message = `Peminjaman Anda telah dimulai hari ini. Item: ${items}. Selamat menggunakan fasilitas!`
             break
           case 'before_end':
-            message = `Pengingat: Peminjaman Anda akan berakhir besok (${new Date(booking.end_date).toLocaleDateString('id-ID')}). Jangan lupa mengembalikan: ${items}`
+            message = `Pengingat: Peminjaman Anda akan berakhir besok (${new Date((booking as any).end_datetime).toLocaleDateString('id-ID')}). Jangan lupa mengembalikan: ${items}`
             break
           case 'after_end':
-            message = `Hari ini (${new Date(booking.end_date).toLocaleDateString('id-ID')}) adalah tanggal pengembalian. Pastikan untuk mengembalikan dalam kondisi baik: ${items}`
+            message = `Hari ini (${new Date((booking as any).end_datetime).toLocaleDateString('id-ID')}) adalah tanggal pengembalian. Pastikan untuk mengembalikan dalam kondisi baik: ${items}`
             break
         }
 

@@ -7,14 +7,25 @@ import { SafeImage } from '@/components/shared/SafeImage'
 
 export const revalidate = 60
 
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 export default async function PublicInventoryPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+  const { id: slug } = await params
   const supabase = await createClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
+
+  // Find room by slug
+  const { data: allRooms } = await sb.from('rooms').select('id, name').eq('is_active', true)
+  const matched = allRooms?.find((r: { id: string; name: string }) => createSlug(r.name) === slug)
+  if (!matched) notFound()
+  const id = matched.id
+
   const [{ data: room }, { data: items }] = await Promise.all([
-    sb.from('assets')
+    sb.from('rooms')
       .select('id, name, room_code, description, photo_url, buildings(name, code)')
       .eq('id', id)
       .single() as Promise<{data:{id:string;name:string;room_code:string|null;description:string|null;photo_url:string|null;buildings:{name:string;code:string}|null}|null}>,

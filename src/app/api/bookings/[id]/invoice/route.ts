@@ -113,7 +113,7 @@ export async function GET(
       items,
       subtotal,
       total,
-      notes: `Tanggal Peminjaman: ${new Date(booking.start_date).toLocaleDateString('id-ID')} - ${new Date(booking.end_date).toLocaleDateString('id-ID')}\nStatus: ${booking.status.toUpperCase()}`,
+      notes: `Tanggal Peminjaman: ${new Date((booking as any).start_datetime).toLocaleDateString('id-ID')} - ${new Date((booking as any).end_datetime).toLocaleDateString('id-ID')}\nStatus: ${booking.status.toUpperCase()}`,
     })
 
     // Generate PDF using Puppeteer

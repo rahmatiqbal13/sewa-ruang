@@ -26,7 +26,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     .select(`
       id, reference_no, status, start_datetime, end_datetime,
       total_amount, purpose, created_at, admin_notes, snapshot_rate,
-      users(id, name, email, phone, telegram_username, institution, class_division, role)
+      users!user_id(id, name, email, phone, telegram_username, institution, class_division, role)
     `)
     .eq('id', id)
     .single()

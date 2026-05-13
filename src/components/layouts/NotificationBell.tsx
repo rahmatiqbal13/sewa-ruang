@@ -30,7 +30,7 @@ export function NotificationBell() {
       const sb = supabase as any
       const [{ data: bookings }, { data: newUsers }] = await Promise.all([
         sb.from('bookings')
-          .select('id, reference_no, created_at, status, users(name), booking_assets(assets(name))')
+          .select('id, reference_no, created_at, status, users!user_id(name), booking_items(item_type, rooms:room_id(name), equipment:equipment_id(name))')
           .eq('status', 'pending')
           .order('created_at', { ascending: false })
           .limit(8),
@@ -45,7 +45,8 @@ export function NotificationBell() {
       const notifs: NotifItem[] = []
 
       for (const b of (bookings ?? [])) {
-        const assetName = (b.booking_assets?.[0]?.assets?.name as string) ?? 'aset'
+        const firstItem = b.booking_items?.[0]
+        const assetName = (firstItem?.item_type === 'room' ? firstItem?.rooms?.name : firstItem?.equipment?.name) ?? 'aset'
         notifs.push({
           id: `b-${b.id}`,
           type: 'booking',

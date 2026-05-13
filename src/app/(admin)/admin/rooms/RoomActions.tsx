@@ -9,9 +9,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, Pencil, ToggleLeft, ToggleRight, Tag, EyeOff, Eye, Package } from 'lucide-react'
 
-interface Props { id: string; isActive: boolean; isForRent: boolean }
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
 
-export function RoomActions({ id, isActive, isForRent }: Props) {
+interface Props { id: string; name: string; isActive: boolean; isForRent: boolean }
+
+export function RoomActions({ id, name, isActive, isForRent }: Props) {
   const router = useRouter()
 
   async function toggleActive() {
@@ -38,14 +42,14 @@ export function RoomActions({ id, isActive, isForRent }: Props) {
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => router.push(`/admin/rooms/${id}`)} className="flex items-center gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={() => router.push(`/admin/rooms/${createSlug(name)}`)} className="flex items-center gap-2 cursor-pointer">
           <Eye className="h-4 w-4" /> Lihat Detail
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push(`/admin/inventory/${id}`)} className="flex items-center gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={() => router.push(`/admin/inventory/${createSlug(name)}`)} className="flex items-center gap-2 cursor-pointer">
           <Package className="h-4 w-4" /> Kelola Inventaris
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push(`/admin/rooms/${id}/edit`)} className="flex items-center gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={() => router.push(`/admin/rooms/${createSlug(name)}/edit`)} className="flex items-center gap-2 cursor-pointer">
           <Pencil className="h-4 w-4" /> Edit Ruangan
         </DropdownMenuItem>
         <DropdownMenuSeparator />

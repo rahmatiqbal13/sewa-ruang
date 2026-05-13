@@ -177,9 +177,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 9. Verify setup
 SELECT 'Activity log system configured successfully!' as status;
 SELECT 
-  tablename,
+  c.relname as table_name,
   COUNT(*) as log_count
 FROM pg_trigger t
 JOIN pg_class c ON t.tgrelid = c.oid
 WHERE t.tgname LIKE 'activity_log_%'
-GROUP BY tablename;
+GROUP BY c.relname;

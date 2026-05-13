@@ -45,6 +45,10 @@ export default function BatchQRClientPage() {
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
 
+  function createSlug(name: string): string {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  }
+
   useEffect(() => {
     async function loadData() {
       const supabase = createClient()
@@ -153,7 +157,7 @@ export default function BatchQRClientPage() {
           name: r.name,
           code: r.room_code,
           type: 'room',
-          url: `${baseUrl}/rooms/${r.id}`,
+          url: `${baseUrl}/rooms/${createSlug(r.name)}`,
           meta: r.building_name
         })
       }
@@ -166,7 +170,7 @@ export default function BatchQRClientPage() {
           name: e.name,
           code: e.equipment_code,
           type: 'equipment',
-          url: `${baseUrl}/equipment/${e.id}/scan`,
+          url: `${baseUrl}/equipment/${createSlug(e.name)}/scan`,
           meta: e.category
         })
       }
@@ -323,7 +327,7 @@ export default function BatchQRClientPage() {
                 }`}
               >
                 <div className="flex justify-center mb-2">
-                  <QRCode value={`${baseUrl}/rooms/${room.id}`} size={60} level="L" />
+                  <QRCode value={`${baseUrl}/rooms/${createSlug(room.name)}`} size={60} level="L" />
                 </div>
                 <Badge variant="outline" className="font-mono text-[10px] mb-1">
                   {room.room_code || 'No Code'}
@@ -375,7 +379,7 @@ export default function BatchQRClientPage() {
                 }`}
               >
                 <div className="flex justify-center mb-2">
-                  <QRCode value={`${baseUrl}/equipment/${item.id}/scan`} size={60} level="L" />
+                  <QRCode value={`${baseUrl}/equipment/${createSlug(item.name)}/scan`} size={60} level="L" />
                 </div>
                 <Badge variant="outline" className="font-mono text-[10px] mb-1">
                   {item.equipment_code || 'No Code'}

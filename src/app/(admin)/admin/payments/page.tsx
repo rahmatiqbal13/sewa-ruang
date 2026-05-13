@@ -69,7 +69,7 @@ export default async function PaymentsPage() {
   // Get traditional payments
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: traditionalPayments } = await (supabase.from('payments') as any)
-    .select('*, bookings(reference_no, users(name))')
+    .select('*, bookings(reference_no, users!user_id(name))')
     .order('created_at', { ascending: false }) as { 
       data: Array<{
         id:string;

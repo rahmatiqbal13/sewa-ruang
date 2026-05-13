@@ -2,6 +2,10 @@ import { createAdminClient as createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { RoomInventoryList } from './RoomInventoryList'
 
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 interface Room {
   id: string
   name: string
@@ -27,12 +31,20 @@ export default async function InventoryPage({
 }: { 
   params: Promise<{ roomId: string }> 
 }) {
-  const { roomId } = await params
+  const { roomId: slug } = await params
   const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any
 
   try {
+    // Find room by slug
+    const { data: allRooms } = await sb.from('rooms').select('id, name')
+    const matched = allRooms?.find((r: { id: string; name: string }) => createSlug(r.name) === slug)
+    if (!matched) notFound()
+    const roomId = matched.id
+
     // Get room info from rooms table (not assets)
-    const { data: room, error: roomError } = await supabase
+    const { data: room, error: roomError } = await sb
       .from('rooms')
       .select('id, name, room_code, buildings(name)')
       .eq('id', roomId)
@@ -44,7 +56,7 @@ export default async function InventoryPage({
     }
 
     // Get inventory items for this room
-    const { data: items, error: itemsError } = await supabase
+    const { data: items, error: itemsError } = await sb
       .from('room_inventory_items')
       .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name), room_asset_id')
       .eq('room_asset_id', roomId)

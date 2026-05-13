@@ -43,9 +43,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await (supabase.from('users') as any)
-    .select('role, name')
+    .select('role, name, photo_url')
     .eq('id', user.id)
-    .single() as { data: { role: string; name: string } | null }
+    .single() as { data: { role: string; name: string; photo_url: string | null } | null }
 
   if (!profile || !['super_admin', 'admin', 'staff'].includes(profile.role)) {
     redirect('/dashboard')
@@ -57,6 +57,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <AdminShell 
       userName={profile.name} 
       userRole={profile.role}
+      photoUrl={profile.photo_url ?? undefined}
       institution={institution}
     >
       {children}

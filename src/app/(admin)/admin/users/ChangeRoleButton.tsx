@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -17,11 +16,18 @@ export function ChangeRoleButton({
   async function handleChange(newRole: string) {
     if (newRole === currentRole) return
     setLoading(true)
-    const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('users') as any).update({ role: newRole }).eq('id', userId)
-    if (error) toast.error('Gagal mengubah role')
-    else { toast.success('Role berhasil diubah'); router.refresh() }
+    const res = await fetch(`/api/super-admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole }),
+    })
+    const json = await res.json()
+    if (!res.ok) {
+      toast.error('Gagal mengubah role: ' + (json.error ?? 'Unknown error'))
+    } else {
+      toast.success('Role berhasil diubah')
+      router.refresh()
+    }
     setLoading(false)
   }
 

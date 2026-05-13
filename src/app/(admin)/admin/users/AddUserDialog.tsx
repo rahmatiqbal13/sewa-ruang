@@ -85,10 +85,8 @@ export function AddUserDialog() {
       setOpen(isOpen)
       if (!isOpen) resetForm()
     }}>
-      <DialogTrigger>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Tambah Pengguna
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <Plus className="mr-2 h-4 w-4" /> Tambah Pengguna
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>

@@ -16,11 +16,11 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
   const { data: booking } = await (supabase.from('bookings') as any)
     .select(`
       *,
-      users(name, email, phone, institution),
+      users!user_id(name, email, phone, institution),
       booking_items(
         id, item_type, quantity,
-        room:rooms(id, name, room_code, buildings(name)),
-        equipment:equipment(id, name, equipment_code)
+        room:rooms(id, name, room_code),
+        equipment:equipment_id(id, name, equipment_code)
       ),
       payments(id, amount, status, method, paid_at)
     `)

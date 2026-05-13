@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { AdminSidebar } from './AdminSidebar'
 import { NotificationBell } from './NotificationBell'
-import { Building2, Menu, ChevronDown, Shield } from 'lucide-react'
+import { Building2, Menu, ChevronDown, Shield, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 
@@ -25,11 +25,13 @@ export function AdminShell({
   children,
   userName,
   userRole,
+  photoUrl,
   institution,
 }: {
   children: React.ReactNode
   userName?: string
   userRole?: string
+  photoUrl?: string
   institution?: InstitutionProfile | null
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -132,12 +134,28 @@ export function AdminShell({
             
             {userName && (
               <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-                <div className={cn(
-                  'h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold border-2',
-                  roleColor[userRole ?? ''] || 'bg-slate-100 text-slate-700 border-slate-200'
-                )}>
-                  {userName.charAt(0).toUpperCase()}
-                </div>
+                {photoUrl ? (
+                  <SafeImage
+                    src={photoUrl}
+                    alt={userName}
+                    className="h-10 w-10 rounded-xl object-cover border-2 border-slate-200"
+                    fallback={
+                      <div className={cn(
+                        'h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold border-2',
+                        roleColor[userRole ?? ''] || 'bg-slate-100 text-slate-700 border-slate-200'
+                      )}>
+                        {userName.charAt(0).toUpperCase()}
+                      </div>
+                    }
+                  />
+                ) : (
+                  <div className={cn(
+                    'h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold border-2',
+                    roleColor[userRole ?? ''] || 'bg-slate-100 text-slate-700 border-slate-200'
+                  )}>
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className="text-right hidden xl:block">
                   <p className="text-sm font-semibold text-slate-900 leading-tight">{userName}</p>
                   <div className="flex items-center gap-1.5">
