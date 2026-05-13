@@ -84,11 +84,11 @@ function getChangesSummary(log: ActivityLog): string {
 export default async function LogsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; table?: string }
+  searchParams: Promise<{ page?: string; table?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) redirect('/login')
 
   const { data: profile } = await (supabase.from('users') as any)
@@ -101,13 +101,15 @@ export default async function LogsPage({
     redirect('/admin/dashboard')
   }
 
-  const page = parseInt(searchParams.page || '1')
+  const { page: pageParam, table: tableFilter } = await searchParams
+  const page = parseInt(pageParam || '1')
   const limit = 20
   const offset = (page - 1) * limit
-  const tableFilter = searchParams.table
 
   // Fetch activity logs
-  let query = supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any
+  let query = sb
     .from('activity_logs')
     .select('*', { count: 'exact' })
     .order('performed_at', { ascending: false })
@@ -117,7 +119,7 @@ export default async function LogsPage({
     query = query.eq('table_name', tableFilter)
   }
 
-  const { data: logs, count, error } = await query
+  const { data: logs, count, error } = await query as { data: ActivityLog[] | null; count: number | null; error: unknown }
 
   if (error) {
     console.error('Error fetching logs:', error)
