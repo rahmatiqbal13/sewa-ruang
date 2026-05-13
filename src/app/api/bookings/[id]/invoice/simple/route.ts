@@ -43,7 +43,9 @@ export async function GET(
     const isAdmin = ['admin', 'super_admin'].includes((userData as any)?.role)
 
     // Get booking details
-    const { data: booking, error: bookingError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any
+    const { data: booking, error: bookingError } = await sb
       .from('bookings')
       .select(`
         *,
