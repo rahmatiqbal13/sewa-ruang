@@ -239,17 +239,16 @@ export function EquipmentForm({
       equipmentId = newEquipment.id
     }
 
-    // Insert/update rates
+    // Insert/update rates for all categories (including 0 for free items like mahasiswa_s1)
     for (const rate of rates) {
-      if (rate.rate_per_day > 0) {
-        await (supabase.from('equipment_rates') as any).upsert({
-          equipment_id: equipmentId,
-          user_category: rate.user_category,
-          rate_per_day: rate.rate_per_day,
-          rate_per_hour: rate.rate_per_hour,
-          requires_supervision: rate.requires_supervision,
-        }, { onConflict: 'equipment_id,user_category' })
-      }
+      // Always save rate, even if 0 (for free items)
+      await (supabase.from('equipment_rates') as any).upsert({
+        equipment_id: equipmentId,
+        user_category: rate.user_category,
+        rate_per_day: rate.rate_per_day,
+        rate_per_hour: rate.rate_per_hour,
+        requires_supervision: rate.requires_supervision,
+      }, { onConflict: 'equipment_id,user_category' })
     }
 
     toast.success(equipment ? 'Alat berhasil diperbarui' : 'Alat berhasil ditambahkan')

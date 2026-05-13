@@ -1,6 +1,8 @@
 # Changelog - Sewa Ruang & Alat
 
-All notable changes and fixes to the system.
+All notable changes and fixes to the system. Diurutkan dari yang terbaru.
+
+---
 
 ## [Unreleased] - 2025-05-12
 
@@ -612,3 +614,53 @@ TELEGRAM_BOT_TOKEN=...
 - `/admin/logs` - Activity audit trail
 - API: `/api/reminders/process` - Reminder processor
 - API: `/api/bookings/[id]/invoice` - Invoice generator
+
+---
+
+## [Booking System] - 2025-01-09
+
+### Halaman Pengajuan (Bookings) — Fitur Baru
+
+- **Stats Cards**: Total, Pending, Lunas/Selesai, Ditolak/Batal
+- **Filter Status**: Tab dengan badge jumlah + toggle Card/Table view
+- **Search**: Filter nomor referensi/nama peminjam + pagination
+- **Peminjaman oleh Admin** (`/admin/bookings/new`): Form untuk input peminjam manual, multi-item (ruang + alat), auto-approve
+- **Detail Booking**: Layout 3 kolom — info peminjam | detail | actions; riwayat pembayaran; item lengkap
+- **Kirim Pesan Manual**: WhatsApp (`wa.me`), Telegram, Email (SMTP), SMS — template otomatis, editable
+
+**File baru:**
+- `src/app/(admin)/admin/bookings/BookingsList.tsx`
+- `src/app/(admin)/admin/bookings/SendMessageDialog.tsx`
+- `src/app/(admin)/admin/bookings/AdminBookingForm.tsx`
+- `src/app/(admin)/admin/bookings/new/page.tsx`
+- `src/app/api/notifications/send-email/route.ts`
+
+**Bug Fixes:**
+- Query database menggunakan join manual (fetch terpisah + merge JS) untuk mengatasi Supabase nested relation issues
+- Data peminjam lengkap tampil di detail booking
+
+---
+
+## [Inventory System] - 2025-01-09
+
+### Manajemen Inventaris — Fitur Baru
+
+- **Tampilan Card & Table**: Toggle view, Info Cards (Total/Baik/Perlu Perbaikan/Rusak)
+- **Filter Kondisi**: Tab filter + pagination (12 item/halaman)
+- **Auto-Generate Kode**: Format `INV-XXXX`, dibuat otomatis, read-only (immutable)
+- **Edit dengan Pindah Lokasi**: Dropdown Gedung & Ruangan terpisah, tampilkan nama (bukan UUID)
+- **Export/Import**: Excel export dan import
+
+**File yang diubah:**
+- `src/app/(admin)/admin/inventory/page.tsx`
+- `src/app/(admin)/admin/inventory/InventoryList.tsx`
+- `src/app/(admin)/admin/inventory/InventoryForm.tsx`
+- `src/app/(admin)/admin/inventory/[roomId]/EditInventoryItemDialog.tsx`
+
+**Database:**
+- Migration `20250509_fix_inventory_rls_policies.sql` — fix RLS `room_inventory_items`
+
+**Bug Fixes:**
+- Dropdown lokasi menampilkan UUID → diganti nama gedung/ruangan
+- Kode inventaris bisa diubah → sekarang immutable
+- Ruangan tidak muncul saat pilih gedung → fixed

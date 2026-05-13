@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createBaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/supabase'
 
@@ -76,4 +77,19 @@ export async function createAdminClient() {
       },
     }
   )
+}
+
+/**
+ * Client admin khusus untuk operasi DB (INSERT/UPDATE/DELETE) yang butuh bypass RLS.
+ * Menggunakan @supabase/supabase-js langsung (bukan SSR) sehingga Authorization
+ * header selalu memakai service role JWT, bukan user session JWT dari cookies.
+ */
+export function createAdminDbClient() {
+  const { url, key } = getAdminEnvVars()
+  return createBaseClient<Database>(url, key, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 }

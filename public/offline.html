@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Sewa Ruang</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      text-align: center;
+      max-width: 400px;
+    }
+    .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #0f766e;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    p {
+      color: #64748b;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0d9488;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background 0.2s;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #0f766e;
+    }
+    .status {
+      margin-top: 24px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>Anda Sedang Offline</h1>
+    <p>Sepertinya koneksi internet Anda terputus. Beberapa fitur mungkin tidak tersedia saat offline.</p>
+    <button class="btn" onclick="retryConnection()">
+      <span id="btn-text">Coba Lagi</span>
+    </button>
+    <div class="status" id="status">
+      Menunggu koneksi...
+    </div>
+  </div>
+
+  <script>
+    // Check connection status
+    function updateStatus() {
+      const statusEl = document.getElementById('status');
+      if (navigator.onLine) {
+        statusEl.textContent = 'Koneksi tersedia! Mengalihkan...';
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      } else {
+        statusEl.textContent = 'Tidak ada koneksi internet';
+      }
+    }
+
+    // Retry connection
+    function retryConnection() {
+      const btnText = document.getElementById('btn-text');
+      btnText.innerHTML = '<span class="spinner"></span> Mencoba...';
+      
+      setTimeout(() => {
+        updateStatus();
+        btnText.textContent = 'Coba Lagi';
+      }, 1500);
+    }
+
+    // Listen for online/offline events
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', () => {
+      document.getElementById('status').textContent = 'Koneksi terputus';
+    });
+
+    // Initial check
+    updateStatus();
+  </script>
+</body>
+</html>

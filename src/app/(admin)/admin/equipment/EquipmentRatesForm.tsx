@@ -113,7 +113,12 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
     const initial: Record<string, Rate> = {}
     CATEGORIES.forEach(cat => {
       const existing = initialRates.find(rate => rate.user_category === cat.key)
-      initial[cat.key] = existing || {
+      initial[cat.key] = existing ? {
+        ...existing,
+        rate_per_day: existing.rate_per_day ?? 0,
+        rate_per_hour: existing.rate_per_hour ?? null,
+        requires_supervision: existing.requires_supervision ?? false
+      } : {
         user_category: cat.key,
         rate_per_day: 0,
         rate_per_hour: null,
@@ -289,8 +294,7 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
                           min="0"
                           placeholder="0"
                           className="pl-7 h-9 text-sm"
-                          value={rate?.rate_per_day || ''}
-                          onChange={(e) => updateRate(category.key, 'rate_per_day', parseFloat(e.target.value) || 0)}
+                          defaultValue={rate?.rate_per_day || ''}
                         />
                       </div>
                     </div>
@@ -310,11 +314,7 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
                           min="0"
                           placeholder="-"
                           className="pl-7 h-9 text-sm"
-                          value={rate?.rate_per_hour || ''}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            updateRate(category.key, 'rate_per_hour', value ? parseFloat(value) : null)
-                          }}
+                          defaultValue={rate?.rate_per_hour ?? ''}
                         />
                       </div>
                     </div>
@@ -325,20 +325,19 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
                         <ShieldCheck className="h-3 w-3" />
                         Supervisi
                       </Label>
-                      <Select
+                      {/* Hidden input ensures supervision value selalu masuk FormData */}
+                      <input
+                        type="hidden"
                         name={`${category.key}_supervision`}
+                        value={rate?.requires_supervision ? 'true' : 'false'}
+                        readOnly
+                      />
+                      <Select
                         value={rate?.requires_supervision ? 'true' : 'false'}
                         onValueChange={(value) => updateRate(category.key, 'requires_supervision', value === 'true')}
                       >
                         <SelectTrigger className="h-9 text-sm">
-                          {rate?.requires_supervision ? (
-                            <span className="flex items-center gap-1 text-amber-600 text-xs">
-                              <ShieldCheck className="h-3 w-3" />
-                              Ya
-                            </span>
-                          ) : (
-                            <span className="text-slate-600 text-xs">Tidak</span>
-                          )}
+                          <SelectValue placeholder="Pilih..." />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="true">Ya, Perlu</SelectItem>

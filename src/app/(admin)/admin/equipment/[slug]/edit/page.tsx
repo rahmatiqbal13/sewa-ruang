@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminClient as createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { EquipmentImageUpload } from '../../EquipmentImageUpload'
 import { EquipmentRatesForm } from '../../EquipmentRatesForm'
 import { RoomSelect } from '../../RoomSelect'
+import { LocationSelect } from '../../LocationSelect'
 
 const EQUIPMENT_CATEGORIES = [
   { value: 'elektronik', label: 'Elektronik' },
@@ -138,7 +139,7 @@ export default async function EditEquipmentPage({ params }: Props) {
     const floor_number = floor ? parseInt(floor) : null
     const current_location = formData.get('current_location') as string
     const storage_room_id = formData.get('storage_room_id') as string || null
-    const is_active = formData.get('is_active') === 'true'
+    const is_active = formData.has('is_active')
     const photo_url = formData.get('photo_url') as string || null
 
     // Generate equipment code if not exists
@@ -214,29 +215,35 @@ export default async function EditEquipmentPage({ params }: Props) {
       throw new Error(error.message)
     }
 
-    // Update equipment rates
+    // Update equipment rates — gunakan adminDb (service role langsung) untuk bypass RLS
+    const adminDb = createAdminDbClient()
     const userCategories = ['mahasiswa_s1', 'mahasiswa_s2', 'dosen', 'mou_unesa', 'umum']
-    
-    for (const category of userCategories) {
-      const rateDay = parseFloat(formData.get(`${category}_day`) as string)
-      const rateHour = parseFloat(formData.get(`${category}_hour`) as string) || null
-      const requiresSupervision = formData.get(`${category}_supervision`) === 'true'
+
+    for (const cat of userCategories) {
+      const dayValue = formData.get(`${cat}_day`) as string
+      const hourValue = formData.get(`${cat}_hour`) as string
+      const supervisionValue = formData.get(`${cat}_supervision`) as string
+
+      const rateDay = dayValue && dayValue.trim() !== '' ? parseFloat(dayValue) : NaN
+      const rateHour = hourValue && hourValue.trim() !== '' ? parseFloat(hourValue) : null
+      const requiresSupervision = supervisionValue === 'true'
 
       if (!isNaN(rateDay) && rateDay > 0) {
-        await sba.from('equipment_rates').upsert({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: upsertError } = await (adminDb as any).from('equipment_rates').upsert({
           equipment_id: equipmentId,
-          user_category: category,
+          user_category: cat,
           rate_per_day: rateDay,
           rate_per_hour: rateHour,
           requires_supervision: requiresSupervision,
-        }, {
-          onConflict: 'equipment_id,user_category'
-        })
+        }, { onConflict: 'equipment_id,user_category' })
+        if (upsertError) console.error(`Rate upsert error [${cat}]:`, upsertError)
       } else {
-        await sba.from('equipment_rates')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (adminDb as any).from('equipment_rates')
           .delete()
           .eq('equipment_id', equipmentId)
-          .eq('user_category', category)
+          .eq('user_category', cat)
       }
     }
 
@@ -327,11 +334,7 @@ export default async function EditEquipmentPage({ params }: Props) {
                 <Label htmlFor="category" className="text-slate-700">Kategori</Label>
                 <Select name="category" defaultValue={equipment.category || ''}>
                   <SelectTrigger className="h-11">
-                    {equipment.category ? (
-                      <span>{EQUIPMENT_CATEGORIES.find(cat => cat.value === equipment.category)?.label || equipment.category}</span>
-                    ) : (
-                      <span className="text-slate-400">Pilih kategori</span>
-                    )}
+                    <SelectValue placeholder="Pilih kategori..." />
                   </SelectTrigger>
                   <SelectContent>
                     {EQUIPMENT_CATEGORIES.map((cat) => (
@@ -386,16 +389,13 @@ export default async function EditEquipmentPage({ params }: Props) {
             <CardHeader className="pb-4">
               <CardTitle className="text-lg">Status & Kondisi</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="current_condition" className="text-slate-700 text-sm">Kondisi *</Label>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="current_condition" className="text-slate-700 text-sm font-medium">Kondisi *</Label>
                   <Select name="current_condition" defaultValue={equipment.current_condition}>
-                    <SelectTrigger className="h-10">
-                      {equipment.current_condition === 'good' && <span>Baik</span>}
-                      {equipment.current_condition === 'needs_repair' && <span>Perlu Perbaikan</span>}
-                      {equipment.current_condition === 'damaged' && <span>Rusak</span>}
-                      {equipment.current_condition === 'lost' && <span>Hilang</span>}
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Pilih kondisi..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="good">Baik</SelectItem>
@@ -405,14 +405,11 @@ export default async function EditEquipmentPage({ params }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ketersediaan" className="text-slate-700 text-sm">Ketersediaan *</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="ketersediaan" className="text-slate-700 text-sm font-medium">Ketersediaan *</Label>
                   <Select name="ketersediaan" defaultValue={equipment.ketersediaan}>
-                    <SelectTrigger className="h-10">
-                      {equipment.ketersediaan === 'tersedia' && <span>Tersedia</span>}
-                      {equipment.ketersediaan === 'digunakan' && <span>Digunakan</span>}
-                      {equipment.ketersediaan === 'hilang' && <span>Hilang</span>}
-                      {equipment.ketersediaan === 'tidak_tersedia' && <span>Tidak Tersedia</span>}
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Pilih ketersediaan..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="tersedia">Tersedia</SelectItem>
@@ -422,14 +419,11 @@ export default async function EditEquipmentPage({ params }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status_tindakan" className="text-slate-700 text-sm">Status Tindakan *</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="status_tindakan" className="text-slate-700 text-sm font-medium">Status Tindakan *</Label>
                   <Select name="status_tindakan" defaultValue={equipment.status_tindakan}>
-                    <SelectTrigger className="h-10">
-                      {equipment.status_tindakan === 'normal' && <span>Normal</span>}
-                      {equipment.status_tindakan === 'perawatan' && <span>Perawatan</span>}
-                      {equipment.status_tindakan === 'menunggu_part' && <span>Menunggu Part</span>}
-                      {equipment.status_tindakan === 'afkir' && <span>Afkir</span>}
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Pilih status..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="normal">Normal</SelectItem>
@@ -441,97 +435,63 @@ export default async function EditEquipmentPage({ params }: Props) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="building_id" className="text-slate-700 text-sm">
-                    Gedung <span className="text-xs text-slate-400 font-normal">(opsional)</span>
-                  </Label>
-                  <Select name="building_id" defaultValue={equipment.building_id || ''}>
-                    <SelectTrigger className="h-10">
-                      {equipment.building_id ? (
-                        <span>{buildings?.find((b: { id: string }) => b.id === equipment.building_id)?.name || 'Pilih gedung...'}</span>
-                      ) : (
-                        <span className="text-slate-400">Pilih gedung...</span>
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Belum ada gedung</SelectItem>
-                      {buildings?.map((b: { id: string; name: string; code: string; floor_count: number }) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name} ({b.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="floor" className="text-slate-700 text-sm">
-                    Lantai <span className="text-xs text-slate-400 font-normal">(opsional)</span>
-                  </Label>
-                  <Select name="floor" defaultValue={equipment.floor?.toString() || ''}>
-                    <SelectTrigger className="h-10">
-                      {equipment.floor ? (
-                        <span>Lantai {equipment.floor}</span>
-                      ) : (
-                        <span className="text-slate-400">Pilih lantai...</span>
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Belum ada lantai</SelectItem>
-                      {buildings?.find((b: { id: string }) => b.id === equipment.building_id)?.floor_count && 
-                        Array.from({ length: buildings.find((b: { id: string }) => b.id === equipment.building_id)?.floor_count || 0 }, (_, i) => i + 1).map((floor) => (
-                          <SelectItem key={floor} value={floor.toString()}>
-                            Lantai {floor}
-                          </SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="storage_room_id" className="text-slate-700 text-sm">
-                    Ruangan <span className="text-xs text-slate-400 font-normal">(opsional)</span>
-                  </Label>
-                  <Select name="storage_room_id" defaultValue={equipment.storage_room_id || ''}>
-                    <SelectTrigger className="h-10">
-                      {equipment.storage_room_id ? (
-                        <span>{rooms?.find((r: { id: string }) => r.id === equipment.storage_room_id)?.name || 'Pilih ruangan...'}</span>
-                      ) : (
-                        <span className="text-slate-400">Pilih ruangan...</span>
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Belum ada ruangan</SelectItem>
-                      {rooms?.map((r: { id: string; name: string; room_code: string }) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.name} ({r.room_code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="pt-4 border-t border-slate-100 mt-4">
+                <h4 className="text-sm font-semibold text-slate-700 mb-3">Status Alat</h4>
+                <div className="flex items-center gap-4">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="is_active" 
+                      value="true"
+                      defaultChecked={equipment.is_active}
+                      className="sr-only peer"
+                    />
+                    <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-teal-600"></div>
+                  </label>
+                  <div>
+                    <span className={`text-sm font-medium ${equipment.is_active ? 'text-teal-700' : 'text-gray-500'}`}>
+                      {equipment.is_active ? 'Aktif' : 'Tidak Aktif'}
+                    </span>
+                    <p className="text-xs text-slate-500">
+                      {equipment.is_active 
+                        ? 'Alat dapat dilihat dan disewa oleh peminjam' 
+                        : 'Alat disembunyikan dari katalog peminjaman'}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sumber" className="text-slate-700 text-sm">Sumber Perolehan</Label>
+              <div className="pt-4 border-t border-slate-100 mt-4">
+                <h4 className="text-sm font-semibold text-slate-700 mb-4">Lokasi Penyimpanan</h4>
+                <LocationSelect
+                  buildings={buildings || []}
+                  rooms={rooms || []}
+                  defaultBuildingId={equipment.building_id}
+                  defaultFloor={equipment.floor}
+                  defaultRoomId={equipment.storage_room_id}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 mt-4">
+                <div className="space-y-3">
+                  <Label htmlFor="sumber" className="text-slate-700 text-sm font-medium">Sumber Perolehan</Label>
                   <Input 
                     id="sumber" 
                     name="sumber" 
+                    className="h-11"
                     defaultValue={equipment.sumber || ''}
-                    className="h-10"
                     placeholder="Contoh: Hibah, Pembelian"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="current_location" className="text-slate-700 text-sm">
+                <div className="space-y-3">
+                  <Label htmlFor="current_location" className="text-slate-700 text-sm font-medium">
                     Keterangan Lokasi <span className="text-xs text-slate-400 font-normal">(opsional)</span>
                   </Label>
                   <Input 
                     id="current_location" 
                     name="current_location" 
+                    className="h-11"
                     defaultValue={equipment.current_location || ''}
-                    className="h-10"
                     placeholder="Contoh: Rak B, Lemari Penyimpanan"
                   />
                 </div>

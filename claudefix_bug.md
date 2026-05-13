@@ -324,6 +324,98 @@ import { createAdminClient as createClient } from '@/lib/supabase/server'
 
 ---
 
+---
+
+## 15. `EquipmentRatesForm` — Tarif Tidak Tersimpan Saat Kategori Baru Diaktifkan
+
+**Symptom:** Admin mengaktifkan kategori tarif yang sebelumnya non-aktif, mengisi nominal, klik Simpan — nominal tidak tersimpan. Setiap kali diulang hasilnya sama.
+
+**Root Cause:** Input `rate_per_day` adalah *controlled input* React dengan `value={rate?.rate_per_day ?? 0}`.
+Ketika kategori baru diaktifkan, nilai awal state adalah `0`, sehingga input menampilkan `"0"`.
+
+Saat user mencoba menghapus `"0"` untuk mengetik nominal baru:
+1. `e.target.value = ""` (input dikosongkan)
+2. `parseFloat("") || 0` = `NaN || 0` = **0**
+3. State di-set kembali ke 0
+4. React re-render: input kembali menampilkan `"0"`
+5. User tidak bisa mengetik nilai lain → submit dengan rate `0`
+
+Rate `0` **memang tersimpan** ke database (karena server action menganggap `0 >= 0` valid), tapi saat halaman reload, kondisi `existing.rate_per_day > 0` = `false` → kategori **tampil sebagai non-aktif**. User mengira nominalnya tidak tersimpan.
+
+**Pengecekan Ruangan:** Form ruangan (`RoomForm.tsx`) menggunakan React Hook Form dengan string state (`''` default), sehingga **tidak memiliki bug ini**.
+
+**Root cause lanjutan:** Meski masalah "stuck at 0" diperbaiki, React *controlled input* (`value` prop) masih bisa tidak sinkron dengan DOM saat form submission di Next.js Server Action. Browser membaca DOM value langsung (bukan React state) saat mengumpulkan FormData — jika ada lag atau mismatch, nilai tidak terkirim.
+
+Selain itu: Radix UI `Select` dengan `name` prop menggunakan mekanisme hidden select internal yang tidak selalu reliable untuk Server Action FormData. Dan kondisi `rateDay >= 0` di server action menyimpan rate=0, tapi form menampilkan `existing.rate_per_day > 0` → rate=0 terlihat sebagai "non-aktif" → user mengira data tidak tersimpan.
+
+**Fix Final** (3 perubahan):
+
+**1. `EquipmentRatesForm.tsx` — Uncontrolled inputs:**
+```tsx
+// ❌ BEFORE — controlled, React bisa tidak sinkron dengan DOM
+value={rate?.rate_per_day ?? 0}
+
+// ✅ AFTER — uncontrolled, browser kelola DOM value langsung
+defaultValue={rate?.rate_per_day || ''}
+onChange={(e) => {
+  const parsed = parseFloat(e.target.value)
+  updateRate(category.key, 'rate_per_day', isNaN(parsed) ? 0 : parsed)
+}}
+```
+
+**2. `EquipmentRatesForm.tsx` — Supervision hidden input:**
+```tsx
+// ❌ BEFORE — Radix UI Select dengan name prop, hidden select tidak reliable
+<Select name={`${category.key}_supervision`} value={...}>
+
+// ✅ AFTER — explicit hidden input (React-controlled, selalu terkirim) + Select murni visual
+<input type="hidden" name={`${category.key}_supervision`} value={...} readOnly />
+<Select value={...} onValueChange={...}>  {/* tanpa name */}
+```
+
+**3. `edit/page.tsx` — Server action condition & error logging:**
+```typescript
+// ❌ BEFORE — rateDay >= 0 menyimpan rate=0 tapi form menampilkan sebagai disabled
+if (!isNaN(rateDay) && rateDay >= 0) {
+  await sba.from('equipment_rates').upsert(...)  // silent fail
+
+// ✅ AFTER — konsisten dengan form (rate > 0 = aktif), plus error logging
+if (!isNaN(rateDay) && rateDay > 0) {
+  const { error: upsertError } = await sba.from('equipment_rates').upsert(...)
+  if (upsertError) console.error(`Rate upsert error [${category}]:`, upsertError)
+```
+
+**Root cause final (setelah debugging dengan console.error):** Error `42501 - row-level security policy violation`. `createAdminClient` menggunakan `@supabase/ssr` yang saat user login, override `Authorization` header dengan user JWT (bukan service role JWT). Akibatnya INSERT ke `equipment_rates` diblokir RLS (tidak ada INSERT policy untuk regular user).
+
+**Fix 4: `src/lib/supabase/server.ts` — tambah `createAdminDbClient`:**
+```typescript
+// Fungsi baru yang pakai @supabase/supabase-js langsung (non-SSR)
+// Authorization header selalu service role JWT → bypass RLS
+export function createAdminDbClient() {
+  const { url, key } = getAdminEnvVars()
+  return createBaseClient<Database>(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
+}
+```
+
+**Fix 5: `edit/page.tsx` server action — pakai `createAdminDbClient` untuk rates:**
+```typescript
+const adminDb = createAdminDbClient()  // bukan sba (SSR client)
+await (adminDb as any).from('equipment_rates').upsert(...)
+```
+
+**Migration (safety net):** `supabase/migrations/20250513_fix_equipment_rates_rls.sql`
+— Tambah RLS policy agar admin user juga bisa INSERT/UPDATE via SSR client.
+
+**Files fixed:**
+- `src/app/(admin)/admin/equipment/EquipmentRatesForm.tsx` — `value` → `defaultValue` untuk day & hour, hidden input untuk supervision
+- `src/app/(admin)/admin/equipment/[slug]/edit/page.tsx` — pakai `createAdminDbClient` untuk rates upsert
+- `src/lib/supabase/server.ts` — tambah `createAdminDbClient` (non-SSR, true service role)
+- `supabase/migrations/20250513_fix_equipment_rates_rls.sql` — RLS policies untuk equipment_rates
+
+---
+
 ## Quick Reference: Common Errors & Fixes
 
 | Error | Penyebab | Fix |
@@ -336,3 +428,4 @@ import { createAdminClient as createClient } from '@/lib/supabase/server'
 | Tanggal "Invalid Date" | Kode pakai `start_date` tapi kolom adalah `start_datetime` | Ganti ke `start_datetime`/`end_datetime` |
 | Nested button hydration error | Pakai `asChild` (Radix) di proyek Base UI | Ganti ke `render={<Component />}` |
 | `updated_at column not found` | Tabel `users` tidak punya kolom `updated_at` | Hapus field ini dari update query |
+| Tarif alat tidak tersimpan saat kategori diaktifkan | Controlled input + RLS 42501 pada `equipment_rates` | `defaultValue` untuk input, `createAdminDbClient` untuk upsert |

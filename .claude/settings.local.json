@@ -35,7 +35,8 @@
       "Bash(Sort-Object)",
       "Bash(del \"c:\\\\Users\\\\HYPE FLEX\\\\Documents\\\\Codex\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\admin\\\\fix-trigger\\\\route.ts\")",
       "Bash(git fetch *)",
-      "Bash(npx vercel *)"
+      "Bash(npx vercel *)",
+      "Bash(node -e \"const pkg = require\\('./package.json'\\); console.log\\(pkg.dependencies['@supabase/supabase-js'] || 'NOT FOUND'\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\HYPE FLEX\\Documents\\Codex\\sewa-ruang\\src\\app\\equipment\\[id]"

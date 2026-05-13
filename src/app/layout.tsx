@@ -1,9 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/layouts/QueryProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { createClient } from "@supabase/supabase-js";
+import { PWAProvider } from "@/components/providers/PWAProvider";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { OnlineStatus } from "@/components/pwa/OnlineStatus";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +46,17 @@ async function getInstitutionMetadata() {
   }
 }
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const institution = await getInstitutionMetadata()
   
@@ -59,10 +73,32 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     keywords: ["sewa ruang", "peminjaman alat", "manajemen aset", "booking ruangan"],
     authors: [{ name: institution?.short_name || institution?.name || "RentSpace" }],
+    manifest: "/manifest.json",
+    icons: {
+      icon: [
+        { url: "/icons/icon-72x72.png", sizes: "72x72", type: "image/png" },
+        { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      ],
+      apple: [
+        { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      ],
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: institution?.short_name || "Sewa Ruang",
+    },
     openGraph: {
       title: institution?.name || "RentSpace",
       description,
       type: "website",
+    },
+    other: {
+      "mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-capable": "yes",
+      "application-name": institution?.short_name || "Sewa Ruang",
+      "msapplication-TileColor": "#0f766e",
+      "msapplication-config": "/icons/browserconfig.xml",
     },
   };
 }
@@ -74,20 +110,29 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${geistSans.variable} h-full antialiased`}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0f766e" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+      </head>
       <body className="min-h-full flex flex-col bg-slate-50">
-        <QueryProvider>
-          {children}
-          <Toaster 
-            richColors 
-            closeButton 
-            position="top-right"
-            toastOptions={{
-              style: {
-                fontFamily: 'Inter, system-ui, sans-serif',
-              },
-            }}
-          />
-        </QueryProvider>
+        <PWAProvider>
+          <QueryProvider>
+            <OnlineStatus />
+            {children}
+            <InstallPrompt />
+            <Toaster 
+              richColors 
+              closeButton 
+              position="top-right"
+              toastOptions={{
+                style: {
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                },
+              }}
+            />
+          </QueryProvider>
+        </PWAProvider>
       </body>
     </html>
   );
