@@ -13,10 +13,10 @@ function formatCurrency(value: number): string {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const bookingId = params.id
+    const { id: bookingId } = await params
 
     if (!bookingId) {
       return NextResponse.json(
