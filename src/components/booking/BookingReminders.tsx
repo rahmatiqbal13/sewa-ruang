@@ -61,6 +61,8 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const supabase = createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any
 
   useEffect(() => {
     fetchReminders()
@@ -68,7 +70,7 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
 
   async function fetchReminders() {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .rpc('get_booking_reminders', { p_booking_id: bookingId })
 
       if (error) throw error
@@ -87,7 +89,7 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
       const scheduledAt = new Date()
       scheduledAt.setDate(scheduledAt.getDate() + 1)
 
-      const { error } = await supabase
+      const { error } = await sb
         .from('booking_reminders')
         .insert({
           booking_id: bookingId,
@@ -110,7 +112,7 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
 
   async function cancelReminder(reminderId: string) {
     try {
-      const { error } = await supabase
+      const { error } = await sb
         .from('booking_reminders')
         .update({ status: 'cancelled', updated_at: new Date().toISOString() })
         .eq('id', reminderId)

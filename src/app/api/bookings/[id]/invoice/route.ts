@@ -120,23 +120,23 @@ export async function GET(
 
     // Generate PDF using Puppeteer
     let pdfBuffer: Buffer
-    
+
     try {
       const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        // Use chrome-aws-lambda for serverless environments
         executablePath: process.env.CHROME_EXECUTABLE_PATH || undefined,
       })
 
       const page = await browser.newPage()
-      await page.setContent(invoiceHtml, { waitUntil: 'networkidle0' })
-      
-      pdfBuffer = await page.pdf({
+      await page.setContent(invoiceHtml, { waitUntil: 'domcontentloaded' })
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pdfBuffer = Buffer.from(await (page as any).pdf({
         format: 'A4',
         printBackground: true,
         margin: { top: '0', right: '0', bottom: '0', left: '0' },
-      })
+      }))
 
       await browser.close()
     } catch (puppeteerError: any) {
@@ -152,7 +152,7 @@ export async function GET(
     }
 
     // Return PDF
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="invoice-${bookingId}.pdf"`,

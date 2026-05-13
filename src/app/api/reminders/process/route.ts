@@ -14,9 +14,11 @@ export async function GET(req: NextRequest) {
     }
 
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any
 
     // Get pending reminders
-    const { data: pendingReminders, error } = await supabase
+    const { data: pendingReminders, error } = await sb
       .rpc('process_pending_reminders')
 
     if (error) {
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest) {
         let result: { success: boolean; error?: string }
 
         // Get booking details
-        const { data: booking } = await supabase
+        const { data: booking } = await sb
           .from('bookings')
           .select(`
             *,
@@ -114,9 +116,9 @@ export async function GET(req: NextRequest) {
 
         // Mark reminder as sent or failed
         if (result.success) {
-          await supabase.rpc('mark_reminder_sent', { p_reminder_id: reminder.reminder_id })
+          await sb.rpc('mark_reminder_sent', { p_reminder_id: reminder.reminder_id })
         } else {
-          await supabase
+          await sb
             .from('booking_reminders')
             .update({ 
               status: 'failed',

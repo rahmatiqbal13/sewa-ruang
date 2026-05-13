@@ -70,6 +70,8 @@ export function DashboardAnalytics() {
   async function fetchDashboardStats() {
     setLoading(true)
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any
       // Calculate date range
       const endDate = new Date()
       const startDate = timeRange === '7d' ? subDays(endDate, 7) :
@@ -78,7 +80,7 @@ export function DashboardAnalytics() {
                        subDays(endDate, 365)
 
       // Fetch bookings dalam range
-      const { data: bookings } = await supabase
+      const { data: bookings } = await sb
         .from('bookings')
         .select('*')
         .gte('created_at', startDate.toISOString())
@@ -89,20 +91,20 @@ export function DashboardAnalytics() {
         timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365
       )
       
-      const { data: prevBookings } = await supabase
+      const { data: prevBookings } = await sb
         .from('bookings')
         .select('*')
         .gte('created_at', prevStartDate.toISOString())
         .lt('created_at', startDate.toISOString())
 
       // Fetch all active bookings
-      const { data: activeBookings } = await supabase
+      const { data: activeBookings } = await sb
         .from('bookings')
         .select('*')
         .in('status', ['approved', 'active'])
 
       // Fetch users
-      const { data: users } = await supabase
+      const { data: users } = await sb
         .from('users')
         .select('*')
 
@@ -113,21 +115,21 @@ export function DashboardAnalytics() {
         ? ((totalBookings - prevTotalBookings) / prevTotalBookings) * 100 
         : 0
 
-      const totalRevenue = bookings?.reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
-      const prevRevenue = prevBookings?.reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
-      const totalRevenueChange = prevRevenue > 0 
-        ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 
+      const totalRevenue = (bookings as any[])?.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0) || 0
+      const prevRevenue = (prevBookings as any[])?.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0) || 0
+      const totalRevenueChange = prevRevenue > 0
+        ? ((totalRevenue - prevRevenue) / prevRevenue) * 100
         : 0
 
       // Bookings by status
-      const statusCount = bookings?.reduce((acc: Record<string, number>, b) => {
+      const statusCount = (bookings as any[])?.reduce((acc: Record<string, number>, b: any) => {
         acc[b.status] = (acc[b.status] || 0) + 1
         return acc
       }, {}) || {}
 
       const bookingsByStatus = Object.entries(statusCount).map(([status, count]) => ({
         name: status.charAt(0).toUpperCase() + status.slice(1),
-        value: count,
+        value: count as number,
         color: STATUS_COLORS[status as keyof typeof STATUS_COLORS] || '#94a3b8',
       }))
 
@@ -135,19 +137,19 @@ export function DashboardAnalytics() {
       const days = eachDayOfInterval({ start: startDate, end: endDate })
       const dailyBookings = days.map(day => {
         const dateStr = format(day, 'yyyy-MM-dd')
-        const dayBookings = bookings?.filter(b => 
+        const dayBookings = (bookings as any[])?.filter((b: any) =>
           format(new Date(b.created_at), 'yyyy-MM-dd') === dateStr
         ) || []
-        
+
         return {
           date: format(day, 'dd MMM', { locale: id }),
           bookings: dayBookings.length,
-          revenue: dayBookings.reduce((sum, b) => sum + (b.total_amount || 0), 0),
+          revenue: dayBookings.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0),
         }
       })
 
       // Recent bookings with user info
-      const { data: recentBookingsData } = await supabase
+      const { data: recentBookingsData } = await sb
         .from('bookings')
         .select(`
           *,
@@ -157,7 +159,7 @@ export function DashboardAnalytics() {
         .limit(5)
 
       // Top rooms
-      const { data: roomStats } = await supabase
+      const { data: roomStats } = await sb
         .from('booking_items')
         .select(`
           room_id,
@@ -181,7 +183,7 @@ export function DashboardAnalytics() {
         .map((r: any) => ({ name: r.name, bookings: r.count }))
 
       // Top equipment
-      const { data: equipmentStats } = await supabase
+      const { data: equipmentStats } = await sb
         .from('booking_items')
         .select(`
           equipment_id,

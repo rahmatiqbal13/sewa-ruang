@@ -191,7 +191,7 @@ function Paginator({ page, total, onChange }: { page: number; total: number; onC
 function RoomCard({ room }: { room: Room & { buildingName: string; displayName: string } }) {
   const lowestRate = useMemo(() => {
     if (!room.room_rates || room.room_rates.length === 0) return null
-    const rates = room.room_rates.map(r => r.rate_per_day).filter(r => r && r > 0)
+    const rates = room.room_rates.map(r => r.rate_per_day).filter((r): r is number => r != null && r > 0)
     return rates.length > 0 ? Math.min(...rates) : null
   }, [room.room_rates])
 
