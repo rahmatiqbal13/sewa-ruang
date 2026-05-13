@@ -32,16 +32,7 @@ const nextConfig: NextConfig = {
     },
   ],
   // Enable experimental features for better PWA support
-  experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
-  },
+  experimental: {},
 };
 
 export default nextConfig;
