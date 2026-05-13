@@ -77,7 +77,7 @@ export function LocationSelect({
         <Select 
           name="building_id" 
           value={selectedBuilding}
-          onValueChange={setSelectedBuilding}
+          onValueChange={(value) => setSelectedBuilding(value || '')}
         >
           <SelectTrigger className="h-11 bg-white border-slate-200 hover:border-slate-300 transition-colors w-full">
             {selectedBuilding && selectedBuildingData ? (
@@ -108,7 +108,7 @@ export function LocationSelect({
         <Select 
           name="floor" 
           value={selectedFloor}
-          onValueChange={setSelectedFloor}
+          onValueChange={(value) => setSelectedFloor(value || '')}
           disabled={!selectedBuilding}
         >
           <SelectTrigger className="h-11 bg-white border-slate-200 hover:border-slate-300 transition-colors disabled:bg-slate-50 disabled:text-slate-400 w-full">
@@ -139,7 +139,7 @@ export function LocationSelect({
         <Select 
           name="storage_room_id" 
           value={selectedRoom}
-          onValueChange={setSelectedRoom}
+          onValueChange={(value) => setSelectedRoom(value || '')}
           disabled={!selectedBuilding}
         >
           <SelectTrigger className="h-11 bg-white border-slate-200 hover:border-slate-300 transition-colors disabled:bg-slate-50 disabled:text-slate-400 w-full">
