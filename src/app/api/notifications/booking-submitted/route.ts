@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { telegramService } from '@/lib/services/telegramService'
 import { emailService } from '@/lib/services/emailService'
 import { generateUSCBookingDocument } from '@/lib/pdf-generator'
@@ -79,15 +80,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
 
-    // Telegram notification
-    const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID
-    if (chatId) {
-      try {
-        const message = telegramService.generateNotificationMessage(booking, 'new')
-        await telegramService.sendMessage({ chatId, message })
-      } catch (err) {
-        console.error('Telegram notification failed:', err)
+    // Telegram notification — baca dari DB config
+    try {
+      const admin = await createAdminClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: tgRow } = await (admin.from('notification_channel_configs') as any)
+        .select('is_enabled, config')
+        .eq('channel', 'telegram')
+        .single()
+
+      const tgEnabled: boolean = tgRow?.is_enabled === true
+      const tgCfg: { bot_token?: string; admin_chat_id?: string } = tgRow?.config ?? {}
+
+      if (tgEnabled && tgCfg.bot_token && tgCfg.admin_chat_id) {
+        const tgService = { sendMessage: telegramService.sendMessage.bind(telegramService) }
+        // Override token dynamically using the DB value
+        const apiUrl = `https://api.telegram.org/bot${tgCfg.bot_token}`
+        const message = telegramService.generateAdminNotification(booking)
+        await fetch(`${apiUrl}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: tgCfg.admin_chat_id,
+            text: message,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+          }),
+        })
+        void tgService // suppress unused warning
       }
+    } catch (err) {
+      console.error('Telegram notification failed:', err)
     }
 
     // PDF formulir email

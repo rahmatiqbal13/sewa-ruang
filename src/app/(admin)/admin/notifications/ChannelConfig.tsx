@@ -152,6 +152,36 @@ export function ChannelConfig({ configs }: { configs: ChannelData[] }) {
       window.open(waLink, '_blank')
       toast.success('WhatsApp Web/App dibuka! Pesan sudah terisi otomatis.')
     }
+
+    if (channel === 'telegram') {
+      if (!cfg.bot_token || !cfg.admin_chat_id) {
+        toast.error('Lengkapi Bot Token dan Admin Chat ID terlebih dahulu')
+        return
+      }
+
+      setLoading(p => ({ ...p, [`${channel}_test`]: true }))
+
+      try {
+        const response = await fetch('/api/notifications/test-telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: cfg.bot_token, chat_id: cfg.admin_chat_id }),
+        })
+
+        const result = await response.json()
+
+        if (response.ok) {
+          toast.success('Pesan test Telegram berhasil dikirim! Cek grup/chat Anda.')
+        } else {
+          toast.error('Gagal kirim Telegram: ' + (result.error || 'Unknown error'))
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        toast.error('Error: ' + msg)
+      }
+
+      setLoading(p => ({ ...p, [`${channel}_test`]: false }))
+    }
   }
 
   return (
@@ -254,10 +284,15 @@ export function ChannelConfig({ configs }: { configs: ChannelData[] }) {
 
                 {ch === 'telegram' && (
                   <>
+                    <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 mb-1">
+                      <p className="text-xs text-sky-700">
+                        <strong>Cara setup:</strong> Buat bot via <strong>@BotFather</strong>, salin token. Tambahkan bot ke grup/channel lalu dapatkan Chat ID via <strong>@userinfobot</strong>.
+                      </p>
+                    </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Bot Token</Label>
                       <SecretInput value={cfg.bot_token} onChange={v => set(ch, 'bot_token', v)} placeholder="123456789:ABCdef..." />
-                      <p className="text-xs text-muted-foreground">Buat bot via @BotFather, lalu salin token yang diberikan.</p>
+                      <p className="text-xs text-muted-foreground">Token yang diberikan @BotFather saat membuat bot.</p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Admin Chat ID</Label>
@@ -284,14 +319,27 @@ export function ChannelConfig({ configs }: { configs: ChannelData[] }) {
                     </Button>
                   )}
                   {ch === 'whatsapp' && (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => testChannel(ch)}
                       className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
                     >
                       <MessageSquare className="mr-2 h-3.5 w-3.5" />
                       Test Buka WhatsApp
+                    </Button>
+                  )}
+                  {ch === 'telegram' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => testChannel(ch)}
+                      disabled={loading[`${ch}_test`]}
+                      className="bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200"
+                    >
+                      {loading[`${ch}_test`] && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                      <Send className="mr-2 h-3.5 w-3.5" />
+                      Test Kirim Telegram
                     </Button>
                   )}
                 </div>

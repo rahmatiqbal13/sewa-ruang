@@ -47,21 +47,19 @@ export function BookingQuickActions({
     } else {
       toast.success(`Status diubah ke ${STATUS_OPTIONS.find(s => s.value === newStatus)?.label}`)
       // Send notification
+      const eventTypeMap: Record<string, string> = {
+        approved: 'booking_approved', rejected: 'booking_rejected',
+        cancelled: 'booking_cancelled', paid: 'payment_received',
+      }
       fetch('/api/notifications/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          event_type: newStatus === 'approved' ? 'booking_approved' : newStatus === 'rejected' ? 'booking_rejected' : `booking_${newStatus}`,
-          booking_id: bookingId,
+          bookingId,
+          event_type: eventTypeMap[newStatus] ?? `booking_${newStatus}`,
+          channels: ['email', 'whatsapp', 'telegram'],
         }),
-      }).then(r => r.json()).then(json => {
-        if (json.whatsapp_url) {
-          toast('Kirim notifikasi WhatsApp?', {
-            action: { label: 'Buka WhatsApp', onClick: () => window.open(json.whatsapp_url, '_blank') },
-            duration: 10000,
-          })
-        }
-      })
+      }).catch(() => { /* non-blocking */ })
       router.refresh()
     }
     setLoading(false)
@@ -86,16 +84,17 @@ export function BookingQuickActions({
     const res = await fetch('/api/notifications/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type: event, booking_id: bookingId }),
+      body: JSON.stringify({
+        bookingId,
+        event_type: event,
+        channels: ['email', 'whatsapp', 'telegram'],
+      }),
     })
-    const json = await res.json()
-    if (json.whatsapp_url) {
-      toast('Kirim notifikasi WhatsApp?', {
-        action: { label: 'Buka WhatsApp', onClick: () => window.open(json.whatsapp_url, '_blank') },
-        duration: 10000,
-      })
-    } else {
+    if (res.ok) {
       toast.success('Notifikasi terkirim')
+    } else {
+      const json = await res.json()
+      toast.error(json.error ?? 'Gagal kirim notifikasi')
     }
     setLoading(false)
   }

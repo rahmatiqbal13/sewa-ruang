@@ -9,11 +9,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, X, Loader2, GraduationCap } from 'lucide-react'
 
-async function sendNotif(_event_type: string, booking_id: string) {
+async function sendNotif(event_type: string, booking_id: string) {
   await fetch('/api/notifications/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ bookingId: booking_id, channels: ['email', 'whatsapp'] }),
+    body: JSON.stringify({
+      bookingId: booking_id,
+      event_type,
+      channels: ['email', 'whatsapp', 'telegram'],
+    }),
   }).catch(() => {
     // Notifikasi gagal tidak memblokir alur approval
   })

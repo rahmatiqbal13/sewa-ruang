@@ -66,7 +66,10 @@
       "Bash(mkdir -p \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\\\\formulir\")",
       "Bash(dir \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\")",
       "Bash(dir \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\\\\formulir\")",
-      "Bash(dir \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\" /b)"
+      "Bash(dir \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\" /b)",
+      "Bash(npx skills *)",
+      "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\.next\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Cache .next dihapus\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\HYPE FLEX\\Documents\\Codex\\sewa-ruang\\src\\app\\equipment\\[id]",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { emailService } from '@/lib/services/emailService'
 import { whatsappService } from '@/lib/services/whatsappService'
+import { sendTelegram } from '@/lib/notifications/sender'
 
 // This endpoint should be called by a cron job every hour
 // In Vercel: Configure in vercel.json or use Vercel Cron Jobs
@@ -115,6 +116,23 @@ export async function GET(req: NextRequest) {
             }
             break
 
+          case 'telegram':
+            if (tgEnabled && tgCfg.bot_token && tgCfg.admin_chat_id) {
+              try {
+                await sendTelegram(
+                  { bot_token: tgCfg.bot_token, admin_chat_id: tgCfg.admin_chat_id },
+                  tgCfg.admin_chat_id,
+                  `🔔 <b>Pengingat Peminjaman</b>\n\n${message}\n\n<i>Sistem Sewa Ruang &amp; Alat</i>`,
+                )
+                result = { success: true }
+              } catch (tgErr) {
+                result = { success: false, error: tgErr instanceof Error ? tgErr.message : String(tgErr) }
+              }
+            } else {
+              result = { success: false, error: 'Telegram not configured' }
+            }
+            break
+
           default:
             result = { success: false, error: 'Unsupported channel' }
         }
@@ -152,6 +170,20 @@ export async function GET(req: NextRequest) {
         })
       }
     }
+
+    // ============================================================
+    // LOAD NOTIFICATION CHANNEL CONFIGS FROM DB
+    // ============================================================
+    const { data: channelConfigs } = await sb
+      .from('notification_channel_configs')
+      .select('channel, is_enabled, config')
+      .in('channel', ['telegram'])
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tgRow = (channelConfigs ?? []).find((c: any) => c.channel === 'telegram')
+    const tgEnabled: boolean = tgRow?.is_enabled === true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tgCfg: { bot_token?: string; admin_chat_id?: string } = tgRow?.config ?? {}
 
     // ============================================================
     // OVERDUE RETURN DETECTION
@@ -269,7 +301,22 @@ export async function GET(req: NextRequest) {
           })
         }
 
-        const overallSuccess = emailResult.success || waResult.success
+        // Telegram — kirim ke admin chat ID (bukan ke peminjam individual)
+        let tgResult: { success: boolean; error?: string } = { success: false, error: 'Telegram not configured' }
+        if (tgEnabled && tgCfg.bot_token && tgCfg.admin_chat_id) {
+          try {
+            await sendTelegram(
+              { bot_token: tgCfg.bot_token, admin_chat_id: tgCfg.admin_chat_id },
+              tgCfg.admin_chat_id,
+              `⚠️ <b>BELUM DIKEMBALIKAN</b>\n\n👤 <b>${userName}</b>\n📋 <code>${booking.reference_no}</code>\n🗓 Batas: ${endDateStr}\n⏱ Terlambat: ${daysLate} hari\n📦 Aset: ${itemNames}\n\n<i>Notifikasi otomatis · ${new Date().toLocaleString('id-ID')}</i>`,
+            )
+            tgResult = { success: true }
+          } catch (tgErr) {
+            tgResult = { success: false, error: tgErr instanceof Error ? tgErr.message : String(tgErr) }
+          }
+        }
+
+        const overallSuccess = emailResult.success || waResult.success || tgResult.success
 
         if (reminderRowId) {
           await sb
@@ -288,6 +335,7 @@ export async function GET(req: NextRequest) {
           days_late: daysLate,
           email: emailResult.success,
           whatsapp: waResult.success,
+          telegram: tgResult.success,
         })
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err)
