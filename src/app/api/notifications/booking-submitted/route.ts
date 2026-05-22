@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createClient()
 
-    // Fetch booking + primary active VA in parallel
+    // Fetch booking + VA accounts per category in parallel
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any
     const [{ data: booking }, { data: vaRows }] = await Promise.all([
@@ -42,10 +42,10 @@ export async function POST(req: NextRequest) {
       `).eq('id', booking_id).single(),
 
       sb.from('bank_accounts')
-        .select('bank_name, virtual_account_number, account_name')
+        .select('bank_name, virtual_account_number, account_name, category')
         .eq('is_active', true)
         .eq('is_primary', true)
-        .limit(1),
+        .in('category', ['room', 'equipment', 'general']),
     ])
 
     if (!booking) {
@@ -82,7 +82,17 @@ export async function POST(req: NextRequest) {
         })) || []
 
         const fmt = (d: string) => new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
-        const primaryVA = vaRows?.[0] ?? null
+
+        const hasRoom = items.some((i: { type: string }) => i.type === 'room')
+        const hasEquipment = items.some((i: { type: string }) => i.type === 'equipment')
+        const vaByCategory = (cat: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const va = (vaRows as any[])?.find((v: any) => v.category === cat)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ?? (vaRows as any[])?.find((v: any) => v.category === 'general')
+          if (!va) return null
+          return { bankName: va.bank_name, accountNumber: va.virtual_account_number, accountName: va.account_name }
+        }
 
         const docHtml = await generateUSCBookingDocument({
           referenceNo: booking.reference_no,
@@ -95,11 +105,10 @@ export async function POST(req: NextRequest) {
           endDate: fmt(booking.end_datetime),
           items,
           total: booking.total_amount || 0,
-          paymentVA: primaryVA ? {
-            bankName: primaryVA.bank_name,
-            accountNumber: primaryVA.virtual_account_number,
-            accountName: primaryVA.account_name,
-          } : null,
+          hasRoom,
+          hasEquipment,
+          roomVA: vaByCategory('room'),
+          equipmentVA: vaByCategory('equipment'),
         })
 
         let pdfAttachment: { filename: string; content: Buffer } | null = null
