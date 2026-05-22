@@ -1,7 +1,5 @@
 'use client'
 
-import * as XLSX from 'xlsx'
-
 // Reuse the existing types and labels from exportEquipment.ts
 const CATEGORY_LABELS: Record<string, string> = {
   elektronik: 'Elektronik',
@@ -67,7 +65,8 @@ interface Equipment {
  * @param selectedIds - Array of equipment IDs to export (if empty, exports all)
  * @param allEquipment - All equipment data from the database
  */
-export function exportEquipmentToExcel(selectedIds: string[], allEquipment: Equipment[]) {
+export async function exportEquipmentToExcel(selectedIds: string[], allEquipment: Equipment[]) {
+  const XLSX = await import('xlsx')
   // Filter equipment to export
   const equipmentToExport = selectedIds.length > 0
     ? allEquipment.filter(item => selectedIds.includes(item.id))
@@ -175,7 +174,8 @@ export function exportEquipmentToExcel(selectedIds: string[], allEquipment: Equi
 /**
  * Download template Excel for equipment import
  */
-export function downloadEquipmentTemplate() {
+export async function downloadEquipmentTemplate() {
+  const XLSX = await import('xlsx')
   const templateData = [
     {
       'Nama Alat': 'Proyektor Epson',

@@ -11,7 +11,7 @@ import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getInstitutionProfile } from '@/lib/institution'
-import { DashboardAnalytics } from '@/components/dashboard/DashboardAnalytics'
+import { DashboardAnalyticsLoader } from '@/components/dashboard/DashboardAnalyticsLoader'
 
 export const revalidate = 60
 
@@ -154,7 +154,7 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Analytics */}
         <div className="lg:col-span-2">
-          <DashboardAnalytics />
+          <DashboardAnalyticsLoader />
         </div>
 
         {/* Right Column - Recent Bookings */}

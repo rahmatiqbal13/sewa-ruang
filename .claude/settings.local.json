@@ -36,10 +36,41 @@
       "Bash(del \"c:\\\\Users\\\\HYPE FLEX\\\\Documents\\\\Codex\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\admin\\\\fix-trigger\\\\route.ts\")",
       "Bash(git fetch *)",
       "Bash(npx vercel *)",
-      "Bash(node -e \"const pkg = require\\('./package.json'\\); console.log\\(pkg.dependencies['@supabase/supabase-js'] || 'NOT FOUND'\\)\")"
+      "Bash(node -e \"const pkg = require\\('./package.json'\\); console.log\\(pkg.dependencies['@supabase/supabase-js'] || 'NOT FOUND'\\)\")",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
+      "WebFetch(domain:localhost)",
+      "Bash(curl -s http://localhost:3000 -L -w \"\\\\n---STATUS:%{http_code}---\")",
+      "Bash(curl -s http://localhost:3000/login -w \"\\\\n---STATUS:%{http_code}---\")",
+      "Bash(curl -s http://localhost:3000/catalog -w \"\\\\n---STATUS:%{http_code}---\")",
+      "Bash(curl -s http://localhost:3000/admin/dashboard -w \"\\\\n---STATUS:%{http_code}---\")",
+      "Bash(curl -s http://localhost:3000/admin/equipment -w \"\\\\n---STATUS:%{http_code}---\")",
+      "Bash(curl -s http://localhost:3000/admin/rooms -w \"\\\\n---STATUS:%{http_code}---\")",
+      "Bash(curl -s http://localhost:3000/admin/bookings -w \"\\\\n---STATUS:%{http_code}---\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\" -Force)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\\\(admin\\)\\\\admin\\\\assets\" -Force)",
+      "Bash(curl -s -o /dev/null -w \"DNS: %{time_namelookup}s | Connect: %{time_connect}s | TTFB: %{time_starttransfer}s | Total: %{time_total}s | Size: %{size_download}B | HTTP: %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"TTFB: %{time_starttransfer}s | Total: %{time_total}s | Size: %{size_download}B | HTTP: %{http_code}\\\\n\" http://localhost:3000/catalog)",
+      "Bash(curl -s -o /dev/null -w \"TTFB: %{time_starttransfer}s | Total: %{time_total}s | Size: %{size_download}B | HTTP: %{http_code}\\\\n\" http://localhost:3000/login)",
+      "Bash(curl -s -o /dev/null -w \"%{time_starttransfer}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"%{time_starttransfer}\\\\n\" http://localhost:3000/catalog)",
+      "Bash(node -e ' *)",
+      "Bash(xargs ls -la)",
+      "Bash(sort -k5 -rn)",
+      "Bash(grep -v \"//.*for\")",
+      "Bash(grep -v \"node_modules\\\\|//.*dynamic\")",
+      "Bash(curl -s -H \"Accept-Encoding: gzip\" -o /dev/null -w \"Content-Encoding: %{header_json}\\\\n\" http://localhost:3000/)",
+      "Bash(python3 -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\).split\\(': ',1\\)[1] if ': ' in sys.stdin.read\\(\\) else '{}'\\); print\\(d\\)\")",
+      "Bash(curl -sv -H \"Accept-Encoding: gzip,br\" http://localhost:3000/)",
+      "Bash(awk ' *)",
+      "Bash(grep -v \"node_modules\\\\|//.*<img\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\\\\formulir\")",
+      "Bash(dir \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\")",
+      "Bash(dir \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\\\\formulir\")",
+      "Bash(dir \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\" /b)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\HYPE FLEX\\Documents\\Codex\\sewa-ruang\\src\\app\\equipment\\[id]"
+      "c:\\Users\\HYPE FLEX\\Documents\\Codex\\sewa-ruang\\src\\app\\equipment\\[id]",
+      "c:\\Users\\sport\\Documents\\GitHub\\sewa-ruang\\src\\app\\api\\bookings\\[id]"
     ]
   }
 }

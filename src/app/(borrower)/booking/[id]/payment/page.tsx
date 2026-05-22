@@ -75,7 +75,11 @@ export default function PaymentPage() {
         .single()
 
       if (bookingError) throw bookingError
-      
+      if (!bookingData) {
+        toast.error('Booking tidak ditemukan')
+        return
+      }
+
       setBooking(bookingData)
 
       // Get booking items to determine type

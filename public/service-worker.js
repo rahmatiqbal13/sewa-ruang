@@ -1,23 +1,23 @@
 const CACHE_NAME = 'sewa-ruang-v1';
+// Only cache public, always-200 assets — never protected routes (they redirect → non-200 → addAll crash)
 const STATIC_ASSETS = [
   '/',
   '/login',
-  '/register',
-  '/dashboard',
-  '/catalog',
-  '/bookings',
   '/manifest.json',
-  '/icons/icon-72x72.png',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
 ];
 
-// Install event - cache static assets
+// Install event — cache each asset individually so one failure doesn't abort the whole install
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('Service Worker: Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
+      return Promise.allSettled(
+        STATIC_ASSETS.map((url) =>
+          cache.add(url).catch((err) => console.warn('SW: skipped cache for', url, err))
+        )
+      );
     })
   );
   self.skipWaiting();

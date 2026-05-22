@@ -1,13 +1,13 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import * as XLSX from 'xlsx'
 import type { ImportResult } from '../equipment/importEquipment'
 
 /**
  * Import inventory from Excel file
  */
 export async function importInventoryFromExcel(formData: FormData, roomId: string): Promise<ImportResult> {
+  const XLSX = await import('xlsx')
   try {
     const file = formData.get('file') as File
     if (!file) {

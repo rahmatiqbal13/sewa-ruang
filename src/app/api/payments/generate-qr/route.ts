@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       bankName: bankAccount.bank_name,
       accountNumber: bankAccount.account_number,
       accountName: bankAccount.account_name,
-      userName: booking.users?.name || booking.users?.email
+      userName: booking.users?.name ?? booking.users?.email ?? 'Peminjam'
     })
 
     // Generate QR code data URL
@@ -177,7 +177,7 @@ atau 3 digit terakhir unik
 untuk verifikasi otomatis
 
 Upload bukti transfer di:
-${process.env.NEXT_PUBLIC_APP_URL}/booking/payment/${referenceNo}
+${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/booking/payment/${referenceNo}
 
 ================================
 `.trim()

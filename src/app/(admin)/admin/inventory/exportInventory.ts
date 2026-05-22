@@ -1,7 +1,5 @@
 'use client'
 
-import * as XLSX from 'xlsx'
-
 const CONDITION_LABELS: Record<string, string> = {
   good: 'Baik',
   fair: 'Cukup',
@@ -32,11 +30,12 @@ interface Room {
  * @param allInventory - All inventory data
  * @param room - Room info (optional)
  */
-export function exportInventoryToExcel(
-  selectedIds: string[], 
+export async function exportInventoryToExcel(
+  selectedIds: string[],
   allInventory: InventoryItem[],
   room?: Room
 ) {
+  const XLSX = await import('xlsx')
   const inventoryToExport = selectedIds.length > 0
     ? allInventory.filter(item => selectedIds.includes(item.id))
     : allInventory
@@ -78,7 +77,8 @@ export function exportInventoryToExcel(
 /**
  * Download template Excel for inventory import
  */
-export function downloadInventoryTemplate() {
+export async function downloadInventoryTemplate() {
+  const XLSX = await import('xlsx')
   const templateData = [
     {
       'Nama Barang': 'Meja Kerja',

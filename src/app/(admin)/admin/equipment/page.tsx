@@ -1,6 +1,8 @@
 import { createAdminClient as createClient } from '@/lib/supabase/server'
 import { EquipmentList } from './EquipmentList'
 
+export const revalidate = 30
+
 const ITEMS_PER_PAGE = 10
 
 // Helper function to create slug from name
@@ -14,9 +16,9 @@ function createSlug(name: string): string {
 export default async function EquipmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ketersediaan?: string; category?: string; condition?: string; page?: string; search?: string; showInactive?: string; todayOnly?: string }>
+  searchParams: Promise<{ ketersediaan?: string; category?: string; condition?: string; page?: string; search?: string; showInactive?: string; todayOnly?: string; inactiveOnly?: string }>
 }) {
-  const { ketersediaan, category, condition, page, search, showInactive, todayOnly } = await searchParams
+  const { ketersediaan, category, condition, page, search, showInactive, todayOnly, inactiveOnly } = await searchParams
   const currentPage = parseInt(page || '1', 10)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
@@ -37,9 +39,11 @@ export default async function EquipmentPage({
 
   // Build base query for counting
   let countQuery = sb.from('equipment').select('*', { count: 'exact', head: true })
-  
-  // Only show active items by default, unless showInactive=true
-  if (showInactive !== 'true') {
+
+  // is_active filtering: inactiveOnly → false, showInactive → all, default → true
+  if (inactiveOnly === 'true') {
+    countQuery = countQuery.eq('is_active', false)
+  } else if (showInactive !== 'true') {
     countQuery = countQuery.eq('is_active', true)
   }
   
@@ -59,14 +63,12 @@ export default async function EquipmentPage({
     countQuery = countQuery.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
   }
 
-  const { count: totalCount } = await countQuery
-
   // Get today's date for filtering
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const todayIso = today.toISOString()
 
-  // Query from new 'equipment' table with pagination
+  // Build paginated query
   let query = sb
     .from('equipment')
     .select(`
@@ -78,35 +80,15 @@ export default async function EquipmentPage({
     .order('name')
     .range(offset, offset + ITEMS_PER_PAGE - 1)
 
-  // Only show active items by default
-  if (showInactive !== 'true') {
-    query = query.eq('is_active', true)
-  }
+  if (inactiveOnly === 'true') query = query.eq('is_active', false)
+  else if (showInactive !== 'true') query = query.eq('is_active', true)
+  if (todayOnly === 'true') query = query.gte('created_at', todayIso)
+  if (ketersediaan) query = query.eq('ketersediaan', ketersediaan)
+  if (category) query = query.eq('category', category)
+  if (condition) query = query.eq('current_condition', condition)
+  if (search) query = query.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
 
-  // Filter for today only
-  if (todayOnly === 'true') {
-    query = query.gte('created_at', todayIso)
-  }
-
-  if (ketersediaan) {
-    query = query.eq('ketersediaan', ketersediaan)
-  }
-  
-  if (category) {
-    query = query.eq('category', category)
-  }
-
-  if (condition) {
-    query = query.eq('current_condition', condition)
-  }
-
-  if (search) {
-    query = query.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
-  }
-
-  const { data: equipment } = await query
-
-  // Query ALL equipment for export (without pagination)
+  // Build export query (all items, no pagination)
   let allEquipmentQuery = sb
     .from('equipment')
     .select(`
@@ -117,51 +99,45 @@ export default async function EquipmentPage({
     `)
     .order('name')
 
-  // Apply same filters
-  if (showInactive !== 'true') {
-    allEquipmentQuery = allEquipmentQuery.eq('is_active', true)
-  }
-  if (todayOnly === 'true') {
-    allEquipmentQuery = allEquipmentQuery.gte('created_at', todayIso)
-  }
-  if (ketersediaan) {
-    allEquipmentQuery = allEquipmentQuery.eq('ketersediaan', ketersediaan)
-  }
-  if (category) {
-    allEquipmentQuery = allEquipmentQuery.eq('category', category)
-  }
-  if (condition) {
-    allEquipmentQuery = allEquipmentQuery.eq('current_condition', condition)
-  }
-  if (search) {
-    allEquipmentQuery = allEquipmentQuery.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
-  }
+  if (inactiveOnly === 'true') allEquipmentQuery = allEquipmentQuery.eq('is_active', false)
+  else if (showInactive !== 'true') allEquipmentQuery = allEquipmentQuery.eq('is_active', true)
+  if (todayOnly === 'true') allEquipmentQuery = allEquipmentQuery.gte('created_at', todayIso)
+  if (ketersediaan) allEquipmentQuery = allEquipmentQuery.eq('ketersediaan', ketersediaan)
+  if (category) allEquipmentQuery = allEquipmentQuery.eq('category', category)
+  if (condition) allEquipmentQuery = allEquipmentQuery.eq('current_condition', condition)
+  if (search) allEquipmentQuery = allEquipmentQuery.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
 
-  const { data: allEquipmentForExport } = await allEquipmentQuery
-
-  // Get categories for filter
-  const { data: categories } = await sb
-    .from('equipment')
-    .select('category')
-    .not('category', 'is', null)
-
-  const uniqueCategories = [...new Set((categories as { category: string }[] | null)?.map(c => c.category).filter(Boolean) || [])]
-
-  // Get counts for all availability (not just current page)
+  // Build availability query
   let availabilityQuery = sb.from('equipment').select('ketersediaan')
-  if (showInactive !== 'true') {
-    availabilityQuery = availabilityQuery.eq('is_active', true)
-  }
-  if (todayOnly === 'true') {
-    availabilityQuery = availabilityQuery.gte('created_at', todayIso)
-  }
-  const { data: availabilityData } = await availabilityQuery
+  if (showInactive !== 'true') availabilityQuery = availabilityQuery.eq('is_active', true)
+  if (todayOnly === 'true') availabilityQuery = availabilityQuery.gte('created_at', todayIso)
+
+  // Jalankan semua 6 query secara paralel
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [r0, r1, r2, r3, r4, r5] = await Promise.all([
+    countQuery,
+    query,
+    allEquipmentQuery,
+    sb.from('equipment').select('category').not('category', 'is', null),
+    availabilityQuery,
+    sb.from('equipment').select('*', { count: 'exact', head: true }).eq('is_active', false),
+  ]) as any[]
+  const totalCount: number | null = r0.count
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const equipment: any[] | null = r1.data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allEquipmentForExport: any[] | null = r2.data
+  const categories: { category: string }[] | null = r3.data
+  const availabilityData: { ketersediaan: string }[] | null = r4.data
+  const inactiveCount: number = r5.count ?? 0
+
+  const uniqueCategories = [...new Set(categories?.map(c => c.category).filter(Boolean) || [])]
 
   const availabilityCounts = {
-    'tersedia': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'tersedia').length ?? 0,
-    'digunakan': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'digunakan').length ?? 0,
-    'hilang': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'hilang').length ?? 0,
-    'tidak_tersedia': (availabilityData as { ketersediaan: string }[] | null)?.filter((e) => e.ketersediaan === 'tidak_tersedia').length ?? 0,
+    'tersedia': availabilityData?.filter((e) => e.ketersediaan === 'tersedia').length ?? 0,
+    'digunakan': availabilityData?.filter((e) => e.ketersediaan === 'digunakan').length ?? 0,
+    'hilang': availabilityData?.filter((e) => e.ketersediaan === 'hilang').length ?? 0,
+    'tidak_tersedia': availabilityData?.filter((e) => e.ketersediaan === 'tidak_tersedia').length ?? 0,
   }
 
   // Check for duplicate names (from all equipment)
@@ -169,8 +145,9 @@ export default async function EquipmentPage({
     if (!allEquipmentForExport) return new Set<string>()
     const nameCounts = new Map<string, number>()
     const baseNames = new Set<string>()
-    
-    allEquipmentForExport.forEach((item: { name: string }) => {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    allEquipmentForExport.forEach((item: any) => {
       const baseName = item.name.replace(/\s*\(\d+\)$/, '').toLowerCase().trim()
       nameCounts.set(baseName, (nameCounts.get(baseName) || 0) + 1)
       if (nameCounts.get(baseName)! > 1) {
@@ -198,7 +175,8 @@ export default async function EquipmentPage({
       duplicateBaseNames={duplicateBaseNames}
       uniqueCategories={uniqueCategories}
       hasDuplicates={hasDuplicates}
-      searchParams={{ ketersediaan, category, condition, search, todayOnly }}
+      inactiveCount={inactiveCount}
+      searchParams={{ ketersediaan, category, condition, search, todayOnly, inactiveOnly }}
       isSuperAdmin={isSuperAdmin}
     />
   )

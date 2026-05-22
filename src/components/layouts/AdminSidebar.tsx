@@ -9,7 +9,7 @@ import {
   Building2, LayoutDashboard, Package, CalendarDays,
   CreditCard, RotateCcw, BarChart3, QrCode, Boxes,
   LogOut, Users, Settings, BellRing, DoorOpen, ShieldCheck,
-  ChevronRight, Database, FileText, Trash2, Wallet
+  ChevronRight, Database, FileText, Trash2
 } from 'lucide-react'
 import { useState } from 'react'
 import { SafeImage } from '@/components/shared/SafeImage'
@@ -45,7 +45,6 @@ const mainMenuItems: NavItem[] = [
   { label: 'Inventaris',          href: '/admin/inventory',        icon: Boxes },
   { label: 'Pengajuan',           href: '/admin/bookings',         icon: CalendarDays },
   { label: 'Pembayaran',          href: '/admin/payments',         icon: CreditCard },
-  { label: 'VA Payment Methods',  href: '/admin/payment-methods',  icon: Wallet },
   { label: 'Pengembalian',        href: '/admin/returns',          icon: RotateCcw },
   { label: 'QR Code',             href: '/admin/qr',               icon: QrCode },
   { label: 'Laporan',             href: '/admin/reports',          icon: BarChart3 },

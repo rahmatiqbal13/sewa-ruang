@@ -114,12 +114,20 @@ export async function sendPasswordResetEmail(
     const resetLink = linkData.properties.action_link
 
     // Send custom email using SMTP
-    await sendCustomResetEmail({
-      to: email,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      name: (userData as any).name || email.split('@')[0],
-      resetLink,
-    })
+    try {
+      await sendCustomResetEmail({
+        to: email,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: (userData as any).name || email.split('@')[0],
+        resetLink,
+      })
+    } catch (emailError) {
+      console.error('Failed to send reset email:', emailError)
+      return {
+        success: false,
+        message: 'Gagal mengirim email. Pastikan konfigurasi SMTP sudah benar.',
+      }
+    }
 
     return {
       success: true,

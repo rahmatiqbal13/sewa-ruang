@@ -2,17 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import * as nodemailer from 'nodemailer'
 import { getInstitutionProfile } from '@/lib/institution'
+import { z } from 'zod'
+
+const sendEmailSchema = z.object({
+  to: z.string().email('Alamat email tujuan tidak valid'),
+  subject: z.string().min(1).max(200, 'Subjek terlalu panjang'),
+  message: z.string().min(1).max(10000, 'Pesan terlalu panjang'),
+  bookingId: z.string().uuid().optional().nullable(),
+})
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, subject, message, bookingId } = await req.json()
+    const body = await req.json()
+    const parsed = sendEmailSchema.safeParse(body)
 
-    if (!to || !subject || !message) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       )
     }
+
+    const { to, subject, message, bookingId } = parsed.data
 
     // Verify admin access
     const supabase = await createClient()

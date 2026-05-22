@@ -130,15 +130,19 @@ export default async function ReturnsPage({
           <p className="text-2xl font-bold text-amber-900">{filteredPending.length}</p>
         </div>
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-          <p className="text-blue-600 text-sm font-medium">Disetujui (Belum Bayar)</p>
+          <p className="text-blue-600 text-sm font-medium">Dikembalikan Bulan Ini</p>
           <p className="text-2xl font-bold text-blue-900">
-            {filteredPending.filter((b: any) => b.status === 'approved').length}
+            {(completedReturns || []).filter((r: any) => {
+              const now = new Date()
+              const d = new Date(r.returned_at)
+              return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+            }).length}
           </p>
         </div>
         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
-          <p className="text-emerald-600 text-sm font-medium">Lunas (Aktif)</p>
+          <p className="text-emerald-600 text-sm font-medium">Total Pengembalian</p>
           <p className="text-2xl font-bold text-emerald-900">
-            {filteredPending.filter((b: any) => b.status === 'paid').length}
+            {(completedReturns || []).length}
           </p>
         </div>
         <div className="bg-green-50 border border-green-100 rounded-xl p-4">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateInvoiceHtml } from '@/lib/pdf-generator'
 import puppeteer from 'puppeteer-core'
+import fs from 'fs'
 
 // Helper function to format currency
 function formatCurrency(value: number): string {
@@ -10,6 +11,36 @@ function formatCurrency(value: number): string {
     currency: 'IDR',
     minimumFractionDigits: 0
   }).format(value)
+}
+
+function getChromeExecutablePath(): string | undefined {
+  if (process.env.CHROME_EXECUTABLE_PATH) return process.env.CHROME_EXECUTABLE_PATH
+
+  const platformPaths: Record<string, string[]> = {
+    win32: [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    ],
+    darwin: [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    ],
+    linux: [
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium',
+    ],
+  }
+
+  const paths = platformPaths[process.platform] || []
+  for (const p of paths) {
+    try {
+      if (fs.existsSync(p)) return p
+    } catch {
+      // ignore
+    }
+  }
+  return undefined
 }
 
 export async function GET(
@@ -56,7 +87,6 @@ export async function GET(
           item_type,
           room_id,
           equipment_id,
-          price,
           rooms:room_id(name, room_code),
           equipment:equipment_id(name, equipment_code)
         ),
@@ -122,10 +152,17 @@ export async function GET(
     let pdfBuffer: Buffer
 
     try {
+      const executablePath = getChromeExecutablePath()
+      if (!executablePath) {
+        throw new Error(
+          'Chrome executable not found. Set CHROME_EXECUTABLE_PATH in .env.local'
+        )
+      }
+
       const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        executablePath: process.env.CHROME_EXECUTABLE_PATH || undefined,
+        executablePath,
       })
 
       const page = await browser.newPage()

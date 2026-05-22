@@ -27,7 +27,7 @@ const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
   email: z.string().email('Email tidak valid'),
   password: z.string().min(8, 'Password minimal 8 karakter'),
-  phone: z.string().min(10, 'Nomor WhatsApp tidak valid'),
+  phone: z.string().regex(/^(\+62|0)[0-9]{9,12}$/, 'Format WhatsApp tidak valid (contoh: 08123456789 atau +628123456789)'),
   borrower_category: z.enum(['mahasiswa', 'pascasarjana', 'dosen_karyawan', 'kerjasama', 'umum'], { message: 'Kategori peminjam wajib dipilih' }),
   institution: z.string().min(2, 'Instansi wajib diisi').max(100),
   class_division: z.string().min(1, 'Kelas/Divisi wajib diisi').max(50),
@@ -41,8 +41,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [photoUrl, setPhotoUrl] = useState('')
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema),
   })
 
   async function onSubmit(data: FormData) {
@@ -167,12 +166,12 @@ export default function RegisterPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-zinc-700">Instansi / Organisasi</Label>
-                  <Input placeholder="Universitas / Komunitas" className="h-10" {...register('institution')} />
+                  <Input placeholder="Universitas / Komunitas" className="h-10" maxLength={100} {...register('institution')} />
                   {errors.institution && <p className="text-xs text-destructive">{errors.institution.message}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-zinc-700">Kelas / Divisi</Label>
-                  <Input placeholder="TI-3A, Divisi IT" className="h-10" {...register('class_division')} />
+                  <Input placeholder="TI-3A, Divisi IT" className="h-10" maxLength={50} {...register('class_division')} />
                   {errors.class_division && <p className="text-xs text-destructive">{errors.class_division.message}</p>}
                 </div>
                 <div className="space-y-1.5">

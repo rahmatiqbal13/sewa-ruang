@@ -1,6 +1,8 @@
 import { createAdminClient as createClient } from '@/lib/supabase/server'
 import { RoomsPageClient } from './RoomsPageClient'
 
+export const revalidate = 30
+
 interface SearchParams {
   for_rent?: string
   building?: string
@@ -33,7 +35,7 @@ export default async function RoomsPage({
     // Fix: Separate query for rooms to avoid join issues
     let roomsQuery = sb
       .from('rooms')
-      .select('*')
+      .select('id, name, room_code, floor_number, capacity, rate_per_hour, rate_per_day, current_condition, is_active, is_for_rent, photo_url, description, building_id')
       .order('name')
 
     // Apply building filter
@@ -43,7 +45,7 @@ export default async function RoomsPage({
 
     // Apply floor filter
     if (floorFilter) {
-      roomsQuery = roomsQuery.eq('floor', parseInt(floorFilter))
+      roomsQuery = roomsQuery.eq('floor_number', parseInt(floorFilter))
     }
 
     // Apply rent filter
@@ -53,16 +55,15 @@ export default async function RoomsPage({
     const { data: rooms, error: roomsError } = await roomsQuery as {
       data: Array<{
         id: string; name: string; room_code: string | null; floor_number: number | null
-        capacity: number | null; rate_per_hour: number | null; current_condition: string
-        is_active: boolean; is_for_rent?: boolean; photo_url: string | null
-        room_type?: string; description?: string | null; building_id?: string | null
-        floor?: number | null
+        capacity: number | null; rate_per_hour: number | null; rate_per_day: number | null
+        current_condition: string; is_active: boolean; is_for_rent?: boolean
+        photo_url: string | null; description?: string | null; building_id?: string | null
       }> | null
       error: any
     }
 
     if (roomsError) {
-      console.error('Error fetching rooms:', roomsError)
+      console.error('Error fetching rooms:', roomsError?.message ?? JSON.stringify(roomsError))
       return (
         <div className="p-6">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">

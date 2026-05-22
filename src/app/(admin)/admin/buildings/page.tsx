@@ -1,5 +1,7 @@
 import { createAdminClient as createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+
+export const revalidate = 60
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Building2, Layers, MapPin, ArrowUpRight, ShieldCheck } from 'lucide-react'

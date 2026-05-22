@@ -154,12 +154,12 @@ export default async function RoomDetailPage({ params }: Props) {
                 </div>
               )}
 
-              {room.floor && (
+              {room.floor_number && (
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-slate-400 mt-0.5" />
                   <div>
                     <p className="text-sm text-slate-500">Lantai</p>
-                    <p className="font-medium">Lantai {room.floor}</p>
+                    <p className="font-medium">Lantai {room.floor_number}</p>
                   </div>
                 </div>
               )}

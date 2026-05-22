@@ -1,7 +1,5 @@
 'use client'
 
-import * as XLSX from 'xlsx'
-
 const ROOM_TYPE_LABELS: Record<string, string> = {
   classroom: 'Kelas',
   meeting_room: 'Ruang Rapat',
@@ -36,7 +34,8 @@ interface Room {
  * @param selectedIds - Array of room IDs to export (if empty, exports all)
  * @param allRooms - All rooms data
  */
-export function exportRoomsToExcel(selectedIds: string[], allRooms: Room[]) {
+export async function exportRoomsToExcel(selectedIds: string[], allRooms: Room[]) {
+  const XLSX = await import('xlsx')
   const roomsToExport = selectedIds.length > 0
     ? allRooms.filter(room => selectedIds.includes(room.id))
     : allRooms
@@ -85,7 +84,8 @@ export function exportRoomsToExcel(selectedIds: string[], allRooms: Room[]) {
 /**
  * Download template Excel for rooms import
  */
-export function downloadRoomsTemplate() {
+export async function downloadRoomsTemplate() {
+  const XLSX = await import('xlsx')
   const templateData = [
     {
       'Nama Ruangan': 'Lab Komputer A',

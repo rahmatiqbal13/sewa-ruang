@@ -555,6 +555,327 @@ export async function generateReportHtml(data: {
   })
 }
 
+/**
+ * Generate USC-style Formulir Peminjaman + Invoice document (4 pages)
+ * Matches the official Unesa Science Center form layout
+ */
+export async function generateUSCBookingDocument(data: {
+  referenceNo: string
+  customerName: string
+  nim?: string | null
+  institution?: string | null
+  phone?: string | null
+  membershipType?: string | null
+  startDate: string
+  endDate: string
+  items: Array<{
+    code: string
+    name: string
+    type: 'room' | 'equipment'
+    price: number
+  }>
+  total: number
+  roomVA?: {
+    bankName: string
+    accountNumber: string
+    accountName: string
+  } | null
+  equipmentVA?: {
+    bankName: string
+    accountNumber: string
+    accountName: string
+  } | null
+  hasRoom: boolean
+  hasEquipment: boolean
+}): Promise<string> {
+  const inst = await getInstitutionProfile()
+
+  const navy    = '#1e3d70'
+  const lblBg   = '#d6e4f5'
+  const border  = '#9ab5d5'
+  const evenRow = '#f0f6ff'
+
+  const logoHtml = inst?.logo_url
+    ? `<img src="${inst.logo_url}" style="height:55px;width:auto;" />`
+    : `<div style="width:55px;height:55px;background:${navy};border-radius:4px;color:white;font-weight:bold;font-size:8pt;text-align:center;line-height:55px;">UNESA</div>`
+
+  const contactParts = [
+    inst?.address || 'Jl. Kampus Unesa Lidah Wetan Surabaya, 60213',
+    inst?.email   ? `E. ${inst.email}`   : null,
+    inst?.website ? `www. ${inst.website}` : null,
+  ].filter(Boolean).join('<br/>')
+
+  const pageHeader = `
+    <table style="width:100%;border-collapse:collapse;padding-bottom:8px;">
+      <tr>
+        <td style="vertical-align:middle;">
+          <table style="border-collapse:collapse;">
+            <tr>
+              <td style="vertical-align:middle;padding-right:10px;">${logoHtml}</td>
+              <td style="vertical-align:middle;">
+                <div style="font-size:12pt;font-weight:bold;color:${navy};line-height:1.3;">${inst?.name || 'UNIVERSITAS NEGERI SURABAYA'}</div>
+                <div style="font-size:9pt;font-weight:bold;color:${navy};">${inst?.short_name || 'DIREKTORAT UNESA SCIENCE CENTER'}</div>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td style="vertical-align:middle;text-align:right;font-size:7.5pt;line-height:1.7;color:#444;">
+          <strong>Kampus Unesa 2</strong><br/>${contactParts}
+        </td>
+      </tr>
+    </table>
+    <div style="border-bottom:2.5px solid ${navy};margin-bottom:0;"></div>`
+
+  const lbl = (text: string) =>
+    `<td style="border:1px solid ${border};padding:5px 8px;height:26px;background:${lblBg};color:${navy};font-weight:bold;width:38%;font-size:9pt;">${text}</td>`
+  const val = (text: string) =>
+    `<td style="border:1px solid ${border};padding:5px 8px;height:26px;font-size:9pt;">: ${text}</td>`
+
+  const th = (text: string, w?: string) =>
+    `<th style="background:${navy};color:white;padding:7px 8px;font-size:9pt;font-weight:bold;text-align:center;border:1px solid ${navy};${w ? `width:${w};` : ''}">${text}</th>`
+
+  const tdStyle = (i: number, align = 'left', extra = '') =>
+    `style="border:1px solid ${border};padding:6px 8px;font-size:9pt;height:28px;vertical-align:middle;text-align:${align};background:${i % 2 === 0 ? '#fff' : evenRow};${extra}"`
+
+  // Formulir rows — padded to at least 5
+  const formulirItems = [...data.items]
+  while (formulirItems.length < 5) formulirItems.push({ code: '', name: '', type: 'equipment' as const, price: 0 })
+
+  const formulirRows = formulirItems.map((item, i) => `
+    <tr>
+      <td ${tdStyle(i, 'center')}>${item.name ? i + 1 : ''}</td>
+      <td ${tdStyle(i)}>${item.name}</td>
+      <td ${tdStyle(i, 'center')}>${item.name ? '1' : ''}</td>
+      <td ${tdStyle(i)}></td>
+      <td ${tdStyle(i)}></td>
+      <td ${tdStyle(i)}></td>
+    </tr>`).join('')
+
+  // Invoice rows — padded to at least 5
+  const invoiceItems = [...data.items]
+  while (invoiceItems.length < 5) invoiceItems.push({ code: '', name: '', type: 'equipment' as const, price: 0 })
+
+  const invoiceRows = invoiceItems.map((item, i) => `
+    <tr>
+      <td ${tdStyle(i, 'center')}>${item.name ? i + 1 : ''}</td>
+      <td ${tdStyle(i, 'left', 'font-family:monospace')}>${item.code}</td>
+      <td ${tdStyle(i)}>${item.name}</td>
+      <td ${tdStyle(i, 'right')}>${item.name ? formatCurrency(item.price) : ''}</td>
+    </tr>`).join('')
+
+  const riskRow = (num: number, text: string, even: boolean) => `
+    <tr>
+      <td style="background:${navy};color:white;font-weight:bold;width:28px;text-align:center;padding:8px;border:1px solid ${border};vertical-align:middle;">${num}</td>
+      <td style="border:1px solid ${border};padding:8px 10px;font-size:9pt;background:${even ? evenRow : '#fff'};">${text}</td>
+    </tr>`
+
+  function vaNote(va: { bankName: string; accountNumber: string; accountName: string }, label: string) {
+    return `<div style="margin-bottom:8px;">
+      <div style="font-weight:bold;color:${navy};font-size:9pt;margin-bottom:4px;">${label}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:9pt;">
+        <tr>
+          <td style="width:130px;padding:2px 0;vertical-align:top;">Bank</td>
+          <td style="padding:2px 0;vertical-align:top;font-weight:bold;">: ${va.bankName}</td>
+        </tr>
+        <tr>
+          <td style="padding:2px 0;vertical-align:top;">No. Virtual Akun</td>
+          <td style="padding:2px 0;vertical-align:top;font-weight:bold;">: ${va.accountNumber}</td>
+        </tr>
+        <tr>
+          <td style="padding:2px 0;vertical-align:top;">Atas Nama</td>
+          <td style="padding:2px 0;vertical-align:top;font-weight:bold;">: ${va.accountName}</td>
+        </tr>
+      </table>
+    </div>`
+  }
+
+  const paymentNotes = (() => {
+    if (!data.hasRoom && !data.hasEquipment) {
+      return `<div style="font-size:9pt;line-height:1.7;">
+        Harap hubungi admin untuk informasi pembayaran.<br/>
+        No. Referensi: <strong>${data.referenceNo}</strong>
+      </div>`
+    }
+
+    let notes = `<div style="font-size:9pt;line-height:1.7;">`
+    notes += `<div style="margin-bottom:8px;">
+      Pembayaran dilakukan dengan <strong>m-banking</strong> melalui menu pembayaran <strong>Virtual Akun</strong> 
+      ke bank lain dan pilih <strong>Bank BTN</strong>.
+    </div>`
+
+    if (data.hasRoom && data.roomVA) {
+      notes += vaNote(data.roomVA, 'Pembayaran Sewa Ruang:')
+    }
+    if (data.hasEquipment && data.equipmentVA) {
+      notes += vaNote(data.equipmentVA, 'Pembayaran Sewa Alat:')
+    }
+
+    notes += `<div style="margin-top:8px;border-top:1px solid ${border};padding-top:6px;">
+      <strong>Catatan Penting:</strong>
+      <ul style="margin:4px 0 0 16px;padding:0;">
+        <li>Sertakan nomor referensi <strong>${data.referenceNo}</strong> pada keterangan transfer.</li>
+        <li>Bukti Transfer dapat dikirim ke nomor Whatsapp: <strong>+62 896-7704-2940 (Iqbal)</strong></li>
+      </ul>
+    </div>`
+
+    notes += `</div>`
+    return notes
+  })()
+
+  const banner = (text: string) =>
+    `<div style="background:${navy};color:white;text-align:center;padding:9px 12px;font-size:10.5pt;font-weight:bold;letter-spacing:0.3px;margin:12px 0 10px 0;">${text}</div>`
+
+  const secHdr = (text: string) =>
+    `<div style="font-weight:bold;color:${navy};font-size:9.5pt;margin:10px 0 5px 0;">${text}</div>`
+
+  const sigCell = (title: string, border2 = true) =>
+    `<td style="border:1px solid ${border};${border2 ? '' : 'border-left:none;'}text-align:center;padding:8px;width:50%;height:110px;vertical-align:top;">
+       <div style="font-weight:bold;color:${navy};font-size:9.5pt;">${title}</div>
+       <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
+     </td>`
+
+  return `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #1a1a1a; }
+  .p { width: 210mm; min-height: 297mm; padding: 12mm 18mm; page-break-after: always; }
+  .p:last-child { page-break-after: auto; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: FORMULIR PEMINJAMAN -->
+<div class="p">
+  ${pageHeader}
+  ${banner('FORMULIR PEMINJAMAN DAN PERSETUJUAN')}
+
+  ${secHdr('A. INFORMASI PEMINJAM')}
+  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+    <tr>${lbl('Nama Peminjam')}${val(data.customerName)}</tr>
+    <tr>${lbl('NIP / NIM')}${val(data.nim || '')}</tr>
+    <tr>${lbl('Departemen / Fakultas')}${val(data.institution || '')}</tr>
+    <tr>${lbl('Tanggal Peminjaman')}${val(data.startDate)}</tr>
+    <tr>${lbl('Tanggal Pengembalian')}${val(data.endDate)}</tr>
+    <tr>${lbl('No. Kontak')}${val(data.phone || '')}</tr>
+  </table>
+
+  ${secHdr('B. ALAT YANG DIPINJAM')}
+  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+    <thead><tr>
+      ${th('No', '30px')}
+      ${th('Nama Barang')}
+      ${th('Jumlah', '65px')}
+      ${th('Kondisi Barang', '120px')}
+      ${th('TTD Peminjam', '100px')}
+      ${th('TTD Laboran', '100px')}
+    </tr></thead>
+    <tbody>${formulirRows}</tbody>
+  </table>
+</div>
+
+<!-- PAGE 2: RISIKO DAN PERSETUJUAN -->
+<div class="p">
+  ${secHdr('C. RISIKO DAN PERSETUJUAN')}
+  <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">
+    ${riskRow(1, 'Saya akan bertanggung jawab atas kondisi alat yang dipinjam selama dalam penggunaan saya.', false)}
+    ${riskRow(2, 'Saya akan mengembalikan alat dalam kondisi yang sama seperti saat dipinjam, dan akan bertanggung jawab atas kerusakan atau kehilangan.', true)}
+    ${riskRow(3, 'Saya memahami bahwa penggunaan alat olahraga dapat berpotensi menyebabkan cedera fisik.', false)}
+    ${riskRow(4, 'Saya akan mematuhi semua pedoman keselamatan yang telah ditetapkan oleh pusat olahraga.', true)}
+    ${riskRow(5, 'Saya melepaskan pusat olahraga dari segala tanggung jawab atas cedera atau kerusakan yang mungkin timbul selama atau akibat penggunaan alat ini.', false)}
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;margin-top:20px;">
+    <tr>
+      <td style="border:1px solid ${border};text-align:center;padding:8px;width:50%;height:110px;vertical-align:top;">
+        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">Laboran</div>
+        <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
+      </td>
+      <td style="border:1px solid ${border};border-left:none;text-align:center;padding:8px;width:50%;height:110px;vertical-align:top;">
+        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">Pemohon</div>
+        <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
+        <div style="margin-top:4px;font-size:9pt;font-weight:bold;">${data.customerName}</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- PAGE 3: INVOICE + CATATAN PEMBAYARAN -->
+<div class="p">
+  ${pageHeader}
+  ${banner('INVOICE PEMINJAMAN SARANA DAN PRASARANA SPORT CENTER')}
+
+  ${secHdr('A. IDENTITAS PEMINJAM')}
+  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+    <tr>${lbl('Nama Peminjam')}${val(data.customerName)}</tr>
+    <tr>${lbl('NIP / NIM')}${val(data.nim || '')}</tr>
+    <tr>${lbl('Instansi')}${val(data.institution || '')}</tr>
+    <tr>${lbl('Tanggal Peminjaman')}${val(data.startDate)}</tr>
+    <tr>${lbl('Tanggal Pengembalian')}${val(data.endDate)}</tr>
+    <tr>${lbl('No. Kontak')}${val(data.phone || '')}</tr>
+    <tr>${lbl('Jenis Keanggotaan')}${val(data.membershipType || '')}</tr>
+  </table>
+
+  ${secHdr('B. RINCIAN PEMINJAMAN')}
+  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+    <thead><tr>
+      ${th('No', '30px')}
+      ${th('Kode Barang', '120px')}
+      ${th('Nama Barang / Ruang')}
+      ${th('Harga', '110px')}
+    </tr></thead>
+    <tbody>
+      ${invoiceRows}
+      <tr>
+        <td colspan="3" style="text-align:right;font-weight:bold;background:${navy};color:white;padding:7px 10px;border:1px solid ${navy};">TOTAL</td>
+        <td style="text-align:right;font-weight:bold;background:${navy};color:white;padding:7px 10px;border:1px solid ${navy};">${formatCurrency(data.total)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  ${secHdr('C. CATATAN PEMBAYARAN')}
+  <div style="border:2px solid #d4aa00;padding:12px 14px;background:#fffef5;font-size:9pt;margin-bottom:12px;line-height:2;">
+    ${paymentNotes}
+  </div>
+</div>
+
+<!-- PAGE 4: TANDA TANGAN & PERSETUJUAN -->
+<div class="p">
+  ${pageHeader}
+  ${banner('PERSETUJUAN DAN TANDA TANGAN')}
+
+  <div style="font-size:9.5pt;line-height:1.7;margin-bottom:15px;color:#333;">
+    Dengan menandatangani formulir ini, pemohon menyatakan telah membaca, memahami, dan menyetujui 
+    semua syarat dan ketentuan yang berlaku terkait peminjaman sarana dan prasarana di Unesa Science Center, 
+    termasuk kewajiban pembayaran sesuai rincian yang tercantum pada invoice di halaman sebelumnya.
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;margin-top:10px;">
+    <tr>
+      <td style="border:1px solid ${border};text-align:center;padding:8px;height:110px;vertical-align:top;width:50%;">
+        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">Admin USC</div>
+        <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
+      </td>
+      <td style="border:1px solid ${border};text-align:center;padding:8px;height:110px;vertical-align:top;width:50%;border-left:none;">
+        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">Pemohon</div>
+        <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
+        <div style="margin-top:4px;font-size:9pt;font-weight:bold;">${data.customerName}</div>
+      </td>
+    </tr>
+  </table>
+
+  <div style="font-size:8.5pt;color:#64748b;text-align:center;margin-top:12px;">
+    Dokumen ini digenerate secara otomatis oleh sistem. Halaman 4 dari 4.
+  </div>
+</div>
+
+</body>
+</html>`
+}
+
 // Helper function
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('id-ID', {

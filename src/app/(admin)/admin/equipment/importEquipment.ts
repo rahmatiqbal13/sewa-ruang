@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import * as XLSX from 'xlsx'
 
 export interface ImportResult {
   success: boolean
@@ -22,6 +21,7 @@ export interface ImportResult {
  * Import equipment from Excel file
  */
 export async function importEquipmentFromExcel(formData: FormData): Promise<ImportResult> {
+  const XLSX = await import('xlsx')
   try {
     const file = formData.get('file') as File
     if (!file) {

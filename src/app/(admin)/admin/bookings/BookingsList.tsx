@@ -5,10 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Calendar, ChevronRight, User, Package, Plus, Download, 
-  FileUp, CheckSquare, Pencil, MoreHorizontal, Trash2, LayoutGrid, 
-  Table2, ChevronLeft, ChevronRightIcon, Search, Send, Eye, CheckCircle, XCircle
+import {
+  Calendar, ChevronRight, User, Package, Plus, Download, Eye,
+  LayoutGrid, Table2, ChevronLeft, ChevronRightIcon, Search, Send, Loader2
 } from 'lucide-react'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { cn, formatDateTime, formatRupiah } from '@/lib/utils'
@@ -16,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { SendMessageDialog } from './SendMessageDialog'
 import { ContactButtons } from '@/components/shared/ContactButtons'
+import { toast } from 'sonner'
 
 const STATUS_TABS = [
   { value: '', label: 'Semua', color: 'bg-slate-800 text-white', bg: 'bg-slate-50' },
@@ -67,6 +67,21 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [messageDialogOpen, setMessageDialogOpen] = useState(false)
+  const [resending, setResending] = useState<string | null>(null)
+
+  async function handleResendFormulir(bookingId: string, refNo: string) {
+    setResending(bookingId)
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/formulir`, { method: 'POST' })
+      const json = await res.json()
+      if (res.ok) toast.success(`Formulir dikirim ke email peminjam (${refNo})`)
+      else toast.error(json.error || 'Gagal mengirim email')
+    } catch {
+      toast.error('Gagal mengirim formulir')
+    } finally {
+      setResending(null)
+    }
+  }
 
   // Filter bookings by search
   const filteredBookings = bookings.filter(b => 
@@ -301,9 +316,45 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                       <BookingStatusBadge status={booking.status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Preview Formulir PDF */}
+                        <a
+                          href={`/api/bookings/${booking.id}/formulir?preview=1`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                          title="Lihat Formulir PDF"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </a>
+
+                        {/* Download Formulir PDF */}
+                        <a
+                          href={`/api/bookings/${booking.id}/formulir`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                          title="Download Formulir PDF"
+                        >
+                          <Download className="h-4 w-4" />
+                        </a>
+
+                        {/* Resend Formulir Email */}
+                        {booking.users?.email && (
+                          <button
+                            onClick={() => handleResendFormulir(booking.id, booking.reference_no)}
+                            disabled={resending === booking.id}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                            title="Kirim Ulang Formulir ke Email"
+                          >
+                            {resending === booking.id
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <Send className="h-4 w-4" />}
+                          </button>
+                        )}
+
                         {(booking.users?.email || booking.users?.phone) && (
-                          <ContactButtons 
+                          <ContactButtons
                             booking={{
                               id: booking.id,
                               reference_no: booking.reference_no,
@@ -320,7 +371,7 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                             }}
                           />
                         )}
-                        
+
                         <Link
                           href={`/admin/bookings/${booking.id}`}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
@@ -386,9 +437,42 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                   
                   <div className="mt-3 pt-3 border-t flex items-center justify-between">
                     <span className="font-semibold text-lg">{formatRupiah(booking.total_amount)}</span>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 items-center">
+                      <a
+                        href={`/api/bookings/${booking.id}/formulir?preview=1`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                        title="Lihat Formulir PDF"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </a>
+
+                      <a
+                        href={`/api/bookings/${booking.id}/formulir`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                        title="Download Formulir PDF"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+
+                      {booking.users?.email && (
+                        <button
+                          onClick={() => handleResendFormulir(booking.id, booking.reference_no)}
+                          disabled={resending === booking.id}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                          title="Kirim Ulang Formulir ke Email"
+                        >
+                          {resending === booking.id
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Send className="h-4 w-4" />}
+                        </button>
+                      )}
+
                       {(booking.users?.email || booking.users?.phone) && (
-                        <ContactButtons 
+                        <ContactButtons
                           booking={{
                             id: booking.id,
                             reference_no: booking.reference_no,
@@ -405,7 +489,7 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                           }}
                         />
                       )}
-                      
+
                       <Link
                         href={`/admin/bookings/${booking.id}`}
                         className="text-xs px-3 py-1.5 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200"

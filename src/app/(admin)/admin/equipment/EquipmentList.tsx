@@ -17,24 +17,7 @@ import { importEquipmentFromExcel, undoImportEquipment, deleteAllEquipment } fro
 import { downloadEquipmentTemplate } from './exportEquipment'
 import { ImportDialog } from './ImportDialog'
 import type { ImportResult } from './importEquipment'
-
-const AVAILABILITY_TABS = [
-  { value: '',           label: 'Semua Alat',    color: 'bg-zinc-800 text-white' },
-  { value: 'tersedia',   label: 'Tersedia',      color: 'bg-green-600 text-white' },
-  { value: 'digunakan',  label: 'Digunakan',     color: 'bg-orange-600 text-white' },
-  { value: 'hilang',     label: 'Hilang',        color: 'bg-red-600 text-white' },
-  { value: 'tidak_tersedia', label: 'Tidak Tersedia', color: 'bg-gray-600 text-white' },
-]
-
-const CATEGORY_LABELS: Record<string, string> = {
-  'elektronik': 'Elektronik',
-  'mebel': 'Mebel',
-  'transportasi': 'Transportasi',
-  'alat_tes_pengukuran': 'Alat Tes Pengukuran',
-  'alat_gym': 'Alat Gym/Fitness',
-  'perlengkapan': 'Perlengkapan',
-  'lainnya': 'Lainnya',
-}
+import { CATEGORY_LABELS, KETERSEDIAAN } from './equipmentConstants'
 
 // Helper function to create slug from name
 function createSlug(name: string): string {
@@ -76,16 +59,19 @@ interface EquipmentListProps {
     tersedia: number
     digunakan: number
     hilang: number
+    tidak_tersedia: number
   }
   duplicateBaseNames: Set<string>
   uniqueCategories: string[]
   hasDuplicates: boolean
+  inactiveCount: number
   searchParams: {
     ketersediaan?: string
     category?: string
     condition?: string
     search?: string
     todayOnly?: string
+    inactiveOnly?: string
   }
   isSuperAdmin?: boolean
 }
@@ -102,6 +88,7 @@ export function EquipmentList({
   duplicateBaseNames,
   uniqueCategories,
   hasDuplicates,
+  inactiveCount,
   searchParams,
   isSuperAdmin = false,
 }: EquipmentListProps) {
@@ -136,25 +123,8 @@ export function EquipmentList({
     return await importEquipmentFromExcel(formData)
   }
 
-  const getKetersediaanColor = (status: string) => {
-    switch (status) {
-      case 'tersedia': return 'bg-green-100 text-green-700 border-green-200'
-      case 'digunakan': return 'bg-orange-100 text-orange-700 border-orange-200'
-      case 'hilang': return 'bg-red-100 text-red-700 border-red-200'
-      case 'tidak_tersedia': return 'bg-gray-100 text-gray-700 border-gray-200'
-      default: return 'bg-gray-100 text-gray-700'
-    }
-  }
-
-  const getKetersediaanLabel = (status: string) => {
-    switch (status) {
-      case 'tersedia': return 'Tersedia'
-      case 'digunakan': return 'Digunakan'
-      case 'hilang': return 'Hilang'
-      case 'tidak_tersedia': return 'Tidak Tersedia'
-      default: return status
-    }
-  }
+  const getKetersediaanColor = (status: string) => KETERSEDIAAN[status]?.badgeClass ?? 'bg-gray-100 text-gray-700'
+  const getKetersediaanLabel = (status: string) => KETERSEDIAAN[status]?.label ?? status
 
   const getDisplayRate = (rates: { rate_per_day: number; rate_per_hour: number | null; user_category: string; requires_supervision: boolean }[] | null | undefined) => {
     if (!rates || rates.length === 0) return null
@@ -275,25 +245,52 @@ export function EquipmentList({
         </div>
       </div>
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-          <p className="text-blue-600 text-sm font-medium">Total Alat</p>
-          <p className="text-2xl font-bold text-blue-900">{totalItems}</p>
-        </div>
-        <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-          <p className="text-green-600 text-sm font-medium">Tersedia</p>
-          <p className="text-2xl font-bold text-green-900">{availabilityCounts['tersedia']}</p>
-        </div>
-        <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
-          <p className="text-orange-600 text-sm font-medium">Digunakan</p>
-          <p className="text-2xl font-bold text-orange-900">{availabilityCounts['digunakan']}</p>
-        </div>
-        <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-          <p className="text-red-600 text-sm font-medium">Hilang/Rusak</p>
-          <p className="text-2xl font-bold text-red-900">{availabilityCounts['hilang']}</p>
-        </div>
-      </div>
+      {/* Clickable availability tabs */}
+      {(() => {
+        const activeK = searchParams.ketersediaan || ''
+        const isInactiveTab = searchParams.inactiveOnly === 'true'
+
+        const buildTabUrl = (k: string, inactive = false) => {
+          const params = new URLSearchParams()
+          if (k) params.set('ketersediaan', k)
+          if (inactive) params.set('inactiveOnly', 'true')
+          if (searchParams.category) params.set('category', searchParams.category)
+          if (searchParams.condition) params.set('condition', searchParams.condition)
+          if (searchParams.search) params.set('search', searchParams.search)
+          if (searchParams.todayOnly) params.set('todayOnly', searchParams.todayOnly)
+          const q = params.toString()
+          return q ? `/admin/equipment?${q}` : '/admin/equipment'
+        }
+
+        const tabs = [
+          { key: '',               label: 'Semua',          count: totalItems,                           isActive: !isInactiveTab && activeK === '',   activeClass: 'bg-blue-600 text-white border-blue-600',    inactiveClass: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100',   href: buildTabUrl('') },
+          { key: 'tersedia',       label: 'Tersedia',       count: availabilityCounts['tersedia'],        isActive: !isInactiveTab && activeK === 'tersedia',      activeClass: 'bg-green-600 text-white border-green-600',  inactiveClass: 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100', href: buildTabUrl('tersedia') },
+          { key: 'digunakan',      label: 'Digunakan',      count: availabilityCounts['digunakan'],       isActive: !isInactiveTab && activeK === 'digunakan',     activeClass: 'bg-orange-600 text-white border-orange-600',inactiveClass: 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100',href: buildTabUrl('digunakan') },
+          { key: 'hilang',         label: 'Hilang',         count: availabilityCounts['hilang'],          isActive: !isInactiveTab && activeK === 'hilang',        activeClass: 'bg-red-600 text-white border-red-600',      inactiveClass: 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100',       href: buildTabUrl('hilang') },
+          { key: 'tidak_tersedia', label: 'Tidak Tersedia', count: availabilityCounts['tidak_tersedia'],  isActive: !isInactiveTab && activeK === 'tidak_tersedia',activeClass: 'bg-gray-600 text-white border-gray-600',    inactiveClass: 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100',   href: buildTabUrl('tidak_tersedia') },
+          { key: 'nonaktif',       label: 'Non Aktif',      count: inactiveCount,                        isActive: isInactiveTab,                                 activeClass: 'bg-slate-700 text-white border-slate-700',  inactiveClass: 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100', href: buildTabUrl('', true) },
+        ]
+
+        return (
+          <div className="flex flex-wrap gap-2">
+            {tabs.map((tab) => (
+              <Link
+                key={tab.key}
+                href={tab.href}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors',
+                  tab.isActive ? tab.activeClass : tab.inactiveClass
+                )}
+              >
+                <span>{tab.label}</span>
+                <span className={cn('text-xs px-1.5 py-0.5 rounded-full', tab.isActive ? 'bg-white/25' : 'bg-black/10')}>
+                  {tab.count}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Filters & View Toggle */}
       <div className="flex items-center justify-between gap-4">

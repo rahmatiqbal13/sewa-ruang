@@ -1,13 +1,13 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import * as XLSX from 'xlsx'
 import type { ImportResult } from '../equipment/importEquipment'
 
 /**
  * Import rooms from Excel file
  */
 export async function importRoomsFromExcel(formData: FormData): Promise<ImportResult> {
+  const XLSX = await import('xlsx')
   try {
     const file = formData.get('file') as File
     if (!file) {
@@ -173,7 +173,7 @@ export async function importRoomsFromExcel(formData: FormData): Promise<ImportRe
           name: name,
           room_code: roomCode,
           building_id: buildingId,
-          floor: floor,
+          floor_number: floor,
           capacity: capacity,
           room_type: roomType,
           description: row[colIndices.description]?.toString().trim() || null,

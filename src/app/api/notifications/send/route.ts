@@ -34,6 +34,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Rate limit: cegah spam notifikasi untuk booking yang sama (min. 60 detik)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: lastNotif } = await (supabase.from('notifications') as any)
+      .select('created_at')
+      .eq('booking_id', bookingId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (lastNotif) {
+      const secondsSinceLast = (Date.now() - new Date(lastNotif.created_at).getTime()) / 1000
+      if (secondsSinceLast < 60) {
+        return NextResponse.json(
+          { error: 'Terlalu sering. Tunggu 60 detik sebelum kirim notifikasi lagi.' },
+          { status: 429 }
+        )
+      }
+    }
+
     // Get booking details
     const { data: booking } = await supabase
       .from('bookings')

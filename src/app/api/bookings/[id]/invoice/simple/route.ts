@@ -55,7 +55,6 @@ export async function GET(
           item_type,
           room_id,
           equipment_id,
-          price,
           rooms:room_id(name, room_code),
           equipment:equipment_id(name, equipment_code)
         ),

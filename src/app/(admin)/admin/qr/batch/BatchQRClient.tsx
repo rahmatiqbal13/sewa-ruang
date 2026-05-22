@@ -130,9 +130,22 @@ export function BatchQRClient({
     return items
   }
 
-  function handlePrint() {
+  async function handlePrint() {
     const items = getSelectedItems()
     if (items.length === 0) return
+
+    // Generate QR data URLs locally — tidak bergantung external API
+    const QRCodeLib = await import('qrcode')
+    const itemsWithQR = await Promise.all(
+      items.map(async (item) => ({
+        ...item,
+        qrDataUrl: await QRCodeLib.toDataURL(item.url, {
+          width: 120,
+          margin: 1,
+          color: { dark: '#000000', light: '#ffffff' },
+        }),
+      }))
+    )
 
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
@@ -144,8 +157,8 @@ export function BatchQRClient({
           <title>Label QR Code - ${items.length} Item</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Arial, sans-serif; 
+            body {
+              font-family: 'Segoe UI', Arial, sans-serif;
               background: white;
               padding: 20px;
             }
@@ -164,16 +177,16 @@ export function BatchQRClient({
               color: #64748b;
               font-size: 14px;
             }
-            .grid { 
-              display: grid; 
-              grid-template-columns: repeat(3, 1fr); 
-              gap: 20px; 
+            .grid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 20px;
             }
-            .label { 
-              border: 2px solid #e2e8f0; 
-              border-radius: 12px; 
-              padding: 20px; 
-              text-align: center; 
+            .label {
+              border: 2px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 20px;
+              text-align: center;
               page-break-inside: avoid;
               background: white;
               box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -231,16 +244,16 @@ export function BatchQRClient({
               font-style: italic;
             }
             @media print {
-              @page { 
-                size: A4; 
+              @page {
+                size: A4;
                 margin: 15mm;
               }
               body { padding: 0; }
-              .header { 
+              .header {
                 margin-bottom: 20px;
                 border-bottom-color: #000;
               }
-              .grid { 
+              .grid {
                 grid-template-columns: repeat(3, 1fr);
                 gap: 15px;
               }
@@ -263,13 +276,13 @@ export function BatchQRClient({
             <p>Total: ${items.length} item | RentSpace System</p>
           </div>
           <div class="grid">
-            ${items.map(item => `
+            ${itemsWithQR.map(item => `
               <div class="label">
                 <div class="label-type ${item.type}">
                   ${item.type === 'room' ? 'Ruangan' : item.type === 'equipment' ? 'Alat' : 'Inventaris'}
                 </div>
                 <div class="label-qr">
-                  <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(item.url)}&size=120x120" alt="QR" />
+                  <img src="${item.qrDataUrl}" alt="QR" />
                 </div>
                 ${item.code ? `<div class="label-code">${item.code}</div>` : ''}
                 <div class="label-name">${item.name}</div>
@@ -281,9 +294,7 @@ export function BatchQRClient({
       </html>
     `)
     printWindow.document.close()
-    printWindow.onload = () => {
-      printWindow.print()
-    }
+    printWindow.print()
   }
 
   const selectedCount = getSelectedItems().length
