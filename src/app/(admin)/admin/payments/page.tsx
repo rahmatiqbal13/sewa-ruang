@@ -7,6 +7,8 @@ import { formatDateTime, formatRupiah } from '@/lib/utils'
 import Link from 'next/link'
 import { Eye, CheckCircle, Clock, Wallet, Settings } from 'lucide-react'
 import { PaymentMethodsPanel } from './PaymentMethodsPanel'
+import { DeletePaymentButton } from './DeletePaymentButton'
+import { DeleteTransactionButton } from './DeleteTransactionButton'
 import { cn } from '@/lib/utils'
 
 export default async function PaymentsPage({
@@ -161,12 +163,13 @@ async function TransaksiTab() {
                 <TableHead>Kode Bayar</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
+                <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {(!bookingsWithPayment || bookingsWithPayment.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada transaksi</TableCell>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada transaksi</TableCell>
                 </TableRow>
               )}
               {bookingsWithPayment?.map((booking) => {
@@ -189,6 +192,13 @@ async function TransaksiTab() {
                           </Link>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <DeleteTransactionButton
+                        bookingId={booking.id}
+                        referenceNo={booking.reference_no}
+                        borrowerName={booking.users?.name ?? '-'}
+                      />
                     </TableCell>
                   </TableRow>
                 )
@@ -215,6 +225,7 @@ async function TransaksiTab() {
                   <TableHead>Bank</TableHead>
                   <TableHead>Nominal</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -228,6 +239,14 @@ async function TransaksiTab() {
                       <TableCell>{proof.bank_name ?? '-'}</TableCell>
                       <TableCell className="font-medium">{formatRupiah(proof.transfer_amount)}</TableCell>
                       <TableCell><Badge className={colors[proof.status]}>{labels[proof.status]}</Badge></TableCell>
+                      <TableCell>
+                        <DeletePaymentButton
+                          id={proof.id}
+                          referenceNo={proof.bookings?.reference_no ?? '-'}
+                          type="proof"
+                          label="Bukti transfer"
+                        />
+                      </TableCell>
                     </TableRow>
                   )
                 })}
@@ -249,6 +268,7 @@ async function TransaksiTab() {
                   <TableHead>Metode</TableHead>
                   <TableHead>Nominal</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -261,6 +281,13 @@ async function TransaksiTab() {
                       <TableCell>{formatRupiah(p.amount)}</TableCell>
                       <TableCell>
                         <Badge variant={p.status === 'paid' ? 'default' : 'secondary'}>{p.status === 'paid' ? 'Lunas' : p.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DeletePaymentButton
+                          id={p.id}
+                          referenceNo={p.bookings?.reference_no ?? '-'}
+                          label="Pembayaran manual"
+                        />
                       </TableCell>
                     </TableRow>
                   )

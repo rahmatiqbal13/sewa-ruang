@@ -7,8 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   Calendar, ChevronRight, User, Package, Plus, Download, Eye,
-  LayoutGrid, Table2, ChevronLeft, ChevronRightIcon, Search, Send, Loader2
+  LayoutGrid, Table2, ChevronLeft, ChevronRightIcon, Search, Send, Loader2, Trash2
 } from 'lucide-react'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { cn, formatDateTime, formatRupiah } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -68,6 +72,28 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [messageDialogOpen, setMessageDialogOpen] = useState(false)
   const [resending, setResending] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/bookings/${deleteTarget.id}`, { method: 'DELETE' })
+      const json = await res.json()
+      if (res.ok) {
+        toast.success(`Booking ${deleteTarget.reference_no} berhasil dihapus`)
+        router.refresh()
+      } else {
+        toast.error(json.error || 'Gagal menghapus booking')
+      }
+    } catch {
+      toast.error('Terjadi kesalahan saat menghapus')
+    } finally {
+      setDeleting(false)
+      setDeleteTarget(null)
+    }
+  }
 
   async function handleResendFormulir(bookingId: string, refNo: string) {
     setResending(bookingId)
@@ -104,6 +130,32 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
         onOpenChange={setMessageDialogOpen}
         booking={selectedBooking}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Booking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Booking <strong>{deleteTarget?.reference_no}</strong> atas nama{' '}
+              <strong>{deleteTarget?.users?.name}</strong> akan dihapus permanen
+              beserta seluruh data pembayaran dan pengembalian terkait.
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Ya, Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -379,6 +431,14 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                         >
                           <ChevronRight className="h-4 w-4" />
                         </Link>
+
+                        <button
+                          onClick={() => setDeleteTarget(booking)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-400 hover:bg-red-50 hover:text-red-600"
+                          title="Hapus booking"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -496,6 +556,14 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
                       >
                         Detail
                       </Link>
+
+                      <button
+                        onClick={() => setDeleteTarget(booking)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-400 hover:bg-red-50 hover:text-red-600"
+                        title="Hapus booking"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

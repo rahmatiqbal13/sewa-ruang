@@ -9,6 +9,7 @@ import { EditUserDialog } from './EditUserDialog'
 import { DeleteUserButton } from './DeleteUserButton'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
 import { AddUserDialog } from './AddUserDialog'
+import { UserDetailSheet } from './UserDetailSheet'
 import { formatDateTime } from '@/lib/utils'
 import { isSuperAdmin } from '@/lib/permissions'
 
@@ -123,17 +124,20 @@ export default async function UsersPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {!isSelf && (
-                        <div className="flex items-center gap-1.5 justify-end flex-wrap">
-                          <EditUserDialog user={u} />
-                          <ChangePasswordDialog
-                            userId={u.id}
-                            userName={u.name}
-                            plainPassword={u.plain_password}
-                          />
-                          <DeleteUserButton userId={u.id} userName={u.name} />
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                        <UserDetailSheet user={u} />
+                        {!isSelf && (
+                          <>
+                            <EditUserDialog user={u} />
+                            <ChangePasswordDialog
+                              userId={u.id}
+                              userName={u.name}
+                              plainPassword={u.plain_password}
+                            />
+                            <DeleteUserButton userId={u.id} userName={u.name} />
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { emailService } from '@/lib/services/emailService'
 import { whatsappService } from '@/lib/services/whatsappService'
 
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any
 
@@ -153,10 +153,155 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // ============================================================
+    // OVERDUE RETURN DETECTION
+    // ============================================================
+    const now = new Date()
+    const todayStart = new Date(now)
+    todayStart.setHours(0, 0, 0, 0)
+
+    const { data: overdueBookings } = await sb
+      .from('bookings')
+      .select(`
+        id, reference_no, end_datetime,
+        users!user_id(name, email, phone),
+        booking_items(
+          item_type,
+          rooms:room_id(name),
+          equipment:equipment_id(name)
+        )
+      `)
+      .in('status', ['approved', 'paid'])
+      .lt('end_datetime', now.toISOString())
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const overdueResults: any[] = []
+
+    for (const booking of (overdueBookings ?? [])) {
+      try {
+        // Skip if already notified today
+        const { data: existing } = await sb
+          .from('booking_reminders')
+          .select('id')
+          .eq('booking_id', booking.id)
+          .eq('reminder_type', 'custom')
+          .gte('created_at', todayStart.toISOString())
+          .limit(1)
+
+        if (existing && existing.length > 0) continue
+
+        const daysLate = Math.floor(
+          (now.getTime() - new Date(booking.end_datetime).getTime()) / 86_400_000
+        )
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const itemNames = (booking.booking_items as any[])
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ?.map((i: any) => (i.item_type === 'room' ? i.rooms?.name : i.equipment?.name))
+          .filter(Boolean)
+          .join(', ') || 'aset'
+
+        const userName: string = booking.users?.name ?? 'Peminjam'
+        const userEmail: string | undefined = booking.users?.email
+        const userPhone: string | undefined = booking.users?.phone
+        const endDateStr = new Date(booking.end_datetime).toLocaleDateString('id-ID', {
+          day: '2-digit', month: 'long', year: 'numeric',
+        })
+
+        // Insert reminder row to deduplicate future runs today
+        const { data: inserted } = await sb
+          .from('booking_reminders')
+          .insert({
+            booking_id: booking.id,
+            reminder_type: 'custom',
+            scheduled_at: now.toISOString(),
+            channel: 'email',
+            message: `overdue:${daysLate}days`,
+            status: 'pending',
+          })
+          .select('id')
+          .single()
+
+        const reminderRowId: string | undefined = inserted?.id
+
+        const subject = `[TELAT KEMBALI] Peminjaman ${booking.reference_no} belum dikembalikan`
+        const overdueHtml = `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+            <div style="background:#dc2626;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0;">
+              <h2 style="margin:0;font-size:18px;">Aset Belum Dikembalikan</h2>
+            </div>
+            <div style="border:1px solid #fca5a5;border-top:none;padding:20px;border-radius:0 0 8px 8px;">
+              <p>Halo <strong>${userName}</strong>,</p>
+              <p>Peminjaman Anda dengan nomor referensi <strong>${booking.reference_no}</strong>
+                 sudah melewati batas pengembalian.</p>
+              <table style="width:100%;border-collapse:collapse;margin:12px 0;">
+                <tr>
+                  <td style="padding:6px;color:#6b7280;width:160px;">Batas Pengembalian</td>
+                  <td style="padding:6px;font-weight:bold;color:#dc2626;">${endDateStr}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px;color:#6b7280;">Hari Terlambat</td>
+                  <td style="padding:6px;font-weight:bold;color:#dc2626;">${daysLate} hari</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px;color:#6b7280;">Aset</td>
+                  <td style="padding:6px;">${itemNames}</td>
+                </tr>
+              </table>
+              <p>Mohon segera mengembalikan aset yang dipinjam. Hubungi admin jika ada kendala.</p>
+              <p style="color:#6b7280;font-size:12px;margin-top:20px;">
+                Pesan otomatis dari sistem Sewa Ruang &amp; Alat.
+              </p>
+            </div>
+          </div>
+        `
+
+        let emailResult: { success: boolean; error?: string } = { success: false, error: 'No email' }
+        const smtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
+        if (userEmail && smtpConfigured) {
+          emailResult = await emailService.sendEmail({ to: userEmail, subject, html: overdueHtml })
+        }
+
+        let waResult: { success: boolean; error?: string } = { success: false, error: 'No phone' }
+        if (userPhone) {
+          waResult = await whatsappService.sendMessage({
+            to: userPhone,
+            message: `*TELAT KEMBALI*\n\nHalo ${userName},\nPeminjaman *${booking.reference_no}* sudah *${daysLate} hari* melewati batas pengembalian.\n\nAset: ${itemNames}\nBatas: ${endDateStr}\n\nMohon segera mengembalikan. Hubungi admin jika ada kendala.\n\n_Sewa Ruang & Alat_`,
+          })
+        }
+
+        const overallSuccess = emailResult.success || waResult.success
+
+        if (reminderRowId) {
+          await sb
+            .from('booking_reminders')
+            .update({
+              status: overallSuccess ? 'sent' : 'failed',
+              sent_at: overallSuccess ? now.toISOString() : null,
+              updated_at: now.toISOString(),
+            })
+            .eq('id', reminderRowId)
+        }
+
+        overdueResults.push({
+          booking_id: booking.id,
+          reference_no: booking.reference_no,
+          days_late: daysLate,
+          email: emailResult.success,
+          whatsapp: waResult.success,
+        })
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('Overdue notification error for booking', booking.id, msg)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       processed: results.length,
       results,
+      overdue_checked: overdueBookings?.length ?? 0,
+      overdue_notified: overdueResults.length,
+      overdue_results: overdueResults,
       timestamp: new Date().toISOString(),
     })
 

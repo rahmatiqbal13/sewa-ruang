@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { formatDateTime, cn } from '@/lib/utils'
 import { Package, DoorOpen, Clock, CheckCircle, CreditCard } from 'lucide-react'
+import { DeleteReturnButton } from './DeleteReturnButton'
 
 export default async function ReturnsPage({
   searchParams,
@@ -295,6 +296,7 @@ export default async function ReturnsPage({
                   <TableHead>Waktu Kembali</TableHead>
                   <TableHead>Kondisi</TableHead>
                   <TableHead>Catatan</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -321,6 +323,12 @@ export default async function ReturnsPage({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
                         {r.notes ?? '—'}
+                      </TableCell>
+                      <TableCell>
+                        <DeleteReturnButton
+                          returnId={r.id}
+                          referenceNo={r.booking?.reference_no ?? '-'}
+                        />
                       </TableCell>
                     </TableRow>
                   )
