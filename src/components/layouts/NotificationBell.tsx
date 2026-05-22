@@ -251,10 +251,9 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className="relative p-2.5 rounded-xl hover:bg-slate-100 transition-all duration-200 group">
-        <Bell className={cn(
-          'h-5 w-5 transition-colors',
-          unreadOverdue > 0 ? 'text-red-500' : 'text-slate-500 group-hover:text-slate-700'
-        )} />
+        <Bell
+          className={`h-5 w-5 transition-colors ${unreadOverdue > 0 ? 'text-red-500' : 'text-slate-500 group-hover:text-slate-700'}`}
+        />
         {unreadCount > 0 && (
           <span className={cn(
             'absolute -top-0.5 -right-0.5 min-w-[20px] h-5 bg-gradient-to-br text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse',
