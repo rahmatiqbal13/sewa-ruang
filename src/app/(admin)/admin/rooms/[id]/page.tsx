@@ -93,25 +93,25 @@ export default async function RoomDetailPage({ params }: Props) {
         <div>
           <Link 
             href="/admin/rooms"
-            className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mb-2"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2"
           >
             <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Ruangan
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{room.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{room.name}</h1>
             <Badge variant={room.is_active ? 'default' : 'secondary'}>
               {room.is_active ? 'Aktif' : 'Nonaktif'}
             </Badge>
           </div>
-          <p className="text-slate-500 font-mono">{room.room_code}</p>
+          <p className="text-muted-foreground font-mono">{room.room_code}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild className="rounded-[10px]">
             <Link href={`/admin/rooms/${slug}/edit`}>
               <Edit className="h-4 w-4 mr-2" /> Edit Ruangan
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild className="rounded-[10px]">
             <Link href={`/admin/inventory/new?roomId=${id}`}>
               <Plus className="h-4 w-4 mr-2" /> Tambah Inventaris
             </Link>
@@ -123,8 +123,8 @@ export default async function RoomDetailPage({ params }: Props) {
         {/* Left Column - Room Info */}
         <div className="lg:col-span-1 space-y-6">
           {/* Photo */}
-          <Card>
-            <div className="aspect-video bg-slate-100 flex items-center justify-center">
+          <Card className="rounded-[14px]">
+            <div className="aspect-video bg-muted flex items-center justify-center">
               {room.photo_url ? (
                 <SafeImage
                   src={room.photo_url}
@@ -132,53 +132,53 @@ export default async function RoomDetailPage({ params }: Props) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Building2 className="h-16 w-16 text-slate-300" />
+                <Building2 className="h-16 w-16 text-border" />
               )}
             </div>
           </Card>
 
           {/* Room Details */}
-          <Card>
+          <Card className="rounded-[14px]">
             <CardHeader>
-              <CardTitle className="text-lg">Informasi Ruangan</CardTitle>
+              <CardTitle className="text-lg text-foreground">Informasi Ruangan</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {building && (
                 <div className="flex items-start gap-3">
-                  <Building2 className="h-5 w-5 text-slate-400 mt-0.5" />
+                  <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="text-sm text-slate-500">Gedung</p>
-                    <p className="font-medium">{building.name}</p>
-                    <p className="text-sm text-slate-400">{building.code}</p>
+                    <p className="text-sm text-muted-foreground">Gedung</p>
+                    <p className="font-medium text-foreground">{building.name}</p>
+                    <p className="text-sm text-muted-foreground/70">{building.code}</p>
                   </div>
                 </div>
               )}
 
               {room.floor_number && (
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-slate-400 mt-0.5" />
+                  <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="text-sm text-slate-500">Lantai</p>
-                    <p className="font-medium">Lantai {room.floor_number}</p>
+                    <p className="text-sm text-muted-foreground">Lantai</p>
+                    <p className="font-medium text-foreground">Lantai {room.floor_number}</p>
                   </div>
                 </div>
               )}
 
               {room.capacity && (
                 <div className="flex items-start gap-3">
-                  <Users className="h-5 w-5 text-slate-400 mt-0.5" />
+                  <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="text-sm text-slate-500">Kapasitas</p>
-                    <p className="font-medium">{room.capacity} orang</p>
+                    <p className="text-sm text-muted-foreground">Kapasitas</p>
+                    <p className="font-medium text-foreground">{room.capacity} orang</p>
                   </div>
                 </div>
               )}
 
               <div className="flex items-start gap-3">
-                <Package className="h-5 w-5 text-slate-400 mt-0.5" />
+                <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-sm text-slate-500">Tipe Ruangan</p>
-                  <p className="font-medium">
+                  <p className="text-sm text-muted-foreground">Tipe Ruangan</p>
+                  <p className="font-medium text-foreground">
                     {ROOM_TYPE_LABELS[room.room_type] || room.room_type}
                   </p>
                 </div>
@@ -187,7 +187,7 @@ export default async function RoomDetailPage({ params }: Props) {
           </Card>
 
           {/* QR Code Card - Future Feature */}
-          <Card className="bg-blue-50 border-blue-200">
+          <Card className="bg-blue-50 border-blue-200 rounded-[14px]">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <QrCode className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -206,18 +206,18 @@ export default async function RoomDetailPage({ params }: Props) {
         {/* Right Column - Inventory & Equipment */}
         <div className="lg:col-span-2 space-y-6">
           {/* Inventory Section */}
-          <Card>
+          <Card className="rounded-[14px]">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                   <ClipboardList className="h-5 w-5" />
                   Inventaris Ruangan
                 </CardTitle>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   {inventory?.length || 0} item inventaris
                 </p>
               </div>
-              <Button size="sm" asChild>
+              <Button size="sm" asChild className="rounded-[10px]">
                 <Link href={`/admin/inventory/new?roomId=${id}`}>
                   <Plus className="h-4 w-4 mr-1" /> Tambah
                 </Link>
@@ -226,24 +226,24 @@ export default async function RoomDetailPage({ params }: Props) {
             </CardHeader>
             <CardContent>
               {inventory && inventory.length > 0 ? (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border border-border rounded-[10px] overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-muted">
                       <tr>
-                        <th className="text-left px-4 py-3 font-medium">Nama Barang</th>
-                        <th className="text-center px-4 py-3 font-medium">Jumlah</th>
-                        <th className="text-left px-4 py-3 font-medium">Kondisi</th>
-                        <th className="text-left px-4 py-3 font-medium">Keterangan</th>
-                        <th className="text-right px-4 py-3 font-medium">Aksi</th>
+                        <th className="text-left px-4 py-3 font-medium text-foreground">Nama Barang</th>
+                        <th className="text-center px-4 py-3 font-medium text-foreground">Jumlah</th>
+                        <th className="text-left px-4 py-3 font-medium text-foreground">Kondisi</th>
+                        <th className="text-left px-4 py-3 font-medium text-foreground">Keterangan</th>
+                        <th className="text-right px-4 py-3 font-medium text-foreground">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-border/60">
                       {inventory.map((item: any) => (
-                        <tr key={item.id} className="hover:bg-slate-50">
+                        <tr key={item.id} className="hover:bg-muted">
                           <td className="px-4 py-3">
-                            <p className="font-medium">{item.name}</p>
+                            <p className="font-medium text-foreground">{item.name}</p>
                             {item.inventory_code && (
-                              <p className="text-xs text-slate-400 font-mono">
+                              <p className="text-xs text-muted-foreground/70 font-mono">
                                 {item.inventory_code}
                               </p>
                             )}
@@ -252,11 +252,11 @@ export default async function RoomDetailPage({ params }: Props) {
                             <Badge variant="outline">{item.quantity}</Badge>
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded text-xs ${CONDITION_COLORS[item.condition] || 'bg-gray-100'}`}>
+                            <span className={`px-2 py-1 rounded-[10px] text-xs ${CONDITION_COLORS[item.condition] || 'bg-muted'}`}>
                               {CONDITION_LABELS[item.condition] || item.condition}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-slate-600">
+                          <td className="px-4 py-3 text-muted-foreground">
                             {item.notes || '-'}
                           </td>
                           <td className="px-4 py-3 text-right">
@@ -272,10 +272,10 @@ export default async function RoomDetailPage({ params }: Props) {
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                  <Package className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500">Belum ada inventaris</p>
-                  <Button variant="outline" size="sm" className="mt-3" asChild>
+                <div className="text-center py-12 border-2 border-dashed border-border rounded-[10px]">
+                  <Package className="h-12 w-12 text-border mx-auto mb-3" />
+                  <p className="text-muted-foreground">Belum ada inventaris</p>
+                  <Button variant="outline" size="sm" className="mt-3 rounded-[10px]" asChild>
                     <Link href={`/admin/inventory/new?roomId=${id}`}>
                       <Plus className="h-4 w-4 mr-1" /> Tambah Inventaris
                     </Link>
@@ -287,10 +287,10 @@ export default async function RoomDetailPage({ params }: Props) {
 
           {/* Equipment Section (if any) */}
           {equipment && equipment.length > 0 && (
-            <Card>
+            <Card className="rounded-[14px]">
               <CardHeader>
-                <CardTitle className="text-lg">Alat Sewa di Ruangan Ini</CardTitle>
-                <p className="text-sm text-slate-500">
+                <CardTitle className="text-lg text-foreground">Alat Sewa di Ruangan Ini</CardTitle>
+                <p className="text-sm text-muted-foreground">
                   {equipment.length} alat yang tersimpan di ruangan ini
                 </p>
               </CardHeader>
@@ -299,11 +299,11 @@ export default async function RoomDetailPage({ params }: Props) {
                   {equipment.map((eq: any) => (
                     <div 
                       key={eq.id} 
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
+                      className="flex items-center justify-between p-3 border border-border rounded-[10px] hover:bg-muted"
                     >
                       <div>
-                        <p className="font-medium">{eq.name}</p>
-                        <p className="text-xs text-slate-400 font-mono">
+                        <p className="font-medium text-foreground">{eq.name}</p>
+                        <p className="text-xs text-muted-foreground/70 font-mono">
                           {eq.equipment_code}
                         </p>
                       </div>

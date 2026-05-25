@@ -262,21 +262,21 @@ export function EquipmentForm({
       {/* Back Button */}
       <Link 
         href="/admin/equipment"
-        className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Kembali ke daftar alat
       </Link>
 
       <div className="flex items-center gap-4 mb-8">
-        <div className="h-14 w-14 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/25">
+        <div className="h-14 w-14 bg-teal-600 rounded-[14px] flex items-center justify-center shadow-soft">
           <Package className="h-7 w-7 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-foreground">
             {equipment ? 'Edit Alat' : 'Tambah Alat Baru'}
           </h1>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             {equipment ? 'Perbarui informasi alat' : 'Isi detail alat yang dapat disewakan'}
           </p>
         </div>
@@ -297,9 +297,9 @@ export function EquipmentForm({
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Informasi Dasar */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border">
           <CardContent className="p-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
               <Tag className="h-5 w-5 text-teal-500" />
               Informasi Dasar
             </h2>
@@ -307,8 +307,8 @@ export function EquipmentForm({
             <div className="space-y-6">
               {/* Photo Upload */}
               <div className="space-y-3">
-                <Label className="text-slate-700 font-medium flex items-center gap-2">
-                  <Camera className="h-4 w-4 text-slate-400" />
+                <Label className="text-foreground/80 font-medium flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-muted-foreground/70" />
                   Foto Alat
                 </Label>
                 <PhotoUpload
@@ -321,13 +321,13 @@ export function EquipmentForm({
               {/* Name & Code */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-slate-700 font-medium">
+                  <Label htmlFor="name" className="text-foreground/80 font-medium">
                     Nama Alat <span className="text-red-500">*</span>
                   </Label>
                   <Input 
                     id="name"
                     placeholder="Contoh: Grip Strength Dynamometer" 
-                    className="h-12 rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
                     {...register('name')} 
                   />
                   {errors.name && (
@@ -336,44 +336,44 @@ export function EquipmentForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="equipment_code" className="text-slate-700 font-medium">
+                  <Label htmlFor="equipment_code" className="text-foreground/80 font-medium">
                     Kode Alat
                   </Label>
                   <Input 
                     id="equipment_code"
                     {...register('equipment_code')}
                     readOnly
-                    className="h-12 rounded-xl border-slate-200 bg-gray-50 font-mono focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-12 rounded-[14px] border-border bg-muted font-mono focus:border-teal-500 focus:ring-teal-500/20"
                   />
-                  <p className="text-xs text-slate-500">Kode dibuat otomatis oleh sistem</p>
+                  <p className="text-xs text-muted-foreground">Kode dibuat otomatis oleh sistem</p>
                 </div>
               </div>
 
               {/* Merk & Category */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="merk" className="text-slate-700 font-medium">
+                  <Label htmlFor="merk" className="text-foreground/80 font-medium">
                     Merk/Brand
                   </Label>
                   <Input 
                     id="merk"
                     placeholder="Contoh: Takei" 
-                    className="h-12 rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
                     {...register('merk')} 
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category" className="text-slate-700 font-medium">
+                  <Label htmlFor="category" className="text-foreground/80 font-medium">
                     Kategori <span className="text-red-500">*</span>
                   </Label>
                   <Select 
                     value={watch('category') || ''} 
                     onValueChange={(v) => v && setValue('category', v)}
                   >
-                    <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500/20">
+                    <SelectTrigger className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20">
                       {selectedCategory ? (
-                        <span className="text-slate-900">{selectedCategory.label}</span>
+                        <span className="text-foreground">{selectedCategory.label}</span>
                       ) : (
                         <SelectValue placeholder="Pilih kategori..." />
                       )}
@@ -394,14 +394,14 @@ export function EquipmentForm({
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-slate-700 font-medium">
+                <Label htmlFor="description" className="text-foreground/80 font-medium">
                   Deskripsi
                 </Label>
                 <Textarea 
                   id="description"
                   placeholder="Deskripsi lengkap alat..." 
                   rows={4}
-                  className="rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 resize-none"
+                  className="rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20 resize-none"
                   {...register('description')} 
                 />
               </div>
@@ -410,25 +410,25 @@ export function EquipmentForm({
         </Card>
 
         {/* Status & Kondisi */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border">
           <CardContent className="p-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               Status & Kondisi
             </h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">
+                <Label className="text-foreground/80 font-medium">
                   Kondisi Fisik <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={watch('current_condition') || 'good'}
                   onValueChange={(v) => v && setValue('current_condition', v as FormData['current_condition'])}
                 >
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                  <SelectTrigger className="h-12 rounded-[14px] border-border">
                     {watch('current_condition') ? (
-                      <span className="text-slate-900">{CONDITION_LABELS[watch('current_condition')]}</span>
+                      <span className="text-foreground">{CONDITION_LABELS[watch('current_condition')]}</span>
                     ) : (
                       <SelectValue placeholder="Pilih kondisi..." />
                     )}
@@ -443,16 +443,16 @@ export function EquipmentForm({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">
+                <Label className="text-foreground/80 font-medium">
                   Ketersediaan <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={watch('ketersediaan') || 'tersedia'}
                   onValueChange={(v) => v && setValue('ketersediaan', v as FormData['ketersediaan'])}
                 >
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                  <SelectTrigger className="h-12 rounded-[14px] border-border">
                     {watch('ketersediaan') ? (
-                      <span className="text-slate-900">{KETERSEDIAAN_LABELS[watch('ketersediaan')]}</span>
+                      <span className="text-foreground">{KETERSEDIAAN_LABELS[watch('ketersediaan')]}</span>
                     ) : (
                       <SelectValue placeholder="Pilih ketersediaan..." />
                     )}
@@ -467,16 +467,16 @@ export function EquipmentForm({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">
+                <Label className="text-foreground/80 font-medium">
                   Status Tindakan <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={watch('status_tindakan') || 'normal'}
                   onValueChange={(v) => v && setValue('status_tindakan', v as FormData['status_tindakan'])}
                 >
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                  <SelectTrigger className="h-12 rounded-[14px] border-border">
                     {watch('status_tindakan') ? (
-                      <span className="text-slate-900">{STATUS_TINDAKAN_LABELS[watch('status_tindakan')]}</span>
+                      <span className="text-foreground">{STATUS_TINDAKAN_LABELS[watch('status_tindakan')]}</span>
                     ) : (
                       <SelectValue placeholder="Pilih status..." />
                     )}
@@ -492,13 +492,13 @@ export function EquipmentForm({
             </div>
 
             <div className="space-y-2 mt-6">
-              <Label htmlFor="sumber" className="text-slate-700 font-medium">
+              <Label htmlFor="sumber" className="text-foreground/80 font-medium">
                 Sumber Perolehan
               </Label>
               <Input 
                 id="sumber"
                 placeholder="Contoh: Hibah Dikti 2023 / Pembelian APBN" 
-                className="h-12 rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500/20"
+                className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
                 {...register('sumber')} 
               />
             </div>
@@ -506,18 +506,18 @@ export function EquipmentForm({
         </Card>
 
         {/* Lokasi */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border">
           <CardContent className="p-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-red-500" />
               Lokasi
             </h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-slate-400" />
-                  Gedung <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                <Label className="text-foreground/80 font-medium flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground/70" />
+                  Gedung <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
                 </Label>
                 <Select
                   value={watch('building_id') || ''}
@@ -527,9 +527,9 @@ export function EquipmentForm({
                     setValue('storage_room_id', '')
                   }}
                 >
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                  <SelectTrigger className="h-12 rounded-[14px] border-border">
                     {selectedBuilding ? (
-                      <span className="text-slate-900">{selectedBuilding.name}</span>
+                      <span className="text-foreground">{selectedBuilding.name}</span>
                     ) : (
                       <SelectValue placeholder="Pilih gedung..." />
                     )}
@@ -546,8 +546,8 @@ export function EquipmentForm({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">
-                  Lantai <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                <Label className="text-foreground/80 font-medium">
+                  Lantai <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
                 </Label>
                 <Select
                   value={selectedFloor ? selectedFloor.toString() : ''}
@@ -558,11 +558,11 @@ export function EquipmentForm({
                   disabled={!selectedBuilding}
                 >
                   <SelectTrigger className={cn(
-                    "h-12 rounded-xl border-slate-200",
-                    !selectedBuilding && "bg-slate-50 text-slate-400"
+                    "h-12 rounded-[14px] border-border",
+                    !selectedBuilding && "bg-muted text-muted-foreground/70"
                   )}>
                     {selectedFloor ? (
-                      <span className="text-slate-900">Lantai {selectedFloor}</span>
+                      <span className="text-foreground">Lantai {selectedFloor}</span>
                     ) : (
                       <SelectValue placeholder={selectedBuilding ? "Pilih lantai..." : "Pilih gedung dulu"} />
                     )}
@@ -579,19 +579,19 @@ export function EquipmentForm({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">
-                  Ruangan <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                <Label className="text-foreground/80 font-medium">
+                  Ruangan <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
                 </Label>
                 <Select
                   value={watch('storage_room_id') || ''}
                   onValueChange={(v) => setValue('storage_room_id', v || '')}
                 >
                   <SelectTrigger className={cn(
-                    "h-12 rounded-xl border-slate-200",
-                    filteredRooms.length === 0 && !selectedStorageRoomId && "text-slate-400"
+                    "h-12 rounded-[14px] border-border",
+                    filteredRooms.length === 0 && !selectedStorageRoomId && "text-muted-foreground/70"
                   )}>
                     {selectedStorageRoom ? (
-                      <span className="text-slate-900">{selectedStorageRoom.name}</span>
+                      <span className="text-foreground">{selectedStorageRoom.name}</span>
                     ) : (
                       <SelectValue placeholder="Pilih ruangan..." />
                     )}
@@ -609,13 +609,13 @@ export function EquipmentForm({
             </div>
 
             <div className="space-y-2 mt-6">
-              <Label htmlFor="location_manual" className="text-slate-700 font-medium">
-                Keterangan Lokasi Tambahan <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+              <Label htmlFor="location_manual" className="text-foreground/80 font-medium">
+                Keterangan Lokasi Tambahan <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
               </Label>
               <Input 
                 id="location_manual"
                 placeholder="Contoh: Rak B, Lemari Penyimpanan A, dll" 
-                className="h-12 rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500/20"
+                className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
                 {...register('location_manual')} 
               />
             </div>
@@ -623,8 +623,7 @@ export function EquipmentForm({
         </Card>
 
         {/* Tarif */}
-        {/* Tarif */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Tarif Sewa per Kategori</CardTitle>
             <CardDescription>Kosongkan kategori yang tidak tersedia</CardDescription>
@@ -661,7 +660,7 @@ export function EquipmentForm({
             type="button" 
             variant="outline" 
             onClick={() => router.back()}
-            className="h-12 px-8 border-slate-200 hover:bg-slate-50"
+            className="h-12 px-8 border-border hover:bg-muted"
           >
             Batal
           </Button>

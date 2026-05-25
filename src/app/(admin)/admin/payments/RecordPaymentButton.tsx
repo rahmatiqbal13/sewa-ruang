@@ -79,19 +79,19 @@ export function RecordPaymentButton({ bookingId, totalAmount, paidAmount = 0 }: 
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button className="w-full" />}>
+      <DialogTrigger render={<Button className="w-full rounded-[10px]" />}>
         <CreditCard className="mr-2 h-4 w-4" /> Catat Pembayaran Manual
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="rounded-[14px]">
         <DialogHeader>
-          <DialogTitle>Catat Pembayaran Manual</DialogTitle>
+          <DialogTitle className="text-foreground">Catat Pembayaran Manual</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label>Metode Pembayaran</Label>
+            <Label className="text-foreground">Metode Pembayaran</Label>
             <Select onValueChange={(v) => setValue('method', v as 'manual_cash' | 'manual_transfer')}>
-              <SelectTrigger><SelectValue placeholder="Pilih metode..." /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="rounded-[10px] border-border"><SelectValue placeholder="Pilih metode..." /></SelectTrigger>
+              <SelectContent className="rounded-[10px]">
                 <SelectItem value="manual_cash">Tunai</SelectItem>
                 <SelectItem value="manual_transfer">Transfer Bank</SelectItem>
               </SelectContent>
@@ -99,20 +99,20 @@ export function RecordPaymentButton({ bookingId, totalAmount, paidAmount = 0 }: 
             {errors.method && <p className="text-sm text-destructive">{errors.method.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label>Nominal (Rp)</Label>
-            <Input type="number" min={0} {...register('amount')} />
+            <Label className="text-foreground">Nominal (Rp)</Label>
+            <Input type="number" min={0} {...register('amount')} className="rounded-[10px] border-border" />
             <p className="text-xs text-muted-foreground">Tagihan: {formatRupiah(totalAmount)}</p>
             {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label>Tanggal & Jam Pembayaran</Label>
-            <Input type="datetime-local" {...register('paid_at')} />
+            <Label className="text-foreground">Tanggal & Jam Pembayaran</Label>
+            <Input type="datetime-local" {...register('paid_at')} className="rounded-[10px] border-border" />
           </div>
           <div className="space-y-2">
-            <Label>No. Referensi Transfer (opsional)</Label>
-            <Input placeholder="Misal: TRF-12345" {...register('gateway_ref')} />
+            <Label className="text-foreground">No. Referensi Transfer (opsional)</Label>
+            <Input placeholder="Misal: TRF-12345" {...register('gateway_ref')} className="rounded-[10px] border-border" />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full rounded-[10px]" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Pembayaran
           </Button>

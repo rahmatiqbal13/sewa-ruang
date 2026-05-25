@@ -139,7 +139,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
   }
 
   return (
-    <Card className="border-green-200">
+    <Card className="border-green-200 rounded-[14px]">
       <CardHeader>
         <CardTitle className="text-sm text-green-800 flex items-center gap-2">
           <Check className="h-4 w-4" />
@@ -148,18 +148,18 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Booking Summary */}
-        <div className="p-3 bg-slate-50 rounded-lg text-sm space-y-1">
+        <div className="p-3 bg-muted rounded-[10px] text-sm space-y-1">
           <p>
-            <span className="text-slate-500">No. Ref:</span>{' '}
-            <span className="font-mono font-medium">{booking.reference_no}</span>
+            <span className="text-muted-foreground">No. Ref:</span>{' '}
+            <span className="font-mono font-medium text-foreground">{booking.reference_no}</span>
           </p>
           <p>
-            <span className="text-slate-500">Jadwal Selesai:</span>{' '}
-            <span className="font-medium">{formatDateTime(booking.end_datetime)}</span>
+            <span className="text-muted-foreground">Jadwal Selesai:</span>{' '}
+            <span className="font-medium text-foreground">{formatDateTime(booking.end_datetime)}</span>
           </p>
           {booking.status === 'paid' && (
             <p>
-              <span className="text-slate-500">Total Dibayar:</span>{' '}
+              <span className="text-muted-foreground">Total Dibayar:</span>{' '}
               <span className="font-medium text-green-600">{formatRupiah(totalPaid)}</span>
             </p>
           )}
@@ -167,7 +167,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
 
         {/* Actual Return Date */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">
+          <Label className="text-sm font-medium text-foreground">
             <Clock className="h-4 w-4 inline mr-1" />
             Waktu Pengembalian Aktual
           </Label>
@@ -176,6 +176,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
             value={actualEndDate}
             onChange={(e) => setActualEndDate(e.target.value)}
             max={booking.end_datetime.slice(0, 16)}
+            className="rounded-[10px] border-border"
           />
           {isEarlyReturn && (
             <p className="text-xs text-amber-600">
@@ -186,12 +187,12 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
 
         {/* Condition */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Kondisi Aset</Label>
+          <Label className="text-sm font-medium text-foreground">Kondisi Alat</Label>
           <Select value={condition} onValueChange={(v) => setCondition(v || 'good')}>
-            <SelectTrigger>
+            <SelectTrigger className="rounded-[10px] border-border">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-[10px]">
               <SelectItem value="good">
                 <span className="text-green-600">● Baik</span>
               </SelectItem>
@@ -210,7 +211,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
 
         {/* Refund Info */}
         {isEarlyReturn && refundAmount > 0 && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="p-3 bg-green-50 border border-green-200 rounded-[10px]">
             <p className="text-sm font-medium text-green-800">
               Refund Dihitung: {formatRupiah(refundAmount)}
             </p>
@@ -222,7 +223,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
 
         {/* Notes */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">
+          <Label className="text-sm font-medium text-foreground">
             Catatan {condition !== 'good' && <span className="text-red-500">*</span>}
           </Label>
           <Textarea
@@ -233,12 +234,13 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
+            className="rounded-[10px] border-border"
           />
         </div>
 
         {/* Photo */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Foto Kondisi</Label>
+          <Label className="text-sm font-medium text-foreground">Foto Kondisi</Label>
           <PhotoUpload
             value={photoUrl}
             onChange={(url) => setPhotoUrl(url || '')}
@@ -250,7 +252,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
         <Button 
           onClick={handleSubmit} 
           disabled={loading || (condition !== 'good' && notes.trim().length < 10)}
-          className="w-full bg-green-600 hover:bg-green-700"
+          className="w-full bg-green-600 hover:bg-green-700 rounded-[10px]"
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           <Check className="mr-2 h-4 w-4" />

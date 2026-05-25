@@ -42,7 +42,7 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
     !latest || item.last_updated_at > latest ? item.last_updated_at : latest, '')
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-background">
       <header className="bg-blue-950 text-white">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-2">
           <Building2 className="h-5 w-5" />
@@ -52,18 +52,18 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Room info card */}
-        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        <div className="bg-card rounded-[14px] border border-border shadow-soft overflow-hidden">
           {room.photo_url ? (
-            <div className="relative h-48 w-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+            <div className="relative h-48 w-full bg-muted flex items-center justify-center p-4">
               <SafeImage 
                 src={room.photo_url} 
                 alt={room.name} 
                 className="object-contain w-full h-full"
-                fallbackClassName="w-full h-full rounded-lg"
+                fallbackClassName="w-full h-full rounded-[10px]"
               />
             </div>
           ) : (
-            <div className="h-32 bg-gradient-to-br from-blue-950 to-indigo-900 flex items-center justify-center">
+            <div className="h-32 bg-muted flex items-center justify-center">
               <Building2 className="h-12 w-12 text-white/30" />
             </div>
           )}
@@ -71,13 +71,13 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-xl font-bold">{room.name}</h1>
               {room.room_code && (
-                <span className="text-xs font-mono bg-zinc-100 border rounded px-2 py-0.5">{room.room_code}</span>
+                <span className="text-xs font-mono bg-muted border border-border rounded-[10px] px-2 py-0.5">{room.room_code}</span>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
               {(room.buildings as {name:string}|null)?.name ?? 'Tanpa gedung'}
             </p>
-            {room.description && <p className="text-sm text-zinc-600 mt-2">{room.description}</p>}
+            {room.description && <p className="text-sm text-muted-foreground mt-2">{room.description}</p>}
             {lastUpdated && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-3">
                 <Clock className="h-3 w-3" />
@@ -94,7 +94,7 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
           </h2>
 
           {items?.length === 0 && (
-            <div className="bg-white rounded-2xl border shadow-sm p-10 text-center">
+            <div className="bg-card rounded-[14px] border border-border shadow-soft p-10 text-center">
               <Package2 className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">Belum ada data inventaris ruangan ini</p>
             </div>
@@ -102,9 +102,9 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {items?.map((item) => (
-              <div key={item.id} className="bg-white rounded-xl border shadow-sm overflow-hidden flex">
+              <div key={item.id} className="bg-card rounded-[14px] border border-border shadow-soft overflow-hidden flex">
                 {/* Photo column */}
-                <div className="w-24 shrink-0 bg-zinc-100 flex items-center justify-center p-1">
+                <div className="w-24 shrink-0 bg-muted flex items-center justify-center p-1">
                   {item.photo_url ? (
                     <div className="relative w-full h-full min-h-[80px] flex items-center justify-center">
                       <SafeImage 
@@ -115,7 +115,7 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
                       />
                     </div>
                   ) : (
-                    <ImageOff className="h-6 w-6 text-zinc-300" />
+                    <ImageOff className="h-6 w-6 text-muted-foreground/30" />
                   )}
                 </div>
                 {/* Content column */}

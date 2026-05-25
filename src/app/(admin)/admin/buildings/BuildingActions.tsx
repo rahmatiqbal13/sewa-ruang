@@ -34,8 +34,8 @@ export function BuildingActions({ id, name, isActive, deleteButton }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={cn(
-        "inline-flex h-9 w-9 items-center justify-center rounded-xl",
-        "text-slate-400 hover:bg-slate-100 hover:text-slate-600",
+        "inline-flex h-9 w-9 items-center justify-center rounded-[14px]",
+        "text-muted-foreground/70 hover:bg-muted hover:text-muted-foreground",
         "transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
       )}>
         <MoreHorizontal className="h-5 w-5" />
@@ -45,7 +45,7 @@ export function BuildingActions({ id, name, isActive, deleteButton }: Props) {
           onClick={() => router.push(`/admin/buildings/${createSlug(name)}/edit`)}
           className="flex items-center gap-2 cursor-pointer py-2.5"
         >
-          <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-[10px] bg-indigo-50 flex items-center justify-center">
             <Pencil className="h-4 w-4 text-indigo-600" />
           </div>
           <span className="font-medium">Edit Gedung</span>
@@ -61,7 +61,7 @@ export function BuildingActions({ id, name, isActive, deleteButton }: Props) {
           )}
         >
           <div className={cn(
-            "h-8 w-8 rounded-lg flex items-center justify-center",
+            "h-8 w-8 rounded-[10px] flex items-center justify-center",
             isActive ? "bg-red-50" : "bg-emerald-50"
           )}>
             {isActive ? (

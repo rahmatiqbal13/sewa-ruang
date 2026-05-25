@@ -85,7 +85,7 @@ export function InventoryItemActions({ item }: InventoryItemActionsProps) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent transition-colors">
+        <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground hover:bg-accent transition-colors">
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

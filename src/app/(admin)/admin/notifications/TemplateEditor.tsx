@@ -1027,10 +1027,10 @@ export function TemplateEditor({ templates }: { templates: Template[] }) {
               key={e.key}
               onClick={() => setSelectedEvent(e.key)}
               className={cn(
-                'w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1',
+                'w-full text-left px-3 py-2.5 rounded-[10px] text-sm transition-colors mb-1',
                 selectedEvent === e.key
                   ? 'bg-blue-950 text-white font-medium'
-                  : 'text-zinc-600 hover:bg-zinc-100'
+                  : 'text-muted-foreground hover:bg-muted'
               )}
             >
               {e.label}
@@ -1058,7 +1058,7 @@ export function TemplateEditor({ templates }: { templates: Template[] }) {
                   'flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
                   activeCategory === cat.key
                     ? 'border-blue-950 text-blue-950'
-                    : 'border-transparent text-muted-foreground hover:text-zinc-700'
+                    : 'border-transparent text-muted-foreground hover:text-foreground/80'
                 )}
                 title={cat.desc}
               >
@@ -1081,7 +1081,7 @@ export function TemplateEditor({ templates }: { templates: Template[] }) {
                   'flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
                   activeChannel === ch.key
                     ? 'border-blue-950 text-blue-950'
-                    : 'border-transparent text-muted-foreground hover:text-zinc-700'
+                    : 'border-transparent text-muted-foreground hover:text-foreground/80'
                 )}
               >
                 <Icon className={cn('h-4 w-4', activeChannel === ch.key ? ch.color : '')} />
@@ -1092,7 +1092,7 @@ export function TemplateEditor({ templates }: { templates: Template[] }) {
         </div>
 
         {/* Category info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="bg-blue-50 border border-blue-200 rounded-[10px] p-3">
           <div className="flex items-center gap-2">
             <categoryMeta.icon className="h-4 w-4 text-blue-600" />
             <span className="font-medium text-sm text-blue-900">{categoryMeta.label}</span>
@@ -1167,7 +1167,7 @@ export function TemplateEditor({ templates }: { templates: Template[] }) {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 mt-1">
             {VARIABLES.map(v => (
-              <p key={v.key} className="text-xs text-muted-foreground"><span className="font-mono text-zinc-600">{v.key}</span> = {v.desc}</p>
+              <p key={v.key} className="text-xs text-muted-foreground"><span className="font-mono text-muted-foreground">{v.key}</span> = {v.desc}</p>
             ))}
           </div>
         </div>

@@ -8,6 +8,7 @@ import { Plus, Package, Calendar, Building2, ArrowLeft } from 'lucide-react'
 import { formatDateTime, formatRupiah } from '@/lib/utils'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { CancelBookingButton } from './CancelBookingButton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface BookingWithItems {
   id: string
@@ -134,16 +135,8 @@ export default async function MyBookingsPage() {
               <TableBody>
                 {bookings?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12">
-                      <div className="flex flex-col items-center">
-                        <Package className="h-12 w-12 text-slate-200 mb-3" />
-                        <p className="text-muted-foreground mb-2">
-                          Belum ada pengajuan peminjaman
-                        </p>
-                        <Link href="/booking/new" className="text-primary hover:underline text-sm">
-                          Ajukan peminjaman sekarang
-                        </Link>
-                      </div>
+                    <TableCell colSpan={7} className="text-center py-0">
+                      <EmptyState variant="bookings" actionHref="/booking/new" minHeight={false} className="py-12" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -204,18 +197,10 @@ export default async function MyBookingsPage() {
           {/* Mobile Cards */}
           <div className="md:hidden divide-y">
             {bookings?.length === 0 && (
-              <div className="text-center py-12 px-4">
-                <Package className="h-12 w-12 text-slate-200 mx-auto mb-3" />
-                <p className="text-muted-foreground mb-2">
-                  Belum ada pengajuan peminjaman
-                </p>
-                <Link href="/booking/new" className="text-primary hover:underline text-sm">
-                  Ajukan peminjaman sekarang
-                </Link>
-              </div>
+              <EmptyState variant="bookings" actionHref="/booking/new" minHeight={false} className="py-12 px-4" />
             )}
             {bookings?.map((booking) => (
-              <div key={booking.id} className="p-4 hover:bg-zinc-50 transition-colors">
+              <div key={booking.id} className="p-4 hover:bg-muted transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <p className="font-mono text-xs text-muted-foreground mb-1">

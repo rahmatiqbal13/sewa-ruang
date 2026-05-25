@@ -187,7 +187,7 @@ export default function PaymentPage() {
       rejected: { label: 'Ditolak', color: 'bg-red-100 text-red-800' },
     }
     
-    const variant = variants[status] || { label: status, color: 'bg-gray-100 text-gray-800' }
+    const variant = variants[status] || { label: status, color: 'bg-muted text-foreground' }
     return <Badge className={variant.color}>{variant.label}</Badge>
   }
 
@@ -204,19 +204,19 @@ export default function PaymentPage() {
       <CardContent className="p-6">
         <div className="space-y-6">
           {/* Bank Header */}
-          <div className="flex items-center gap-3 pb-4 border-b">
+          <div className="flex items-center gap-3 pb-4 border-b border-border">
             <Landmark className="h-8 w-8 text-blue-600" />
             <div>
               <h3 className="font-bold text-xl">{method.bankName}</h3>
-              <p className="text-gray-600">{method.accountName}</p>
+              <p className="text-muted-foreground">{method.accountName}</p>
             </div>
           </div>
 
           {/* VA Number - PROMINENT */}
-          <div className="bg-blue-50 p-6 rounded-lg text-center">
-            <p className="text-sm text-blue-700 mb-2">Nomor Virtual Account</p>
+          <div className="bg-muted p-6 rounded-[10px] text-center">
+            <p className="text-sm text-muted-foreground mb-2">Nomor Virtual Account</p>
             <div className="flex items-center justify-center gap-3">
-              <p className="text-3xl font-mono font-bold text-blue-900 tracking-wider">
+              <p className="text-3xl font-mono font-bold text-foreground tracking-wider">
                 {formatVA(method.virtualAccountNumber)}
               </p>
               <Button
@@ -228,23 +228,23 @@ export default function PaymentPage() {
                 {copied === 'VA' ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
               </Button>
             </div>
-            <p className="text-xs text-blue-600 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               Klik tombol copy untuk menyalin nomor VA
             </p>
           </div>
 
           {/* Total Amount */}
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <p className="text-sm text-green-700 mb-1">Total Pembayaran</p>
-            <p className="text-3xl font-bold text-green-900">
+          <div className="bg-muted p-4 rounded-[10px] text-center">
+            <p className="text-sm text-muted-foreground mb-1">Total Pembayaran</p>
+            <p className="text-3xl font-bold text-foreground">
               {booking && formatRupiah(booking.total_amount)}
             </p>
           </div>
 
           {/* Instructions */}
-          <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-2">
-            <p className="font-semibold text-gray-900">Cara Pembayaran:</p>
-            <ol className="list-decimal list-inside space-y-1 text-gray-700">
+          <div className="bg-muted p-4 rounded-[10px] text-sm space-y-2">
+            <p className="font-semibold text-foreground">Cara Pembayaran:</p>
+            <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
               <li>Buka aplikasi BTN Mobile / ATM BTN</li>
               <li>Pilih menu <strong>Pembayaran</strong> {'>'} <strong>Virtual Account</strong></li>
               <li>Masukkan nomor VA di atas</li>
@@ -271,7 +271,7 @@ export default function PaymentPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-        <h1 className="text-xl font-semibold text-gray-900">Booking tidak ditemukan</h1>
+        <h1 className="text-xl font-semibold text-foreground">Booking tidak ditemukan</h1>
         <Link href="/bookings" className="mt-6">
           <Button>Kembali ke Daftar Booking</Button>
         </Link>
@@ -282,10 +282,10 @@ export default function PaymentPage() {
   // Redirect if already paid
   if (booking.status === 'paid') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-green-50">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted">
         <CheckCircle className="h-20 w-20 text-green-500 mb-4" />
-        <h1 className="text-2xl font-bold text-green-900">Pembayaran Lunas!</h1>
-        <p className="text-green-700 mt-2">Terima kasih, pembayaran Anda sudah diverifikasi</p>
+        <h1 className="text-2xl font-bold text-foreground">Pembayaran Lunas!</h1>
+        <p className="text-muted-foreground mt-2">Terima kasih, pembayaran Anda sudah diverifikasi</p>
         <div className="mt-6 flex gap-4">
           <Link href={`/bookings/${bookingId}`}>
             <Button variant="outline">Lihat Detail Booking</Button>
@@ -299,11 +299,11 @@ export default function PaymentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-muted py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <Link href={`/bookings/${bookingId}`} className="inline-flex items-center text-gray-600 hover:text-gray-900">
+          <Link href={`/bookings/${bookingId}`} className="inline-flex items-center text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Kembali ke Booking
           </Link>
@@ -314,24 +314,24 @@ export default function PaymentPage() {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <p className="text-sm text-gray-500">Status Pembayaran</p>
+                <p className="text-sm text-muted-foreground">Status Pembayaran</p>
                 <div className="mt-1">{getStatusBadge(booking.status)}</div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Total Pembayaran</p>
-                <p className="text-2xl font-bold text-gray-900">{formatRupiah(booking.total_amount)}</p>
+                <p className="text-sm text-muted-foreground">Total Pembayaran</p>
+                <p className="text-2xl font-bold text-foreground">{formatRupiah(booking.total_amount)}</p>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">No. Referensi</span>
+                <span className="text-muted-foreground">No. Referensi</span>
                 <span className="font-mono font-medium">{booking.reference_no}</span>
               </div>
               {booking.payment_code && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Kode Pembayaran</span>
+                  <span className="text-muted-foreground">Kode Pembayaran</span>
                   <span className="font-mono font-medium text-blue-600">{booking.payment_code}</span>
                 </div>
               )}
@@ -343,9 +343,9 @@ export default function PaymentPage() {
         {!booking.payment_code && (
           <Card className="mb-6">
             <CardContent className="p-8 text-center">
-              <Landmark className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <Landmark className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Generate Kode Pembayaran</h3>
-              <p className="text-gray-600 mb-4">Klik tombol di bawah untuk mendapatkan instruksi pembayaran</p>
+              <p className="text-muted-foreground mb-4">Klik tombol di bawah untuk mendapatkan instruksi pembayaran</p>
               <Button 
                 onClick={getPaymentCode} 
                 disabled={gettingCode}
@@ -377,7 +377,7 @@ export default function PaymentPage() {
                     <Building2 className="h-5 w-5" />
                     Pembayaran via Virtual Account
                   </CardTitle>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Pilih VA sesuai jenis pemesanan Anda
                   </p>
                 </CardHeader>
@@ -400,12 +400,12 @@ export default function PaymentPage() {
 
                     {roomMethods.length > 0 && (
                       <TabsContent value="room" className="mt-6 space-y-4">
-                        <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                          <h4 className="font-semibold text-blue-900 flex items-center gap-2">
+                        <div className="bg-muted p-4 rounded-[10px] mb-4">
+                          <h4 className="font-semibold text-foreground flex items-center gap-2">
                             <Home className="h-5 w-5" />
                             Virtual Account untuk Sewa Gedung
                           </h4>
-                          <p className="text-sm text-blue-700 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             Gunakan VA berikut untuk pembayaran sewa gedung/ruangan
                           </p>
                         </div>
@@ -415,12 +415,12 @@ export default function PaymentPage() {
 
                     {equipmentMethods.length > 0 && (
                       <TabsContent value="equipment" className="mt-6 space-y-4">
-                        <div className="bg-green-50 p-4 rounded-lg mb-4">
-                          <h4 className="font-semibold text-green-900 flex items-center gap-2">
+                        <div className="bg-muted p-4 rounded-[10px] mb-4">
+                          <h4 className="font-semibold text-foreground flex items-center gap-2">
                             <Box className="h-5 w-5" />
                             Virtual Account untuk Sewa Alat
                           </h4>
-                          <p className="text-sm text-green-700 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             Gunakan VA berikut untuk pembayaran sewa alat/peralatan
                           </p>
                         </div>
@@ -434,8 +434,8 @@ export default function PaymentPage() {
               <Card className="mb-6">
                 <CardContent className="p-8 text-center">
                   <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-                  <p className="text-gray-600">Belum ada metode pembayaran yang tersedia</p>
-                  <p className="text-sm text-gray-500 mt-2">Silakan hubungi admin</p>
+                  <p className="text-muted-foreground">Belum ada metode pembayaran yang tersedia</p>
+                  <p className="text-sm text-muted-foreground/70 mt-2">Silakan hubungi admin</p>
                 </CardContent>
               </Card>
             )}
@@ -443,7 +443,7 @@ export default function PaymentPage() {
             {/* Upload Button */}
             <Card className="mb-6">
               <CardContent className="p-6 text-center">
-                <p className="text-gray-600 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Sudah transfer? Upload bukti pembayaran Anda
                 </p>
                 <Link href={`/booking/${bookingId}/upload-proof`}>
@@ -458,10 +458,10 @@ export default function PaymentPage() {
         )}
 
         {/* Help Section */}
-        <Card className="bg-gray-100 border-0">
+        <Card className="bg-muted border-0">
           <CardContent className="p-4">
-            <h4 className="font-medium text-gray-900 mb-2">Informasi Penting</h4>
-            <ul className="text-sm text-gray-600 space-y-2">
+            <h4 className="font-medium text-foreground mb-2">Informasi Penting</h4>
+            <ul className="text-sm text-muted-foreground space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-blue-600">•</span>
                 <span>Pastikan transfer sesuai nominal yang tertera</span>

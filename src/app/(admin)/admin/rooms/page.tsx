@@ -66,7 +66,7 @@ export default async function RoomsPage({
       console.error('Error fetching rooms:', roomsError?.message ?? JSON.stringify(roomsError))
       return (
         <div className="p-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-red-50 border border-red-200 rounded-[10px] p-4">
             <h2 className="text-red-800 font-semibold">Error Loading Rooms</h2>
             <p className="text-red-600 mt-1">{roomsError.message}</p>
           </div>
@@ -96,7 +96,7 @@ export default async function RoomsPage({
     console.error('Error in RoomsPage:', error)
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-[10px] p-4">
           <h2 className="text-red-800 font-semibold">Terjadi Kesalahan</h2>
           <p className="text-red-600 mt-1">Mohon refresh halaman atau hubungi admin</p>
         </div>

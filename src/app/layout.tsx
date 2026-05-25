@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/layouts/QueryProvider";
 import { Toaster } from "@/components/ui/sonner";
@@ -8,9 +8,18 @@ import { PWAProvider } from "@/components/providers/PWAProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OnlineStatus } from "@/components/pwa/OnlineStatus";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const dmMono = DM_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500"],
 });
 
 // Server-side fetch institution profile for metadata
@@ -52,8 +61,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+    { media: "(prefers-color-scheme: light)", color: "#F9FAFB" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f19" },
   ],
 };
 
@@ -62,7 +71,7 @@ export async function generateMetadata(): Promise<Metadata> {
   
   const title = institution?.name 
     ? `${institution.name} - Sistem Manajemen Peminjaman`
-    : "RentSpace - Sistem Manajemen Peminjaman Ruang & Alat"
+    : "Sewa Ruang & Alat USC - Sistem Manajemen Peminjaman"
     
   const description = institution?.description 
     ? `${institution.description} Platform modern untuk pengelolaan dan peminjaman ruang serta peralatan.`
@@ -71,8 +80,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
-    keywords: ["sewa ruang", "peminjaman alat", "manajemen aset", "booking ruangan"],
-    authors: [{ name: institution?.short_name || institution?.name || "RentSpace" }],
+    keywords: ["sewa ruang", "peminjaman alat", "manajemen aset", "booking ruangan", "USC", "UNESA"],
+    authors: [{ name: institution?.short_name || institution?.name || "USC" }],
     manifest: "/manifest.json",
     icons: {
       icon: [
@@ -89,7 +98,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: institution?.short_name || "Sewa Ruang",
     },
     openGraph: {
-      title: institution?.name || "RentSpace",
+      title: institution?.name || "Sewa Ruang & Alat USC",
       description,
       type: "website",
     },
@@ -97,7 +106,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",
       "application-name": institution?.short_name || "Sewa Ruang",
-      "msapplication-TileColor": "#0f766e",
+      "msapplication-TileColor": "#1B3A8C",
       "msapplication-config": "/icons/browserconfig.xml",
     },
   };
@@ -109,28 +118,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="id" className={`${dmSans.variable} ${dmMono.variable} h-full antialiased`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0f766e" />
+        <meta name="theme-color" content="#1B3A8C" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
-      <body className="min-h-full flex flex-col bg-slate-50">
+      <body className="min-h-full flex flex-col bg-background font-sans">
         <PWAProvider>
           <QueryProvider>
             <OnlineStatus />
             {children}
             <InstallPrompt />
-            <Toaster 
-              richColors 
-              closeButton 
-              position="top-right"
-              toastOptions={{
-                style: {
-                  fontFamily: 'Inter, system-ui, sans-serif',
-                },
-              }}
-            />
+            <div aria-live="polite" aria-atomic="false">
+              <Toaster 
+                richColors 
+                closeButton 
+                position="top-right"
+                toastOptions={{
+                  style: {
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                  },
+                }}
+              />
+            </div>
           </QueryProvider>
         </PWAProvider>
       </body>

@@ -121,7 +121,7 @@ export function ApprovalButtons({ bookingId, borrowerCategory, purpose }: Approv
       </CardHeader>
       <CardContent className="space-y-4">
         {isFree && (
-          <div className="p-3 bg-white/60 border border-green-200 rounded-lg">
+          <div className="p-3 bg-card/60 border border-green-200 rounded-[10px]">
             <p className="text-sm text-green-800">
               <strong>Peminjaman Gratis</strong>
             </p>

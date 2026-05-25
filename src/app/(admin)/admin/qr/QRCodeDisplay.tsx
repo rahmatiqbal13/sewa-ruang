@@ -92,11 +92,11 @@ export function QRCodeDisplay({ url, name, code, type, location, category }: Pro
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden rounded-[14px]">
       {/* Header */}
-      <div className={`${config.color} px-6 py-4 border-b`}>
+      <div className={`${config.color} px-6 py-4 border-b border-border/60`}>
         <div className="flex items-center gap-3">
-          <div className={`${config.badgeColor} text-white p-2 rounded-lg`}>
+          <div className={`${config.badgeColor} text-white p-2 rounded-[10px]`}>
             <Icon className="h-5 w-5" />
           </div>
           <div>
@@ -110,7 +110,7 @@ export function QRCodeDisplay({ url, name, code, type, location, category }: Pro
         {/* Info */}
         <div className="text-center space-y-2">
           {code && (
-            <Badge variant="outline" className="font-mono text-sm px-3 py-1">
+            <Badge variant="outline" className="font-mono text-sm px-3 py-1 rounded-[10px]">
               {code}
             </Badge>
           )}
@@ -120,12 +120,12 @@ export function QRCodeDisplay({ url, name, code, type, location, category }: Pro
         </div>
 
         {/* QR Code */}
-        <div ref={containerRef} className="p-8 bg-white border-2 border-zinc-200 rounded-xl shadow-inner">
+        <div ref={containerRef} className="p-8 bg-card border-2 border-border rounded-[14px] shadow-inner">
           <QRCode value={url} size={280} level="M" style={{ height: '280px', width: '280px' }} />
         </div>
 
         {/* URL */}
-        <div className="text-center text-xs text-muted-foreground max-w-sm break-all bg-slate-50 p-3 rounded-lg">
+        <div className="text-center text-xs text-muted-foreground max-w-sm break-all bg-muted p-3 rounded-[10px]">
           {url}
         </div>
 
@@ -141,7 +141,7 @@ export function QRCodeDisplay({ url, name, code, type, location, category }: Pro
                 className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
                   printFormat === f.id
                     ? 'bg-primary text-primary-foreground border-primary font-semibold'
-                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+                    : 'bg-card hover:bg-muted border-border text-muted-foreground'
                 }`}
               >
                 {f.label}
@@ -152,16 +152,16 @@ export function QRCodeDisplay({ url, name, code, type, location, category }: Pro
 
         {/* Actions */}
         <div className="flex gap-3 flex-wrap justify-center">
-          <Button onClick={downloadSVG} variant="outline" size="sm">
+          <Button onClick={downloadSVG} variant="outline" size="sm" className="rounded-[10px]">
             <Download className="mr-2 h-4 w-4" /> SVG
           </Button>
-          <Button onClick={downloadPNG} variant="outline" size="sm">
+          <Button onClick={downloadPNG} variant="outline" size="sm" className="rounded-[10px]">
             <Download className="mr-2 h-4 w-4" /> PNG
           </Button>
-          <Button onClick={handlePrint} variant="outline" size="sm">
+          <Button onClick={handlePrint} variant="outline" size="sm" className="rounded-[10px]">
             <Printer className="mr-2 h-4 w-4" /> Cetak
           </Button>
-          <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
+          <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')} className="rounded-[10px]">
             <ExternalLink className="mr-2 h-4 w-4" /> Buka
           </Button>
         </div>

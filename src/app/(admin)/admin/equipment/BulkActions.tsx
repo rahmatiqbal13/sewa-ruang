@@ -126,7 +126,7 @@ export function BulkActionsBar({
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white border shadow-lg rounded-xl px-4 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-4">
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-card border shadow-lg rounded-[14px] px-4 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-4">
         <div className="flex items-center gap-2">
           <CheckSquare className="h-5 w-5 text-blue-600" />
           <span className="font-medium">
@@ -134,7 +134,7 @@ export function BulkActionsBar({
           </span>
         </div>
         
-        <div className="h-6 w-px bg-slate-200" />
+        <div className="h-6 w-px bg-border" />
         
         <div className="flex items-center gap-2">
           {(allActive || mixedStatus) && (
@@ -162,13 +162,13 @@ export function BulkActionsBar({
           )}
         </div>
         
-        <div className="h-6 w-px bg-slate-200" />
+        <div className="h-6 w-px bg-border" />
         
         <Button
           variant="ghost"
           size="sm"
           onClick={onClear}
-          className="text-slate-500"
+          className="text-muted-foreground"
         >
           <X className="h-4 w-4 mr-1" />
           Batal

@@ -74,7 +74,7 @@ export default async function EquipmentScanPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-background">
       <header className="bg-blue-950 text-white">
         <div className="max-w-xl mx-auto px-4 py-4 flex items-center gap-2">
           <Building2 className="h-5 w-5" />
@@ -167,7 +167,7 @@ export default async function EquipmentScanPage({ params }: { params: Promise<{ 
         {equipment.description && (
           <div className="bg-white rounded-2xl border shadow-sm px-5 py-4 flex gap-3">
             <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-            <p className="text-sm text-zinc-600 leading-relaxed">{equipment.description}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{equipment.description}</p>
           </div>
         )}
 

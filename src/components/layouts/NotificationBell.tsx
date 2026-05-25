@@ -250,7 +250,7 @@ export function NotificationBell() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={`relative p-2.5 rounded-xl hover:bg-slate-100 transition-all duration-200 group ${unreadOverdue > 0 ? 'text-red-500' : 'text-slate-500 hover:text-slate-700'}`}>
+      <PopoverTrigger className={`relative p-2.5 rounded-[14px] hover:bg-muted transition-all duration-200 group ${unreadOverdue > 0 ? 'text-red-500' : 'text-muted-foreground/70 hover:text-muted-foreground'}`}>
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
           <span className={cn(
@@ -262,15 +262,15 @@ export function NotificationBell() {
         )}
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="w-[420px] p-0 shadow-2xl shadow-slate-900/10 border-slate-200 rounded-2xl overflow-hidden">
+      <PopoverContent align="end" className="w-[420px] p-0 shadow-2xl shadow-foreground/10 border-border rounded-[14px] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 bg-gradient-to-r from-muted to-card">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-[10px] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
               <Bell className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900">Notifikasi</p>
+              <p className="text-sm font-semibold text-foreground">Notifikasi</p>
               <div className="flex items-center gap-2 flex-wrap">
                 {overdueCount > 0 && (
                   <span className="text-[10px] font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">
@@ -294,7 +294,7 @@ export function NotificationBell() {
             <button
               onClick={fetchActivity}
               disabled={loading}
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              className="p-1.5 rounded-[10px] hover:bg-muted text-muted-foreground/70 hover:text-muted-foreground transition-colors"
               title="Refresh"
             >
               <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
@@ -310,14 +310,14 @@ export function NotificationBell() {
         </div>
 
         {/* List */}
-        <div className="max-h-[420px] overflow-y-auto divide-y divide-slate-50">
+        <div className="max-h-[420px] overflow-y-auto divide-y divide-muted">
           {items.length === 0 && !loading && (
             <div className="py-12 text-center">
-              <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
-                <Bell className="h-8 w-8 text-slate-300" />
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                <Bell className="h-8 w-8 text-muted-foreground/40" />
               </div>
-              <p className="text-sm font-medium text-slate-500">Semua aman</p>
-              <p className="text-xs text-slate-400 mt-1">Tidak ada notifikasi saat ini</p>
+              <p className="text-sm font-medium text-muted-foreground/70">Semua aman</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Tidak ada notifikasi saat ini</p>
             </div>
           )}
 
@@ -329,7 +329,7 @@ export function NotificationBell() {
                 key={item.id}
                 href={item.href}
                 onClick={() => { setOpen(false); router.push(item.href) }}
-                className="flex items-start gap-4 px-5 py-3.5 hover:bg-slate-50 transition-all duration-200 group"
+                className="flex items-start gap-4 px-5 py-3.5 hover:bg-muted transition-all duration-200 group"
               >
                 {/* Left dot indicator */}
                 <div className="mt-1.5 shrink-0">
@@ -338,7 +338,7 @@ export function NotificationBell() {
 
                 {/* Icon */}
                 <div className={cn(
-                  'mt-0.5 rounded-xl p-2.5 shrink-0 transition-colors',
+                  'mt-0.5 rounded-[14px] p-2.5 shrink-0 transition-colors',
                   cfg.iconBg,
                 )}>
                   <Icon className={cn('h-4 w-4', cfg.iconText)} />
@@ -357,9 +357,9 @@ export function NotificationBell() {
                       {cfg.label}
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-slate-900 truncate">{item.title}</p>
-                  <p className="text-xs text-slate-500 truncate mt-0.5">{item.subtitle}</p>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-sm font-semibold text-foreground truncate">{item.title}</p>
+                  <p className="text-xs text-muted-foreground/70 truncate mt-0.5">{item.subtitle}</p>
+                  <p className="text-[11px] text-muted-foreground/70 mt-1">
                     {item.type === 'overdue' || item.type === 'due'
                       ? `Batas: ${formatDateTime(item.time)}`
                       : formatDateTime(item.time)
@@ -367,7 +367,7 @@ export function NotificationBell() {
                   </p>
                 </div>
 
-                <ChevronRight className="h-4 w-4 text-slate-300 mt-2 shrink-0 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground/40 mt-2 shrink-0 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
               </Link>
             )
           })}
@@ -375,8 +375,8 @@ export function NotificationBell() {
 
         {/* Footer summary */}
         {items.length > 0 && (
-          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-            <p className="text-xs text-slate-400">{totalCount} total notifikasi</p>
+          <div className="px-5 py-3 border-t border-border/60 bg-muted flex items-center justify-between">
+            <p className="text-xs text-muted-foreground/70">{totalCount} total notifikasi</p>
             {overdueCount > 0 && (
               <Link
                 href="/admin/returns"

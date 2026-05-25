@@ -43,7 +43,7 @@ export function DeleteUserButton({ userId, userName }: { userId: string; userNam
         <AlertDialogHeader>
           <AlertDialogTitle>Hapus Pengguna</AlertDialogTitle>
           <AlertDialogDescription>
-            Akun <span className="font-semibold text-zinc-700">{userName}</span> akan dihapus permanen dari sistem beserta seluruh datanya. Tindakan ini tidak dapat dibatalkan.
+            Akun <span className="font-semibold text-foreground">{userName}</span> akan dihapus permanen dari sistem beserta seluruh datanya. Tindakan ini tidak dapat dibatalkan.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

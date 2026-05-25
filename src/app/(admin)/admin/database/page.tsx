@@ -69,8 +69,8 @@ export default async function DatabasePage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Database Management</h1>
-        <p className="text-slate-500 mt-1">Kelola dan monitoring database sistem</p>
+        <h1 className="text-3xl font-bold text-foreground">Database Management</h1>
+        <p className="text-muted-foreground mt-1">Kelola dan monitoring database sistem</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -78,12 +78,12 @@ export default async function DatabasePage() {
           <Card key={stat.label}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <div className="h-12 w-12 bg-purple-100 rounded-[14px] flex items-center justify-center">
                   <stat.icon className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                  <p className="text-sm text-slate-500">{stat.label}</p>
+                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
             </CardContent>
@@ -107,8 +107,8 @@ export default async function DatabasePage() {
             <li>Monitoring performance</li>
             <li>Mengelola indexes</li>
           </ul>
-          <div className="p-4 bg-white rounded-lg border border-amber-200 mt-4">
-            <p className="text-sm text-slate-600">
+          <div className="p-4 bg-card rounded-[10px] border border-amber-200 mt-4">
+            <p className="text-sm text-muted-foreground">
               <strong>Status:</strong> Modul ini sedang dalam pengembangan. 
               Hubungi developer untuk fitur advanced database management.
             </p>

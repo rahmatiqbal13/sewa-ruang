@@ -123,7 +123,7 @@ export function EquipmentList({
     return await importEquipmentFromExcel(formData)
   }
 
-  const getKetersediaanColor = (status: string) => KETERSEDIAAN[status]?.badgeClass ?? 'bg-gray-100 text-gray-700'
+  const getKetersediaanColor = (status: string) => KETERSEDIAAN[status]?.badgeClass ?? 'bg-muted text-muted-foreground'
   const getKetersediaanLabel = (status: string) => KETERSEDIAAN[status]?.label ?? status
 
   const getDisplayRate = (rates: { rate_per_day: number; rate_per_hour: number | null; user_category: string; requires_supervision: boolean }[] | null | undefined) => {
@@ -144,8 +144,7 @@ export function EquipmentList({
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Import Dialog */}
+    <div className="admin-page">
       <ImportDialog
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
@@ -158,89 +157,42 @@ export function EquipmentList({
         entityName="alat"
       />
 
-      {/* Info Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <Package className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div>
-            <h3 className="font-semibold text-blue-800">Apa itu Asset (Alat)?</h3>
-            <p className="text-sm text-blue-700 mt-1">
-              Asset adalah alat dan peralatan yang dapat <strong>disewakan</strong> oleh pengguna.
-              Contoh: Alat tes pengukuran, alat gym, proyektor, dll.
-              Untuk barang inventaris ruangan (meja, kursi, AC), gunakan menu
-              <Link href="/admin/inventory" className="text-blue-800 underline hover:text-blue-900"> Inventaris</Link>.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Duplicate Warning Banner */}
+      {/* Duplicate warning */}
       {hasDuplicates && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-amber-800">Perhatian: Ada Nama Alat yang Sama!</h3>
-              <p className="text-sm text-amber-700 mt-1">
-                Terdapat {duplicateBaseNames.size} nama alat yang memiliki duplikat.
-                Alat dengan nama sama ditandai dengan warna <span className="font-medium">oranje/amber</span>.
-                Pertimbangkan untuk mengganti nama agar lebih spesifik.
-              </p>
-            </div>
-          </div>
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-[14px] p-3.5 text-sm">
+          <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+          <p className="text-amber-800">
+            <span className="font-semibold">{duplicateBaseNames.size} nama alat duplikat</span> — alat terduplikat ditandai warna oranye.
+            <span className="text-amber-600"> Pertimbangkan untuk mengganti nama agar lebih spesifik.</span>
+          </p>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            Alat & Peralatan (Asset)
-            {isSuperAdmin && <ShieldCheck className="h-6 w-6 text-purple-600" />}
+          <h1 className="page-title flex items-center gap-2">
+            Alat &amp; Peralatan
+            {isSuperAdmin && <ShieldCheck className="h-4.5 w-4.5 text-purple-500" />}
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {isSuperAdmin 
-              ? 'Kelola alat yang dapat disewakan — Super Admin mode aktif' 
-              : 'Alat yang dapat disewakan dengan tarif per kategori pengguna'}
+          <p className="page-subtitle">
+            {isSuperAdmin ? 'Super Admin mode — semua operasi tersedia' : 'Alat yang dapat disewakan dengan tarif per kategori'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Export Selected Button */}
+        <div className="flex items-center gap-2 shrink-0">
           {hasSelection && (
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              disabled={isExporting}
-              className="hidden sm:flex border-blue-200 text-blue-700 hover:bg-blue-50"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export ({selectedCount})
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting} className="border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+              <Download className="mr-1.5 h-3.5 w-3.5" /> Export ({selectedCount})
             </Button>
           )}
-          
-          {/* Export All Button */}
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            disabled={isExporting}
-            className="hidden sm:flex"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {isExporting ? 'Mengekspor...' : 'Export Semua'}
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting} className="hidden sm:flex">
+            <Download className="mr-1.5 h-3.5 w-3.5" /> {isExporting ? 'Mengekspor...' : 'Export'}
           </Button>
-          
-          {/* Import Button */}
-          <Button
-            variant="outline"
-            onClick={() => setIsImportDialogOpen(true)}
-            className="hidden sm:flex"
-          >
-            <FileUp className="mr-2 h-4 w-4" />
-            Import
+          <Button variant="outline" size="sm" onClick={() => setIsImportDialogOpen(true)} className="hidden sm:flex">
+            <FileUp className="mr-1.5 h-3.5 w-3.5" /> Import
           </Button>
-          
-          <Link href="/admin/equipment/new" className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
-            <Plus className="mr-2 h-4 w-4" /> Tambah Alat
+          <Link href="/admin/equipment/new" className="inline-flex items-center gap-1.5 h-9 px-3.5 text-sm font-medium rounded-[10px] bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+            <Plus className="h-3.5 w-3.5" /> Tambah Alat
           </Link>
         </div>
       </div>
@@ -263,27 +215,24 @@ export function EquipmentList({
         }
 
         const tabs = [
-          { key: '',               label: 'Semua',          count: totalItems,                           isActive: !isInactiveTab && activeK === '',   activeClass: 'bg-blue-600 text-white border-blue-600',    inactiveClass: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100',   href: buildTabUrl('') },
+          { key: '',               label: 'Semua',          count: totalItems,                           isActive: !isInactiveTab && activeK === '',   activeClass: 'bg-blue-600 text-white border-blue-600',    inactiveClass: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100', href: buildTabUrl('') },
           { key: 'tersedia',       label: 'Tersedia',       count: availabilityCounts['tersedia'],        isActive: !isInactiveTab && activeK === 'tersedia',      activeClass: 'bg-green-600 text-white border-green-600',  inactiveClass: 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100', href: buildTabUrl('tersedia') },
           { key: 'digunakan',      label: 'Digunakan',      count: availabilityCounts['digunakan'],       isActive: !isInactiveTab && activeK === 'digunakan',     activeClass: 'bg-orange-600 text-white border-orange-600',inactiveClass: 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100',href: buildTabUrl('digunakan') },
           { key: 'hilang',         label: 'Hilang',         count: availabilityCounts['hilang'],          isActive: !isInactiveTab && activeK === 'hilang',        activeClass: 'bg-red-600 text-white border-red-600',      inactiveClass: 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100',       href: buildTabUrl('hilang') },
-          { key: 'tidak_tersedia', label: 'Tidak Tersedia', count: availabilityCounts['tidak_tersedia'],  isActive: !isInactiveTab && activeK === 'tidak_tersedia',activeClass: 'bg-gray-600 text-white border-gray-600',    inactiveClass: 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100',   href: buildTabUrl('tidak_tersedia') },
-          { key: 'nonaktif',       label: 'Non Aktif',      count: inactiveCount,                        isActive: isInactiveTab,                                 activeClass: 'bg-slate-700 text-white border-slate-700',  inactiveClass: 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100', href: buildTabUrl('', true) },
+          { key: 'tidak_tersedia', label: 'Tidak Tersedia', count: availabilityCounts['tidak_tersedia'],  isActive: !isInactiveTab && activeK === 'tidak_tersedia',activeClass: 'bg-foreground text-primary-foreground border-foreground',    inactiveClass: 'bg-muted border-border text-foreground/80 hover:bg-muted',   href: buildTabUrl('tidak_tersedia') },
+          { key: 'nonaktif',       label: 'Non Aktif',      count: inactiveCount,                        isActive: isInactiveTab,                                 activeClass: 'bg-foreground text-white border-foreground',  inactiveClass: 'bg-muted border-border text-muted-foreground hover:bg-muted', href: buildTabUrl('', true) },
         ]
 
         return (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {tabs.map((tab) => (
               <Link
                 key={tab.key}
                 href={tab.href}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors',
-                  tab.isActive ? tab.activeClass : tab.inactiveClass
-                )}
+                className={cn('filter-pill', tab.isActive ? 'filter-pill-active' : 'filter-pill-inactive')}
               >
-                <span>{tab.label}</span>
-                <span className={cn('text-xs px-1.5 py-0.5 rounded-full', tab.isActive ? 'bg-white/25' : 'bg-black/10')}>
+                {tab.label}
+                <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold', tab.isActive ? 'bg-card/20' : 'bg-muted text-muted-foreground')}>
                   {tab.count}
                 </span>
               </Link>
@@ -293,35 +242,24 @@ export function EquipmentList({
       })()}
 
       {/* Filters & View Toggle */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex-1">
           <EquipmentFilters categories={uniqueCategories} />
         </div>
-        <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-lg">
-          <button
-            onClick={() => setViewMode('card')}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
-              viewMode === 'card'
-                ? 'bg-white text-zinc-900 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-700'
-            )}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Card</span>
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
-              viewMode === 'table'
-                ? 'bg-white text-zinc-900 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-700'
-            )}
-          >
-            <Table2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Tabel</span>
-          </button>
+        <div className="flex items-center gap-0.5 bg-muted p-1 rounded-[10px] shrink-0">
+          {(['card', 'table'] as const).map(mode => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={cn(
+                'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all',
+                viewMode === mode ? 'bg-card text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {mode === 'card' ? <LayoutGrid className="h-3.5 w-3.5" /> : <Table2 className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">{mode === 'card' ? 'Card' : 'Tabel'}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -334,7 +272,7 @@ export function EquipmentList({
               onCheckedChange={toggleAll}
               disabled={equipment.length === 0}
             />
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-muted-foreground">
               {hasSelection ? `${selectedCount} dipilih` : 'Pilih semua'}
             </span>
           </div>
@@ -347,14 +285,12 @@ export function EquipmentList({
 
       {/* Empty State */}
       {equipment.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-xl">
-          <Package className="h-10 w-10 mx-auto mb-3 opacity-30" />
-          <p>
-            {searchParams.search
-              ? `Tidak ada alat dengan kata kunci "${searchParams.search}"`
-              : 'Belum ada alat.'}
-            <Link href="/admin/equipment/new" className="text-primary hover:underline"> Tambah sekarang</Link>
+        <div className="empty-state">
+          <Package className="h-10 w-10 mb-3 opacity-25" />
+          <p className="text-sm font-medium">
+            {searchParams.search ? `Tidak ada hasil untuk "${searchParams.search}"` : 'Belum ada alat'}
           </p>
+          <Link href="/admin/equipment/new" className="mt-2 text-xs text-primary hover:underline">Tambah sekarang</Link>
         </div>
       )}
 
@@ -368,14 +304,14 @@ export function EquipmentList({
 
           return (
             <div key={item.id} className={cn(
-              "rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow group",
-              isDuplicate ? "bg-amber-50 border-amber-300" : "bg-white",
+              "rounded-[14px] border overflow-hidden hover:shadow-soft transition-shadow group",
+              isDuplicate ? "bg-amber-50 border-amber-300" : "bg-card",
               !item.is_active && "opacity-60 grayscale"
             )}>
               {/* Photo - Clickable to detail */}
               <Link
                 href={`/admin/equipment/${createSlug(item.name)}`}
-                className="relative h-44 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-2 block"
+                className="relative h-44 bg-muted flex items-center justify-center p-2 block"
               >
                 {item.photo_url ? (
                   <div className="relative w-full h-full flex items-center justify-center">
@@ -383,7 +319,7 @@ export function EquipmentList({
                       src={item.photo_url}
                       alt={item.name}
                       className="object-contain w-full h-full max-h-40"
-                      fallbackClassName="w-full h-full rounded-lg"
+                      fallbackClassName="w-full h-full rounded-[10px]"
                     />
                   </div>
                 ) : (
@@ -393,14 +329,14 @@ export function EquipmentList({
                 )}
                 {item.equipment_code && (
                   <div className="absolute top-2 left-2">
-                    <span className="bg-white/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded-lg font-mono text-blue-700 border border-blue-200">
+                    <span className="bg-card/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded-[10px] font-mono text-blue-700 border border-blue-200">
                       {item.equipment_code}
                     </span>
                   </div>
                 )}
                 <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                   {!item.is_active && (
-                    <span className="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <span className="bg-muted-foreground text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                       Nonaktif
                     </span>
                   )}
@@ -421,7 +357,7 @@ export function EquipmentList({
                 {/* Checkbox overlay */}
                 <div className="absolute bottom-2 right-2">
                   <div
-                    className="bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm"
+                    className="bg-card/90 backdrop-blur rounded-[10px] p-1 shadow-soft"
                     onClick={(e) => e.preventDefault()}
                   >
                     <ItemCheckbox
@@ -436,14 +372,14 @@ export function EquipmentList({
               <div className="p-4">
                 <Link href={`/admin/equipment/${createSlug(item.name)}`}>
                   <h3 className={cn(
-                    "font-semibold text-zinc-900 text-sm truncate group-hover:text-blue-600 transition-colors",
+                    "font-semibold text-foreground text-sm truncate group-hover:text-blue-600 transition-colors",
                     !item.is_active && "line-through"
                   )} title={item.name}>
                     {item.name}
                   </h3>
                 </Link>
                 {item.merk && (
-                  <p className="text-xs text-zinc-500 mt-0.5">{item.merk}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.merk}</p>
                 )}
 
                 {/* Availability & Status */}
@@ -466,7 +402,7 @@ export function EquipmentList({
 
                 {/* Location */}
                 {item.current_location && (
-                  <p className="mt-2 text-xs text-zinc-500 flex items-center gap-1">
+                  <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
                     <span className="truncate">{item.current_location}</span>
                   </p>
                 )}
@@ -476,12 +412,12 @@ export function EquipmentList({
                   {lowestRate ? (
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-zinc-400">Mulai dari</p>
+                        <p className="text-xs text-muted-foreground/70">Mulai dari</p>
                         <p className="text-sm font-semibold text-emerald-600">
                           {formatRupiah(lowestRate.rate_per_day)}/hari
                         </p>
                         {lowestRate.rate_per_hour && (
-                          <p className="text-[10px] text-zinc-400">
+                          <p className="text-[10px] text-muted-foreground/70">
                             {formatRupiah(lowestRate.rate_per_hour)}/jam
                           </p>
                         )}
@@ -493,7 +429,7 @@ export function EquipmentList({
                       )}
                     </div>
                   ) : (
-                    <p className="text-xs text-zinc-400 italic">Tarif belum diatur</p>
+                    <p className="text-xs text-muted-foreground/70 italic">Tarif belum diatur</p>
                   )}
                 </div>
 
@@ -503,13 +439,13 @@ export function EquipmentList({
                   <div className="flex gap-1">
                     <Link
                       href={`/admin/equipment/${createSlug(item.name)}`}
-                      className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium"
+                      className="text-xs px-2 py-1 rounded-[10px] bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium"
                     >
                       Detail
                     </Link>
                     <Link
                       href={`/admin/equipment/${createSlug(item.name)}/edit`}
-                      className="text-xs px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 transition-colors"
+                      className="text-xs px-2 py-1 rounded-[10px] bg-muted hover:bg-muted/80 transition-colors"
                     >
                       Edit
                     </Link>
@@ -543,26 +479,22 @@ export function EquipmentList({
         </div>
       ) : (
         /* Table View */
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-card rounded-[14px] border border-border overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-zinc-50 border-b">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600 w-10">
-                    <SelectAllCheckbox
-                      checked={isAllSelected}
-                      onCheckedChange={toggleAll}
-                      disabled={equipment.length === 0}
-                    />
+                  <th className="w-10">
+                    <SelectAllCheckbox checked={isAllSelected} onCheckedChange={toggleAll} disabled={equipment.length === 0} />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kode</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Nama Alat</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kategori</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kondisi</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Lokasi</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Tarif/Hari</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-zinc-600">Aksi</th>
+                  <th>Kode</th>
+                  <th>Nama Alat</th>
+                  <th>Kategori</th>
+                  <th>Kondisi</th>
+                  <th>Status</th>
+                  <th>Lokasi</th>
+                  <th>Tarif/Hari</th>
+                  <th className="text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -575,7 +507,7 @@ export function EquipmentList({
                     <tr
                       key={item.id}
                       className={cn(
-                        'hover:bg-zinc-50 transition-colors',
+                        'hover:bg-muted transition-colors',
                         isDuplicate && 'bg-amber-50/50',
                         !item.is_active && 'opacity-60'
                       )}
@@ -588,11 +520,11 @@ export function EquipmentList({
                       </td>
                       <td className="px-4 py-3">
                         {item.equipment_code ? (
-                          <span className="text-xs font-mono bg-zinc-100 px-2 py-0.5 rounded">
+                          <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">
                             {item.equipment_code}
                           </span>
                         ) : (
-                          <span className="text-xs text-zinc-400">-</span>
+                          <span className="text-xs text-muted-foreground/70">-</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -601,25 +533,25 @@ export function EquipmentList({
                             <SafeImage
                               src={item.photo_url}
                               alt={item.name}
-                              className="w-10 h-10 object-cover rounded-lg"
+                              className="w-10 h-10 object-cover rounded-[10px]"
                             />
                           ) : (
-                            <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center">
-                              <Package className="h-4 w-4 text-zinc-300" />
+                            <div className="w-10 h-10 bg-muted rounded-[10px] flex items-center justify-center">
+                              <Package className="h-4 w-4 text-muted-foreground/30" />
                             </div>
                           )}
                           <div>
                             <Link
                               href={`/admin/equipment/${createSlug(item.name)}`}
                               className={cn(
-                                'font-medium text-sm text-zinc-900 hover:text-blue-600 transition-colors',
+                                'font-medium text-sm text-foreground hover:text-blue-600 transition-colors',
                                 !item.is_active && 'line-through'
                               )}
                             >
                               {item.name}
                             </Link>
                             {item.merk && (
-                              <p className="text-xs text-zinc-500">{item.merk}</p>
+                              <p className="text-xs text-muted-foreground">{item.merk}</p>
                             )}
                             {isDuplicate && (
                               <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 mt-0.5">
@@ -635,7 +567,7 @@ export function EquipmentList({
                             {CATEGORY_LABELS[item.category] || item.category}
                           </span>
                         ) : (
-                          <span className="text-xs text-zinc-400">-</span>
+                          <span className="text-xs text-muted-foreground/70">-</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -653,14 +585,14 @@ export function EquipmentList({
                             </span>
                           )}
                           {!item.is_active && (
-                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                               Nonaktif
                             </span>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs text-zinc-600 truncate max-w-[120px] block">
+                        <span className="text-xs text-muted-foreground truncate max-w-[120px] block">
                           {item.current_location || '-'}
                         </span>
                       </td>
@@ -671,26 +603,26 @@ export function EquipmentList({
                               {formatRupiah(lowestRate.rate_per_day)}
                             </span>
                             {lowestRate.rate_per_hour && (
-                              <p className="text-[10px] text-zinc-400">
+                              <p className="text-[10px] text-muted-foreground/70">
                                 {formatRupiah(lowestRate.rate_per_hour)}/jam
                               </p>
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs text-zinc-400 italic">Belum diatur</span>
+                          <span className="text-xs text-muted-foreground/70 italic">Belum diatur</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/admin/equipment/${createSlug(item.name)}`}
-                            className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium"
+                            className="text-xs px-2 py-1 rounded-[10px] bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium"
                           >
                             Detail
                           </Link>
                           <Link
                             href={`/admin/equipment/${createSlug(item.name)}/edit`}
-                            className="text-xs px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 transition-colors"
+                            className="text-xs px-2 py-1 rounded-[10px] bg-muted hover:bg-muted/80 transition-colors"
                           >
                             Edit
                           </Link>
@@ -728,77 +660,21 @@ export function EquipmentList({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-6">
-          {currentPage > 1 ? (
-            <Link
-              href={`/admin/equipment?${buildQueryString(currentPage - 1)}`}
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white border text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Sebelumnya
-            </Link>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed">
-              <ChevronLeft className="h-4 w-4" />
-              Sebelumnya
-            </span>
-          )}
-
+        <div className="flex items-center justify-between pt-1">
+          <Link href={currentPage > 1 ? `/admin/equipment?${buildQueryString(currentPage - 1)}` : '#'} className={cn('page-btn', currentPage === 1 && 'opacity-40 pointer-events-none')}>
+            <ChevronLeft className="h-4 w-4" /> Sebelumnya
+          </Link>
           <div className="flex items-center gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
-              const shouldShow =
-                pageNum === 1 ||
-                pageNum === totalPages ||
-                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-
-              const showEllipsis =
-                (pageNum === 2 && currentPage > 3) ||
-                (pageNum === totalPages - 1 && currentPage < totalPages - 2)
-
-              if (showEllipsis) {
-                return <span key={`ellipsis-${pageNum}`} className="px-2 text-zinc-400">...</span>
-              }
-
-              if (!shouldShow) return null
-
-              return (
-                <Link
-                  key={pageNum}
-                  href={`/admin/equipment?${buildQueryString(pageNum)}`}
-                  className={cn(
-                    'w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-all',
-                    currentPage === pageNum
-                      ? 'bg-zinc-800 text-white'
-                      : 'bg-white border text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300'
-                  )}
-                >
-                  {pageNum}
-                </Link>
-              )
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => {
+              if (n === 1 || n === totalPages || (n >= currentPage - 1 && n <= currentPage + 1))
+                return <Link key={n} href={`/admin/equipment?${buildQueryString(n)}`} className={n === currentPage ? 'page-btn-active' : 'page-btn-num'}>{n}</Link>
+              if (n === 2 || n === totalPages - 1) return <span key={n} className="text-muted-foreground/30 text-sm px-1">…</span>
+              return null
             })}
           </div>
-
-          {currentPage < totalPages ? (
-            <Link
-              href={`/admin/equipment?${buildQueryString(currentPage + 1)}`}
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white border text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300"
-            >
-              Selanjutnya
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed">
-              Selanjutnya
-              <ChevronRight className="h-4 w-4" />
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Page Info Footer */}
-      {totalPages > 1 && (
-        <div className="text-center text-sm text-muted-foreground">
-          Halaman {currentPage} dari {totalPages} • {ITEMS_PER_PAGE} item per halaman
+          <Link href={currentPage < totalPages ? `/admin/equipment?${buildQueryString(currentPage + 1)}` : '#'} className={cn('page-btn', currentPage === totalPages && 'opacity-40 pointer-events-none')}>
+            Selanjutnya <ChevronRight className="h-4 w-4" />
+          </Link>
         </div>
       )}
 

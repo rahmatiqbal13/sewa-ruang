@@ -37,14 +37,14 @@ const KETERSEDIAAN_CONFIG = {
   tersedia: { label: 'Tersedia', color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle2 },
   digunakan: { label: 'Sedang Digunakan', color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock },
   hilang: { label: 'Hilang', color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle },
-  tidak_tersedia: { label: 'Tidak Tersedia', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: AlertCircle },
+  tidak_tersedia: { label: 'Tidak Tersedia', color: 'bg-muted text-foreground/80 border-border', icon: AlertCircle },
 }
 
 const STATUS_TINDAKAN_CONFIG = {
   normal: { label: 'Normal', color: 'bg-blue-100 text-blue-700' },
   perawatan: { label: 'Dalam Perawatan', color: 'bg-yellow-100 text-yellow-700' },
   menunggu_part: { label: 'Menunggu Part', color: 'bg-purple-100 text-purple-700' },
-  afkir: { label: 'Afkir', color: 'bg-gray-100 text-gray-700' },
+  afkir: { label: 'Afkir', color: 'bg-muted text-foreground/80' },
 }
 
 interface Props {
@@ -166,10 +166,10 @@ export default async function EquipmentDetailPage({ params }: Props) {
     .limit(5)
 
   const ketersediaanConfig = KETERSEDIAAN_CONFIG[equipment.ketersediaan as keyof typeof KETERSEDIAAN_CONFIG] || 
-    { label: equipment.ketersediaan, color: 'bg-gray-100 text-gray-700', icon: AlertCircle }
+    { label: equipment.ketersediaan, color: 'bg-muted text-foreground/80', icon: AlertCircle }
 
   const statusTindakanConfig = STATUS_TINDAKAN_CONFIG[equipment.status_tindakan as keyof typeof STATUS_TINDAKAN_CONFIG] ||
-    { label: equipment.status_tindakan, color: 'bg-gray-100 text-gray-700' }
+    { label: equipment.status_tindakan, color: 'bg-muted text-foreground/80' }
 
   const KetersediaanIcon = ketersediaanConfig.icon
 
@@ -179,7 +179,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
       <div className="mb-8">
         <Link 
           href="/admin/equipment" 
-          className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mb-4 transition-colors"
+          className="text-sm text-muted-foreground hover:text-foreground/80 flex items-center gap-1 mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Alat
         </Link>
@@ -187,13 +187,13 @@ export default async function EquipmentDetailPage({ params }: Props) {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-slate-900">{equipment.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground">{equipment.name}</h1>
               <Badge variant={equipment.is_active ? 'default' : 'secondary'}>
                 {equipment.is_active ? 'Aktif' : 'Nonaktif'}
               </Badge>
             </div>
             {equipment.equipment_code && (
-              <p className="text-slate-500 font-mono text-sm">
+              <p className="text-muted-foreground font-mono text-sm">
                 Kode: {equipment.equipment_code}
               </p>
             )}
@@ -230,16 +230,16 @@ export default async function EquipmentDetailPage({ params }: Props) {
         <div className="lg:col-span-1 space-y-6">
           {/* Photo Card */}
           <Card className="overflow-hidden">
-            <div className="aspect-square bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+            <div className="aspect-square bg-primary flex items-center justify-center p-4">
               {equipment.photo_url ? (
                 <SafeImage
                   src={equipment.photo_url}
                   alt={equipment.name}
                   className="object-contain w-full h-full"
-                  fallbackClassName="w-full h-full rounded-lg"
+                  fallbackClassName="w-full h-full rounded-[10px]"
                 />
               ) : (
-                <Package className="h-24 w-24 text-slate-300" />
+                <Package className="h-24 w-24 text-muted-foreground/30" />
               )}
             </div>
           </Card>
@@ -254,18 +254,18 @@ export default async function EquipmentDetailPage({ params }: Props) {
             <CardContent className="space-y-4">
               {/* Aktif/Nonaktif Badge */}
               {!equipment.is_active && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 border border-gray-200">
-                  <XCircle className="h-5 w-5 shrink-0 text-gray-600" />
+                <div className="flex items-center gap-3 p-3 rounded-[14px] bg-muted border border-border">
+                  <XCircle className="h-5 w-5 shrink-0 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Nonaktif</p>
-                    <p className="text-xs text-gray-500">Alat tidak ditampilkan di katalog</p>
+                    <p className="text-sm font-medium text-foreground/80">Nonaktif</p>
+                    <p className="text-xs text-muted-foreground">Alat tidak ditampilkan di katalog</p>
                   </div>
                 </div>
               )}
 
               {/* Ketersediaan */}
               <div className={cn(
-                "flex items-center gap-3 p-3 rounded-xl border",
+                "flex items-center gap-3 p-3 rounded-[14px] border",
                 ketersediaanConfig.color
               )}>
                 <KetersediaanIcon className="h-5 w-5 shrink-0" />
@@ -277,7 +277,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
 
               {/* Status Tindakan */}
               <div className={cn(
-                "flex items-center gap-3 p-3 rounded-xl",
+                "flex items-center gap-3 p-3 rounded-[14px]",
                 statusTindakanConfig.color
               )}>
                 <AlertTriangle className="h-5 w-5 shrink-0" />
@@ -289,7 +289,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
 
               {/* Condition */}
               <div className="flex items-center gap-3">
-                <span className="text-sm text-slate-500">Kondisi:</span>
+                <span className="text-sm text-muted-foreground">Kondisi:</span>
                 <ConditionBadge condition={equipment.current_condition} />
               </div>
             </CardContent>
@@ -306,10 +306,10 @@ export default async function EquipmentDetailPage({ params }: Props) {
               {/* Building */}
               {equipment.building && (
                 <div className="flex items-start gap-3">
-                  <Building2 className="h-4 w-4 text-slate-400 mt-0.5" />
+                  <Building2 className="h-4 w-4 text-muted-foreground/70 mt-0.5" />
                   <div>
                     <p className="font-medium text-sm">{equipment.building.name}</p>
-                    <p className="text-xs text-slate-500">{equipment.building.code}</p>
+                    <p className="text-xs text-muted-foreground">{equipment.building.code}</p>
                   </div>
                 </div>
               )}
@@ -317,9 +317,9 @@ export default async function EquipmentDetailPage({ params }: Props) {
               {/* Floor */}
               {equipment.floor && (
                 <div className="flex items-start gap-3">
-                  <div className="h-4 w-4 flex items-center justify-center text-slate-400 text-xs font-bold">L</div>
+                  <div className="h-4 w-4 flex items-center justify-center text-muted-foreground/70 text-xs font-bold">L</div>
                   <div>
-                    <p className="text-xs text-slate-500">Lantai</p>
+                    <p className="text-xs text-muted-foreground">Lantai</p>
                     <p className="font-medium text-sm">Lantai {equipment.floor}</p>
                   </div>
                 </div>
@@ -328,16 +328,16 @@ export default async function EquipmentDetailPage({ params }: Props) {
               {/* Room */}
               {equipment.storage_room && (
                 <div className="flex items-start gap-3">
-                  <div className="h-4 w-4 flex items-center justify-center text-slate-400">
+                  <div className="h-4 w-4 flex items-center justify-center text-muted-foreground/70">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Ruangan</p>
+                    <p className="text-xs text-muted-foreground">Ruangan</p>
                     <p className="font-medium text-sm">{equipment.storage_room.name}</p>
                     {equipment.storage_room.room_code && (
-                      <p className="text-xs font-mono text-slate-400">{equipment.storage_room.room_code}</p>
+                      <p className="text-xs font-mono text-muted-foreground/70">{equipment.storage_room.room_code}</p>
                     )}
                   </div>
                 </div>
@@ -345,10 +345,10 @@ export default async function EquipmentDetailPage({ params }: Props) {
               
               {/* Additional location info */}
               {equipment.current_location && (
-                <div className="flex items-start gap-3 pt-2 border-t border-slate-100">
-                  <MapPin className="h-4 w-4 text-slate-400 mt-0.5" />
+                <div className="flex items-start gap-3 pt-2 border-t border-border/60">
+                  <MapPin className="h-4 w-4 text-muted-foreground/70 mt-0.5" />
                   <div>
-                    <p className="text-xs text-slate-500">Keterangan Tambahan</p>
+                    <p className="text-xs text-muted-foreground">Keterangan Tambahan</p>
                     <p className="text-sm">{equipment.current_location}</p>
                   </div>
                 </div>
@@ -356,7 +356,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
               
               {/* Show message if no location data */}
               {!equipment.building && !equipment.floor && !equipment.storage_room && !equipment.current_location && (
-                <p className="text-sm text-slate-400 italic">Lokasi belum ditentukan</p>
+                <p className="text-sm text-muted-foreground/70 italic">Lokasi belum ditentukan</p>
               )}
             </CardContent>
           </Card>
@@ -374,9 +374,9 @@ export default async function EquipmentDetailPage({ params }: Props) {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-slate-500 mb-1">Kategori</p>
+                  <p className="text-sm text-muted-foreground mb-1">Kategori</p>
                   <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-slate-400" />
+                    <Tag className="h-4 w-4 text-muted-foreground/70" />
                     <p className="font-medium">
                       {CATEGORY_LABELS[equipment.category] || equipment.category}
                     </p>
@@ -385,20 +385,20 @@ export default async function EquipmentDetailPage({ params }: Props) {
                 
                 {equipment.merk && (
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">Merk/Brand</p>
+                    <p className="text-sm text-muted-foreground mb-1">Merk/Brand</p>
                     <p className="font-medium">{equipment.merk}</p>
                   </div>
                 )}
                 
                 {equipment.sumber && (
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">Sumber Perolehan</p>
+                    <p className="text-sm text-muted-foreground mb-1">Sumber Perolehan</p>
                     <p className="font-medium">{equipment.sumber}</p>
                   </div>
                 )}
                 
                 <div>
-                  <p className="text-sm text-slate-500 mb-1">Terakhir Diupdate</p>
+                  <p className="text-sm text-muted-foreground mb-1">Terakhir Diupdate</p>
                   <p className="font-medium">
                     {equipment.updated_at 
                       ? new Date(equipment.updated_at).toLocaleDateString('id-ID', {
@@ -414,8 +414,8 @@ export default async function EquipmentDetailPage({ params }: Props) {
 
               {equipment.description && (
                 <div className="mt-6 pt-6 border-t">
-                  <p className="text-sm text-slate-500 mb-2">Deskripsi</p>
-                  <p className="text-slate-700 whitespace-pre-wrap">{equipment.description}</p>
+                  <p className="text-sm text-muted-foreground mb-2">Deskripsi</p>
+                  <p className="text-foreground/80 whitespace-pre-wrap">{equipment.description}</p>
                 </div>
               )}
             </CardContent>
@@ -439,7 +439,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
                   }) => (
                     <div 
                       key={rate.user_category}
-                      className="p-4 bg-slate-50 rounded-xl border border-slate-100"
+                      className="p-4 bg-muted rounded-[14px] border border-border/60"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <p className="font-medium text-sm">
@@ -452,10 +452,10 @@ export default async function EquipmentDetailPage({ params }: Props) {
                       <div className="space-y-1">
                         <p className="text-lg font-bold text-emerald-600">
                           {formatRupiah(rate.rate_per_day)}
-                          <span className="text-sm font-normal text-slate-500">/hari</span>
+                          <span className="text-sm font-normal text-muted-foreground">/hari</span>
                         </p>
                         {rate.rate_per_hour && (
-                          <p className="text-sm text-slate-500">
+                          <p className="text-sm text-muted-foreground">
                             {formatRupiah(rate.rate_per_hour)}/jam
                           </p>
                         )}
@@ -499,10 +499,10 @@ export default async function EquipmentDetailPage({ params }: Props) {
                       <div 
                         key={bookingSlot.id}
                         className={cn(
-                          "p-4 rounded-xl border",
+                          "p-4 rounded-[14px] border",
                           isCurrentlyActive 
                             ? "bg-orange-50 border-orange-200" 
-                            : "bg-slate-50 border-slate-200"
+                            : "bg-muted border-border"
                         )}
                       >
                         <div className="flex items-start justify-between gap-4">
@@ -521,10 +521,10 @@ export default async function EquipmentDetailPage({ params }: Props) {
                                 {bookingSlot.status}
                               </Badge>
                             </div>
-                            <p className="text-xs text-slate-500 mb-2">
+                            <p className="text-xs text-muted-foreground mb-2">
                               Kode: {bookingSlot.booking.booking_code}
                             </p>
-                            <div className="flex items-center gap-4 text-sm text-slate-600">
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-3.5 w-3.5" />
                                 {startDate.toLocaleDateString('id-ID')}
@@ -535,7 +535,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
                                 {endDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-500 mt-2">
+                            <p className="text-xs text-muted-foreground mt-2">
                               Oleh: {bookingSlot.booking.user?.full_name || bookingSlot.booking.user?.email}
                             </p>
                           </div>
@@ -550,7 +550,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p>Tidak ada jadwal penggunaan aktif</p>
                 </div>
@@ -587,15 +587,15 @@ export default async function EquipmentDetailPage({ params }: Props) {
                     return (
                       <div 
                         key={bookingSlot.id}
-                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg text-sm"
+                        className="flex items-center justify-between p-3 bg-muted rounded-[10px] text-sm"
                       >
                         <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-4 w-4 text-slate-400" />
+                          <CheckCircle2 className="h-4 w-4 text-muted-foreground/70" />
                           <div>
                             <p className="font-medium">
                               {bookingSlot.booking.purpose || 'Peminjaman'}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                               {startDate.toLocaleDateString('id-ID')} • {bookingSlot.booking.user?.full_name}
                             </p>
                           </div>

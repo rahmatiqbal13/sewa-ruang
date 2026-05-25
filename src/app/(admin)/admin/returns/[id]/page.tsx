@@ -39,7 +39,7 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
   if (existingReturn) {
     return (
       <div className="p-6 max-w-2xl mx-auto text-center">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-8">
+        <div className="bg-green-50 border border-green-200 rounded-[14px] p-8">
           <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-green-800 mb-2">Peminjaman Sudah Selesai</h2>
           <p className="text-green-600 mb-4">Pengembalian untuk booking ini sudah dicatat.</p>
@@ -69,12 +69,12 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
       <div className="flex items-center gap-4">
         <Link 
           href="/admin/returns"
-          className="inline-flex items-center justify-center h-10 w-10 rounded-lg border hover:bg-slate-50"
+          className="inline-flex items-center justify-center h-10 w-10 rounded-[10px] border hover:bg-muted"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Proses Pengembalian</h1>
+          <h1 className="text-2xl font-bold text-foreground">Proses Pengembalian</h1>
           <p className="font-mono text-muted-foreground">{booking.reference_no}</p>
         </div>
       </div>
@@ -83,49 +83,49 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
         {/* Left Column - Booking Info */}
         <div className="lg:col-span-1 space-y-6">
           {/* Borrower Info */}
-          <Card>
+          <Card className="rounded-[14px]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                 <User className="h-4 w-4" />
                 Data Peminjam
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <p className="text-sm text-slate-500">Nama</p>
-                <p className="font-medium">{booking.users?.name}</p>
+                <p className="text-sm text-muted-foreground">Nama</p>
+                <p className="font-medium text-foreground">{booking.users?.name}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Instansi</p>
-                <p className="font-medium">{booking.users?.institution || '-'}</p>
+                <p className="text-sm text-muted-foreground">Instansi</p>
+                <p className="font-medium text-foreground">{booking.users?.institution || '-'}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Telepon</p>
-                <p className="font-medium">{booking.users?.phone || '-'}</p>
+                <p className="text-sm text-muted-foreground">Telepon</p>
+                <p className="font-medium text-foreground">{booking.users?.phone || '-'}</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Schedule Info */}
-          <Card>
+          <Card className="rounded-[14px]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                 <Clock className="h-4 w-4" />
                 Jadwal Peminjaman
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <p className="text-sm text-slate-500">Mulai</p>
-                <p className="font-medium">{formatDateTime(booking.start_datetime)}</p>
+                <p className="text-sm text-muted-foreground">Mulai</p>
+                <p className="font-medium text-foreground">{formatDateTime(booking.start_datetime)}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Selesai (Rencana)</p>
-                <p className="font-medium">{formatDateTime(booking.end_datetime)}</p>
+                <p className="text-sm text-muted-foreground">Selesai (Rencana)</p>
+                <p className="font-medium text-foreground">{formatDateTime(booking.end_datetime)}</p>
               </div>
               {booking.actual_end_datetime && (
-                <div className="pt-2 border-t">
-                  <p className="text-sm text-slate-500">Selesai (Aktual)</p>
+                <div className="pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground">Selesai (Aktual)</p>
                   <p className="font-medium text-green-600">
                     {formatDateTime(booking.actual_end_datetime)}
                   </p>
@@ -135,32 +135,32 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
           </Card>
 
           {/* Payment Info */}
-          <Card>
+          <Card className="rounded-[14px]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                 <CreditCard className="h-4 w-4" />
                 Informasi Pembayaran
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-500">Status</span>
+                <span className="text-sm text-muted-foreground">Status</span>
                 <Badge variant={isPaid ? 'default' : 'secondary'}>
                   {isPaid ? 'Lunas' : 'Menunggu Pembayaran'}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-500">Total Tagihan</span>
-                <span className="font-medium">{formatRupiah(booking.total_amount)}</span>
+                <span className="text-sm text-muted-foreground">Total Tagihan</span>
+                <span className="font-medium text-foreground">{formatRupiah(booking.total_amount)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-500">Sudah Dibayar</span>
+                <span className="text-sm text-muted-foreground">Sudah Dibayar</span>
                 <span className="font-medium text-green-600">{formatRupiah(totalPaid)}</span>
               </div>
               {totalPaid < booking.total_amount && (
-                <div className="pt-2 border-t">
+                <div className="pt-2 border-t border-border">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Sisa</span>
+                    <span className="text-sm text-muted-foreground">Sisa</span>
                     <span className="font-bold text-amber-600">
                       {formatRupiah(booking.total_amount - totalPaid)}
                     </span>
@@ -181,9 +181,9 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
         {/* Right Column - Items & Return Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Items */}
-          <Card>
+          <Card className="rounded-[14px]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                 <Package className="h-4 w-4" />
                 Item yang Dipinjam
               </CardTitle>
@@ -191,19 +191,19 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
             <CardContent>
               <div className="space-y-3">
                 {(booking.booking_items || []).map((item: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 border border-border rounded-[10px]">
                     <div className="flex items-center gap-3">
                       <span className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600">
                         {index + 1}
                       </span>
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium text-foreground">
                           {item.item_type === 'room' 
                             ? item.room?.name 
                             : item.equipment?.name
                           }
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-muted-foreground">
                           {item.item_type === 'room' 
                             ? `Ruang - ${item.room?.buildings?.name}`
                             : `Alat - Kode: ${item.equipment?.equipment_code || '-'}`

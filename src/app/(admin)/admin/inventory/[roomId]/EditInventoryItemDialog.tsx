@@ -242,14 +242,14 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
           {/* Lokasi Section */}
           <Card className="border-amber-200">
             <CardContent className="p-4 space-y-4">
-              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-amber-600" />
                 Lokasi
               </h3>
               
               {/* Building Select */}
               <div className="space-y-2">
-                <Label className="text-slate-700">Gedung</Label>
+                <Label className="text-foreground/80">Gedung</Label>
                 <Select
                   value={selectedBuildingId}
                   onValueChange={(value) => {
@@ -268,7 +268,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                         return building ? `${building.name} (${building.code})` : 'Pilih gedung...'
                       })()
                     ) : (
-                      <span className="text-slate-400">Pilih gedung...</span>
+                      <span className="text-muted-foreground/70">Pilih gedung...</span>
                     )}
                   </SelectTrigger>
                   <SelectContent>
@@ -283,7 +283,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
 
               {/* Room Select */}
               <div className="space-y-2">
-                <Label className="text-slate-700">
+                <Label className="text-foreground/80">
                   Ruangan <span className="text-red-500">*</span>
                 </Label>
                 <Select
@@ -298,12 +298,12 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                         return room ? `${room.name}${room.room_code ? ` (${room.room_code})` : ''}` : 'Pilih ruangan...'
                       })()
                     ) : (
-                      <span className="text-slate-400">{selectedBuildingId ? 'Pilih ruangan...' : 'Pilih gedung terlebih dahulu'}</span>
+                      <span className="text-muted-foreground/70">{selectedBuildingId ? 'Pilih ruangan...' : 'Pilih gedung terlebih dahulu'}</span>
                     )}
                   </SelectTrigger>
                   <SelectContent>
                     {filteredRooms.length === 0 ? (
-                      <div className="px-2 py-3 text-sm text-slate-400 text-center">
+                      <div className="px-2 py-3 text-sm text-muted-foreground/70 text-center">
                         Tidak ada ruangan di gedung ini
                       </div>
                     ) : (
@@ -321,7 +321,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                 
                 {/* Current Location Info */}
                 {selectedRoom && (
-                  <div className="mt-2 p-3 bg-amber-50 rounded-lg text-sm">
+                  <div className="mt-2 p-3 bg-amber-50 rounded-[10px] text-sm">
                     <div className="flex items-center gap-2 text-amber-800">
                       <DoorOpen className="h-4 w-4" />
                       <span className="font-medium">Lokasi saat ini:</span>
@@ -339,8 +339,8 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
 
           {/* Photo Upload */}
           <div className="space-y-2">
-            <Label className="text-slate-700 font-medium flex items-center gap-2">
-              <Camera className="h-4 w-4 text-slate-400" />
+            <Label className="text-foreground/80 font-medium flex items-center gap-2">
+              <Camera className="h-4 w-4 text-muted-foreground/70" />
               Foto Item
             </Label>
             <PhotoUpload
@@ -352,7 +352,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
 
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-slate-700 font-medium">
+            <Label htmlFor="name" className="text-foreground/80 font-medium">
               Nama Item <span className="text-red-500">*</span>
             </Label>
             <Input 
@@ -368,7 +368,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
           {/* Quantity & Inventory Code */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="quantity" className="text-slate-700 font-medium">
+              <Label htmlFor="quantity" className="text-foreground/80 font-medium">
                 Jumlah <span className="text-red-500">*</span>
               </Label>
               <Input 
@@ -383,8 +383,8 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="inventory_code" className="text-slate-700 font-medium flex items-center gap-2">
-                <Hash className="h-4 w-4 text-slate-400" />
+              <Label htmlFor="inventory_code" className="text-foreground/80 font-medium flex items-center gap-2">
+                <Hash className="h-4 w-4 text-muted-foreground/70" />
                 Kode Inventaris
               </Label>
               <Input 
@@ -397,7 +397,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
 
           {/* Condition */}
           <div className="space-y-2">
-            <Label className="text-slate-700 font-medium">
+            <Label className="text-foreground/80 font-medium">
               Kondisi <span className="text-red-500">*</span>
             </Label>
             <div className="grid grid-cols-3 gap-2">
@@ -406,13 +406,13 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                   key={cond.value}
                   type="button"
                   onClick={() => setValue('condition', cond.value as FormData['condition'])}
-                  className={`p-3 rounded-lg border-2 text-center transition-all ${
+                  className={`p-3 rounded-[10px] border-2 text-center transition-all ${
                     watch('condition') === cond.value
                       ? `${cond.bg} ${cond.border} ${cond.color}`
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                      : 'border-border hover:border-muted-foreground/30 bg-card'
                   }`}
                 >
-                  <span className={`text-sm font-medium ${watch('condition') === cond.value ? cond.color : 'text-slate-700'}`}>
+                  <span className={`text-sm font-medium ${watch('condition') === cond.value ? cond.color : 'text-foreground/80'}`}>
                     {cond.label}
                   </span>
                 </button>
@@ -422,7 +422,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes" className="text-slate-700 font-medium">
+            <Label htmlFor="notes" className="text-foreground/80 font-medium">
               Catatan
             </Label>
             <Textarea 

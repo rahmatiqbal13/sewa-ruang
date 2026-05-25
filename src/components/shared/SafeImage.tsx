@@ -19,8 +19,8 @@ export function SafeImage({ src, alt, className = '', fallbackClassName = '', fa
       return <>{fallback}</>
     }
     return (
-      <div className={`flex items-center justify-center bg-slate-100 ${fallbackClassName || className}`}>
-        <ImageIcon className="h-8 w-8 text-slate-300" />
+      <div className={`flex items-center justify-center bg-muted ${fallbackClassName || className}`}>
+        <ImageIcon className="h-8 w-8 text-muted-foreground/70" />
       </div>
     )
   }

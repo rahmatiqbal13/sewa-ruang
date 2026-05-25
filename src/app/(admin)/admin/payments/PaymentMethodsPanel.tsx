@@ -112,53 +112,53 @@ export function PaymentMethodsPanel() {
   return (
     <div className="space-y-6">
       {/* Add new VA */}
-      <Card>
+      <Card className="rounded-[14px]">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2 text-base text-foreground">
             <Plus className="h-4 w-4" /> Tambah Virtual Account
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Nama Bank</Label>
-              <Input value={newVA.bankName} onChange={e => setNewVA({ ...newVA, bankName: e.target.value })} placeholder="Contoh: BCA Virtual Account" />
+              <Label className="text-foreground">Nama Bank</Label>
+              <Input value={newVA.bankName} onChange={e => setNewVA({ ...newVA, bankName: e.target.value })} placeholder="Contoh: BCA Virtual Account" className="rounded-[10px] border-border" />
             </div>
             <div>
-              <Label>No. Virtual Account</Label>
-              <Input value={newVA.virtualAccountNumber} onChange={e => setNewVA({ ...newVA, virtualAccountNumber: e.target.value })} placeholder="8888-1234-5678-90" />
+              <Label className="text-foreground">No. Virtual Account</Label>
+              <Input value={newVA.virtualAccountNumber} onChange={e => setNewVA({ ...newVA, virtualAccountNumber: e.target.value })} placeholder="8888-1234-5678-90" className="rounded-[10px] border-border" />
             </div>
             <div>
-              <Label>Atas Nama</Label>
-              <Input value={newVA.accountName} onChange={e => setNewVA({ ...newVA, accountName: e.target.value })} placeholder="Direktorat Olahraga Unesa" />
+              <Label className="text-foreground">Atas Nama</Label>
+              <Input value={newVA.accountName} onChange={e => setNewVA({ ...newVA, accountName: e.target.value })} placeholder="Direktorat Olahraga Unesa" className="rounded-[10px] border-border" />
             </div>
             <div>
-              <Label>Kategori</Label>
-              <select value={newVA.category} onChange={e => setNewVA({ ...newVA, category: e.target.value as 'room' | 'equipment' | 'general' })} className="w-full h-10 px-3 rounded-md border border-input bg-background">
+              <Label className="text-foreground">Kategori</Label>
+              <select value={newVA.category} onChange={e => setNewVA({ ...newVA, category: e.target.value as 'room' | 'equipment' | 'general' })} className="w-full h-10 px-3 rounded-[10px] border border-input bg-background text-foreground">
                 <option value="room">Sewa Ruang</option>
                 <option value="equipment">Sewa Alat</option>
                 <option value="general">Umum</option>
               </select>
             </div>
           </div>
-          <Button onClick={handleCreate} className="mt-4"><Plus className="mr-2 h-4 w-4" />Tambah VA</Button>
+          <Button onClick={handleCreate} className="mt-4 rounded-[10px]"><Plus className="mr-2 h-4 w-4" />Tambah VA</Button>
         </CardContent>
       </Card>
 
       {/* VA list */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Daftar Virtual Account</CardTitle></CardHeader>
+      <Card className="rounded-[14px]">
+        <CardHeader><CardTitle className="text-base text-foreground">Daftar Virtual Account</CardTitle></CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="room"><Home className="h-4 w-4 mr-1" />Sewa Ruang ({byCategory('room').length})</TabsTrigger>
-              <TabsTrigger value="equipment"><Box className="h-4 w-4 mr-1" />Sewa Alat ({byCategory('equipment').length})</TabsTrigger>
-              <TabsTrigger value="general"><CreditCard className="h-4 w-4 mr-1" />Umum ({byCategory('general').length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 rounded-[10px]">
+              <TabsTrigger value="room" className="rounded-[10px]"><Home className="h-4 w-4 mr-1" />Sewa Ruang ({byCategory('room').length})</TabsTrigger>
+              <TabsTrigger value="equipment" className="rounded-[10px]"><Box className="h-4 w-4 mr-1" />Sewa Alat ({byCategory('equipment').length})</TabsTrigger>
+              <TabsTrigger value="general" className="rounded-[10px]"><CreditCard className="h-4 w-4 mr-1" />Umum ({byCategory('general').length})</TabsTrigger>
             </TabsList>
             {(['room', 'equipment', 'general'] as const).map(cat => (
               <TabsContent key={cat} value={cat} className="mt-6">
                 {byCategory(cat).length === 0 ? (
-                  <div className="text-center py-8 text-slate-400">
+                  <div className="text-center py-8 text-muted-foreground/70">
                     <AlertCircle className="h-10 w-10 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">Belum ada VA untuk kategori ini</p>
                   </div>
@@ -193,14 +193,14 @@ function VACard({ method, uploading, onUpload, onToggle, onDelete }: {
   onDelete: (id: string) => void
 }) {
   return (
-    <Card className={!method.is_active ? 'opacity-60' : ''}>
+    <Card className={`rounded-[14px] ${!method.is_active ? 'opacity-60' : ''}`}>
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row">
-          <div className="w-full md:w-56 bg-slate-50 flex-shrink-0 flex items-center justify-center">
+          <div className="w-full md:w-56 bg-muted flex-shrink-0 flex items-center justify-center">
             {method.qr_image_url ? (
               <img src={method.qr_image_url} alt={method.bank_name} className="w-full h-56 object-contain" />
             ) : (
-              <div className="h-56 flex flex-col items-center justify-center text-slate-400">
+              <div className="h-56 flex flex-col items-center justify-center text-muted-foreground/70">
                 <ImageIcon className="h-10 w-10 mb-2 opacity-50" />
                 <p className="text-xs">Belum ada gambar</p>
               </div>
@@ -209,39 +209,39 @@ function VACard({ method, uploading, onUpload, onToggle, onDelete }: {
           <div className="flex-1 p-5">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="font-semibold">{method.bank_name}</p>
+                <p className="font-semibold text-foreground">{method.bank_name}</p>
                 <Badge variant={method.is_active ? 'default' : 'secondary'} className="mt-1 text-xs">
                   {method.is_active ? 'Aktif' : 'Nonaktif'}
                 </Badge>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => onToggle(method.id, method.is_active)}>
+                <Button variant="outline" size="sm" onClick={() => onToggle(method.id, method.is_active)} className="rounded-[10px]">
                   {method.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => onDelete(method.id)}>
+                <Button variant="destructive" size="sm" onClick={() => onDelete(method.id)} className="rounded-[10px]">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             </div>
             <div className="space-y-1.5 text-sm mb-5">
               <div className="flex justify-between">
-                <span className="text-slate-500">No. VA</span>
-                <span className="font-mono font-medium">{method.virtual_account_number}</span>
+                <span className="text-muted-foreground">No. VA</span>
+                <span className="font-mono font-medium text-foreground">{method.virtual_account_number}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Atas Nama</span>
-                <span>{method.account_name}</span>
+                <span className="text-muted-foreground">Atas Nama</span>
+                <span className="text-foreground">{method.account_name}</span>
               </div>
               {method.account_number && (
                 <div className="flex justify-between">
-                  <span className="text-slate-500">No. Rekening</span>
-                  <span className="font-mono">{method.account_number}</span>
+                  <span className="text-muted-foreground">No. Rekening</span>
+                  <span className="font-mono text-foreground">{method.account_number}</span>
                 </div>
               )}
             </div>
             <input type="file" accept="image/*" className="hidden" id={`up-${method.id}`} onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(method.id, f) }} />
             <label htmlFor={`up-${method.id}`}>
-              <Button variant="outline" size="sm" disabled={uploading === method.id} asChild>
+              <Button variant="outline" size="sm" disabled={uploading === method.id} asChild className="rounded-[10px]">
                 <span>
                   {uploading === method.id ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mengupload...</> : <><Upload className="mr-2 h-4 w-4" />{method.qr_image_url ? 'Ganti Gambar' : 'Upload Gambar'}</>}
                 </span>

@@ -1,325 +1,341 @@
 import Link from 'next/link'
-import { buttonVariants } from '@/components/ui/button'
-import {
-  Building2, CalendarDays, CreditCard, QrCode,
-  Shield, Users, ArrowRight, CheckCircle2, ChevronRight,
-  Sparkles, BarChart3, Clock, Zap, Phone, Mail, MapPin
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { createClient } from '@supabase/supabase-js'
-import { SafeImage } from '@/components/shared/SafeImage'
+import {
+  Building2,
+  CalendarDays,
+  Shield,
+  ArrowRight,
+  CheckCircle2,
+  Phone,
+  Mail,
+  MapPin,
+  Building,
+  Wrench,
+  FileCheck,
+  GraduationCap,
+  UserCircle,
+  Briefcase,
+  Handshake,
+  Globe,
+  ChevronRight,
+  Search,
+} from 'lucide-react'
+import { Navbar } from './(components)/Navbar'
+import { KatalogPreview } from './(components)/KatalogPreview'
 
-const features = [
-  { 
-    icon: Building2, 
-    title: 'Katalog Terstruktur', 
-    desc: 'Ruang & alat dikelompokkan per gedung, lengkap dengan data ketersediaan real-time.', 
-    gradient: 'from-blue-500 to-cyan-500',
-    bgColor: 'bg-blue-50' 
-  },
-  { 
-    icon: CalendarDays, 
-    title: 'Pengajuan Online', 
-    desc: 'Ajukan peminjaman, pantau status, dan terima notifikasi tanpa perlu menghubungi admin.', 
-    gradient: 'from-indigo-500 to-purple-500',
-    bgColor: 'bg-indigo-50' 
-  },
-  { 
-    icon: CreditCard, 
-    title: 'Pencatatan Pembayaran', 
-    desc: 'Catat pembayaran tunai, transfer, maupun online gateway — semua terdokumentasi otomatis.', 
-    gradient: 'from-violet-500 to-pink-500',
-    bgColor: 'bg-violet-50' 
-  },
-  { 
-    icon: QrCode, 
-    title: 'QR Code per Aset', 
-    desc: 'Tempel QR Code di pintu ruangan atau pada alat untuk akses cepat data & inventaris.', 
-    gradient: 'from-cyan-500 to-teal-500',
-    bgColor: 'bg-cyan-50' 
-  },
-  { 
-    icon: Shield, 
-    title: 'Perjanjian Digital', 
-    desc: 'Peminjam menyetujui perjanjian tanggung jawab secara digital sebelum booking diproses.', 
-    gradient: 'from-emerald-500 to-green-500',
-    bgColor: 'bg-emerald-50' 
-  },
-  { 
-    icon: Users, 
-    title: 'Multi-Role', 
-    desc: 'Admin, Staff, dan Peminjam masing-masing memiliki akses dan fitur yang sesuai tugasnya.', 
-    gradient: 'from-amber-500 to-orange-500',
-    bgColor: 'bg-amber-50' 
-  },
-]
-
-const steps = [
-  { n: '01', title: 'Buat Akun', desc: 'Daftar dengan email institusi dan isi data profil lengkap.' },
-  { n: '02', title: 'Pilih Aset', desc: 'Cari ruangan atau alat dari katalog, cek ketersediaan, lalu ajukan peminjaman.' },
-  { n: '03', title: 'Tunggu Persetujuan', desc: 'Admin memverifikasi pengajuan dan menginformasikan status via notifikasi.' },
-  { n: '04', title: 'Gunakan & Kembalikan', desc: 'Gunakan sesuai jadwal, lalu catat pengembalian di sistem.' },
-]
-
-const stats = [
-  { value: '10+', label: 'Gedung', icon: Building2 },
-  { value: '50+', label: 'Ruangan', icon: CalendarDays },
-  { value: '200+', label: 'Peralatan', icon: Zap },
-  { value: '3', label: 'Peran Pengguna', icon: Users },
-]
-
-// Server-side fetch institution profile
-async function getInstitutionProfile() {
+// Server-side fetch data
+async function getLandingData() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
+
     if (!supabaseUrl || !supabaseKey) {
       return null
     }
-    
+
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
-      }
+        persistSession: false,
+      },
     })
-    
-    const { data, error } = await supabase
-      .from('institution_profile')
-      .select('*')
-      .single()
-    
-    if (error || !data) {
-      return null
+
+    const [
+      { data: institution, error: instError },
+      { count: roomCount },
+      { count: equipmentCount },
+      { count: bookingCount },
+    ] = await Promise.all([
+      supabase.from('institution_profile').select('*').single(),
+      supabase.from('rooms').select('*', { count: 'exact', head: true }),
+      supabase.from('equipment').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('bookings').select('*', { count: 'exact', head: true }),
+    ])
+
+    if (instError) {
+      console.error('Error fetching institution:', instError)
     }
-    
-    return data
+
+    return {
+      institution: institution || null,
+      roomCount: roomCount || 0,
+      equipmentCount: equipmentCount || 0,
+      bookingCount: bookingCount || 0,
+    }
   } catch (error) {
-    console.error('Error fetching institution profile:', error)
+    console.error('Error fetching landing data:', error)
     return null
   }
 }
 
+// Stats config (values passed dynamically from DB)
+const statsConfig = [
+  { key: 'rooms' as const, label: 'Ruangan', icon: Building, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  { key: 'equipment' as const, label: 'Peralatan', icon: Wrench, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+  { key: 'bookings' as const, label: 'Peminjaman', icon: FileCheck, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+  { key: 'satisfaction' as const, label: 'Kepuasan', icon: CheckCircle2, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+]
+
+// Steps data
+const steps = [
+  {
+    n: 1,
+    title: 'Pilih Aset',
+    desc: 'Telusuri katalog ruangan dan peralatan yang tersedia',
+    color: 'bg-blue-900',
+    borderColor: 'border-blue-900',
+  },
+  {
+    n: 2,
+    title: 'Ajukan Peminjaman',
+    desc: 'Isi formulir peminjaman dengan detail kebutuhan Anda',
+    color: 'bg-indigo-600',
+    borderColor: 'border-indigo-600',
+  },
+  {
+    n: 3,
+    title: 'Ambil & Gunakan',
+    desc: 'Setelah disetujui, ambil aset dan gunakan sesuai jadwal',
+    color: 'bg-emerald-600',
+    borderColor: 'border-emerald-600',
+  },
+]
+
+// Borrower categories
+const borrowerCategories = [
+  {
+    label: 'Mahasiswa S1',
+    desc: 'Mahasiswa program sarjana',
+    icon: GraduationCap,
+    color: 'bg-blue-50 text-blue-600',
+  },
+  {
+    label: 'Mahasiswa S2',
+    desc: 'Mahasiswa program magister',
+    icon: GraduationCap,
+    color: 'bg-indigo-50 text-indigo-600',
+  },
+  {
+    label: 'Dosen',
+    desc: 'Tenaga pengajar',
+    icon: UserCircle,
+    color: 'bg-purple-50 text-purple-600',
+  },
+  {
+    label: 'Staff',
+    desc: 'Tenaga kependidikan',
+    icon: Briefcase,
+    color: 'bg-emerald-50 text-emerald-600',
+  },
+  {
+    label: 'Mitra MOU',
+    desc: 'Kerjasama institusi',
+    icon: Handshake,
+    color: 'bg-amber-50 text-amber-600',
+  },
+  {
+    label: 'Umum',
+    desc: 'Masyarakat umum',
+    icon: Globe,
+    color: 'bg-rose-50 text-rose-600',
+  },
+]
+
 export default async function HomePage() {
-  const institution = await getInstitutionProfile()
+  const data = await getLandingData()
+  const institution = data?.institution || null
+  const roomCount = data?.roomCount || 0
+  const equipmentCount = data?.equipmentCount || 0
+  const bookingCount = data?.bookingCount || 0
   const currentYear = new Date().getFullYear()
-  
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            {institution?.logo_url ? (
-              <SafeImage
-                src={institution.logo_url}
-                alt={institution.name}
-                className="h-9 w-auto"
-                fallback={
-                  <div className="h-9 w-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                    <Building2 className="h-5 w-5 text-white" />
-                  </div>
-                }
-              />
-            ) : (
-              <div className="h-9 w-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-white" />
-              </div>
-            )}
-            <div className="hidden sm:block">
-              <span className="font-bold text-lg text-slate-900">{institution?.short_name || institution?.name || 'RentSpace'}</span>
-              {institution?.short_name && institution?.name && institution.short_name !== institution.name && (
-                <p className="text-xs text-slate-500 -mt-1">{institution.name}</p>
-              )}
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/catalog" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-slate-600 hover:text-slate-900')}>
-              Katalog
-            </Link>
-            <Link href="/login" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-slate-600 hover:text-slate-900 hidden sm:inline-flex')}>
-              Masuk
-            </Link>
-            <Link href="/register" className={cn(buttonVariants({ size: 'sm' }), 'btn-gradient text-white border-0')}>
-              Daftar <ChevronRight className="ml-1 h-3 w-3" />
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* 1. NAVBAR */}
+      <Navbar />
 
-      <main>
-        {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-          {/* Background Elements */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-indigo-50/30" />
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-indigo-400/20 to-purple-400/20 rounded-full blur-3xl" />
-            <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-gradient-to-tr from-cyan-400/20 to-blue-400/20 rounded-full blur-3xl" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-violet-400/10 to-pink-400/10 rounded-full blur-3xl" />
-          </div>
-          
-          {/* Grid Pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
-          
-          <div className="relative max-w-7xl mx-auto px-4 py-20 text-center">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/80 border border-indigo-100 shadow-sm shadow-indigo-500/10 text-indigo-600 text-sm px-4 py-2 rounded-full mb-8 fade-in">
-              <Sparkles className="h-4 w-4" />
-              <span className="font-medium">
-                {institution?.short_name ? `Sistem ${institution.short_name}` : 'Sistem Manajemen Aset Terintegrasi'}
-              </span>
+      <main className="pt-16">
+        {/* 2. HERO */}
+        <section className="relative bg-gradient-to-br from-[#1B3A8C] to-[#2A52C9]">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 lg:py-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              {/* Left Content */}
+              <div className="text-center lg:text-left">
+                {/* Eyebrow */}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full text-white/70 text-sm font-medium mb-5">
+                  <Building2 className="h-4 w-4" />
+                  USC UNESA
+                </div>
+
+                {/* H1 */}
+                <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold text-white leading-[1.15] mb-4">
+                  Sewa Ruang & Alat
+                </h1>
+
+                {/* Subtext */}
+                <p className="text-base lg:text-lg text-white/80 mb-6 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                  {institution?.description ||
+                    'Platform digital terintegrasi untuk peminjaman ruangan dan peralatan di lingkungan kampus. Proses mudah, transparan, dan terpercaya.'}
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8">
+                  <Link
+                    href="/catalog"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white text-[#1B3A8C] font-semibold rounded-xl hover:bg-white/90 transition-all shadow-lg shadow-black/10"
+                  >
+                    Jelajahi Katalog
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/10 text-white font-semibold rounded-xl border border-white/30 hover:bg-white/20 transition-all"
+                  >
+                    Ajukan Peminjaman
+                  </Link>
+                </div>
+
+                {/* Trust Badges */}
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2">
+                  {[
+                    { icon: CheckCircle2, label: 'Proses Cepat' },
+                    { icon: Shield, label: 'Transparan' },
+                    { icon: CheckCircle2, label: 'Aman Terpercaya' },
+                  ].map((badge, index) => (
+                    <div key={`${badge.label}-${index}`} className="flex items-center gap-1.5 text-white/80">
+                      <badge.icon className="h-4 w-4 text-emerald-300" />
+                      <span className="text-sm font-medium">{badge.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Illustration - only on large screens */}
+              <div className="hidden lg:flex justify-center items-center">
+                <div className="relative w-72 h-64">
+                  {/* Main Card */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-44 bg-white/10 backdrop-blur-md rounded-[20px] border border-white/20 p-5 shadow-2xl">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-white font-semibold text-sm">Ruang Seminar</p>
+                        <p className="text-white/60 text-xs">A101 - Gedung A</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-2 bg-white/20 rounded-full w-full" />
+                      <div className="h-2 bg-white/20 rounded-full w-3/4" />
+                      <div className="h-2 bg-white/10 rounded-full w-1/2" />
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-white/60 text-xs">Kapasitas: 50</span>
+                      <span className="bg-emerald-500/30 text-emerald-300 text-xs font-semibold px-2 py-0.5 rounded-full">Tersedia</span>
+                    </div>
+                  </div>
+
+                {/* Floating Small Card - Top Right */}
+                <div className="absolute top-4 right-0 w-36 h-20 bg-white/10 backdrop-blur-sm rounded-[16px] border border-white/20 p-3 shadow-xl">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
+                      <CalendarDays className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-white text-xs font-medium">Jadwal</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="h-1.5 bg-white/20 rounded-full w-full" />
+                    <div className="h-1.5 bg-white/10 rounded-full w-2/3" />
+                  </div>
+                </div>
+
+                {/* Floating Check */}
+                <div className="absolute bottom-8 left-4 w-10 h-10 bg-emerald-500/30 backdrop-blur-sm rounded-lg flex items-center justify-center border border-emerald-400/30">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-300" />
+                </div>
+                </div>
+              </div>
             </div>
-            
+          </div>
+        </section>
+
+        {/* 3. STATS ROW */}
+        <section className="py-12 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+              {statsConfig.map((stat) => {
+                const rawValue = stat.key === 'rooms' ? roomCount 
+                  : stat.key === 'equipment' ? equipmentCount 
+                  : stat.key === 'bookings' ? bookingCount 
+                  : 98
+                // Use realistic fallback for demo if count is 0
+                const value = rawValue === 0 
+                  ? (stat.key === 'rooms' ? 20 : stat.key === 'equipment' ? 100 : 500) 
+                  : rawValue
+                const displayValue = stat.key === 'satisfaction' ? `${value}%` : `${value}+`
+                return (
+                  <div key={stat.label} className="text-center">
+                    <div className={`inline-flex items-center justify-center w-14 h-14 ${stat.bgColor} rounded-2xl mb-4`}>
+                      <stat.icon className={`h-7 w-7 ${stat.color}`} />
+                    </div>
+                    <p className="text-3xl lg:text-4xl font-bold text-[#111827] mb-1">{displayValue}</p>
+                    <p className="text-sm text-[#6B7280] font-medium">{stat.label}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* 4. CARA MEMINJAM - FIXED: Always visible steps */}
+        <section id="cara" className="py-20 bg-[#F9FAFB]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
             {/* Title */}
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1] slide-up">
-              <span className="text-slate-900">Sewa Ruang &</span>
-              <br />
-              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
-                Peralatan Digital
-              </span>
-            </h1>
-            
-            {/* Subtitle */}
-            <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed slide-up" style={{ animationDelay: '0.1s' }}>
-              {institution?.description || 'Ganti catatan manual dan grup WhatsApp dengan sistem digital terpusat. Kelola aset, proses peminjaman, dan pantau penggunaan dalam satu platform modern.'}
-            </p>
-            
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center slide-up" style={{ animationDelay: '0.2s' }}>
-              <Link href="/catalog" className={cn(
-                buttonVariants({ size: 'lg' }), 
-                'btn-gradient text-white border-0 text-base px-8 h-14'
-              )}>
-                Lihat Katalog <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-              <Link href="/register" className={cn(
-                buttonVariants({ size: 'lg', variant: 'outline' }), 
-                'border-slate-200 text-slate-700 hover:bg-slate-50 text-base px-8 h-14'
-              )}>
-                Daftar Gratis
-              </Link>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="flex items-center justify-center gap-8 mt-12 slide-up" style={{ animationDelay: '0.3s' }}>
-              <div className="flex items-center gap-2 text-slate-500">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">Gratis Pendaftaran</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-500">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">Proses Cepat</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-500">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">Aman & Terpercaya</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Scroll Indicator */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">Scroll</span>
-            <div className="w-6 h-10 border-2 border-slate-300 rounded-full flex justify-center pt-2">
-              <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
-            </div>
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="relative py-16 bg-white border-y border-slate-100">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center group">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 mb-4 group-hover:scale-110 transition-transform">
-                    <stat.icon className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <p className="text-4xl font-bold text-slate-900 mb-1">{stat.value}</p>
-                  <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-24 bg-slate-50/50">
-          <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-16">
-              <span className="inline-block text-indigo-600 text-sm font-semibold uppercase tracking-wider mb-4">
-                Fitur Unggulan
-              </span>
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">
-                Semua yang Anda Butuhkan
+              <h2 className="text-3xl lg:text-4xl font-bold text-[#111827] mb-4">
+                Cara Meminjam
               </h2>
-              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                Platform lengkap untuk mengelola aset fisik institusi dari satu tempat dengan mudah dan efisien.
+              <p className="text-[#6B7280] max-w-2xl mx-auto text-base">
+                Proses peminjaman yang mudah dan transparan dalam tiga langkah sederhana
               </p>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((f) => (
-                <div 
-                  key={f.title} 
-                  className={cn(
-                    'group relative bg-white rounded-2xl p-6 border border-slate-100 card-hover overflow-hidden',
-                  )}
-                >
-                  {/* Gradient Border Effect */}
-                  <div className={cn(
-                    'absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl',
-                    f.gradient
-                  )} style={{ padding: '1px' }}>
-                    <div className="w-full h-full bg-white rounded-2xl" />
-                  </div>
-                  
-                  <div className="relative">
-                    <div className={cn(
-                      'w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br',
-                      f.gradient
-                    )}>
-                      <f.icon className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-slate-900 mb-3">{f.title}</h3>
-                    <p className="text-slate-600 leading-relaxed">{f.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        {/* How It Works Section */}
-        <section className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-16">
-              <span className="inline-block text-indigo-600 text-sm font-semibold uppercase tracking-wider mb-4">
-                Cara Kerja
-              </span>
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">
-                Proses Sederhana & Transparan
-              </h2>
-              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                Hanya empat langkah mudah untuk memulai peminjaman ruang atau peralatan.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {steps.map((step, i) => (
-                <div key={step.n} className="relative">
-                  {i < steps.length - 1 && (
-                    <div className="hidden lg:block absolute top-8 left-full w-full h-0.5">
-                      <div className="w-full h-full bg-gradient-to-r from-indigo-200 to-transparent" />
-                    </div>
-                  )}
-                  <div className="relative text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-lg mb-6 shadow-lg shadow-indigo-500/25">
+            {/* Steps - Desktop (md and up) */}
+            <div className="hidden md:block relative">
+              {/* Connector Line */}
+              <div className="absolute top-[2rem] left-[16.66%] right-[16.66%] h-0.5 bg-gray-200">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-900 rounded-full" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-emerald-600 rounded-full" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-8">
+                {steps.map((step) => (
+                  <div key={step.n} className="relative text-center">
+                    <div
+                      className={`inline-flex items-center justify-center w-16 h-16 ${step.color} text-white text-xl font-bold rounded-2xl mb-6 shadow-lg mx-auto`}
+                    >
                       {step.n}
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-900 mb-3">{step.title}</h3>
-                    <p className="text-slate-600 leading-relaxed">{step.desc}</p>
+                    <h3 className="text-xl font-semibold text-[#111827] mb-3">{step.title}</h3>
+                    <p className="text-[#6B7280] leading-relaxed px-4 text-sm">{step.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Steps - Mobile (below md) */}
+            <div className="md:hidden relative">
+              <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200" />
+              {steps.map((step) => (
+                <div key={step.n} className="relative flex gap-6 mb-10 last:mb-0">
+                  <div
+                    className={`relative z-10 flex-shrink-0 w-16 h-16 ${step.color} text-white text-xl font-bold rounded-2xl flex items-center justify-center shadow-lg`}
+                  >
+                    {step.n}
+                  </div>
+                  <div className="pt-3">
+                    <h3 className="text-lg font-semibold text-[#111827] mb-2">{step.title}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
                   </div>
                 </div>
               ))}
@@ -327,129 +343,184 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="relative py-24 overflow-hidden">
-          {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500" />
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-          </div>
-          
-          {/* Pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:40px_40px]" />
-          
-          <div className="relative max-w-4xl mx-auto px-4 text-center">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-full mb-6">
-              <Sparkles className="h-4 w-4" />
-              <span className="font-medium">Mulai Sekarang - Gratis!</span>
+        {/* 5. KATALOG PREVIEW */}
+        <section className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            {/* Title */}
+            <div className="text-center mb-12">
+              <h2 className="text-3xl lg:text-4xl font-bold text-[#111827] mb-4">
+                Katalog Terbaru
+              </h2>
+              <p className="text-[#6B7280] max-w-2xl mx-auto text-base">
+                Pilih dari berbagai ruangan dan peralatan yang tersedia untuk kebutuhan Anda
+              </p>
             </div>
-            
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Siap Mengelola Aset<br />Dengan Lebih Baik?
-            </h2>
-            
-            <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-              Daftar akun gratis dan ajukan peminjaman pertama Anda hari ini. 
-              Tidak ada biaya tersembunyi.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register" className={cn(
-                buttonVariants({ size: 'lg' }), 
-                'bg-white text-indigo-600 hover:bg-slate-100 font-semibold text-base px-8 h-14 shadow-xl shadow-black/10'
-              )}>
-                Buat Akun Sekarang <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-              <Link href="/login" className={cn(
-                buttonVariants({ size: 'lg', variant: 'outline' }), 
-                'border-white/30 text-white hover:bg-white/10 text-base px-8 h-14'
-              )}>
-                Sudah Punya Akun
-              </Link>
+
+            {/* Katalog Preview Component */}
+            <KatalogPreview />
+
+          </div>
+        </section>
+
+        {/* 6. KATEGORI PEMINJAM */}
+        <section className="py-20 bg-[#EFF3FF]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            {/* Title */}
+            <div className="text-center mb-12">
+              <h2 className="text-3xl lg:text-4xl font-bold text-[#111827] mb-4">
+                Kategori Peminjam
+              </h2>
+              <p className="text-[#6B7280] max-w-2xl mx-auto text-base">
+                Sistem melayani berbagai kategori peminjam dengan kebutuhan yang berbeda
+              </p>
+            </div>
+
+            {/* Categories Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {borrowerCategories.map((category) => (
+                <div
+                  key={category.label}
+                  className="bg-white rounded-[14px] p-6 border border-[#E5E7EB] hover:shadow-lg transition-all duration-300 group cursor-default"
+                >
+                  <div
+                    className={`inline-flex items-center justify-center w-14 h-14 ${category.color} rounded-2xl mb-4 group-hover:scale-110 transition-transform`}
+                  >
+                    <category.icon className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-[#111827] mb-2">{category.label}</h3>
+                  <p className="text-[#6B7280] text-sm">{category.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 7. CTA BANNER */}
+        <section className="py-8 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="relative rounded-2xl bg-gradient-to-br from-[#1B3A8C] to-[#2A52C9] overflow-hidden">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+                    backgroundSize: '32px 32px',
+                  }}
+                />
+              </div>
+
+              <div className="relative py-14 px-8 text-center">
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                  Siap Memulai Peminjaman?
+                </h2>
+                <p className="text-white/80 mb-8 max-w-xl mx-auto text-base">
+                  Daftar sekarang dan nikmati kemudahan meminjam ruangan dan peralatan dengan proses yang cepat dan transparan
+                </p>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B3A8C] font-semibold rounded-xl hover:bg-white/90 transition-colors shadow-lg"
+                >
+                  Mulai Sekarang
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-slate-300 py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            {/* Institution Info */}
+      {/* 8. FOOTER */}
+      <footer id="kontak" className="bg-[#0F172A]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+            {/* Tentang USC */}
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                {institution?.logo_url ? (
-                  <SafeImage
-                    src={institution.logo_url}
-                    alt={institution.name}
-                    className="h-10 w-auto"
-                    fallback={
-                      <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-white" />
-                      </div>
-                    }
-                  />
-                ) : (
-                  <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                    <Building2 className="h-5 w-5 text-white" />
-                  </div>
-                )}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-[#1B3A8C] rounded-lg flex items-center justify-center">
+                  <Building2 className="h-5 w-5 text-white" />
+                </div>
                 <div>
-                  <span className="font-bold text-lg text-white">{institution?.name || 'RentSpace'}</span>
-                  <p className="text-sm text-slate-400">Sistem Manajemen Peminjaman</p>
+                  <span className="font-bold text-lg text-white">{institution?.short_name || 'USC'}</span>
                 </div>
               </div>
+              <p className="text-sm leading-relaxed text-gray-400 mb-4">
+                Unit Sarana dan Prasarana Universitas Negeri Surabaya. Mengelola peminjaman ruangan dan peralatan untuk mendukung kegiatan akademik dan non-akademik.
+              </p>
             </div>
-            
-            {/* Contact Info */}
+
+            {/* Link Cepat */}
             <div>
-              <h4 className="font-semibold text-white mb-3">Kontak Kami</h4>
-              <div className="space-y-2 text-sm">
+              <h4 className="font-semibold text-white mb-5">Link Cepat</h4>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/catalog" className="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-2">
+                    <Search className="h-3.5 w-3.5" />
+                    Katalog
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#cara" className="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-2">
+                    <FileCheck className="h-3.5 w-3.5" />
+                    Cara Peminjaman
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/login" className="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-2">
+                    <ArrowRight className="h-3.5 w-3.5" />
+                    Masuk
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/register" className="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-2">
+                    <ArrowRight className="h-3.5 w-3.5" />
+                    Daftar
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Kontak */}
+            <div>
+              <h4 className="font-semibold text-white mb-5">Kontak</h4>
+              <div className="space-y-3 text-sm">
                 {institution?.address && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 mt-0.5 text-indigo-400 shrink-0" />
-                    <span>{institution.address}</span>
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 mt-0.5 text-gray-500 shrink-0" />
+                    <span className="text-gray-400">{institution.address}</span>
                   </div>
                 )}
                 {institution?.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-indigo-400 shrink-0" />
-                    <a href={`tel:${institution.phone}`} className="hover:text-white transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-gray-500 shrink-0" />
+                    <a href={`tel:${institution.phone}`} className="text-gray-400 hover:text-white transition-colors">
                       {institution.phone}
                     </a>
                   </div>
                 )}
                 {institution?.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-indigo-400 shrink-0" />
-                    <a href={`mailto:${institution.email}`} className="hover:text-white transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-gray-500 shrink-0" />
+                    <a href={`mailto:${institution.email}`} className="text-gray-400 hover:text-white transition-colors">
                       {institution.email}
                     </a>
                   </div>
                 )}
               </div>
             </div>
-
-            {/* Navigation */}
-            <div>
-              <h4 className="font-semibold text-white mb-3">Navigasi</h4>
-              <div className="flex flex-col gap-2 text-sm">
-                <Link href="/catalog" className="hover:text-white transition-colors">Katalog</Link>
-                <Link href="/login" className="hover:text-white transition-colors">Masuk</Link>
-                <Link href="/register" className="hover:text-white transition-colors">Daftar</Link>
-              </div>
-            </div>
           </div>
-          
-          <div className="border-t border-slate-800 pt-6 text-center text-sm text-slate-500">
-            <p>&copy; {currentYear} {institution?.name || 'RentSpace'}. All rights reserved.</p>
+
+          {/* Copyright Bar */}
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-500">
+              &copy; {currentYear} {institution?.name || 'USC UNESA'}. All rights reserved.
+            </p>
             {institution?.website && (
-              <a 
+              <a
                 href={institution.website}
                 target="_blank"
-                rel="noopener noreferrer" 
-                className="text-indigo-400 hover:text-indigo-300 transition-colors mt-1 inline-block"
+                rel="noopener noreferrer"
+                className="text-sm text-gray-500 hover:text-white transition-colors"
               >
                 {institution.website}
               </a>

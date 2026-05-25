@@ -62,20 +62,20 @@ export function RecordReturnForm({ bookingId }: { bookingId: string }) {
   }
 
   return (
-    <Card>
-      <CardHeader><CardTitle className="text-sm">Form Pengembalian</CardTitle></CardHeader>
+    <Card className="rounded-[14px]">
+      <CardHeader><CardTitle className="text-sm text-foreground">Form Pengembalian</CardTitle></CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label>Waktu Pengembalian Aktual</Label>
-            <Input type="datetime-local" {...register('returned_at')} />
+            <Label className="text-foreground">Waktu Pengembalian Aktual</Label>
+            <Input type="datetime-local" {...register('returned_at')} className="rounded-[10px] border-border" />
           </div>
 
           <div className="space-y-2">
-            <Label>Kondisi Aset</Label>
+            <Label className="text-foreground">Kondisi Alat</Label>
             <Select defaultValue="good" onValueChange={(v) => v && setValue('condition', v as FormData['condition'])}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="rounded-[10px] border-border"><SelectValue /></SelectTrigger>
+              <SelectContent className="rounded-[10px]">
                 <SelectItem value="good">Baik</SelectItem>
                 <SelectItem value="minor_damage">Rusak Ringan</SelectItem>
                 <SelectItem value="major_damage">Rusak Berat</SelectItem>
@@ -85,17 +85,18 @@ export function RecordReturnForm({ bookingId }: { bookingId: string }) {
           </div>
 
           <div className="space-y-2">
-            <Label>
+            <Label className="text-foreground">
               Catatan Kondisi {condition !== 'good' && <span className="text-destructive">*</span>}
             </Label>
             <Textarea
               placeholder={condition !== 'good' ? 'Wajib diisi — jelaskan kondisi kerusakan/kehilangan...' : 'Catatan tambahan (opsional)...'}
               {...register('notes')}
+              className="rounded-[10px] border-border"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Foto Kondisi Aset</Label>
+            <Label className="text-foreground">Foto Kondisi Alat</Label>
             <PhotoUpload
               value={photoUrl}
               onChange={(url) => setValue('photo_url', url ?? '')}
@@ -103,7 +104,7 @@ export function RecordReturnForm({ bookingId }: { bookingId: string }) {
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full rounded-[10px]" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Pengembalian
           </Button>

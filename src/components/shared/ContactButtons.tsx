@@ -382,7 +382,7 @@ export function ContactButtons({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger 
-        className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-2 text-xs ${className}`}
+        className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-soft hover:bg-accent hover:text-accent-foreground h-8 rounded-[10px] px-2 text-xs ${className}`}
         disabled={isLoading}
       >
         {isLoading ? (
@@ -416,7 +416,7 @@ export function ContactButtons({
           >
             <MessageSquare className="h-4 w-4 mr-2 text-green-600" />
             WhatsApp
-            <ExternalLink className="h-3 w-3 ml-auto text-slate-400" />
+            <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/70" />
           </DropdownMenuItem>
         )}
         
@@ -427,7 +427,7 @@ export function ContactButtons({
           >
             <Send className="h-4 w-4 mr-2 text-sky-600" />
             Telegram
-            <ExternalLink className="h-3 w-3 ml-auto text-slate-400" />
+            <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/70" />
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { AdminSidebar } from './AdminSidebar'
 import { NotificationBell } from './NotificationBell'
@@ -35,9 +35,39 @@ export function AdminShell({
   institution?: InstitutionProfile | null
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
   const pathname = usePathname()
 
   useEffect(() => { setSidebarOpen(false) }, [pathname])
+
+  // Swipe gesture for sidebar
+  const minSwipeDistance = 50
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }, [])
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }, [])
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+    
+    // Swipe right from left edge (0-30px) opens sidebar
+    if (isRightSwipe && touchStart < 30 && !sidebarOpen) {
+      setSidebarOpen(true)
+    }
+    // Swipe left closes sidebar
+    if (isLeftSwipe && sidebarOpen) {
+      setSidebarOpen(false)
+    }
+  }, [touchStart, touchEnd, sidebarOpen])
 
   const roleLabel: Record<string, string> = {
     super_admin: 'Super Admin',
@@ -46,19 +76,24 @@ export function AdminShell({
   }
 
   const roleColor: Record<string, string> = {
-    super_admin: 'bg-purple-100 text-purple-700 border-purple-200',
-    admin: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    staff: 'bg-blue-100 text-blue-700 border-blue-200',
+    super_admin: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    admin: 'bg-sky-100 text-sky-700 border-sky-200',
+    staff: 'bg-muted text-muted-foreground border-border',
   }
 
   const displayName = institution?.short_name || institution?.name || 'RentSpace'
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div 
+      className="flex min-h-screen bg-background"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -79,31 +114,31 @@ export function AdminShell({
       <div className="flex flex-col flex-1 lg:pl-72 min-w-0">
 
         {/* Mobile header */}
-        <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-16 bg-white border-b border-slate-200 text-slate-900 shrink-0">
+        <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-16 bg-card border-b border-border shrink-0"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+        >
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-[10px] hover:bg-muted transition-colors"
+            aria-label="Buka menu navigasi"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-3 font-bold text-lg flex-1">
+          <div className="flex items-center gap-3 font-semibold text-base flex-1 text-foreground">
             {institution?.logo_url ? (
               <SafeImage
                 src={institution.logo_url}
                 alt={institution.name}
                 className="h-8 w-auto"
                 fallback={
-                  <div className="h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <div className="h-8 w-8 bg-primary rounded-[10px] flex items-center justify-center">
                     <Building2 className="h-4 w-4 text-white" />
                   </div>
                 }
               />
             ) : (
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg blur opacity-40" />
-                <div className="relative h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-4 w-4 text-white" />
-                </div>
+              <div className="h-8 w-8 bg-primary rounded-[10px] flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-white" />
               </div>
             )}
             <span className="truncate">{displayName}</span>
@@ -112,19 +147,21 @@ export function AdminShell({
         </header>
 
         {/* Desktop top bar */}
-        <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between px-8 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shrink-0">
+        <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between px-8 h-14 bg-card border-b border-border shrink-0"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+        >
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-sm text-slate-500 font-medium">Sistem aktif dan berjalan normal</span>
+              <div className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="text-sm text-muted-foreground font-medium">Sistem aktif</span>
             </div>
             {institution && (
-              <div className="h-4 w-px bg-slate-300 mx-2" />
+              <div className="h-4 w-px bg-border mx-2" />
             )}
             {institution && (
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <Building2 className="h-4 w-4 text-slate-400" />
-                <span className="font-medium">{institution.name}</span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Building2 className="h-4 w-4" />
+                <span className="font-medium text-foreground/80">{institution.name}</span>
               </div>
             )}
           </div>
@@ -133,16 +170,16 @@ export function AdminShell({
             <NotificationBell />
             
             {userName && (
-              <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+              <div className="flex items-center gap-3 pl-4 border-l border-border">
                 {photoUrl ? (
                   <SafeImage
                     src={photoUrl}
                     alt={userName}
-                    className="h-10 w-10 rounded-xl object-cover border-2 border-slate-200"
+                    className="h-9 w-9 rounded-[10px] object-cover border border-border"
                     fallback={
                       <div className={cn(
-                        'h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold border-2',
-                        roleColor[userRole ?? ''] || 'bg-slate-100 text-slate-700 border-slate-200'
+                        'h-9 w-9 rounded-[10px] flex items-center justify-center text-sm font-bold border',
+                        roleColor[userRole ?? ''] || 'bg-muted text-foreground border-border'
                       )}>
                         {userName.charAt(0).toUpperCase()}
                       </div>
@@ -150,20 +187,20 @@ export function AdminShell({
                   />
                 ) : (
                   <div className={cn(
-                    'h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold border-2',
-                    roleColor[userRole ?? ''] || 'bg-slate-100 text-slate-700 border-slate-200'
+                    'h-9 w-9 rounded-[10px] flex items-center justify-center text-sm font-bold border',
+                    roleColor[userRole ?? ''] || 'bg-muted text-foreground border-border'
                   )}>
                     {userName.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="text-right hidden xl:block">
-                  <p className="text-sm font-semibold text-slate-900 leading-tight">{userName}</p>
+                  <p className="text-sm font-semibold text-foreground leading-tight">{userName}</p>
                   <div className="flex items-center gap-1.5">
-                    {userRole === 'super_admin' && <Shield className="h-3 w-3 text-purple-500" />}
-                    <p className="text-xs text-slate-500">{roleLabel[userRole ?? ''] ?? userRole}</p>
+                    {userRole === 'super_admin' && <Shield className="h-3 w-3 text-indigo-500" />}
+                    <p className="text-xs text-muted-foreground">{roleLabel[userRole ?? ''] ?? userRole}</p>
                   </div>
                 </div>
-                <ChevronDown className="h-4 w-4 text-slate-400 hidden xl:block" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground hidden xl:block" />
               </div>
             )}
           </div>

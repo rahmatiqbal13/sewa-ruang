@@ -38,10 +38,10 @@ export function RoomActions({ id, name, isActive, isForRent }: Props) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent transition-colors">
+      <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground hover:bg-muted transition-colors">
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="rounded-[10px]">
         <DropdownMenuItem onClick={() => router.push(`/admin/rooms/${createSlug(name)}`)} className="flex items-center gap-2 cursor-pointer">
           <Eye className="h-4 w-4" /> Lihat Detail
         </DropdownMenuItem>

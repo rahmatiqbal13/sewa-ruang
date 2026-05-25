@@ -165,7 +165,7 @@ export function ImportDialog({
         {!result && (
           <>
             {/* Template Download */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-[10px] p-4">
               <div className="flex items-start gap-3">
                 <FileSpreadsheet className="h-5 w-5 text-blue-600 mt-0.5" />
                 <div className="flex-1">
@@ -188,7 +188,7 @@ export function ImportDialog({
 
             {/* Delete All Warning */}
             {onDeleteAll && !showDeleteAllConfirm && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-red-50 border border-red-200 rounded-[10px] p-4">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                   <div className="flex-1">
@@ -213,7 +213,7 @@ export function ImportDialog({
 
             {/* Delete All Confirmation */}
             {showDeleteAllConfirm && (
-              <div className="bg-red-100 border-2 border-red-300 rounded-lg p-6">
+              <div className="bg-red-100 border-2 border-red-300 rounded-[10px] p-6">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="h-6 w-6 text-red-600 mt-0.5" />
                   <div className="flex-1">
@@ -261,10 +261,10 @@ export function ImportDialog({
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors",
+                "border-2 border-dashed rounded-[14px] p-8 text-center cursor-pointer transition-colors",
                 isDragActive 
                   ? "border-blue-500 bg-blue-50" 
-                  : "border-slate-300 hover:border-slate-400",
+                  : "border-muted-foreground/30 hover:border-muted-foreground/50",
                 isUploading && "opacity-50 cursor-not-allowed",
                 file && "border-green-500 bg-green-50"
               )}
@@ -275,8 +275,8 @@ export function ImportDialog({
                 <div className="flex items-center justify-center gap-3">
                   <FileSpreadsheet className="h-8 w-8 text-green-600" />
                   <div className="text-left">
-                    <p className="font-medium text-slate-900">{file.name}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="font-medium text-foreground">{file.name}</p>
+                    <p className="text-sm text-muted-foreground">
                       {(file.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
@@ -295,11 +295,11 @@ export function ImportDialog({
                 </div>
               ) : (
                 <>
-                  <Upload className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                  <p className="font-medium text-slate-700">
+                  <Upload className="h-12 w-12 text-muted-foreground/70 mx-auto mb-3" />
+                  <p className="font-medium text-foreground/80">
                     {isDragActive ? 'Lepaskan file di sini' : 'Klik atau seret file Excel ke sini'}
                   </p>
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Format yang didukung: .xlsx, .xls
                   </p>
                 </>
@@ -308,7 +308,7 @@ export function ImportDialog({
 
             {/* File Rejection Errors */}
             {fileRejections.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="bg-red-50 border border-red-200 rounded-[10px] p-3">
                 <p className="text-sm text-red-600 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   File tidak valid. Pastikan format file adalah Excel (.xlsx atau .xls)
@@ -322,7 +322,7 @@ export function ImportDialog({
         {isUploading && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Mengimport {entityName}...</span>
+              <span className="text-muted-foreground">Mengimport {entityName}...</span>
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
             <Progress value={undefined} className="h-2" />
@@ -332,7 +332,7 @@ export function ImportDialog({
         {/* Result */}
         {result && (
           <div className={cn(
-            "rounded-lg p-4",
+            "rounded-[10px] p-4",
             result.success 
               ? "bg-green-50 border border-green-200" 
               : result.successCount > 0 
@@ -361,7 +361,7 @@ export function ImportDialog({
                 
                 {/* Stats */}
                 <div className="flex gap-4 mt-3 text-sm">
-                  <span className="text-slate-600">
+                  <span className="text-muted-foreground">
                     Total: <strong>{result.totalRows}</strong> baris
                   </span>
                   <span className="text-green-600">
@@ -377,25 +377,25 @@ export function ImportDialog({
                 {/* Error Details */}
                 {result.errors.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-sm font-medium text-slate-700 mb-2">Detail Error:</p>
-                    <div className="bg-white rounded-lg border max-h-40 overflow-y-auto">
+                    <p className="text-sm font-medium text-foreground/80 mb-2">Detail Error:</p>
+                    <div className="bg-card rounded-[10px] border max-h-40 overflow-y-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-slate-50 sticky top-0">
+                        <thead className="bg-muted sticky top-0">
                           <tr>
-                            <th className="text-left px-3 py-2 font-medium text-slate-600">Baris</th>
-                            <th className="text-left px-3 py-2 font-medium text-slate-600">Error</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Baris</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Error</th>
                           </tr>
                         </thead>
                         <tbody>
                           {result.errors.slice(0, 10).map((error, idx) => (
                             <tr key={idx} className="border-t">
-                              <td className="px-3 py-2 text-slate-600">{error.row}</td>
+                              <td className="px-3 py-2 text-muted-foreground">{error.row}</td>
                               <td className="px-3 py-2 text-red-600">{error.message}</td>
                             </tr>
                           ))}
                           {result.errors.length > 10 && (
                             <tr>
-                              <td colSpan={2} className="px-3 py-2 text-center text-slate-500 text-xs">
+                              <td colSpan={2} className="px-3 py-2 text-center text-muted-foreground text-xs">
                                 ...dan {result.errors.length - 10} error lainnya
                               </td>
                             </tr>

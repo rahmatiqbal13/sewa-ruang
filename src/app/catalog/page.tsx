@@ -123,7 +123,7 @@ export default async function CatalogPage() {
   })).filter((b) => b.assets.length > 0) || []
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <PublicHeader />
       
       <main className="flex-1">

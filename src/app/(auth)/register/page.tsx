@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Building2, Loader2, CheckCircle2, User } from 'lucide-react'
+import { Building2, Loader2, User } from 'lucide-react'
 import { ImageUpload } from '@/components/shared/ImageUpload'
 
 const BORROWER_CATEGORIES = [
@@ -24,10 +24,10 @@ const BORROWER_CATEGORIES = [
 ]
 
 const schema = z.object({
-  name: z.string().min(2, 'Nama minimal 2 karakter'),
-  email: z.string().email('Email tidak valid'),
-  password: z.string().min(8, 'Password minimal 8 karakter'),
-  phone: z.string().regex(/^(\+62|0)[0-9]{9,12}$/, 'Format WhatsApp tidak valid (contoh: 08123456789 atau +628123456789)'),
+  name: z.string().min(1, 'Nama wajib diisi').min(3, 'Nama minimal 3 karakter'),
+  email: z.string().min(1, 'Email wajib diisi').email('Email tidak valid'),
+  password: z.string().min(1, 'Password wajib diisi').min(6, 'Password minimal 6 karakter'),
+  phone: z.string().min(1, 'Nomor WhatsApp wajib diisi').regex(/^(\+62|0)[0-9]{9,12}$/, 'Format WhatsApp tidak valid (contoh: 08123456789 atau +628123456789)'),
   borrower_category: z.enum(['mahasiswa', 'pascasarjana', 'dosen_karyawan', 'kerjasama', 'umum'], { message: 'Kategori peminjam wajib dipilih' }),
   institution: z.string().min(2, 'Instansi wajib diisi').max(100),
   class_division: z.string().min(1, 'Kelas/Divisi wajib diisi').max(50),
@@ -40,8 +40,9 @@ export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [photoUrl, setPhotoUrl] = useState('')
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, formState: { errors, isValid } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    mode: 'onChange',
   })
 
   async function onSubmit(data: FormData) {
@@ -70,135 +71,123 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-zinc-50">
-      {/* Left panel */}
-      <div className="hidden lg:flex flex-col w-[400px] shrink-0 bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-900 text-white p-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32" />
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg mb-16">
-            <div className="bg-white/20 p-2 rounded-xl">
-              <Building2 className="h-5 w-5" />
-            </div>
-            Sewa Ruang & Alat
-          </Link>
-          <h2 className="text-3xl font-bold mb-4 leading-tight">Bergabung Sekarang</h2>
-          <p className="text-blue-200 mb-10 leading-relaxed">
-            Buat akun peminjam dan mulai ajukan peminjaman ruangan atau peralatan secara digital.
-          </p>
-          <div className="space-y-4">
-            {['Proses pengajuan 100% online', 'Notifikasi status real-time', 'Riwayat peminjaman tersimpan', 'Perjanjian digital otomatis'].map(t => (
-              <div key={t} className="flex items-center gap-3 text-sm">
-                <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
-                <span className="text-blue-100">{t}</span>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#F9FAFB]">
+      <div className="w-full max-w-[560px]">
+        <div className="bg-white rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#E5E7EB] p-8 md:p-10">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-[10px] flex items-center justify-center bg-[#1B3A8C]">
+                <Building2 className="h-5 w-5 text-white" />
               </div>
-            ))}
-          </div>
-        </div>
-        <p className="relative z-10 mt-auto text-blue-400 text-xs">
-          &copy; {new Date().getFullYear()} Sistem Sewa Ruang & Alat
-        </p>
-      </div>
-
-      {/* Right form panel */}
-      <div className="flex-1 flex items-start justify-center py-8 px-6 overflow-y-auto">
-        <div className="w-full max-w-lg">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 font-bold text-blue-950 mb-6 justify-center">
-            <div className="bg-blue-950 text-white p-1.5 rounded-lg">
-              <Building2 className="h-4 w-4" />
+              <div>
+                <h1 className="text-[#111827] font-bold text-2xl">Buat Akun Baru</h1>
+                <p className="text-[#6B7280] text-sm">Isi data di bawah untuk mendaftar</p>
+              </div>
             </div>
-            Sewa Ruang & Alat
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border p-8">
-            <h1 className="text-2xl font-bold text-zinc-900 mb-1">Buat Akun</h1>
-            <p className="text-muted-foreground text-sm mb-7">Isi data diri untuk membuat akun peminjam</p>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Photo Upload */}
+            <div className="space-y-1.5">
+              <Label className="text-[#111827] text-sm font-medium flex items-center gap-1">
+                <User className="h-4 w-4" />
+                Foto Profil <span className="text-[#9CA3AF] font-normal">(opsional)</span>
+              </Label>
+              <ImageUpload 
+                value={photoUrl}
+                onChange={setPhotoUrl}
+                bucket="avatars"
+                folder="users"
+              />
+              <p className="text-xs text-[#9CA3AF]">
+                Upload foto profil Anda. Maksimal 5MB.
+              </p>
+            </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {/* Photo Upload */}
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-zinc-700 flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  Foto Profil <span className="text-muted-foreground font-normal">(opsional)</span>
+            {/* Name */}
+            <div className="space-y-1.5">
+              <Label htmlFor="name" className="text-[#111827] text-sm font-medium">Nama Lengkap</Label>
+              <Input id="name" placeholder="Nama lengkap Anda" className="h-11 rounded-lg border-[#E5E7EB]" aria-describedby={errors.name ? 'name-error' : undefined} aria-invalid={!!errors.name} {...register('name')} />
+              {errors.name && <p id="name-error" role="alert" className="text-xs text-red-600 font-medium">{errors.name.message}</p>}
+            </div>
+
+            {/* Email | Password */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-[#111827] text-sm font-medium">Email</Label>
+                <Input id="email" type="email" placeholder="nama@email.com" className="h-11 rounded-lg border-[#E5E7EB]" aria-describedby={errors.email ? 'email-error' : undefined} aria-invalid={!!errors.email} {...register('email')} />
+                {errors.email && <p id="email-error" role="alert" className="text-xs text-red-600 font-medium">{errors.email.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-[#111827] text-sm font-medium">Password</Label>
+                <Input id="password" type="password" placeholder="Min. 6 karakter" className="h-11 rounded-lg border-[#E5E7EB]" aria-describedby={errors.password ? 'password-error' : undefined} aria-invalid={!!errors.password} {...register('password')} />
+                {errors.password && <p id="password-error" role="alert" className="text-xs text-red-600 font-medium">{errors.password.message}</p>}
+              </div>
+            </div>
+
+            {/* Phone | Telegram */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="text-[#111827] text-sm font-medium">Nomor WhatsApp</Label>
+                <Input id="phone" placeholder="08xxxxxxxxxx" className="h-11 rounded-lg border-[#E5E7EB]" aria-describedby={errors.phone ? 'phone-error' : undefined} aria-invalid={!!errors.phone} {...register('phone')} />
+                {errors.phone && <p id="phone-error" role="alert" className="text-xs text-red-600 font-medium">{errors.phone.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="telegram_username" className="text-[#111827] text-sm font-medium flex items-center gap-1">
+                  Username Telegram <span className="text-[#9CA3AF] font-normal">(opsional)</span>
                 </Label>
-                <ImageUpload 
-                  value={photoUrl}
-                  onChange={setPhotoUrl}
-                  bucket="avatars"
-                  folder="users"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Upload foto profil Anda. Maksimal 5MB.
-                </p>
+                <Input id="telegram_username" placeholder="@username" className="h-11 rounded-lg border-[#E5E7EB]" {...register('telegram_username')} />
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-zinc-700">Nama Lengkap</Label>
-                  <Input placeholder="Nama lengkap Anda" className="h-10" {...register('name')} />
-                  {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-zinc-700">Email</Label>
-                  <Input type="email" placeholder="nama@email.com" className="h-10" {...register('email')} />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-zinc-700">Password</Label>
-                  <Input type="password" placeholder="Min. 8 karakter" className="h-10" {...register('password')} />
-                  {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-zinc-700">Nomor WhatsApp</Label>
-                  <Input placeholder="08xxxxxxxxxx" className="h-10" {...register('phone')} />
-                  {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-zinc-700">Kategori Peminjam <span className="text-destructive">*</span></Label>
-                  <Select onValueChange={(v: string | null) => { if (v) setValue('borrower_category', v as FormData['borrower_category']) }}>
-                    <SelectTrigger className="h-10"><SelectValue placeholder="Pilih kategori Anda..." /></SelectTrigger>
-                    <SelectContent>
-                      {BORROWER_CATEGORIES.map(c => (
-                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.borrower_category && <p className="text-xs text-destructive">{errors.borrower_category.message}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-zinc-700">Instansi / Organisasi</Label>
-                  <Input placeholder="Universitas / Komunitas" className="h-10" maxLength={100} {...register('institution')} />
-                  {errors.institution && <p className="text-xs text-destructive">{errors.institution.message}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-zinc-700">Kelas / Divisi</Label>
-                  <Input placeholder="TI-3A, Divisi IT" className="h-10" maxLength={50} {...register('class_division')} />
-                  {errors.class_division && <p className="text-xs text-destructive">{errors.class_division.message}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-zinc-700 flex items-center gap-1">NIM / NIP / KTP <span className="text-muted-foreground font-normal">(opsional)</span></Label>
-                  <Input placeholder="Nomor identitas" className="h-10" {...register('identity_number')} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-zinc-700 flex items-center gap-1">Username Telegram <span className="text-muted-foreground font-normal">(opsional)</span></Label>
-                  <Input placeholder="@username" className="h-10" {...register('telegram_username')} />
-                </div>
+            {/* Kategori Peminjam */}
+            <div className="space-y-1.5">
+              <Label htmlFor="borrower_category" className="text-[#111827] text-sm font-medium">
+                Kategori Peminjam <span className="text-red-600">*</span>
+              </Label>
+              <Select onValueChange={(v: string | null) => { if (v) setValue('borrower_category', v as FormData['borrower_category']) }}>
+                <SelectTrigger id="borrower_category" className="h-11 rounded-lg border-[#E5E7EB]" aria-describedby={errors.borrower_category ? 'borrower_category-error' : undefined} aria-invalid={!!errors.borrower_category}><SelectValue placeholder="Pilih kategori Anda..." /></SelectTrigger>
+                <SelectContent>
+                  {BORROWER_CATEGORIES.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.borrower_category && <p id="borrower_category-error" role="alert" className="text-xs text-red-600 font-medium">{errors.borrower_category.message}</p>}
+            </div>
+
+            {/* Institution & Class */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="institution" className="text-[#111827] text-sm font-medium">Instansi / Organisasi</Label>
+                <Input id="institution" placeholder="Universitas / Komunitas" className="h-11 rounded-lg border-[#E5E7EB]" maxLength={100} aria-describedby={errors.institution ? 'institution-error' : undefined} aria-invalid={!!errors.institution} {...register('institution')} />
+                {errors.institution && <p id="institution-error" role="alert" className="text-xs text-red-600 font-medium">{errors.institution.message}</p>}
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="class_division" className="text-[#111827] text-sm font-medium">Kelas / Divisi</Label>
+                <Input id="class_division" placeholder="TI-3A, Divisi IT" className="h-11 rounded-lg border-[#E5E7EB]" maxLength={50} aria-describedby={errors.class_division ? 'class_division-error' : undefined} aria-invalid={!!errors.class_division} {...register('class_division')} />
+                {errors.class_division && <p id="class_division-error" role="alert" className="text-xs text-red-600 font-medium">{errors.class_division.message}</p>}
+              </div>
+            </div>
 
-              <Button type="submit" className="w-full h-11 bg-blue-950 hover:bg-blue-900 text-white font-semibold mt-2" disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Buat Akun
-              </Button>
-            </form>
+            {/* NIM / NIP / KTP */}
+            <div className="space-y-1.5">
+              <Label htmlFor="identity_number" className="text-[#111827] text-sm font-medium flex items-center gap-1">
+                NIM / NIP / KTP <span className="text-[#9CA3AF] font-normal">(opsional)</span>
+              </Label>
+              <Input id="identity_number" placeholder="Nomor identitas" className="h-11 rounded-lg border-[#E5E7EB]" {...register('identity_number')} />
+            </div>
 
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-              Sudah punya akun?{' '}
-              <Link href="/login" className="text-blue-700 hover:text-blue-900 font-medium hover:underline">Masuk sekarang</Link>
-            </p>
-          </div>
+            <Button type="submit" className="w-full h-11 bg-[#1B3A8C] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg mt-2" disabled={loading || !isValid}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Buat Akun
+            </Button>
+          </form>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            <Link href="/" className="hover:underline">← Kembali ke Beranda</Link>
+          <p className="mt-6 text-center text-sm text-[#6B7280]">
+            Sudah punya akun?{' '}
+            <Link href="/login" className="text-[#1B3A8C] hover:underline font-semibold">Masuk</Link>
           </p>
         </div>
       </div>

@@ -188,17 +188,17 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
 
           <div className="space-y-4">
             {/* Booking Info */}
-            <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+            <div className="p-4 bg-muted rounded-[10px] space-y-2">
               <p className="text-sm">
-                <span className="text-slate-500">No. Ref:</span>{' '}
+                <span className="text-muted-foreground">No. Ref:</span>{' '}
                 <span className="font-mono font-medium">{booking.reference_no}</span>
               </p>
               <p className="text-sm">
-                <span className="text-slate-500">Jadwal Selesai:</span>{' '}
+                <span className="text-muted-foreground">Jadwal Selesai:</span>{' '}
                 <span className="font-medium">{formatDateTime(booking.end_datetime)}</span>
               </p>
               <p className="text-sm">
-                <span className="text-slate-500">Sisa Waktu:</span>{' '}
+                <span className="text-muted-foreground">Sisa Waktu:</span>{' '}
                 <span className="font-medium text-amber-600">
                   {hoursRemaining > 24 
                     ? `${Math.ceil(hoursRemaining / 24)} hari` 
@@ -210,7 +210,7 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
 
             {/* Items List */}
             <div>
-              <Label className="text-sm text-slate-500 mb-2 block">Item yang Dipinjam</Label>
+              <Label className="text-sm text-muted-foreground mb-2 block">Item yang Dipinjam</Label>
               <div className="space-y-2">
                 {items.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 border rounded text-sm">
@@ -220,7 +220,7 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
                         : item.equipment?.name
                       }
                     </span>
-                    <span className="text-slate-500">× {item.quantity}</span>
+                    <span className="text-muted-foreground">× {item.quantity}</span>
                   </div>
                 ))}
               </div>
@@ -239,25 +239,25 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
                 max={booking.end_datetime.slice(0, 16)}
                 className="mt-1"
               />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Waktu sekarang: {formatDateTime(new Date().toISOString())}
               </p>
             </div>
 
             {/* Refund Calculation */}
             {refundAmount > 0 && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-[10px]">
                 <div className="flex items-center gap-2 text-green-800 mb-2">
                   <CheckCircle className="h-5 w-5" />
                   <span className="font-semibold">Perhitungan Refund</span>
                 </div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Total Tagihan:</span>
+                    <span className="text-muted-foreground">Total Tagihan:</span>
                     <span className="font-medium">{formatRupiah(booking.total_amount)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Sudah Dibayar:</span>
+                    <span className="text-muted-foreground">Sudah Dibayar:</span>
                     <span className="font-medium">{formatRupiah(totalPaid)}</span>
                   </div>
                   <div className="border-t pt-1 mt-1">
@@ -271,7 +271,7 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
             )}
 
             {refundAmount === 0 && actualEndDate && (
-              <div className="p-3 bg-slate-100 rounded-lg text-sm text-slate-600">
+              <div className="p-3 bg-muted rounded-[10px] text-sm text-muted-foreground">
                 Tidak ada refund yang dihitung untuk waktu pengembalian ini.
               </div>
             )}

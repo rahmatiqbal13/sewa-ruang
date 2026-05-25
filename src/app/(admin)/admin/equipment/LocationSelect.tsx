@@ -71,28 +71,28 @@ export function LocationSelect({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
       {/* Building Select */}
       <div className="space-y-2 md:space-y-3 min-w-0">
-        <Label htmlFor="building_id" className="text-slate-700 text-sm font-medium block">
-          Gedung <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+        <Label htmlFor="building_id" className="text-foreground/80 text-sm font-medium block">
+          Gedung <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
         </Label>
         <Select 
           name="building_id" 
           value={selectedBuilding}
           onValueChange={(value) => setSelectedBuilding(value || '')}
         >
-          <SelectTrigger className="h-11 bg-white border-slate-200 hover:border-slate-300 transition-colors w-full">
+          <SelectTrigger className="h-11 bg-card border-border hover:border-border transition-colors w-full">
             {selectedBuilding && selectedBuildingData ? (
-              <span className="text-slate-900 font-medium">{selectedBuildingData.code}</span>
+              <span className="text-foreground font-medium">{selectedBuildingData.code}</span>
             ) : (
-              <span className="text-slate-400">Pilih gedung...</span>
+              <span className="text-muted-foreground/70">Pilih gedung...</span>
             )}
           </SelectTrigger>
           <SelectContent className="max-h-60 w-[320px]">
-            <SelectItem value="" className="text-slate-500">Belum ada gedung</SelectItem>
+            <SelectItem value="" className="text-muted-foreground">Belum ada gedung</SelectItem>
             {buildings.map((b) => (
               <SelectItem key={b.id} value={b.id} className="py-3">
                 <div className="flex flex-col">
                   <span className="font-medium">{b.name}</span>
-                  <span className="text-xs text-slate-500">Kode: {b.code} • {b.floor_count} lantai</span>
+                  <span className="text-xs text-muted-foreground">Kode: {b.code} • {b.floor_count} lantai</span>
                 </div>
               </SelectItem>
             ))}
@@ -102,8 +102,8 @@ export function LocationSelect({
 
       {/* Floor Select */}
       <div className="space-y-2 md:space-y-3 min-w-0">
-        <Label htmlFor="floor" className="text-slate-700 text-sm font-medium block">
-          Lantai <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+        <Label htmlFor="floor" className="text-foreground/80 text-sm font-medium block">
+          Lantai <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
         </Label>
         <Select 
           name="floor" 
@@ -111,15 +111,15 @@ export function LocationSelect({
           onValueChange={(value) => setSelectedFloor(value || '')}
           disabled={!selectedBuilding}
         >
-          <SelectTrigger className="h-11 bg-white border-slate-200 hover:border-slate-300 transition-colors disabled:bg-slate-50 disabled:text-slate-400 w-full">
+          <SelectTrigger className="h-11 bg-card border-border hover:border-border transition-colors disabled:bg-muted disabled:text-muted-foreground/70 w-full">
             {selectedFloor ? (
-              <span className="text-slate-900">Lantai {selectedFloor}</span>
+              <span className="text-foreground">Lantai {selectedFloor}</span>
             ) : (
-              <span className="text-slate-400">{selectedBuilding ? "Pilih lantai..." : "Pilih gedung dulu"}</span>
+              <span className="text-muted-foreground/70">{selectedBuilding ? "Pilih lantai..." : "Pilih gedung dulu"}</span>
             )}
           </SelectTrigger>
           <SelectContent className="max-h-60">
-            <SelectItem value="" className="text-slate-500">Belum ada lantai</SelectItem>
+            <SelectItem value="" className="text-muted-foreground">Belum ada lantai</SelectItem>
             {floorCount > 0 && 
               Array.from({ length: floorCount }, (_, i) => i + 1).map((floor) => (
                 <SelectItem key={floor} value={floor.toString()}>
@@ -133,8 +133,8 @@ export function LocationSelect({
 
       {/* Room Select */}
       <div className="space-y-2 md:space-y-3 min-w-0">
-        <Label htmlFor="storage_room_id" className="text-slate-700 text-sm font-medium block">
-          Ruangan <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+        <Label htmlFor="storage_room_id" className="text-foreground/80 text-sm font-medium block">
+          Ruangan <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
         </Label>
         <Select 
           name="storage_room_id" 
@@ -142,17 +142,17 @@ export function LocationSelect({
           onValueChange={(value) => setSelectedRoom(value || '')}
           disabled={!selectedBuilding}
         >
-          <SelectTrigger className="h-11 bg-white border-slate-200 hover:border-slate-300 transition-colors disabled:bg-slate-50 disabled:text-slate-400 w-full">
+          <SelectTrigger className="h-11 bg-card border-border hover:border-border transition-colors disabled:bg-muted disabled:text-muted-foreground/70 w-full">
             {selectedRoom && selectedRoomData ? (
-              <span className="text-slate-900 font-medium">{selectedRoomData.room_code}</span>
+              <span className="text-foreground font-medium">{selectedRoomData.room_code}</span>
             ) : (
-              <span className="text-slate-400">{selectedBuilding ? "Pilih ruangan..." : "Pilih gedung dulu"}</span>
+              <span className="text-muted-foreground/70">{selectedBuilding ? "Pilih ruangan..." : "Pilih gedung dulu"}</span>
             )}
           </SelectTrigger>
           <SelectContent className="max-h-60 w-[320px]">
-            <SelectItem value="" className="text-slate-500">Belum ada ruangan</SelectItem>
+            <SelectItem value="" className="text-muted-foreground">Belum ada ruangan</SelectItem>
             {filteredRooms.length === 0 && selectedBuilding && (
-              <SelectItem value="" disabled className="text-slate-400 italic">
+              <SelectItem value="" disabled className="text-muted-foreground/70 italic">
                 Tidak ada ruangan di lantai ini
               </SelectItem>
             )}
@@ -160,7 +160,7 @@ export function LocationSelect({
               <SelectItem key={r.id} value={r.id} className="py-3">
                 <div className="flex flex-col">
                   <span className="font-medium">{r.name}</span>
-                  <span className="text-xs text-slate-500">Kode: {r.room_code}</span>
+                  <span className="text-xs text-muted-foreground">Kode: {r.room_code}</span>
                 </div>
               </SelectItem>
             ))}

@@ -78,7 +78,7 @@ export function ChangePasswordDialog({ userId, userName, plainPassword }: Props)
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Password Tersimpan</Label>
               <div className="flex items-center gap-2">
-                <div className="flex-1 bg-zinc-50 border rounded-md px-3 py-2 text-sm font-mono min-h-[36px] flex items-center">
+                <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono min-h-[36px] flex items-center">
                   {plainPassword
                     ? (showCurrent ? plainPassword : '••••••••')
                     : <span className="text-muted-foreground italic text-xs">Belum diset oleh admin</span>

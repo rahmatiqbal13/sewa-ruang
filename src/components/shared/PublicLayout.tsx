@@ -46,7 +46,7 @@ export async function PublicHeader({ showAuth = true }: PublicHeaderProps) {
   const institution = await getInstitutionProfile()
   
   return (
-    <header className="bg-white border-b sticky top-0 z-50">
+    <header className="bg-card border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo & Name */}
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -56,18 +56,18 @@ export async function PublicHeader({ showAuth = true }: PublicHeaderProps) {
               alt={institution.name}
               className="h-10 w-auto"
               fallback={
-                <div className="h-10 w-10 bg-blue-950 rounded-lg flex items-center justify-center">
+                <div className="h-10 w-10 bg-blue-950 rounded-[10px] flex items-center justify-center">
                   <Building2 className="h-6 w-6 text-white" />
                 </div>
               }
             />
           ) : (
-            <div className="h-10 w-10 bg-blue-950 rounded-lg flex items-center justify-center">
+            <div className="h-10 w-10 bg-blue-950 rounded-[10px] flex items-center justify-center">
               <Building2 className="h-6 w-6 text-white" />
             </div>
           )}
           <div className="hidden sm:block">
-            <h1 className="font-bold text-lg text-blue-950 leading-tight">
+            <h1 className="font-bold text-lg text-foreground leading-tight">
               {institution?.name || 'Tim Admin USC'}
             </h1>
             {institution?.short_name && (
@@ -118,7 +118,7 @@ export async function PublicFooter({ showContact = true }: PublicFooterProps) {
   const currentYear = new Date().getFullYear()
   
   return (
-    <footer className="bg-slate-900 text-slate-300">
+    <footer className="bg-foreground text-muted-foreground">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Institution Info */}
@@ -136,19 +136,19 @@ export async function PublicFooter({ showContact = true }: PublicFooterProps) {
               ) : (
                 <Building2 className="h-6 w-6 text-blue-400" />
               )}
-              <h3 className="font-bold text-white">
+              <h3 className="font-bold text-foreground">
                 {institution?.name || 'Tim Admin USC'}
               </h3>
             </div>
             {institution?.description && (
-              <p className="text-sm text-slate-400 mb-3">{institution.description}</p>
+              <p className="text-sm text-muted-foreground/70 mb-3">{institution.description}</p>
             )}
           </div>
 
           {/* Contact Info */}
           {showContact && (
             <div>
-              <h4 className="font-semibold text-white mb-3">Kontak Kami</h4>
+              <h4 className="font-semibold text-foreground mb-3">Kontak Kami</h4>
               <div className="space-y-2 text-sm">
                 {institution?.address && (
                   <div className="flex items-start gap-2">
@@ -159,7 +159,7 @@ export async function PublicFooter({ showContact = true }: PublicFooterProps) {
                 {institution?.phone && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-blue-400 shrink-0" />
-                    <a href={`tel:${institution.phone}`} className="hover:text-white transition-colors">
+                    <a href={`tel:${institution.phone}`} className="hover:text-foreground transition-colors">
                       {institution.phone}
                     </a>
                   </div>
@@ -167,7 +167,7 @@ export async function PublicFooter({ showContact = true }: PublicFooterProps) {
                 {institution?.email && (
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-blue-400 shrink-0" />
-                    <a href={`mailto:${institution.email}`} className="hover:text-white transition-colors">
+                    <a href={`mailto:${institution.email}`} className="hover:text-foreground transition-colors">
                       {institution.email}
                     </a>
                   </div>
@@ -178,17 +178,17 @@ export async function PublicFooter({ showContact = true }: PublicFooterProps) {
 
           {/* Operating Hours */}
           <div>
-            <h4 className="font-semibold text-white mb-3">Jam Operasional</h4>
+            <h4 className="font-semibold text-foreground mb-3">Jam Operasional</h4>
             {institution?.operating_hours ? (
               <p className="text-sm">{institution.operating_hours}</p>
             ) : (
-              <p className="text-sm text-slate-400">Senin - Jumat: 08:00 - 17:00<br/>Sabtu: 08:00 - 12:00</p>
+              <p className="text-sm text-muted-foreground/70">Senin - Jumat: 08:00 - 17:00<br/>Sabtu: 08:00 - 12:00</p>
             )}
           </div>
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-slate-800 mt-8 pt-6 text-center text-sm text-slate-500">
+        <div className="border-t border-border/60 mt-8 pt-6 text-center text-sm text-muted-foreground">
           <p>© {currentYear} {institution?.name || 'Tim Admin USC'}. All rights reserved.</p>
           {institution?.website && (
             <a 

@@ -134,7 +134,7 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Inventaris Ruangan</h1>
+          <h1 className="text-2xl font-bold text-foreground">Inventaris Ruangan</h1>
           <p className="text-muted-foreground text-sm">
             {room.name} {room.room_code && `(${room.room_code})`} — {room.buildings?.name}
           </p>
@@ -144,12 +144,12 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
       {/* Stats and Actions */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-zinc-500 bg-white border rounded-lg px-3 py-1.5">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-card border rounded-[10px] px-3 py-1.5">
             <Package className="h-4 w-4 text-teal-500" />
             {items.length} item inventaris
           </div>
           {hasSelection && (
-            <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
+            <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-[10px] px-3 py-1.5">
               <CheckSquare className="h-4 w-4" />
               {selectedIds.size} dipilih
               <button 
@@ -220,7 +220,7 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={toggleAll}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                   />
                 </TableHead>
                 <TableHead>Nama Item</TableHead>
@@ -261,13 +261,13 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
                         type="checkbox"
                         checked={selected}
                         onChange={() => toggleSelection(item.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                       />
                     </TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {item.photo_url && (
-                          <div className="h-8 w-8 rounded bg-gray-100 overflow-hidden">
+                          <div className="h-8 w-8 rounded bg-muted overflow-hidden">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img 
                               src={item.photo_url} 
@@ -279,7 +279,7 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
                         {item.name}
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">{item.inventory_code ?? '-'}</TableCell>
+                    <TableCell className="font-mono text-sm text-muted-foreground">{item.inventory_code ?? '-'}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell><Badge variant={cond?.variant}>{cond?.label}</Badge></TableCell>
                     <TableCell className="text-sm text-muted-foreground">

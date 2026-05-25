@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Building2, Loader2, Save, Globe, Phone, Mail, MapPin, Clock, ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { saveInstitutionProfile, InstitutionProfile } from './institutionActions'
@@ -53,7 +53,7 @@ export function InstitutionProfileForm({ initialData }: InstitutionProfileFormPr
             <Building2 className="h-5 w-5 text-blue-600" />
             Profil Institusi
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Kelola informasi kampus/institusi yang akan ditampilkan di aplikasi
           </p>
         </div>
@@ -91,7 +91,7 @@ export function InstitutionProfileForm({ initialData }: InstitutionProfileFormPr
                   placeholder="Contoh: Sport Center Universitas Negeri Surabaya"
                   required
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Nama lengkap yang akan ditampilkan di header dan dokumen resmi
                 </p>
               </div>
@@ -108,7 +108,7 @@ export function InstitutionProfileForm({ initialData }: InstitutionProfileFormPr
                   placeholder="Contoh: SC UNESA"
                   required
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Nama pendek untuk tampilan kompak dan notifikasi
                 </p>
               </div>
@@ -227,7 +227,7 @@ export function InstitutionProfileForm({ initialData }: InstitutionProfileFormPr
                   folder="institution"
                   aspectRatio="square"
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Logo akan ditampilkan di header aplikasi dan dokumen resmi. 
                   Disarankan ukuran 1:1 (persegi) dengan format PNG atau JPG.
                 </p>
@@ -236,9 +236,9 @@ export function InstitutionProfileForm({ initialData }: InstitutionProfileFormPr
           </Card>
 
           {/* Preview Card */}
-          <Card className="bg-slate-50">
+          <Card className="bg-muted">
             <CardHeader>
-              <CardTitle className="text-sm text-slate-600">Preview</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Preview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {formData.logo_url && (
@@ -250,7 +250,7 @@ export function InstitutionProfileForm({ initialData }: InstitutionProfileFormPr
               )}
               <div className="text-center">
                 <p className="font-semibold text-sm">{formData.name}</p>
-                <p className="text-xs text-slate-500">{formData.short_name}</p>
+                <p className="text-xs text-muted-foreground">{formData.short_name}</p>
               </div>
             </CardContent>
           </Card>

@@ -135,13 +135,13 @@ export default function UploadProofPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-muted py-8 px-4">
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="mb-6">
           <Link 
             href={`/booking/${bookingId}/payment`} 
-            className="inline-flex items-center text-gray-600 hover:text-gray-900"
+            className="inline-flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Kembali ke Pembayaran
@@ -161,7 +161,7 @@ export default function UploadProofPage() {
               <div className="space-y-2">
                 <Label>Bukti Transfer (Screenshot/Foto)</Label>
                 {!file ? (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
+                  <div className="border-2 border-dashed border-border rounded-[10px] p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
                     <input
                       type="file"
                       accept="image/*"
@@ -170,9 +170,9 @@ export default function UploadProofPage() {
                       id="proof-upload"
                     />
                     <label htmlFor="proof-upload" className="cursor-pointer">
-                      <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600">Klik untuk upload bukti transfer</p>
-                      <p className="text-sm text-gray-400 mt-1">JPG, PNG (Max 5MB)</p>
+                      <ImageIcon className="h-12 w-12 text-muted-foreground/70 mx-auto mb-3" />
+                      <p className="text-muted-foreground">Klik untuk upload bukti transfer</p>
+                      <p className="text-sm text-muted-foreground/70 mt-1">JPG, PNG (Max 5MB)</p>
                     </label>
                   </div>
                 ) : (
@@ -180,7 +180,7 @@ export default function UploadProofPage() {
                     <img 
                       src={preview || ''} 
                       alt="Preview" 
-                      className="w-full h-64 object-contain bg-gray-100 rounded-lg"
+                      className="w-full h-64 object-contain bg-muted rounded-[10px]"
                     />
                     <button
                       type="button"

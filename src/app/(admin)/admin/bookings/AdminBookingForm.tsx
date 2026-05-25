@@ -350,18 +350,18 @@ export function AdminBookingForm() {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/admin/bookings" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700">
+        <Link href="/admin/bookings" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground/80">
           <ArrowLeft className="h-4 w-4" /> Kembali
         </Link>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="h-14 w-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+        <div className="h-14 w-14 bg-primary rounded-[14px] flex items-center justify-center shadow-lg">
           <Calendar className="h-7 w-7 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Peminjaman Baru</h1>
-          <p className="text-slate-500">Buat pengajuan peminjaman untuk pimpinan/tamu</p>
+          <h1 className="text-2xl font-bold text-foreground">Peminjaman Baru</h1>
+          <p className="text-muted-foreground">Buat pengajuan peminjaman untuk pimpinan/tamu</p>
         </div>
       </div>
 
@@ -473,7 +473,7 @@ export function AdminBookingForm() {
               const equipmentRate = selectedEquipment ? getEquipmentRate(selectedEquipment, watchMemberType) : null
 
               return (
-                <div key={field.id} className="p-4 border rounded-lg space-y-4">
+                <div key={field.id} className="p-4 border rounded-[10px] space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Item #{index + 1}</h4>
                     {fields.length > 1 && (
@@ -543,7 +543,7 @@ export function AdminBookingForm() {
                               <SelectItem key={item.id} value={item.id}>
                                 <div className="flex items-center justify-between w-full">
                                   <span>{item.name} {item.room_code || item.equipment_code ? `(${item.room_code || item.equipment_code})` : ''}</span>
-                                  <span className="text-xs text-slate-500 ml-2">
+                                  <span className="text-xs text-muted-foreground ml-2">
                                     Rp {displayRate.toLocaleString('id-ID')}
                                   </span>
                                 </div>
@@ -567,7 +567,7 @@ export function AdminBookingForm() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="mb-2"
                     />
-                    <div className="max-h-40 overflow-y-auto border rounded-lg">
+                    <div className="max-h-40 overflow-y-auto border rounded-[10px]">
                       {getFilteredItems(currentItem?.item_type || 'room').slice(0, 5).map((item: any) => {
                         const rate = currentItem?.item_type === 'room' 
                           ? getRoomRate(item, watchMemberType)
@@ -586,18 +586,18 @@ export function AdminBookingForm() {
                               }
                               setSearchQuery('')
                             }}
-                            className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 border-b last:border-b-0 text-left"
+                            className="w-full flex items-center gap-3 p-3 hover:bg-muted border-b last:border-b-0 text-left"
                           >
                             {item.photo_url ? (
-                              <img src={item.photo_url} alt={item.name} className="w-12 h-12 object-cover rounded-lg" />
+                              <img src={item.photo_url} alt={item.name} className="w-12 h-12 object-cover rounded-[10px]" />
                             ) : (
-                              <div className="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center">
-                                <Package className="h-6 w-6 text-slate-400" />
+                              <div className="w-12 h-12 bg-muted rounded-[10px] flex items-center justify-center">
+                                <Package className="h-6 w-6 text-muted-foreground/70" />
                               </div>
                             )}
                             <div className="flex-1">
                               <p className="font-medium text-sm">{item.name}</p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-muted-foreground">
                                 {item.room_code || item.equipment_code ? `Kode: ${item.room_code || item.equipment_code}` : ''}
                                 {item.building_name ? ` • ${item.building_name}` : ''}
                                 {item.merk ? ` • ${item.merk}` : ''}
@@ -614,18 +614,18 @@ export function AdminBookingForm() {
 
                   {/* Selected Item Info */}
                   {(selectedRoom || selectedEquipment) && (
-                    <div className="p-4 bg-slate-50 rounded-lg">
+                    <div className="p-4 bg-muted rounded-[10px]">
                       <p className="text-sm font-medium mb-2">Item Terpilih:</p>
                       <div className="flex gap-4">
                         {(selectedRoom?.photo_url || selectedEquipment?.photo_url) ? (
                           <img 
                             src={selectedRoom?.photo_url || selectedEquipment?.photo_url || ''} 
                             alt="Selected" 
-                            className="w-24 h-24 object-cover rounded-lg"
+                            className="w-24 h-24 object-cover rounded-[10px]"
                           />
                         ) : (
-                          <div className="w-24 h-24 bg-slate-200 rounded-lg flex items-center justify-center">
-                            <Package className="h-10 w-10 text-slate-400" />
+                          <div className="w-24 h-24 bg-muted rounded-[10px] flex items-center justify-center">
+                            <Package className="h-10 w-10 text-muted-foreground/70" />
                           </div>
                         )}
                         <div className="flex-1">
@@ -634,16 +634,16 @@ export function AdminBookingForm() {
                           </h5>
                           {selectedRoom && (
                             <>
-                              <p className="text-sm text-slate-600">Kode: {selectedRoom.room_code || '-'}</p>
-                              <p className="text-sm text-slate-600">Gedung: {selectedRoom.building_name}</p>
-                              <p className="text-sm text-slate-600">Kapasitas: {selectedRoom.capacity || '-'} orang</p>
+                              <p className="text-sm text-muted-foreground">Kode: {selectedRoom.room_code || '-'}</p>
+                              <p className="text-sm text-muted-foreground">Gedung: {selectedRoom.building_name}</p>
+                              <p className="text-sm text-muted-foreground">Kapasitas: {selectedRoom.capacity || '-'} orang</p>
                             </>
                           )}
                           {selectedEquipment && (
                             <>
-                              <p className="text-sm text-slate-600">Kode: {selectedEquipment.equipment_code || '-'}</p>
-                              <p className="text-sm text-slate-600">Merk: {selectedEquipment.merk || '-'}</p>
-                              <p className="text-sm text-slate-600">Status: Tersedia</p>
+                              <p className="text-sm text-muted-foreground">Kode: {selectedEquipment.equipment_code || '-'}</p>
+                              <p className="text-sm text-muted-foreground">Merk: {selectedEquipment.merk || '-'}</p>
+                              <p className="text-sm text-muted-foreground">Status: Tersedia</p>
                             </>
                           )}
                           <p className="text-sm font-medium text-blue-600 mt-1">

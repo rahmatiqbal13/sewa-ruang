@@ -20,7 +20,7 @@ export default function BorrowerError({
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-8 text-center">
       <AlertTriangle className="h-12 w-12 text-destructive" />
       <div>
-        <h2 className="text-xl font-semibold text-zinc-900">Terjadi Kesalahan</h2>
+        <h2 className="text-xl font-semibold text-foreground">Terjadi Kesalahan</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Halaman ini mengalami error. Silakan coba lagi atau kembali ke beranda.
         </p>

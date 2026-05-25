@@ -11,13 +11,12 @@ import {
   LogOut, Users, Settings, BellRing, DoorOpen, ShieldCheck,
   ChevronRight, Database, FileText, Trash2
 } from 'lucide-react'
-import { useState } from 'react'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { isSuperAdmin, UserRole } from '@/lib/permissions'
 
-type NavItem = { 
-  label: string; 
-  href: string; 
+type NavItem = {
+  label: string;
+  href: string;
   icon: React.ElementType;
   requiredRole?: UserRole[];
   superAdminOnly?: boolean;
@@ -36,7 +35,6 @@ interface InstitutionProfile {
   operating_hours: string | null
 }
 
-// Menu items with role requirements
 const mainMenuItems: NavItem[] = [
   { label: 'Dashboard',           href: '/admin/dashboard',        icon: LayoutDashboard },
   { label: 'Gedung',              href: '/admin/buildings',        icon: Building2 },
@@ -52,12 +50,11 @@ const mainMenuItems: NavItem[] = [
   { label: 'Pengaturan',          href: '/admin/settings',         icon: Settings },
 ]
 
-// Super admin only menu items
 const superAdminMenuItems: NavItem[] = [
-  { label: 'Kelola Pengguna', href: '/admin/users', icon: Users, superAdminOnly: true },
-  { label: 'Database',        href: '/admin/database', icon: Database, superAdminOnly: true },
-  { label: 'System Logs',     href: '/admin/logs', icon: FileText, superAdminOnly: true },
-  { label: 'Trash/Recycle',   href: '/admin/trash', icon: Trash2, superAdminOnly: true },
+  { label: 'Kelola Pengguna', href: '/admin/users',     icon: Users,     superAdminOnly: true },
+  { label: 'Database',        href: '/admin/database',  icon: Database,  superAdminOnly: true },
+  { label: 'System Logs',     href: '/admin/logs',      icon: FileText,  superAdminOnly: true },
+  { label: 'Trash/Recycle',   href: '/admin/trash',     icon: Trash2,    superAdminOnly: true },
 ]
 
 interface AdminSidebarProps {
@@ -81,45 +78,35 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
 
   function NavLink({ item }: { item: NavItem }) {
     const active = pathname === item.href || pathname.startsWith(item.href + '/')
-    
-    // Check if item should be visible
-    if (item.superAdminOnly && !userIsSuperAdmin) {
-      return null
-    }
-    
+
+    if (item.superAdminOnly && !userIsSuperAdmin) return null
+
     return (
       <Link
         href={item.href}
         onClick={onClose}
         className={cn(
-          'group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden',
+          'group relative flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-200 overflow-hidden cursor-pointer',
           active
-            ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-          item.superAdminOnly && 'border-l-2 border-purple-400'
+            ? 'bg-sidebar-primary/20 text-sidebar-primary-foreground'
+            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          item.superAdminOnly && !active && 'border-l-2 border-primary/50 pl-[10px]'
         )}
       >
-        {/* Active Indicator */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r-full" />
         )}
-        
+
         <item.icon className={cn(
-          'h-5 w-5 shrink-0 transition-transform duration-200',
-          active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-500',
-          'group-hover:scale-110',
-          item.superAdminOnly && !active && 'text-purple-500'
+          'h-4 w-4 shrink-0 transition-colors duration-200',
+          active ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80',
+          item.superAdminOnly && !active && 'text-primary/60'
         )} />
-        
+
         <span className="flex-1">{item.label}</span>
-        
-        {active && (
-          <ChevronRight className="h-4 w-4 text-white/70" />
-        )}
-        
-        {item.superAdminOnly && (
-          <ShieldCheck className="h-3 w-3 text-purple-500" />
-        )}
+
+        {active && <ChevronRight className="h-3.5 w-3.5 text-sidebar-foreground/30" />}
+        {item.superAdminOnly && <ShieldCheck className="h-3 w-3 text-primary/50" />}
       </Link>
     )
   }
@@ -127,58 +114,50 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
   const displayName = institution?.short_name || institution?.name || 'RentSpace'
 
   return (
-    <aside className="flex flex-col h-full bg-white border-r border-slate-200/80">
-      {/* Logo Section */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-slate-100">
+    <aside className="flex flex-col h-full bg-sidebar">
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 py-5 shrink-0 border-b border-sidebar-border">
         {institution?.logo_url ? (
           <SafeImage
             src={institution.logo_url}
             alt={institution.name}
-            className="h-10 w-auto rounded-lg"
+            className="h-9 w-auto rounded-[10px]"
             fallback={
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl blur-lg opacity-40" />
-                <div className="relative h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Building2 className="h-5 w-5 text-white" />
-                </div>
+              <div className="h-9 w-9 rounded-[10px] flex items-center justify-center bg-sidebar-primary/20 border border-sidebar-border">
+                <Building2 className="h-4 w-4 text-sidebar-foreground/80" />
               </div>
             }
           />
         ) : (
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl blur-lg opacity-40" />
-            <div className="relative h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Building2 className="h-5 w-5 text-white" />
-            </div>
+          <div className="h-9 w-9 rounded-[10px] flex items-center justify-center shrink-0 bg-sidebar-primary/20 border border-sidebar-border">
+            <Building2 className="h-4 w-4 text-sidebar-foreground/80" />
           </div>
         )}
-        <div className="flex flex-col">
-          <span className="font-bold text-lg text-slate-900 leading-tight truncate max-w-[140px]">{displayName}</span>
-          <span className="text-xs text-slate-500">Admin Panel</span>
+        <div className="min-w-0">
+          <p className="text-[0.9375rem] font-semibold text-sidebar-primary-foreground leading-tight truncate max-w-[148px]">{displayName}</p>
+          <p className="text-[11px] text-sidebar-foreground/50 tracking-wide mt-0.5">Admin Panel</p>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {/* Main Menu Section */}
-        <div className="px-4 mb-2">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-            Menu Utama
-          </span>
-        </div>
-        
+      {/* Nav */}
+      <nav className="flex-1 py-3 px-2.5 overflow-y-auto space-y-px"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--sidebar-border) transparent' }}
+      >
+        <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30">
+          Menu Utama
+        </p>
+
         {mainMenuItems.map(item => <NavLink key={item.href} item={item} />)}
 
-        {/* Super Admin Section */}
         {userIsSuperAdmin && (
           <>
-            <div className="pt-6 pb-2">
-              <div className="flex items-center gap-2 px-4 mb-2">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-purple-600 flex items-center gap-1.5 bg-purple-100 px-3 py-1.5 rounded-full">
-                  <ShieldCheck className="h-3 w-3" /> Super Admin
+            <div className="pt-4 pb-2 px-1">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-px bg-sidebar-border" />
+                <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest px-2 py-1 rounded-md text-sidebar-foreground/40 bg-sidebar-accent">
+                  <ShieldCheck className="h-2.5 w-2.5" /> Super Admin
                 </span>
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent" />
+                <div className="flex-1 h-px bg-sidebar-border" />
               </div>
             </div>
             {superAdminMenuItems.map(item => <NavLink key={item.href} item={item} />)}
@@ -186,27 +165,22 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
         )}
       </nav>
 
-      {/* Role Badge */}
-      <div className="px-4 py-2">
-        <div className={cn(
-          'flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium',
-          userIsSuperAdmin 
-            ? 'bg-purple-100 text-purple-700 border border-purple-200' 
-            : 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-        )}>
-          <ShieldCheck className="h-3.5 w-3.5" />
+      {/* Role badge */}
+      <div className="px-3 pb-2">
+        <div className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium bg-sidebar-accent text-sidebar-foreground/50 border border-sidebar-border">
+          <ShieldCheck className="h-3 w-3" />
           {userIsSuperAdmin ? 'Super Administrator' : userRole === 'admin' ? 'Administrator' : 'Staff'}
         </div>
       </div>
 
-      {/* Logout Section */}
-      <div className="p-4 border-t border-slate-100">
+      {/* Logout */}
+      <div className="p-3 border-t border-sidebar-border">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 group"
+          className="group flex items-center gap-3 px-3 py-2.5 w-full rounded-[10px] text-sm font-medium transition-all duration-200 cursor-pointer text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive"
         >
-          <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-red-100 transition-colors">
-            <LogOut className="h-4 w-4 text-slate-500 group-hover:text-red-500 transition-colors" />
+          <div className="h-7 w-7 rounded-[8px] flex items-center justify-center shrink-0 bg-sidebar-accent">
+            <LogOut className="h-3.5 w-3.5 text-sidebar-foreground/40 group-hover:text-destructive" />
           </div>
           <span>Keluar</span>
         </button>

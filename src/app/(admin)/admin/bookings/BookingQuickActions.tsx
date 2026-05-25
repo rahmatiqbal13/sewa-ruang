@@ -17,7 +17,7 @@ const STATUS_OPTIONS = [
   { value: 'rejected',  label: 'Ditolak',    color: 'text-red-600' },
   { value: 'paid',      label: 'Lunas',      color: 'text-emerald-600' },
   { value: 'completed', label: 'Selesai',    color: 'text-green-700' },
-  { value: 'cancelled', label: 'Dibatalkan', color: 'text-zinc-500' },
+  { value: 'cancelled', label: 'Dibatalkan', color: 'text-muted-foreground' },
 ]
 
 export function BookingQuickActions({
@@ -113,10 +113,10 @@ export function BookingQuickActions({
             <DropdownMenuItem
               key={opt.value}
               onClick={() => changeStatus(opt.value)}
-              className={opt.value === status ? 'font-bold bg-zinc-50' : ''}
+              className={opt.value === status ? 'font-bold bg-muted' : ''}
             >
               <span className={opt.color}>{opt.label}</span>
-              {opt.value === status && <span className="ml-auto text-xs text-zinc-400">aktif</span>}
+              {opt.value === status && <span className="ml-auto text-xs text-muted-foreground/70">aktif</span>}
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />

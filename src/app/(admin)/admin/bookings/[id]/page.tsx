@@ -7,12 +7,13 @@ import { Separator } from '@/components/ui/separator'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { ApprovalButtons } from './ApprovalButtons'
 import { RecordPaymentButton } from '../../payments/RecordPaymentButton'
-import { SendMessageButton } from './SendMessageButton'
 import { formatDateTime, formatRupiah } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { 
   ArrowLeft, User, Mail, Phone, Building2, 
-  Calendar, Package, CreditCard, FileText, Receipt, Clock
+  Calendar, Package, CreditCard, FileText, Receipt, Clock,
+  MessageSquare, Download, MapPin, GraduationCap, CheckCircle2,
+  Clock3, AlertCircle
 } from 'lucide-react'
 import { ContactButtons } from '@/components/shared/ContactButtons'
 
@@ -125,281 +126,200 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     }
   })
 
+  // Status timeline steps
+  const statusSteps = [
+    { status: 'pending', label: 'Pengajuan Dibuat', icon: Clock3 },
+    { status: 'approved', label: 'Disetujui Admin', icon: CheckCircle2 },
+    { status: 'paid', label: 'Pembayaran Diterima', icon: CreditCard },
+    { status: 'completed', label: 'Selesai', icon: CheckCircle2 },
+  ]
+
+  const currentStepIndex = statusSteps.findIndex(s => s.status === booking.status)
+
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="admin-page max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link 
             href="/admin/bookings"
-            className="inline-flex items-center justify-center h-10 w-10 rounded-lg border hover:bg-slate-50"
+            className="inline-flex items-center justify-center h-10 w-10 rounded-[10px] border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] transition-colors shadow-soft"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5 text-[#374151]" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Detail Pengajuan</h1>
-            <p className="font-mono text-muted-foreground">{booking.reference_no}</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-xl md:text-2xl font-semibold text-[#111827]">Detail Peminjaman</h1>
+              <span className="font-mono text-sm text-[#1B3A8C] bg-[#1B3A8C]/10 px-2.5 py-1 rounded-full">
+                {booking.reference_no}
+              </span>
+            </div>
+            <p className="text-sm text-[#6B7280] mt-0.5">
+              Dibuat pada {formatDateTime(booking.created_at)}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <BookingStatusBadge status={booking.status} />
-          <SendMessageButton 
-            booking={{
-              id: booking.id,
-              reference_no: booking.reference_no,
-              status: booking.status,
-              users: borrower
-            }} 
-          />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Borrower Info */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <User className="h-4 w-4" />
+      {/* 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left Column (2/3) */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Peminjam Card */}
+          <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
+            <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+              <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
+                <User className="h-4 w-4 text-[#1B3A8C]" />
                 Data Peminjam
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center pb-4 border-b">
-                <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-2xl font-bold text-blue-600">
+            <CardContent className="p-5">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+                {/* Avatar */}
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 bg-[#1B3A8C] rounded-full flex items-center justify-center text-white text-xl font-bold shadow-soft">
                     {borrower?.name?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <h3 className="font-semibold">{borrower?.name}</h3>
-                <p className="text-sm text-slate-500">{borrower?.role || 'Peminjam'}</p>
-              </div>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start gap-3">
-                  <Building2 className="h-4 w-4 text-slate-400 mt-0.5" />
-                  <div>
-                    <p className="text-slate-500">Instansi</p>
-                    <p className="font-medium">{borrower?.institution || '-'}</p>
+                  </div>
+                  <div className="sm:hidden">
+                    <h3 className="font-semibold text-[#111827] text-lg">{borrower?.name}</h3>
+                    <Badge variant="secondary" className="mt-1">
+                      {borrower?.role || 'Peminjam'}
+                    </Badge>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <User className="h-4 w-4 text-slate-400 mt-0.5" />
+                {/* Info Grid */}
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-slate-500">Kelas/Divisi</p>
-                    <p className="font-medium">{borrower?.class_division || '-'}</p>
+                    <p className="text-xs text-[#6B7280] mb-1">Nama Lengkap</p>
+                    <p className="font-medium text-[#111827]">{borrower?.name}</p>
                   </div>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-start gap-3">
-                  <Mail className="h-4 w-4 text-slate-400 mt-0.5" />
                   <div>
-                    <p className="text-slate-500">Email</p>
-                    <p className="font-medium">{borrower?.email || '-'}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Phone className="h-4 w-4 text-slate-400 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-slate-500">Kontak</p>
-                    <div className="flex items-center gap-2 flex-wrap mt-1">
-                      <p className="font-medium">{borrower?.phone || borrower?.email || '-'}</p>
-                      {(borrower?.phone || borrower?.email) && (
-                        <ContactButtons 
-                          booking={{
-                            id: booking.id,
-                            reference_no: booking.reference_no,
-                            status: booking.status,
-                            start_datetime: booking.start_datetime,
-                            end_datetime: booking.end_datetime,
-                            users: { 
-                              name: borrower.name,
-                              email: borrower.email || undefined,
-                              phone: borrower.phone || undefined,
-                              telegram_username: borrower.telegram_username || undefined
-                            },
-                            booking_items: bookingItems.map((item: any) => ({
-                              item_type: item.item_type,
-                              room: item.room,
-                              equipment: item.equipment
-                            })),
-                            admin_notes: booking.admin_notes
-                          }}
-                        />
+                    <p className="text-xs text-[#6B7280] mb-1">Kategori</p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[#1B3A8C] border-[#1B3A8C]/30">
+                        {borrower?.role || 'Mahasiswa'}
+                      </Badge>
+                      {isGratis && (
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                          <GraduationCap className="h-3 w-3 mr-1" />
+                          Gratis
+                        </Badge>
                       )}
                     </div>
                   </div>
+                  <div>
+                    <p className="text-xs text-[#6B7280] mb-1">Instansi</p>
+                    <div className="flex items-center gap-1.5 text-[#111827]">
+                      <Building2 className="h-3.5 w-3.5 text-[#6B7280]" />
+                      {borrower?.institution || '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[#6B7280] mb-1">Kelas/Divisi</p>
+                    <p className="text-[#111827]">{borrower?.class_division || '-'}</p>
+                  </div>
                 </div>
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Contact Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                {borrower?.email && (
+                  <a 
+                    href={`mailto:${borrower.email}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-blue-50 text-blue-700 text-sm hover:bg-blue-100 transition-colors"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    Email
+                  </a>
+                )}
+                {borrower?.phone && (
+                  <a 
+                    href={`https://wa.me/${borrower.phone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-green-50 text-green-700 text-sm hover:bg-green-100 transition-colors"
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    WhatsApp
+                  </a>
+                )}
+                {borrower?.telegram_username && (
+                  <a 
+                    href={`https://t.me/${borrower.telegram_username.replace(/^@/, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-sky-50 text-sky-700 text-sm hover:bg-sky-100 transition-colors"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    Telegram
+                  </a>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
-          {booking.status === 'pending' && (
-            <ApprovalButtons 
-              bookingId={id} 
-              borrowerCategory={borrowerCategory}
-              purpose={booking.purpose || ''}
-            />
-          )}
-
-          {/* Show payment button only if approved AND not free booking AND has remaining amount */}
-          {booking.status === 'approved' && 
-           !isGratis && 
-           booking.total_amount > 0 && (
-            <RecordPaymentButton 
-              bookingId={id} 
-              totalAmount={booking.total_amount} 
-              paidAmount={(payments || [])
-                .filter((p: any) => p.status === 'paid')
-                .reduce((sum: number, p: any) => sum + p.amount, 0)}
-            />
-          )}
-
-          {/* Show info card for free bookings that are paid */}
-          {booking.status === 'paid' && isGratis && (
-            <Card className="border-green-200 bg-green-50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-green-800">Peminjaman Gratis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-green-700">
-                  Peminjaman ini <strong>GRATIS</strong> karena dari Mahasiswa S1 untuk keperluan perkuliahan.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Link to Process Return for approved/paid bookings */}
-          {(booking.status === 'approved' || booking.status === 'paid') && (
-            <Card className="border-blue-200">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-blue-800">Proses Pengembalian</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-slate-600 mb-3">
-                  Proses pengembalian aset dan selesaikan peminjaman
-                </p>
-                <Link 
-                  href={`/admin/returns/${id}`}
-                  className={buttonVariants({ className: 'w-full' })}
-                >
-                  Catat Pengembalian
-                </Link>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Column - Booking Details */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Booking Info */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Detail Peminjaman
+          {/* Item Card */}
+          <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
+            <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+              <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
+                <Package className="h-4 w-4 text-[#1B3A8C]" />
+                Ruang &amp; Alat yang Dipinjam
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <p className="text-xs text-slate-500 mb-1">Tanggal Mulai</p>
-                  <p className="font-medium">{formatDateTime(booking.start_datetime)}</p>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <p className="text-xs text-slate-500 mb-1">Tanggal Selesai</p>
-                  <p className="font-medium">{formatDateTime(booking.end_datetime)}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Tujuan Peminjaman</p>
-                <p className="text-sm bg-slate-50 p-3 rounded-lg">{booking.purpose}</p>
-              </div>
-
-              {booking.admin_notes && (
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Catatan Admin</p>
-                  <p className="text-sm bg-amber-50 p-3 rounded-lg text-amber-800">{booking.admin_notes}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Invoice / Price Breakdown */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Receipt className="h-4 w-4" />
-                Invoice & Rincian Harga
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Duration Info */}
-              <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg mb-4">
-                <Clock className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm text-blue-900">
-                    <span className="font-semibold">Durasi:</span>{' '}
-                    {durationDays > 1 
-                      ? `${durationDays} hari (${durationHours} jam)` 
-                      : `${durationHours} jam`
-                    }
-                  </p>
-                  <p className="text-xs text-blue-600">
-                    {formatDateTime(booking.start_datetime)} - {formatDateTime(booking.end_datetime)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Items with Price */}
+            <CardContent className="p-5">
               <div className="space-y-3">
                 {bookingItemsWithPrice.map((item: any, index: number) => (
                   <div 
                     key={index} 
-                    className="p-4 border rounded-lg hover:bg-slate-50"
+                    className="p-4 border border-[#E5E7EB] rounded-[10px] hover:bg-[#FAFAFA] transition-colors"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <span className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600 flex-shrink-0">
+                        <span className="h-8 w-8 bg-[#1B3A8C]/10 rounded-full flex items-center justify-center text-sm font-semibold text-[#1B3A8C] flex-shrink-0">
                           {index + 1}
                         </span>
                         <div>
-                          <p className="font-medium">
+                          <p className="font-medium text-[#111827]">
                             {item.item_type === 'room' 
                               ? item.room?.name 
                               : item.equipment?.name
                             }
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge 
+                              variant={item.item_type === 'room' ? 'default' : 'secondary'} 
+                              className="text-[10px]"
+                            >
+                              {item.item_type === 'room' ? 'Ruang' : 'Alat'}
+                            </Badge>
+                            <span className="text-xs text-[#6B7280]">× {item.quantity} unit</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-[#6B7280] mt-1.5">
+                            <MapPin className="h-3 w-3" />
                             {item.item_type === 'room' ? (
                               <>
-                                Ruang {item.room?.room_code && `(${item.room.room_code})`} - {item.room?.buildings?.name}
+                                {item.room?.room_code && `${item.room.room_code} · `}
+                                {item.room?.buildings?.name}
                               </>
                             ) : (
                               <>
-                                Alat {item.equipment?.equipment_code && `(${item.equipment.equipment_code})`}
+                                {item.equipment?.equipment_code && `Kode: ${item.equipment.equipment_code}`}
                               </>
                             )}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={item.item_type === 'room' ? 'default' : 'secondary'} className="text-xs">
-                              {item.item_type === 'room' ? 'Ruang' : 'Alat'}
-                            </Badge>
-                            <span className="text-xs text-slate-400">× {item.quantity} unit</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-[#111827]">
                           {formatRupiah(item.itemTotal)}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-[#6B7280]">
                           {formatRupiah(item.unitPrice)} / unit
                         </p>
                       </div>
@@ -410,74 +330,54 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
               <Separator className="my-4" />
 
-              {/* Total Summary */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500">Subtotal</span>
-                  <span className="font-medium">{formatRupiah(booking.total_amount)}</span>
+              {/* Date Range */}
+              <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-[10px]">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm text-blue-900">
+                    <span className="font-semibold">Durasi:</span>{' '}
+                    {durationDays > 1 
+                      ? `${durationDays} hari (${durationHours} jam)` 
+                      : `${durationHours} jam`
+                    }
+                  </p>
+                  <p className="text-xs text-blue-600 mt-0.5">
+                    {formatDateTime(booking.start_datetime)} - {formatDateTime(booking.end_datetime)}
+                  </p>
                 </div>
-                
-                {payments && payments.length > 0 && (
-                  <>
-                    {payments.filter((p: any) => p.status === 'paid').map((payment: any) => (
-                      <div key={payment.id} className="flex items-center justify-between text-sm">
-                        <span className="text-green-600">
-                          {payment.method === 'manual_cash' ? 'Bayar Tunai' : 
-                           payment.method === 'manual_transfer' ? 'Transfer' : 'Pembayaran'}
-                        </span>
-                        <span className="font-medium text-green-600">-{formatRupiah(payment.amount)}</span>
-                      </div>
-                    ))}
-                    <Separator className="my-2" />
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Sisa Pembayaran</span>
-                      <span className="text-xl font-bold">
-                        {formatRupiah(booking.total_amount - (payments || [])
-                          .filter((p: any) => p.status === 'paid')
-                          .reduce((sum: number, p: any) => sum + p.amount, 0))}
-                      </span>
-                    </div>
-                  </>
-                )}
-                
-                {(!payments || payments.filter((p: any) => p.status === 'paid').length === 0) && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-medium">
-                      {isGratis ? 'Total (Gratis)' : 'Total Tagihan'}
-                    </span>
-                    <div className="text-right">
-                      {isGratis ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-400 line-through">{formatRupiah(booking.total_amount > 0 ? booking.total_amount : 100000)}</span>
-                          <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
-                            GRATIS
-                          </Badge>
-                        </div>
-                      ) : (
-                        <span className="text-2xl font-bold">{formatRupiah(booking.total_amount)}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Payment History */}
-          {payments && payments.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  Riwayat Pembayaran
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+          {/* Pembayaran Card */}
+          <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
+            <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+              <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
+                <CreditCard className="h-4 w-4 text-[#1B3A8C]" />
+                Pembayaran
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5">
+              {isGratis ? (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-[10px]">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <GraduationCap className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-green-800">Peminjaman Gratis</p>
+                      <p className="text-sm text-green-700">
+                        Mahasiswa S1 untuk keperluan perkuliahan tidak dikenakan biaya.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : payments && payments.length > 0 ? (
                 <div className="space-y-3">
                   {payments.map((payment: any) => (
                     <div 
                       key={payment.id} 
-                      className="flex items-center justify-between p-3 border rounded-lg"
+                      className="flex items-center justify-between p-3 border border-[#E5E7EB] rounded-[10px]"
                     >
                       <div className="flex items-center gap-3">
                         <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
@@ -488,9 +388,10 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                           }`} />
                         </div>
                         <div>
-                          <p className="font-medium">{formatRupiah(payment.amount)}</p>
-                          <p className="text-xs text-slate-500 capitalize">
-                            {payment.method.replace('_', ' ')}
+                          <p className="font-medium text-[#111827]">{formatRupiah(payment.amount)}</p>
+                          <p className="text-xs text-[#6B7280] capitalize">
+                            {payment.method === 'manual_cash' ? 'Tunai' : 
+                             payment.method === 'manual_transfer' ? 'Transfer Bank' : payment.method}
                           </p>
                         </div>
                       </div>
@@ -499,19 +400,256 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                           {payment.status === 'paid' ? 'Lunas' : 'Pending'}
                         </Badge>
                         {payment.paid_at && (
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs text-[#6B7280] mt-1">
                             {formatDateTime(payment.paid_at)}
                           </p>
                         )}
                       </div>
                     </div>
                   ))}
+
+                  {/* Payment Summary */}
+                  <Separator />
+                  <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-[10px]">
+                    <span className="text-[#6B7280]">Total Tagihan</span>
+                    <span className="font-semibold text-[#111827]">{formatRupiah(booking.total_amount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-[10px]">
+                    <span className="text-[#6B7280]">Sudah Dibayar</span>
+                    <span className="font-semibold text-green-600">
+                      {formatRupiah((payments || [])
+                        .filter((p: any) => p.status === 'paid')
+                        .reduce((sum: number, p: any) => sum + p.amount, 0))}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-[10px]">
+                    <span className="text-amber-800 font-medium">Sisa Pembayaran</span>
+                    <span className="font-bold text-amber-800">
+                      {formatRupiah(booking.total_amount - (payments || [])
+                        .filter((p: any) => p.status === 'paid')
+                        .reduce((sum: number, p: any) => sum + p.amount, 0))}
+                    </span>
+                  </div>
                 </div>
+              ) : (
+                <div className="text-center py-8 text-[#6B7280]">
+                  <Receipt className="h-12 w-12 mx-auto mb-3 text-[#E5E7EB]" />
+                  <p className="text-sm">Belum ada pembayaran tercatat</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Status Timeline */}
+          <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
+            <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+              <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
+                <Clock className="h-4 w-4 text-[#1B3A8C]" />
+                Status Timeline
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5">
+              <div className="relative">
+                {statusSteps.map((step, index) => {
+                  const StepIcon = step.icon
+                  const isActive = index <= currentStepIndex
+                  const isCurrent = index === currentStepIndex
+                  
+                  return (
+                    <div key={step.status} className="flex gap-4 relative">
+                      {/* Timeline line */}
+                      {index < statusSteps.length - 1 && (
+                        <div className="absolute left-[19px] top-8 bottom-0 w-0.5 bg-[#E5E7EB]" />
+                      )}
+                      
+                      {/* Icon */}
+                      <div className={cn(
+                        'relative z-10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0',
+                        isActive ? 'bg-[#1B3A8C] text-white' : 'bg-[#F3F4F6] text-[#9CA3AF]'
+                      )}>
+                        <StepIcon className="h-5 w-5" />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className={cn(
+                        'pb-6',
+                        !isActive && 'opacity-50'
+                      )}>
+                        <p className={cn(
+                          'font-medium',
+                          isCurrent ? 'text-[#1B3A8C]' : 'text-[#111827]'
+                        )}>
+                          {step.label}
+                        </p>
+                        {isCurrent && (
+                          <p className="text-xs text-[#6B7280] mt-0.5">
+                            Status saat ini
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                
+                {booking.status === 'rejected' && (
+                  <div className="flex gap-4 relative">
+                    <div className="relative z-10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 bg-red-100 text-red-600">
+                      <AlertCircle className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-red-600">Ditolak</p>
+                      {booking.admin_notes && (
+                        <p className="text-xs text-[#6B7280] mt-0.5">
+                          Alasan: {booking.admin_notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {booking.status === 'cancelled' && (
+                  <div className="flex gap-4 relative">
+                    <div className="relative z-10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 text-gray-600">
+                      <AlertCircle className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-600">Dibatalkan</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Catatan Admin */}
+          {booking.admin_notes && booking.status !== 'rejected' && (
+            <Card className="rounded-[14px] border-amber-200 bg-amber-50 overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2 text-amber-800">
+                  <FileText className="h-4 w-4" />
+                  Catatan Admin
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-amber-800">{booking.admin_notes}</p>
               </CardContent>
             </Card>
           )}
         </div>
+
+        {/* Right Column (1/3) - Action Card */}
+        <div className="lg:col-span-1">
+          <div className="lg:sticky lg:top-6 space-y-4">
+            {/* Action Card */}
+            <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
+              <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+                <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
+                  Tindakan Cepat
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 space-y-3">
+                {/* Pending Actions */}
+                {booking.status === 'pending' && (
+                  <ApprovalButtons 
+                    bookingId={id} 
+                    borrowerCategory={borrowerCategory}
+                    purpose={booking.purpose || ''}
+                  />
+                )}
+
+                {/* Approved + Payment Proof Pending */}
+                {booking.status === 'approved' && !isGratis && booking.total_amount > 0 && (
+                  <>
+                    <RecordPaymentButton 
+                      bookingId={id} 
+                      totalAmount={booking.total_amount} 
+                      paidAmount={(payments || [])
+                        .filter((p: any) => p.status === 'paid')
+                        .reduce((sum: number, p: any) => sum + p.amount, 0)}
+                    />
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-[10px]">
+                      <p className="text-xs text-amber-800">
+                        Menunggu pembayaran dari peminjam.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* Paid - Record Return */}
+                {(booking.status === 'approved' || booking.status === 'paid') && (
+                  <Link 
+                    href={`/admin/returns/${id}`}
+                    className={buttonVariants({ 
+                      className: 'w-full rounded-[10px] bg-blue-600 hover:bg-blue-700' 
+                    })}
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Catat Pengembalian
+                  </Link>
+                )}
+
+                {/* Contact Buttons */}
+                <div className="grid grid-cols-3 gap-2">
+                  {borrower?.phone && (
+                    <a 
+                      href={`https://wa.me/${borrower.phone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 h-10 rounded-[10px] bg-green-50 text-green-700 hover:bg-green-100 transition-colors text-sm font-medium"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <span className="hidden sm:inline">WA</span>
+                    </a>
+                  )}
+                  {borrower?.email && (
+                    <a 
+                      href={`mailto:${borrower.email}`}
+                      className="inline-flex items-center justify-center gap-1.5 h-10 rounded-[10px] bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors text-sm font-medium"
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span className="hidden sm:inline">Email</span>
+                    </a>
+                  )}
+                  <a 
+                    href={`/api/bookings/${id}/formulir`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 h-10 rounded-[10px] bg-[#1B3A8C]/10 text-[#1B3A8C] hover:bg-[#1B3A8C]/20 transition-colors text-sm font-medium"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">PDF</span>
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Info Card */}
+            <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#6B7280]">No. Referensi</span>
+                  <span className="font-mono text-[#1B3A8C] font-medium">{booking.reference_no}</span>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#6B7280]">Tujuan</span>
+                  <span className="text-[#111827] text-right max-w-[150px] truncate">{booking.purpose || '-'}</span>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#6B7280]">Total</span>
+                  <span className="font-semibold text-[#111827]">{formatRupiah(booking.total_amount)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
+}
+
+// Helper function
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ')
 }

@@ -171,10 +171,10 @@ function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, { class: string; label: string }> = {
     approved: { class: 'bg-green-100 text-green-700 border-green-200', label: 'Disetujui' },
     active: { class: 'bg-blue-100 text-blue-700 border-blue-200', label: 'Berlangsung' },
-    completed: { class: 'bg-gray-100 text-gray-700 border-gray-200', label: 'Selesai' },
+    completed: { class: 'bg-muted text-foreground/80 border-border', label: 'Selesai' },
   }
   
-  const variant = variants[status] || { class: 'bg-gray-100 text-gray-700', label: status }
+  const variant = variants[status] || { class: 'bg-muted text-foreground/80', label: status }
   
   return (
     <Badge variant="outline" className={cn("text-xs", variant.class)}>
@@ -205,7 +205,7 @@ export default async function PublicSchedulePage() {
   }, {} as Record<string, typeof allBookings>)
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <PublicHeader />
       
       <main className="flex-1">
@@ -213,7 +213,7 @@ export default async function PublicSchedulePage() {
         <div className="bg-gradient-to-br from-blue-950 to-blue-800 text-white">
           <div className="max-w-7xl mx-auto px-4 py-10">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-white/10 rounded-lg">
+              <div className="p-2 bg-card/10 rounded-[10px]">
                 <CalendarDays className="h-6 w-6" />
               </div>
               <div>
@@ -234,7 +234,7 @@ export default async function PublicSchedulePage() {
                 <span className="text-sm text-blue-200">Berlangsung</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-gray-400" />
+                <div className="w-3 h-3 rounded-full bg-muted-foreground" />
                 <span className="text-sm text-blue-200">Selesai</span>
               </div>
             </div>
@@ -266,7 +266,7 @@ export default async function PublicSchedulePage() {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-gray-600">
+                <div className="text-2xl font-bold text-muted-foreground">
                   {allBookings.filter(b => b.status === 'completed').length}
                 </div>
                 <div className="text-sm text-muted-foreground">Selesai</div>
@@ -308,10 +308,10 @@ export default async function PublicSchedulePage() {
                             <div
                               key={booking.id}
                               className={cn(
-                                "p-4 rounded-lg border transition-colors",
+                                "p-4 rounded-[10px] border border-border transition-colors",
                                 booking.status === 'active' && "bg-blue-50 border-blue-200",
                                 booking.status === 'approved' && "bg-green-50 border-green-200",
-                                booking.status === 'completed' && "bg-gray-50 border-gray-200"
+                                booking.status === 'completed' && "bg-muted border-border"
                               )}
                             >
                               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -378,7 +378,7 @@ export default async function PublicSchedulePage() {
                 {schedules.map((room) => (
                   <div
                     key={room.id}
-                    className="p-4 rounded-lg border bg-white hover:shadow-md transition-shadow"
+                    className="p-4 rounded-[10px] border border-border bg-card hover:shadow-soft transition-shadow"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -386,7 +386,7 @@ export default async function PublicSchedulePage() {
                         <p className="text-xs text-muted-foreground">{room.building_name}</p>
                       </div>
                       {room.room_code && (
-                        <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded">
+                        <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded-[10px]">
                           {room.room_code}
                         </span>
                       )}

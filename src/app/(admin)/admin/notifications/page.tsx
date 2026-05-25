@@ -47,7 +47,7 @@ export default async function NotificationsPage({
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 active
                   ? 'border-blue-950 text-blue-950'
-                  : 'border-transparent text-muted-foreground hover:text-zinc-700'
+                  : 'border-transparent text-muted-foreground hover:text-foreground/80'
               }`}
             >
               <Icon className="h-4 w-4" />

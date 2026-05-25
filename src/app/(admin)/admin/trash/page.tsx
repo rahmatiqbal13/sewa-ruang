@@ -30,8 +30,8 @@ export default async function TrashPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Trash / Recycle Bin</h1>
-        <p className="text-slate-500 mt-1">Kelola data yang telah dihapus (soft delete)</p>
+        <h1 className="text-3xl font-bold text-foreground">Trash / Recycle Bin</h1>
+        <p className="text-muted-foreground mt-1">Kelola data yang telah dihapus (soft delete)</p>
       </div>
 
       <Card className="border-red-200 bg-red-50">
@@ -63,14 +63,14 @@ export default async function TrashPage() {
           {deletedItems.length > 0 ? (
             <div className="space-y-2">
               {deletedItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
+                <div key={item.id} className="flex items-center justify-between p-4 bg-muted rounded-[10px] border border-border">
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <div className="h-10 w-10 bg-red-100 rounded-[10px] flex items-center justify-center">
                       <Trash2 className="h-5 w-5 text-red-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">{item.name}</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="font-medium text-foreground">{item.name}</p>
+                      <p className="text-sm text-muted-foreground">
                         {item.type} • Dihapus {new Date(item.deletedAt).toLocaleDateString('id-ID')} • oleh {item.deletedBy}
                       </p>
                     </div>
@@ -88,14 +88,14 @@ export default async function TrashPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-500">
-              <Trash2 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+            <div className="text-center py-12 text-muted-foreground">
+              <Trash2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
               <p>Tidak ada item di trash</p>
             </div>
           )}
           
-          <div className="mt-6 p-4 bg-slate-100 rounded-lg text-center">
-            <p className="text-sm text-slate-600">
+          <div className="mt-6 p-4 bg-muted rounded-[10px] text-center">
+            <p className="text-sm text-muted-foreground">
               <strong>Note:</strong> Implementasi soft delete memerlukan modifikasi database.
               Hubungi developer untuk setup fitur ini.
             </p>

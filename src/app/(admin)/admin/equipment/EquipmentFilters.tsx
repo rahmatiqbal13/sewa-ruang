@@ -40,7 +40,7 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
   const hasActiveFilters = ketersediaan || category || condition || search || showInactive || todayOnly || inactiveOnly
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4">
+    <div className="bg-card rounded-[14px] border border-border p-4 space-y-4">
       {/* Search */}
       <form
         onSubmit={(e) => {
@@ -51,7 +51,7 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
         className="flex gap-2"
       >
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
           <Input
             name="search"
             type="text"
@@ -62,19 +62,19 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
         </div>
         <button
           type="submit"
-          className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors"
+          className="px-4 py-2 bg-foreground text-white rounded-[10px] text-sm font-medium hover:bg-foreground/90 transition-colors"
         >
           Cari
         </button>
       </form>
 
       {/* Dropdowns */}
-      <div className="border-t border-slate-100 pt-4">
-        <div className="flex items-center gap-2 text-slate-700 mb-3">
+      <div className="border-t border-border/60 pt-4">
+        <div className="flex items-center gap-2 text-foreground/80 mb-3">
           <Filter className="h-4 w-4" />
           <span className="text-sm font-medium">Filter</span>
           {hasActiveFilters && (
-            <Link href="/admin/equipment" className="ml-auto text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1">
+            <Link href="/admin/equipment" className="ml-auto text-xs text-muted-foreground hover:text-foreground/80 flex items-center gap-1">
               <X className="h-3 w-3" /> Reset Semua
             </Link>
           )}
@@ -83,11 +83,11 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Category */}
           <div>
-            <label className="text-xs text-slate-500 mb-1.5 block">Kategori</label>
+            <label className="text-xs text-muted-foreground mb-1.5 block">Kategori</label>
             <Select value={category} onValueChange={(v) => router.push(buildUrl({ category: v || '' }))}>
               <SelectTrigger className="w-full">
                 <span className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-slate-400" />
+                  <Tag className="h-4 w-4 text-muted-foreground/70" />
                   <SelectValue placeholder="Semua Kategori" />
                 </span>
               </SelectTrigger>
@@ -102,7 +102,7 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
 
           {/* Condition */}
           <div>
-            <label className="text-xs text-slate-500 mb-1.5 block">Kondisi</label>
+            <label className="text-xs text-muted-foreground mb-1.5 block">Kondisi</label>
             <Select value={condition} onValueChange={(v) => router.push(buildUrl({ condition: v || '' }))}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Semua Kondisi" />
@@ -117,14 +117,14 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
         </div>
 
         {/* Checkboxes */}
-        <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-4">
+        <div className="mt-3 pt-3 border-t border-border/60 flex flex-wrap gap-4">
           <label className="flex items-center gap-2 cursor-pointer group">
             <Checkbox
               checked={showInactive}
               onCheckedChange={(checked) => router.push(buildUrl({ showInactive: checked ? 'true' : '' }))}
             />
-            <span className="flex items-center gap-1.5 text-sm text-slate-600 group-hover:text-slate-800">
-              <EyeOff className="h-3.5 w-3.5 text-slate-400" />
+            <span className="flex items-center gap-1.5 text-sm text-muted-foreground group-hover:text-foreground">
+              <EyeOff className="h-3.5 w-3.5 text-muted-foreground/70" />
               Tampilkan nonaktif
             </span>
           </label>
@@ -134,8 +134,8 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
               checked={todayOnly}
               onCheckedChange={(checked) => router.push(buildUrl({ todayOnly: checked ? 'true' : '' }))}
             />
-            <span className="flex items-center gap-1.5 text-sm text-slate-600 group-hover:text-slate-800">
-              <CalendarPlus className="h-3.5 w-3.5 text-slate-400" />
+            <span className="flex items-center gap-1.5 text-sm text-muted-foreground group-hover:text-foreground">
+              <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground/70" />
               Ditambahkan hari ini
             </span>
           </label>

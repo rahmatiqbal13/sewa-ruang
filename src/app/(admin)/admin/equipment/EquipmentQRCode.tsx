@@ -133,7 +133,7 @@ export function EquipmentQRCode({ equipmentId, equipmentName, equipmentCode }: E
         <div className="flex flex-col items-center gap-6 py-4">
           {qrDataUrl ? (
             <>
-              <div className="bg-white p-6 rounded-xl border-2 border-dashed border-slate-200">
+              <div className="bg-card p-6 rounded-[14px] border-2 border-dashed border-border">
                 <img 
                   src={qrDataUrl} 
                   alt="QR Code" 
@@ -142,11 +142,11 @@ export function EquipmentQRCode({ equipmentId, equipmentName, equipmentCode }: E
               </div>
               
               <div className="text-center space-y-1">
-                <p className="font-semibold text-slate-900">{equipmentName}</p>
+                <p className="font-semibold text-foreground">{equipmentName}</p>
                 {equipmentCode && (
-                  <p className="text-sm font-mono text-slate-500">{equipmentCode}</p>
+                  <p className="text-sm font-mono text-muted-foreground">{equipmentCode}</p>
                 )}
-                <p className="text-xs text-slate-400 mt-2">
+                <p className="text-xs text-muted-foreground/70 mt-2">
                   Scan untuk melihat detail dan status alat
                 </p>
               </div>
@@ -171,8 +171,8 @@ export function EquipmentQRCode({ equipmentId, equipmentName, equipmentCode }: E
               </div>
             </>
           ) : (
-            <div className="w-64 h-64 bg-slate-100 rounded-xl animate-pulse flex items-center justify-center">
-              <QrCode className="h-12 w-12 text-slate-300" />
+            <div className="w-64 h-64 bg-muted rounded-[14px] animate-pulse flex items-center justify-center">
+              <QrCode className="h-12 w-12 text-muted-foreground/30" />
             </div>
           )}
         </div>

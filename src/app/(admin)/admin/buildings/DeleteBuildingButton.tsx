@@ -65,7 +65,7 @@ export function DeleteBuildingButton({ id, buildingName }: DeleteBuildingButtonP
         <div 
           className="flex items-center gap-2 cursor-pointer py-2.5 text-red-600 focus:text-red-600 w-full px-2"
         >
-          <div className="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-[10px] bg-red-50 flex items-center justify-center">
             <Trash2 className="h-4 w-4 text-red-600" />
           </div>
           <span className="font-medium">Hapus Gedung</span>

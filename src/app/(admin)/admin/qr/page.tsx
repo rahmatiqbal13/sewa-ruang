@@ -102,7 +102,7 @@ export default function QRPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
             QR Code Generator
             {isSuperAdmin && <ShieldCheck className="h-6 w-6 text-purple-600" />}
           </h1>
@@ -110,23 +110,23 @@ export default function QRPage() {
             Generate QR Code untuk Ruangan, Alat{isSuperAdmin && ', dan Inventaris'}
           </p>
         </div>
-        <Link href="/admin/qr/batch" className={buttonVariants({ variant: 'outline' })}>
+        <Link href="/admin/qr/batch" className={buttonVariants({ variant: 'outline', className: 'rounded-[10px]' })}>
           Cetak Label Massal
         </Link>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="rooms" className="flex items-center gap-2">
+        <TabsList className="grid w-full max-w-md grid-cols-3 rounded-[10px]">
+          <TabsTrigger value="rooms" className="flex items-center gap-2 rounded-[10px]">
             <DoorOpen className="h-4 w-4" />
             Ruangan
           </TabsTrigger>
-          <TabsTrigger value="equipment" className="flex items-center gap-2">
+          <TabsTrigger value="equipment" className="flex items-center gap-2 rounded-[10px]">
             <Package className="h-4 w-4" />
             Alat
           </TabsTrigger>
           {isSuperAdmin && (
-            <TabsTrigger value="inventory" className="flex items-center gap-2">
+            <TabsTrigger value="inventory" className="flex items-center gap-2 rounded-[10px]">
               <Boxes className="h-4 w-4" />
               Inventaris
             </TabsTrigger>
@@ -137,22 +137,22 @@ export default function QRPage() {
         <TabsContent value="rooms" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-2">
-              <p className="text-sm font-medium">Pilih Ruangan ({rooms.length})</p>
-              <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+              <p className="text-sm font-medium text-foreground">Pilih Ruangan ({rooms.length})</p>
+              <div className="border border-border rounded-[10px] overflow-hidden max-h-[500px] overflow-y-auto">
                 {rooms.map((room: any) => (
                   <div
                     key={room.id}
                     onClick={() => setSelectedRoom(room)}
-                    className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors cursor-pointer ${
+                    className={`flex flex-col px-4 py-3 border-b border-border/60 text-sm hover:bg-muted transition-colors cursor-pointer ${
                       selectedRoom?.id === room.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">{room.name}</span>
+                      <span className="font-medium text-foreground">{room.name}</span>
                       {room.is_for_rent ? (
-                        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Sewa</span>
+                        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Sewa</span>
                       ) : (
-                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Inventaris</span>
+                        <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">Inventaris</span>
                       )}
                     </div>
                     <span className="text-muted-foreground text-xs">
@@ -173,7 +173,7 @@ export default function QRPage() {
                   location={selectedRoom.buildings?.name}
                 />
               ) : (
-                <div className="flex items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">
+                <div className="flex items-center justify-center h-64 border-2 border-dashed border-border rounded-[10px] text-muted-foreground">
                   Pilih ruangan dari daftar untuk generate QR Code
                 </div>
               )}
@@ -185,17 +185,17 @@ export default function QRPage() {
         <TabsContent value="equipment" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-2">
-              <p className="text-sm font-medium">Pilih Alat ({equipment.length})</p>
-              <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+              <p className="text-sm font-medium text-foreground">Pilih Alat ({equipment.length})</p>
+              <div className="border border-border rounded-[10px] overflow-hidden max-h-[500px] overflow-y-auto">
                 {equipment.map((item: any) => (
                   <div
                     key={item.id}
                     onClick={() => setSelectedEquipment(item)}
-                    className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors cursor-pointer ${
+                    className={`flex flex-col px-4 py-3 border-b border-border/60 text-sm hover:bg-muted transition-colors cursor-pointer ${
                       selectedEquipment?.id === item.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
                     }`}
                   >
-                    <span className="font-medium">{item.name}</span>
+                    <span className="font-medium text-foreground">{item.name}</span>
                     <span className="text-muted-foreground text-xs">
                       {item.equipment_code} — {item.category}
                     </span>
@@ -214,7 +214,7 @@ export default function QRPage() {
                   category={selectedEquipment.category}
                 />
               ) : (
-                <div className="flex items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">
+                <div className="flex items-center justify-center h-64 border-2 border-dashed border-border rounded-[10px] text-muted-foreground">
                   Pilih alat dari daftar untuk generate QR Code
                 </div>
               )}
@@ -227,17 +227,17 @@ export default function QRPage() {
           <TabsContent value="inventory" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1 space-y-2">
-                <p className="text-sm font-medium">Pilih Inventaris ({inventory.length})</p>
-                <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+                <p className="text-sm font-medium text-foreground">Pilih Inventaris ({inventory.length})</p>
+                <div className="border border-border rounded-[10px] overflow-hidden max-h-[500px] overflow-y-auto">
                   {inventory.map((item: any) => (
                     <div
                       key={item.id}
                       onClick={() => setSelectedInventory(item)}
-                      className={`flex flex-col px-4 py-3 border-b text-sm hover:bg-zinc-50 transition-colors cursor-pointer ${
+                      className={`flex flex-col px-4 py-3 border-b border-border/60 text-sm hover:bg-muted transition-colors cursor-pointer ${
                         selectedInventory?.id === item.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
                       }`}
                     >
-                      <span className="font-medium">{item.name}</span>
+                      <span className="font-medium text-foreground">{item.name}</span>
                       <span className="text-muted-foreground text-xs">
                         {item.inventory_code} — {item.rooms?.name}
                       </span>
@@ -256,7 +256,7 @@ export default function QRPage() {
                     location={selectedInventory.rooms?.name}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground">
+                  <div className="flex items-center justify-center h-64 border-2 border-dashed border-border rounded-[10px] text-muted-foreground">
                     Pilih inventaris dari daftar untuk generate QR Code
                   </div>
                 )}

@@ -215,18 +215,18 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   return (
     <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
       {/* Informasi Dasar */}
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-border shadow-sm rounded-[14px]">
         <CardContent className="p-8">
-          <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
-            <DoorOpen className="h-5 w-5 text-purple-500" />
+          <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+            <DoorOpen className="h-5 w-5 text-primary" />
             Informasi Ruangan
           </h2>
           
           <div className="space-y-6">
             {/* Photo Upload */}
             <div className="space-y-3">
-              <Label className="text-slate-700 font-medium flex items-center gap-2">
-                <Camera className="h-4 w-4 text-slate-400" />
+              <Label className="text-foreground font-medium flex items-center gap-2">
+                <Camera className="h-4 w-4 text-muted-foreground" />
                 Foto Ruangan
               </Label>
               <PhotoUpload
@@ -238,13 +238,13 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-slate-700 font-medium">
+              <Label htmlFor="name" className="text-foreground font-medium">
                 Nama Ruangan <span className="text-red-500">*</span>
               </Label>
               <Input 
                 id="name"
                 placeholder="Contoh: Ruang Seminar A" 
-                className="h-12 rounded-xl border-slate-200 focus:border-purple-500 focus:ring-purple-500/20"
+                className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
                 {...register('name')} 
               />
               {errors.name && (
@@ -254,8 +254,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
             {/* Building */}
             <div className="space-y-2">
-              <Label className="text-slate-700 font-medium flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-slate-400" />
+              <Label className="text-foreground font-medium flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
                 Gedung <span className="text-red-500">*</span>
               </Label>
               <Select
@@ -265,14 +265,14 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                   setValue('floor_number', 1)
                 }}
               >
-                <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:border-purple-500 focus:ring-purple-500/20">
+                <SelectTrigger className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20">
                   {selectedBuilding ? (
-                    <span className="text-slate-900">{selectedBuilding.name} ({selectedBuilding.code})</span>
+                    <span className="text-foreground">{selectedBuilding.name} ({selectedBuilding.code})</span>
                   ) : (
                     <SelectValue placeholder="Pilih gedung..." />
                   )}
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-[10px]">
                   {buildings.map(b => (
                     <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
                   ))}
@@ -286,22 +286,22 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
             {/* Floor & Sequence */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-slate-400" />
+                <Label className="text-foreground font-medium flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-muted-foreground" />
                   Lantai <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={watch('floor_number')?.toString() || '1'}
                   onValueChange={(v) => setValue('floor_number', parseInt(v ?? '1'))}
                 >
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:border-purple-500 focus:ring-purple-500/20">
+                  <SelectTrigger className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20">
                     {watch('floor_number') ? (
-                      <span className="text-slate-900">Lantai {watch('floor_number')}</span>
+                      <span className="text-foreground">Lantai {watch('floor_number')}</span>
                     ) : (
                       <SelectValue placeholder="Pilih lantai..." />
                     )}
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-[10px]">
                     {Array.from({ length: selectedBuilding?.floor_count ?? 10 }, (_, i) => i + 1).map(n => (
                       <SelectItem key={n} value={n.toString()}>Lantai {n}</SelectItem>
                     ))}
@@ -313,7 +313,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="room_sequence" className="text-slate-700 font-medium">
+                <Label htmlFor="room_sequence" className="text-foreground font-medium">
                   Nomor Urut <span className="text-red-500">*</span>
                 </Label>
                 <Input 
@@ -322,20 +322,20 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                   min={1}
                   max={99}
                   placeholder="1"
-                  className="h-12 rounded-xl border-slate-200 focus:border-purple-500 focus:ring-purple-500/20"
+                  className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
                   {...register('room_sequence')}
                 />
                 {errors.room_sequence && (
                   <p className="text-sm text-red-500 font-medium">{errors.room_sequence.message}</p>
                 )}
-                <p className="text-xs text-slate-500">Kode ruang digenerate otomatis dari gedung + lantai + nomor urut</p>
+                <p className="text-xs text-muted-foreground">Kode ruang digenerate otomatis dari gedung + lantai + nomor urut</p>
               </div>
             </div>
 
             {/* Capacity */}
             <div className="space-y-2">
-              <Label htmlFor="capacity" className="text-slate-700 font-medium flex items-center gap-2">
-                <Users className="h-4 w-4 text-slate-400" />
+              <Label htmlFor="capacity" className="text-foreground font-medium flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
                 Kapasitas (orang)
               </Label>
               <Input 
@@ -343,7 +343,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                 type="number"
                 min={1}
                 placeholder="30"
-                className="h-12 rounded-xl border-slate-200 focus:border-purple-500 focus:ring-purple-500/20"
+                className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
                 {...register('capacity')}
               />
               {errors.capacity && (
@@ -352,28 +352,28 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
             </div>
 
             {/* Is For Rent Switch */}
-            <div className="flex items-center gap-3 py-2 px-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-3 py-2 px-4 bg-muted rounded-[10px] border border-border">
               <Switch 
                 id="is_for_rent" 
                 checked={isForRent} 
                 onCheckedChange={(v) => setValue('is_for_rent', v)} 
               />
-              <Label htmlFor="is_for_rent" className="cursor-pointer font-medium text-slate-700 flex items-center gap-2">
-                <Tag className="h-4 w-4 text-purple-500" />
+              <Label htmlFor="is_for_rent" className="cursor-pointer font-medium text-foreground flex items-center gap-2">
+                <Tag className="h-4 w-4 text-primary" />
                 Ruangan ini dapat disewakan
               </Label>
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-slate-700 font-medium">
+              <Label htmlFor="description" className="text-foreground font-medium">
                 Deskripsi
               </Label>
               <Textarea 
                 id="description"
                 placeholder="Fasilitas, keterangan tambahan..." 
                 rows={4}
-                className="rounded-xl border-slate-200 focus:border-purple-500 focus:ring-purple-500/20 resize-none"
+                className="rounded-[10px] border-border focus:border-primary focus:ring-primary/20 resize-none"
                 {...register('description')}
               />
             </div>
@@ -383,39 +383,39 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
       {/* Tarif Sewa */}
       {isForRent && (
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border shadow-sm rounded-[14px]">
           <CardContent className="p-8">
-          <h2 className="text-lg font-semibold text-slate-900 mb-2">Tarif Sewa per Kategori</h2>
-          <p className="text-slate-500 mb-6">Atur harga per kategori penggunaan (kosongkan jika tidak tersedia)</p>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Tarif Sewa per Kategori</h2>
+          <p className="text-muted-foreground mb-6">Atur harga per kategori penggunaan (kosongkan jika tidak tersedia)</p>
           
             <div className="space-y-4">
               {USAGE_CATEGORIES.map(cat => {
                 const colors = COLOR_STYLES[cat.color]
                 const rateValue = rates?.[cat.value] || { rate_per_hour: '', rate_per_day: '' }
                 return (
-                  <div key={cat.value} className={`border rounded-xl p-4 ${colors.bg} ${colors.border}`}>
+                  <div key={cat.value} className={`border rounded-[14px] p-4 ${colors.bg} ${colors.border}`}>
                     <h4 className={`font-semibold mb-3 ${colors.text}`}>{cat.label}</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm text-slate-600">Tarif per Jam (Rp)</Label>
+                        <Label className="text-sm text-muted-foreground">Tarif per Jam (Rp)</Label>
                         <Input 
                           type="number" 
                           min={0} 
                           placeholder="0"
                           value={rateValue.rate_per_hour}
                           onChange={(e) => setValue(`rates.${cat.value}.rate_per_hour` as any, e.target.value)}
-                          className="h-10 rounded-lg border-slate-200"
+                          className="h-10 rounded-[10px] border-border"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm text-slate-600">Tarif per Hari (Rp)</Label>
+                        <Label className="text-sm text-muted-foreground">Tarif per Hari (Rp)</Label>
                         <Input 
                           type="number" 
                           min={0} 
                           placeholder="0"
                           value={rateValue.rate_per_day}
                           onChange={(e) => setValue(`rates.${cat.value}.rate_per_day` as any, e.target.value)}
-                          className="h-10 rounded-lg border-slate-200"
+                          className="h-10 rounded-[10px] border-border"
                         />
                       </div>
                     </div>
@@ -432,7 +432,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
         <Button 
           type="submit" 
           disabled={loading}
-          className="h-12 px-8 bg-purple-600 hover:bg-purple-700"
+          className="h-12 px-8 bg-primary hover:bg-primary/90 rounded-[10px]"
         >
           {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
           {room ? 'Simpan Perubahan' : 'Tambah Ruangan'}
@@ -441,7 +441,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
           type="button" 
           variant="outline" 
           onClick={() => router.back()}
-          className="h-12 px-8 border-slate-200 hover:bg-slate-50"
+          className="h-12 px-8 border-border hover:bg-muted rounded-[10px]"
         >
           Batal
         </Button>

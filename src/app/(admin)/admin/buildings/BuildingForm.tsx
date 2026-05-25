@@ -95,33 +95,33 @@ export function BuildingForm({ building }: { building?: Building }) {
       {/* Back Button */}
       <Link 
         href="/admin/buildings"
-        className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Kembali ke daftar gedung
       </Link>
 
       <div className="flex items-center gap-4 mb-8">
-        <div className="h-14 w-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/25">
+        <div className="h-14 w-14 bg-indigo-600 rounded-[14px] flex items-center justify-center shadow-soft">
           <Building2 className="h-7 w-7 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-foreground">
             {building ? 'Edit Gedung' : 'Tambah Gedung Baru'}
           </h1>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             {building ? 'Perbarui informasi gedung' : 'Isi detail gedung untuk menambahkan ke sistem'}
           </p>
         </div>
       </div>
 
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-border">
         <CardContent className="p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Photo Upload */}
             <div className="space-y-3">
-              <Label className="text-slate-700 font-medium flex items-center gap-2">
-                <Camera className="h-4 w-4 text-slate-400" />
+              <Label className="text-foreground/80 font-medium flex items-center gap-2">
+                <Camera className="h-4 w-4 text-muted-foreground/70" />
                 Foto Gedung
               </Label>
               <PhotoUpload
@@ -133,13 +133,13 @@ export function BuildingForm({ building }: { building?: Building }) {
 
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-slate-700 font-medium">
+              <Label htmlFor="name" className="text-foreground/80 font-medium">
                 Nama Gedung <span className="text-red-500">*</span>
               </Label>
               <Input 
                 id="name"
                 placeholder="Contoh: Gedung Kuliah Bersama, Gedung Laboratorium" 
-                className="h-12 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20"
+                className="h-12 rounded-[14px] border-border focus:border-indigo-500 focus:ring-indigo-500/20"
                 {...register('name')} 
               />
               {errors.name && (
@@ -150,13 +150,13 @@ export function BuildingForm({ building }: { building?: Building }) {
             {/* Code & Floor Count */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="code" className="text-slate-700 font-medium">
+                <Label htmlFor="code" className="text-foreground/80 font-medium">
                   Kode Gedung <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="code"
                   placeholder="A / B / LAB"
-                  className="h-12 rounded-xl border-slate-200 uppercase font-mono focus:border-indigo-500 focus:ring-indigo-500/20"
+                  className="h-12 rounded-[14px] border-border uppercase font-mono focus:border-indigo-500 focus:ring-indigo-500/20"
                   {...register('code')}
                   onChange={(e) => {
                     const upperValue = e.target.value.toUpperCase()
@@ -166,11 +166,11 @@ export function BuildingForm({ building }: { building?: Building }) {
                 {errors.code && (
                   <p className="text-sm text-red-500 font-medium">{errors.code.message}</p>
                 )}
-                <p className="text-xs text-slate-500">Maks 5 karakter, huruf kapital & angka</p>
+                <p className="text-xs text-muted-foreground">Maks 5 karakter, huruf kapital & angka</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="floor_count" className="text-slate-700 font-medium">
+                <Label htmlFor="floor_count" className="text-foreground/80 font-medium">
                   Jumlah Lantai <span className="text-red-500">*</span>
                 </Label>
                 <Input 
@@ -179,7 +179,7 @@ export function BuildingForm({ building }: { building?: Building }) {
                   min={1} 
                   max={99} 
                   placeholder="1" 
-                  className="h-12 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20"
+                  className="h-12 rounded-[14px] border-border focus:border-indigo-500 focus:ring-indigo-500/20"
                   {...register('floor_count')} 
                 />
                 {errors.floor_count && (
@@ -190,33 +190,33 @@ export function BuildingForm({ building }: { building?: Building }) {
 
             {/* Address */}
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-slate-700 font-medium">
+              <Label htmlFor="address" className="text-foreground/80 font-medium">
                 Alamat / Lokasi
               </Label>
               <Input 
                 id="address"
                 placeholder="Jl. Contoh No. 1, Kampus Utama" 
-                className="h-12 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20"
+                className="h-12 rounded-[14px] border-border focus:border-indigo-500 focus:ring-indigo-500/20"
                 {...register('address')} 
               />
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-slate-700 font-medium">
+              <Label htmlFor="description" className="text-foreground/80 font-medium">
                 Deskripsi
               </Label>
               <Textarea 
                 id="description"
                 placeholder="Deskripsi singkat tentang gedung ini..." 
                 rows={4}
-                className="rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20 resize-none"
+                className="rounded-[14px] border-border focus:border-indigo-500 focus:ring-indigo-500/20 resize-none"
                 {...register('description')} 
               />
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border/60">
               <Button 
                 type="submit" 
                 disabled={loading}
@@ -229,7 +229,7 @@ export function BuildingForm({ building }: { building?: Building }) {
                 type="button" 
                 variant="outline" 
                 onClick={() => router.back()}
-                className="h-12 px-8 border-slate-200 hover:bg-slate-50"
+                className="h-12 px-8 border-border hover:bg-muted"
               >
                 Batal
               </Button>

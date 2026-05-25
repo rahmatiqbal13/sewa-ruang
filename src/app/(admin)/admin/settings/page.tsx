@@ -68,9 +68,9 @@ export default async function SettingsPage() {
       </div>
 
       {/* System Info */}
-      <Card className="border-zinc-200 bg-zinc-50">
+      <Card className="border-border bg-muted">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base flex items-center gap-2 text-foreground">
             <Settings className="h-4 w-4" /> Informasi Sistem
           </CardTitle>
         </CardHeader>

@@ -25,7 +25,7 @@ import {
 import { SafeImage } from '@/components/shared/SafeImage'
 
 const CONDITIONS = [
-  { value: '', label: 'Semua', color: 'bg-slate-800 text-white', bg: 'bg-slate-50 border-slate-200' },
+  { value: '', label: 'Semua', color: 'bg-foreground text-white', bg: 'bg-muted border-border' },
   { value: 'good', label: 'Baik', color: 'bg-green-600 text-white', bg: 'bg-green-50 border-green-200' },
   { value: 'needs_repair', label: 'Perlu Perbaikan', color: 'bg-yellow-600 text-white', bg: 'bg-yellow-50 border-yellow-200' },
   { value: 'damaged', label: 'Rusak', color: 'bg-red-600 text-white', bg: 'bg-red-50 border-red-200' },
@@ -187,7 +187,7 @@ export function InventoryList({
       />
 
       {/* Info Banner */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-[14px] p-4">
         <div className="flex items-start gap-3">
           <Boxes className="h-5 w-5 text-amber-600 mt-0.5" />
           <div>
@@ -204,7 +204,7 @@ export function InventoryList({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Inventaris Ruangan</h1>
+          <h1 className="text-2xl font-bold text-foreground">Inventaris Ruangan</h1>
           <p className="text-muted-foreground text-sm">Barang-barang di dalam ruangan (tidak untuk disewakan)</p>
         </div>
         <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export function InventoryList({
           
           <Link 
             href="/admin/inventory/new" 
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-amber-600 text-white hover:bg-amber-700 h-10 px-4 py-2"
+            className="inline-flex items-center justify-center rounded-[10px] text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-amber-600 text-white hover:bg-amber-700 h-10 px-4 py-2"
           >
             <Plus className="mr-2 h-4 w-4" /> Tambah Item
           </Link>
@@ -250,19 +250,19 @@ export function InventoryList({
 
       {/* Info Cards - Like Equipment Page */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-          <p className="text-slate-600 text-sm font-medium">Total Item</p>
-          <p className="text-2xl font-bold text-slate-900">{totalCount}</p>
+        <div className="bg-muted border border-border rounded-[14px] p-4">
+          <p className="text-muted-foreground text-sm font-medium">Total Item</p>
+          <p className="text-2xl font-bold text-foreground">{totalCount}</p>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+        <div className="bg-green-50 border border-green-200 rounded-[14px] p-4">
           <p className="text-green-600 text-sm font-medium">Kondisi Baik</p>
           <p className="text-2xl font-bold text-green-900">{condCounts['good'] ?? 0}</p>
         </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-[14px] p-4">
           <p className="text-yellow-600 text-sm font-medium">Perlu Perbaikan</p>
           <p className="text-2xl font-bold text-yellow-900">{condCounts['needs_repair'] ?? 0}</p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+        <div className="bg-red-50 border border-red-200 rounded-[14px] p-4">
           <p className="text-red-600 text-sm font-medium">Rusak</p>
           <p className="text-2xl font-bold text-red-900">{condCounts['damaged'] ?? 0}</p>
         </div>
@@ -279,14 +279,14 @@ export function InventoryList({
                 key={tab.value}
                 href={`/admin/inventory${buildQueryString(tab.value)}`}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                  isActive ? tab.color : 'bg-white border text-slate-600 hover:bg-slate-50'
+                  'inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-sm font-medium transition-all',
+                  isActive ? tab.color : 'bg-card border text-muted-foreground hover:bg-muted'
                 )}
               >
                 {tab.label}
                 <span className={cn(
                   'text-xs rounded-full px-1.5 py-0.5 font-bold',
-                  isActive ? 'bg-white/20' : 'bg-slate-100'
+                  isActive ? 'bg-white/20' : 'bg-muted'
                 )}>
                   {count}
                 </span>
@@ -295,14 +295,14 @@ export function InventoryList({
           })}
         </div>
         
-        <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-lg">
+        <div className="flex items-center gap-1 bg-muted p-1 rounded-[10px]">
           <button
             onClick={() => setViewMode('card')}
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
               viewMode === 'card'
-                ? 'bg-white text-zinc-900 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-700'
+                ? 'bg-card text-foreground shadow-soft'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <LayoutGrid className="h-4 w-4" />
@@ -313,8 +313,8 @@ export function InventoryList({
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all',
               viewMode === 'table'
-                ? 'bg-white text-zinc-900 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-700'
+                ? 'bg-card text-foreground shadow-soft'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <Table2 className="h-4 w-4" />
@@ -331,9 +331,9 @@ export function InventoryList({
               type="checkbox"
               checked={isAllSelected}
               onChange={toggleAll}
-              className="h-5 w-5 rounded border-2 border-slate-300 text-blue-600"
+              className="h-5 w-5 rounded border-2 border-border text-blue-600"
             />
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-muted-foreground">
               {hasSelection ? `${selectedIds.size} dipilih` : 'Pilih semua'}
             </span>
           </div>
@@ -346,7 +346,7 @@ export function InventoryList({
 
       {/* Empty State */}
       {items.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-xl">
+        <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-[14px]">
           <Package className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p>Tidak ada item {currentCondition ? 'dengan kondisi ini' : 'inventaris'}</p>
           <Link href="/admin/inventory/new" className="text-amber-600 hover:underline"> Tambah sekarang</Link>
@@ -364,25 +364,25 @@ export function InventoryList({
               <div 
                 key={item.id} 
                 className={cn(
-                  "rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow group",
-                  item.condition === 'good' && "bg-white border-green-200",
+                  "rounded-[14px] border overflow-hidden hover:shadow-soft transition-shadow group",
+                  item.condition === 'good' && "bg-card border-green-200",
                   item.condition === 'needs_repair' && "bg-yellow-50/50 border-yellow-300",
                   item.condition === 'damaged' && "bg-red-50/50 border-red-300",
                 )}
               >
                 {/* Photo Section */}
-                <div className="relative h-44 bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-2">
+                <div className="relative h-44 bg-muted flex items-center justify-center p-2">
                   {item.photo_url ? (
                     <div className="relative w-full h-full flex items-center justify-center">
                       <SafeImage
                         src={item.photo_url}
                         alt={item.name}
                         className="object-contain w-full h-full max-h-40"
-                        fallbackClassName="w-full h-full rounded-lg"
+                        fallbackClassName="w-full h-full rounded-[10px]"
                       />
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground/70">
                       <Package className="h-12 w-12 mb-2" />
                       <span className="text-xs">Belum ada foto</span>
                     </div>
@@ -391,7 +391,7 @@ export function InventoryList({
                   {/* Inventory Code Badge */}
                   {item.inventory_code && (
                     <div className="absolute top-2 left-2">
-                      <span className="bg-white/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded-lg font-mono text-amber-700 border border-amber-200">
+                      <span className="bg-card/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded-[10px] font-mono text-amber-700 border border-amber-200">
                         {item.inventory_code}
                       </span>
                     </div>
@@ -405,14 +405,14 @@ export function InventoryList({
                   {/* Checkbox */}
                   <div className="absolute bottom-2 right-2">
                     <div
-                      className="bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm"
+                      className="bg-card/90 backdrop-blur rounded-[10px] p-1 shadow-soft"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <input
                         type="checkbox"
                         checked={selected}
                         onChange={() => toggleSelection(item.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                        className="h-4 w-4 rounded border-border text-blue-600"
                       />
                     </div>
                   </div>
@@ -420,7 +420,7 @@ export function InventoryList({
 
                 {/* Content */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-slate-900 text-sm truncate group-hover:text-amber-600 transition-colors">
+                  <h3 className="font-semibold text-foreground text-sm truncate group-hover:text-amber-600 transition-colors">
                     {item.name}
                   </h3>
                   
@@ -428,32 +428,32 @@ export function InventoryList({
                   <div className="mt-2 space-y-1">
                     {room ? (
                       <>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <DoorOpen className="h-3.5 w-3.5 text-purple-500 shrink-0" />
                           <span className="truncate">{room.name}</span>
-                          {room.room_code && <span className="font-mono text-slate-400">({room.room_code})</span>}
+                          {room.room_code && <span className="font-mono text-muted-foreground/70">({room.room_code})</span>}
                         </div>
                         {room.buildings && (
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Building2 className="h-3.5 w-3.5 text-orange-400 shrink-0" />
                             <span className="truncate">{room.buildings.name}</span>
                           </div>
                         )}
                       </>
                     ) : (
-                      <p className="text-xs text-slate-400 italic">Lokasi tidak diketahui</p>
+                      <p className="text-xs text-muted-foreground/70 italic">Lokasi tidak diketahui</p>
                     )}
                   </div>
 
                   {/* Quantity */}
-                  <div className="mt-3 pt-3 border-t border-slate-100">
+                  <div className="mt-3 pt-3 border-t border-border/60">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-slate-400">Jumlah</p>
-                        <p className="text-lg font-bold text-slate-700">{item.quantity} <span className="text-sm font-normal">unit</span></p>
+                        <p className="text-xs text-muted-foreground/70">Jumlah</p>
+                        <p className="text-lg font-bold text-foreground/80">{item.quantity} <span className="text-sm font-normal">unit</span></p>
                       </div>
                       {item.notes && (
-                        <p className="text-xs text-slate-400 truncate max-w-[120px]" title={item.notes}>
+                        <p className="text-xs text-muted-foreground/70 truncate max-w-[120px]" title={item.notes}>
                           {item.notes}
                         </p>
                       )}
@@ -461,17 +461,17 @@ export function InventoryList({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
                     <button
                       onClick={() => setEditingItem(item)}
-                      className="text-xs px-3 py-1.5 rounded-md bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors font-medium"
+                      className="text-xs px-3 py-1.5 rounded-[10px] bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors font-medium"
                     >
                       Edit
                     </button>
                     
                     <div className="flex items-center gap-1">
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 transition-colors">
+                        <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground hover:bg-muted transition-colors">
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -488,7 +488,7 @@ export function InventoryList({
                       {room && (
                         <Link
                           href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_asset_id}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground/70 hover:bg-muted hover:text-muted-foreground"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </Link>
@@ -504,67 +504,67 @@ export function InventoryList({
 
       {/* TABLE VIEW */}
       {viewMode === 'table' && paginatedItems.length > 0 && (
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-card rounded-[14px] border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-zinc-50 border-b">
+              <thead className="bg-muted border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600 w-10">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground w-10">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
                       onChange={toggleAll}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                      className="h-4 w-4 rounded border-border text-blue-600"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Foto</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kode</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Nama Item</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Lokasi</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-600">Jumlah</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Kondisi</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-zinc-600">Aksi</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Foto</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Kode</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nama Item</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Lokasi</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Jumlah</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Kondisi</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border/60">
                 {paginatedItems.map((item) => {
                   const room = item.rooms
                   const selected = isSelected(item.id)
                   
                   return (
-                    <tr key={item.id} className={cn(selected && 'bg-blue-50/50', 'hover:bg-slate-50')}>
+                    <tr key={item.id} className={cn(selected && 'bg-blue-50/50', 'hover:bg-muted')}>
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
                           checked={selected}
                           onChange={() => toggleSelection(item.id)}
-                          className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                          className="h-4 w-4 rounded border-border text-blue-600"
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <div className="h-10 w-10 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-[10px] bg-muted overflow-hidden flex items-center justify-center">
                           {item.photo_url ? (
                             <SafeImage src={item.photo_url} alt={item.name} className="h-full w-full object-cover" />
                           ) : (
-                            <Package className="h-5 w-5 text-slate-300" />
+                            <Package className="h-5 w-5 text-muted-foreground/30" />
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-mono text-sm text-slate-500">
+                      <td className="px-4 py-3 font-mono text-sm text-muted-foreground">
                         {item.inventory_code ?? '-'}
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900">{item.name}</p>
-                        {item.notes && <p className="text-xs text-slate-400 truncate max-w-[200px]">{item.notes}</p>}
+                        <p className="font-medium text-foreground">{item.name}</p>
+                        {item.notes && <p className="text-xs text-muted-foreground/70 truncate max-w-[200px]">{item.notes}</p>}
                       </td>
                       <td className="px-4 py-3">
                         {room ? (
                           <div>
-                            <p className="text-sm font-medium text-slate-700">{room.name}</p>
-                            <p className="text-xs text-slate-400">{room.buildings?.name}</p>
+                            <p className="text-sm font-medium text-foreground/80">{room.name}</p>
+                            <p className="text-xs text-muted-foreground/70">{room.buildings?.name}</p>
                           </div>
                         ) : (
-                          <span className="text-slate-400">-</span>
+                          <span className="text-muted-foreground/70">-</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -577,13 +577,13 @@ export function InventoryList({
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => setEditingItem(item)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-amber-600"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground hover:bg-muted hover:text-amber-600"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           
                           <DropdownMenu>
-                            <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100">
+                            <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground hover:bg-muted">
                               <MoreHorizontal className="h-4 w-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -600,7 +600,7 @@ export function InventoryList({
                           {room && (
                             <Link
                               href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_asset_id}`}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground/70 hover:bg-muted hover:text-muted-foreground"
                             >
                               <ChevronRight className="h-4 w-4" />
                             </Link>
@@ -626,7 +626,7 @@ export function InventoryList({
           >
             <ChevronLeft className="h-4 w-4 mr-2" /> Sebelumnya
           </Button>
-          <span className="text-sm text-slate-600">
+          <span className="text-sm text-muted-foreground">
             Halaman {currentPage} dari {totalPages}
           </span>
           <Button

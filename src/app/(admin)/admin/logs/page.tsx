@@ -143,8 +143,8 @@ export default async function LogsPage({
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Activity Log</h1>
-        <p className="text-slate-500 mt-1">Audit trail perubahan data sistem</p>
+        <h1 className="text-3xl font-bold text-foreground">Activity Log</h1>
+        <p className="text-muted-foreground mt-1">Audit trail perubahan data sistem</p>
       </div>
 
       {/* Stats */}
@@ -195,7 +195,7 @@ export default async function LogsPage({
               href="/admin/logs"
               className={cn(
                 'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
-                !tableFilter ? 'bg-blue-950 text-white border-blue-950' : 'bg-white text-zinc-600 border-zinc-300 hover:border-blue-400'
+                !tableFilter ? 'bg-blue-950 text-white border-blue-950' : 'bg-card text-muted-foreground border-border hover:border-blue-400'
               )}
             >
               Semua
@@ -206,7 +206,7 @@ export default async function LogsPage({
                 href={`/admin/logs?table=${stat.name}`}
                 className={cn(
                   'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
-                  tableFilter === stat.name ? 'bg-blue-950 text-white border-blue-950' : 'bg-white text-zinc-600 border-zinc-300 hover:border-blue-400'
+                  tableFilter === stat.name ? 'bg-blue-950 text-white border-blue-950' : 'bg-card text-muted-foreground border-border hover:border-blue-400'
                 )}
               >
                 {TABLE_LABELS[stat.name] || stat.name}
@@ -231,7 +231,7 @@ export default async function LogsPage({
               {logs.map((log: ActivityLog) => (
                 <div
                   key={log.id}
-                  className="flex items-start gap-4 p-4 rounded-lg border hover:bg-slate-50 transition-colors"
+                  className="flex items-start gap-4 p-4 rounded-[10px] border hover:bg-muted transition-colors"
                 >
                   <ActionBadge action={log.action} />
                   
@@ -240,22 +240,22 @@ export default async function LogsPage({
                       <span className="font-medium text-sm">
                         {TABLE_LABELS[log.table_name] || log.table_name}
                       </span>
-                      <span className="text-slate-400">•</span>
-                      <span className="text-sm text-slate-700 truncate max-w-[200px]">
+                      <span className="text-muted-foreground/30">•</span>
+                      <span className="text-sm text-foreground/80 truncate max-w-[200px]">
                         {getRecordName(log)}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {getChangesSummary(log)}
                     </p>
                   </div>
                   
                   <div className="text-right shrink-0">
-                    <div className="flex items-center gap-1 text-xs text-slate-500">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <User className="h-3 w-3" />
                       {log.user_name || 'System'}
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mt-1">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground/70 mt-1">
                       <Clock className="h-3 w-3" />
                       {format(new Date(log.performed_at), 'dd MMM yyyy HH:mm', { locale: id })}
                     </div>
@@ -264,8 +264,8 @@ export default async function LogsPage({
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-500">
-              <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
               <p>Belum ada aktivitas tercatat</p>
               <p className="text-sm mt-1">Activity log akan muncul setelah ada perubahan data</p>
             </div>
@@ -278,13 +278,13 @@ export default async function LogsPage({
                 href={`/admin/logs?page=${Math.max(1, page - 1)}${tableFilter ? `&table=${tableFilter}` : ''}`}
                 className={cn(
                   'p-2 rounded border transition-colors',
-                  page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'
+                  page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'
                 )}
               >
                 <ChevronLeft className="h-4 w-4" />
               </a>
               
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-muted-foreground">
                 Halaman {page} dari {totalPages}
               </span>
               
@@ -292,7 +292,7 @@ export default async function LogsPage({
                 href={`/admin/logs?page=${Math.min(totalPages, page + 1)}${tableFilter ? `&table=${tableFilter}` : ''}`}
                 className={cn(
                   'p-2 rounded border transition-colors',
-                  page === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'
+                  page === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'
                 )}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -303,7 +303,7 @@ export default async function LogsPage({
       </Card>
 
       {/* Info */}
-      <div className="text-xs text-slate-400 text-center">
+      <div className="text-xs text-muted-foreground/70 text-center">
         <p>Activity log mencatat perubahan pada: Bookings, Users, Equipment, Rooms, Buildings, Payment Proofs</p>
       </div>
     </div>

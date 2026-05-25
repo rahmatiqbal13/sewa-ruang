@@ -261,17 +261,17 @@ export default async function EditEquipmentPage({ params }: Props) {
       <div className="mb-6">
         <Link 
           href="/admin/equipment" 
-          className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mb-3 transition-colors"
+          className="text-sm text-muted-foreground hover:text-foreground/80 flex items-center gap-1 mb-3 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Alat
         </Link>
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/25">
+          <div className="h-12 w-12 bg-primary rounded-[14px] flex items-center justify-center shadow-lg shadow-teal-500/25">
             <Package className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Edit Alat</h1>
-            <p className="text-slate-500">{equipment.name}</p>
+            <h1 className="text-2xl font-bold text-foreground">Edit Alat</h1>
+            <p className="text-muted-foreground">{equipment.name}</p>
           </div>
         </div>
       </div>
@@ -287,7 +287,7 @@ export default async function EditEquipmentPage({ params }: Props) {
 
       <form action={updateEquipment} className="space-y-6">
         {/* Main Info Card */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Informasi Dasar</CardTitle>
             <CardDescription>Data identitas dan klasifikasi alat</CardDescription>
@@ -296,7 +296,7 @@ export default async function EditEquipmentPage({ params }: Props) {
             {/* Row 1: Name & Code */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="name" className="text-slate-700">Nama Alat *</Label>
+                  <Label htmlFor="name" className="text-foreground/80">Nama Alat *</Label>
                   <Input 
                     id="name" 
                     name="name" 
@@ -306,7 +306,7 @@ export default async function EditEquipmentPage({ params }: Props) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="equipment_code" className="text-slate-700">
+                  <Label htmlFor="equipment_code" className="text-foreground/80">
                     Kode Alat {equipment.equipment_code ? '' : <span className="text-amber-600">*</span>}
                   </Label>
                   <Input
@@ -318,7 +318,7 @@ export default async function EditEquipmentPage({ params }: Props) {
                     className={cn(
                       "h-11 font-mono",
                       equipment.equipment_code 
-                        ? "bg-slate-50 text-slate-500" 
+                        ? "bg-muted text-muted-foreground" 
                         : "bg-amber-50 border-amber-200 text-amber-700 placeholder:text-amber-400"
                     )}
                   />
@@ -331,7 +331,7 @@ export default async function EditEquipmentPage({ params }: Props) {
             {/* Row 2: Category & Merk */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-slate-700">Kategori</Label>
+                <Label htmlFor="category" className="text-foreground/80">Kategori</Label>
                 <Select name="category" defaultValue={equipment.category || ''}>
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="Pilih kategori..." />
@@ -346,7 +346,7 @@ export default async function EditEquipmentPage({ params }: Props) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="merk" className="text-slate-700">Merk/Brand</Label>
+                <Label htmlFor="merk" className="text-foreground/80">Merk/Brand</Label>
                 <Input 
                   id="merk" 
                   name="merk" 
@@ -359,7 +359,7 @@ export default async function EditEquipmentPage({ params }: Props) {
 
             {/* Row 3: Description */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-slate-700">Deskripsi</Label>
+              <Label htmlFor="description" className="text-foreground/80">Deskripsi</Label>
               <Textarea 
                 id="description" 
                 name="description" 
@@ -375,7 +375,7 @@ export default async function EditEquipmentPage({ params }: Props) {
         {/* Photo & Status Card */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Photo */}
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-border shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg">Foto Alat</CardTitle>
             </CardHeader>
@@ -385,14 +385,14 @@ export default async function EditEquipmentPage({ params }: Props) {
           </Card>
 
           {/* Status */}
-          <Card className="lg:col-span-2 border-slate-200 shadow-sm">
+          <Card className="lg:col-span-2 border-border shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg">Status & Kondisi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3">
-                  <Label htmlFor="current_condition" className="text-slate-700 text-sm font-medium">Kondisi *</Label>
+                  <Label htmlFor="current_condition" className="text-foreground/80 text-sm font-medium">Kondisi *</Label>
                   <Select name="current_condition" defaultValue={equipment.current_condition}>
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Pilih kondisi..." />
@@ -406,7 +406,7 @@ export default async function EditEquipmentPage({ params }: Props) {
                   </Select>
                 </div>
                 <div className="space-y-3">
-                  <Label htmlFor="ketersediaan" className="text-slate-700 text-sm font-medium">Ketersediaan *</Label>
+                  <Label htmlFor="ketersediaan" className="text-foreground/80 text-sm font-medium">Ketersediaan *</Label>
                   <Select name="ketersediaan" defaultValue={equipment.ketersediaan}>
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Pilih ketersediaan..." />
@@ -420,7 +420,7 @@ export default async function EditEquipmentPage({ params }: Props) {
                   </Select>
                 </div>
                 <div className="space-y-3">
-                  <Label htmlFor="status_tindakan" className="text-slate-700 text-sm font-medium">Status Tindakan *</Label>
+                  <Label htmlFor="status_tindakan" className="text-foreground/80 text-sm font-medium">Status Tindakan *</Label>
                   <Select name="status_tindakan" defaultValue={equipment.status_tindakan}>
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Pilih status..." />
@@ -435,8 +435,8 @@ export default async function EditEquipmentPage({ params }: Props) {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 mt-4">
-                <h4 className="text-sm font-semibold text-slate-700 mb-3">Status Alat</h4>
+              <div className="pt-4 border-t border-border/60 mt-4">
+                <h4 className="text-sm font-semibold text-foreground/80 mb-3">Status Alat</h4>
                 <div className="flex items-center gap-4">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -446,13 +446,13 @@ export default async function EditEquipmentPage({ params }: Props) {
                       defaultChecked={equipment.is_active}
                       className="sr-only peer"
                     />
-                    <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-teal-600"></div>
+                    <div className="w-14 h-7 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-card after:border-border after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-teal-600"></div>
                   </label>
                   <div>
-                    <span className={`text-sm font-medium ${equipment.is_active ? 'text-teal-700' : 'text-gray-500'}`}>
+                    <span className={`text-sm font-medium ${equipment.is_active ? 'text-teal-700' : 'text-muted-foreground'}`}>
                       {equipment.is_active ? 'Aktif' : 'Tidak Aktif'}
                     </span>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted-foreground">
                       {equipment.is_active 
                         ? 'Alat dapat dilihat dan disewa oleh peminjam' 
                         : 'Alat disembunyikan dari katalog peminjaman'}
@@ -461,8 +461,8 @@ export default async function EditEquipmentPage({ params }: Props) {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 mt-4">
-                <h4 className="text-sm font-semibold text-slate-700 mb-4">Lokasi Penyimpanan</h4>
+              <div className="pt-4 border-t border-border/60 mt-4">
+                <h4 className="text-sm font-semibold text-foreground/80 mb-4">Lokasi Penyimpanan</h4>
                 <LocationSelect
                   buildings={buildings || []}
                   rooms={rooms || []}
@@ -472,9 +472,9 @@ export default async function EditEquipmentPage({ params }: Props) {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/60 mt-4">
                 <div className="space-y-3">
-                  <Label htmlFor="sumber" className="text-slate-700 text-sm font-medium">Sumber Perolehan</Label>
+                  <Label htmlFor="sumber" className="text-foreground/80 text-sm font-medium">Sumber Perolehan</Label>
                   <Input 
                     id="sumber" 
                     name="sumber" 
@@ -484,8 +484,8 @@ export default async function EditEquipmentPage({ params }: Props) {
                   />
                 </div>
                 <div className="space-y-3">
-                  <Label htmlFor="current_location" className="text-slate-700 text-sm font-medium">
-                    Keterangan Lokasi <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                  <Label htmlFor="current_location" className="text-foreground/80 text-sm font-medium">
+                    Keterangan Lokasi <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
                   </Label>
                   <Input 
                     id="current_location" 
@@ -501,7 +501,7 @@ export default async function EditEquipmentPage({ params }: Props) {
         </div>
 
         {/* Rates Card */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Tarif Sewa per Kategori</CardTitle>
             <CardDescription>Kosongkan kategori yang tidak tersedia</CardDescription>

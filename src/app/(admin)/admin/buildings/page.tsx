@@ -2,7 +2,6 @@ import { createAdminClient as createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
 export const revalidate = 60
-import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Building2, Layers, MapPin, ArrowUpRight, ShieldCheck } from 'lucide-react'
 import { BuildingActions } from './BuildingActions'
@@ -41,124 +40,109 @@ export default async function BuildingsPage() {
     .order('name')
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="admin-page">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="page-title flex items-center gap-2">
             Gedung
-            {isSuperAdmin && <ShieldCheck className="h-6 w-6 text-purple-600" />}
+            {isSuperAdmin && <ShieldCheck className="h-4 w-4 text-purple-500" />}
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="page-subtitle">
             {isSuperAdmin ? 'Kelola data gedung — Super Admin mode aktif' : 'Kelola data gedung dan lantai'}
           </p>
         </div>
-        <Link 
-          href="/admin/buildings/new" 
-          className={cn(buttonVariants(), 'btn-gradient')}
+        <Link
+          href="/admin/buildings/new"
+          className="inline-flex items-center gap-1.5 h-9 px-3.5 text-sm font-medium rounded-[10px] bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
         >
-          <Plus className="mr-2 h-4 w-4" /> Tambah Gedung
+          <Plus className="h-3.5 w-3.5" /> Tambah Gedung
         </Link>
       </div>
 
+      {/* Summary Stats */}
+      {buildings && buildings.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="mini-stat border-t-indigo-400">
+            <p className="mini-stat-label">Total Gedung</p>
+            <p className="mini-stat-value">{buildings.length}</p>
+          </div>
+          <div className="mini-stat border-t-emerald-400">
+            <p className="mini-stat-label">Gedung Aktif</p>
+            <p className="mini-stat-value">{(buildings as Building[]).filter((b: Building) => b.is_active).length}</p>
+          </div>
+          <div className="mini-stat border-t-amber-400">
+            <p className="mini-stat-label">Total Lantai</p>
+            <p className="mini-stat-value">{(buildings as Building[]).reduce((acc: number, b: Building) => acc + b.floor_count, 0)}</p>
+          </div>
+        </div>
+      )}
+
       {/* Empty State */}
       {buildings?.length === 0 && (
-        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
-          <div className="h-20 w-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Building2 className="h-10 w-10 text-indigo-400" />
-          </div>
-          <h3 className="text-xl font-semibold text-slate-900 mb-2">Belum ada data gedung</h3>
-          <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-            Mulai dengan menambahkan gedung pertama untuk mengelola ruangan dan aset
-          </p>
-          <Link 
-            href="/admin/buildings/new" 
-            className={cn(buttonVariants(), 'btn-gradient')}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Tambah Gedung
+        <div className="empty-state">
+          <Building2 className="h-10 w-10 mb-3 opacity-25" />
+          <p className="text-sm font-medium">Belum ada data gedung</p>
+          <Link href="/admin/buildings/new" className="mt-2 text-xs text-primary hover:underline">
+            Tambah gedung pertama
           </Link>
         </div>
       )}
 
       {/* Buildings Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {(buildings as Building[] | null)?.map((building) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const roomCount = ((building as any).rooms as { count: number }[])?.[0]?.count ?? 0
           return (
-            <div 
-              key={building.id} 
-              className="group bg-white rounded-2xl border border-slate-100 shadow-sm shadow-slate-900/5 overflow-hidden card-hover"
+            <div
+              key={building.id}
+              className="group bg-card rounded-[14px] border border-border overflow-hidden hover:shadow-soft hover:-translate-y-px transition-all duration-200"
             >
               {/* Photo */}
-              <div className="relative h-48 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 overflow-hidden flex items-center justify-center p-3">
+              <div className="relative h-40 bg-muted overflow-hidden flex items-center justify-center p-2">
                 {building.photo_url ? (
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    <SafeImage 
-                      src={building.photo_url} 
-                      alt={building.name} 
-                      className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105"
-                      fallbackClassName="w-full h-full rounded-xl"
-                    />
-                  </div>
+                  <SafeImage
+                    src={building.photo_url}
+                    alt={building.name}
+                    className="object-contain w-full h-full"
+                    fallbackClassName="w-full h-full rounded-[10px]"
+                  />
                 ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <Building2 className="h-16 w-16 text-indigo-200" />
-                  </div>
+                  <Building2 className="h-12 w-12 text-muted-foreground/20" />
                 )}
-                
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                
-                {/* Code Badge */}
-                <div className="absolute top-4 left-4">
-                  <span className="bg-white/95 backdrop-blur-sm text-xs font-bold px-3 py-1.5 rounded-xl font-mono text-indigo-700 shadow-sm border border-indigo-100">
-                    {building.code}
-                  </span>
-                </div>
-                
-                {/* Status Badge */}
-                <div className="absolute top-4 right-4">
-                  <Badge 
-                    variant={building.is_active ? 'success' : 'secondary'} 
-                    className="shadow-sm"
-                  >
+
+                <span className="absolute bottom-2 left-2 bg-card/90 backdrop-blur text-[10px] font-bold font-mono px-2 py-0.5 rounded-[10px] text-indigo-700 border border-indigo-100">
+                  {building.code}
+                </span>
+
+                <div className="absolute top-2.5 right-2.5">
+                  <Badge variant={building.is_active ? 'success' : 'secondary'} className="text-[10px]">
                     {building.is_active ? 'Aktif' : 'Nonaktif'}
                   </Badge>
                 </div>
               </div>
 
               {/* Info */}
-              <div className="p-5">
-                <h3 className="font-semibold text-lg text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">
+              <div className="p-3.5">
+                <h3 className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
                   {building.name}
                 </h3>
-                
                 {building.address && (
-                  <p className="text-sm text-slate-500 flex items-center gap-1.5 mb-4">
-                    <MapPin className="h-3.5 w-3.5 text-slate-400" /> 
-                    <span className="truncate">{building.address}</span>
+                  <p className="flex items-center gap-1 mt-1 text-xs text-muted-foreground/70 truncate">
+                    <MapPin className="h-3 w-3 shrink-0" /> {building.address}
                   </p>
                 )}
-                
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg">
-                    <Layers className="h-4 w-4 text-indigo-500" />
-                    <span className="text-sm font-medium text-slate-700">{building.floor_count} Lantai</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg">
-                    <Building2 className="h-4 w-4 text-purple-500" />
-                    <span className="text-sm font-medium text-slate-700">{roomCount} Ruang</span>
-                  </div>
+                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><Layers className="h-3 w-3 text-muted-foreground/70" /> {building.floor_count} Lantai</span>
+                  <span className="flex items-center gap-1"><Building2 className="h-3 w-3 text-muted-foreground/70" /> {roomCount} Ruang</span>
                 </div>
-                
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                  <Link 
+                <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/60">
+                  <Link
                     href={`/admin/rooms?building=${building.id}`}
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group/link"
+                    className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5"
                   >
-                    Lihat Ruangan 
-                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                    Lihat Ruangan <ArrowUpRight className="h-3 w-3" />
                   </Link>
                   <BuildingActions
                     id={building.id}
@@ -172,53 +156,6 @@ export default async function BuildingsPage() {
           )
         })}
       </div>
-
-      {/* Summary Stats */}
-      {buildings && buildings.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-indigo-100 text-sm font-medium">Total Gedung</p>
-                <p className="text-3xl font-bold mt-1">{buildings.length}</p>
-              </div>
-              <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-500 text-sm font-medium">Gedung Aktif</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">
-                  {(buildings as Building[]).filter((b: Building) => b.is_active).length}
-                </p>
-              </div>
-              <div className="h-12 w-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <Badge variant="success" className="h-6 w-6 p-0 flex items-center justify-center">
-                  <span className="text-xs">✓</span>
-                </Badge>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-500 text-sm font-medium">Total Lantai</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">
-                  {(buildings as Building[]).reduce((acc: number, b: Building) => acc + b.floor_count, 0)}
-                </p>
-              </div>
-              <div className="h-12 w-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                <Layers className="h-6 w-6 text-amber-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

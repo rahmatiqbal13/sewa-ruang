@@ -35,6 +35,18 @@ export async function GET(req: NextRequest) {
       )
     }
 
+    // Load notification channel configs
+    const { data: channelConfigs } = await sb
+      .from('notification_channel_configs')
+      .select('channel, is_enabled, config')
+      .in('channel', ['telegram'])
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tgRow = (channelConfigs ?? []).find((c: any) => c.channel === 'telegram')
+    const tgEnabled: boolean = tgRow?.is_enabled === true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tgCfg: { bot_token?: string; admin_chat_id?: string } = tgRow?.config ?? {}
+
     const results: any[] = []
 
     // Process each reminder
@@ -170,20 +182,6 @@ export async function GET(req: NextRequest) {
         })
       }
     }
-
-    // ============================================================
-    // LOAD NOTIFICATION CHANNEL CONFIGS FROM DB
-    // ============================================================
-    const { data: channelConfigs } = await sb
-      .from('notification_channel_configs')
-      .select('channel, is_enabled, config')
-      .in('channel', ['telegram'])
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tgRow = (channelConfigs ?? []).find((c: any) => c.channel === 'telegram')
-    const tgEnabled: boolean = tgRow?.is_enabled === true
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tgCfg: { bot_token?: string; admin_chat_id?: string } = tgRow?.config ?? {}
 
     // ============================================================
     // OVERDUE RETURN DETECTION

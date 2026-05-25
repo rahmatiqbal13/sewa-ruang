@@ -100,11 +100,11 @@ const COLOR_STYLES: Record<string, { bg: string; border: string; text: string; a
     lightBg: 'bg-orange-50'
   },
   slate: { 
-    bg: 'bg-slate-50/50', 
-    border: 'border-slate-200', 
-    text: 'text-slate-700',
-    accent: 'bg-slate-500',
-    lightBg: 'bg-slate-50'
+    bg: 'bg-muted/50', 
+    border: 'border-border', 
+    text: 'text-foreground/80',
+    accent: 'bg-muted-foreground',
+    lightBg: 'bg-muted'
   },
 }
 
@@ -193,18 +193,18 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
       {/* Compact Stats */}
       <div className="flex items-center gap-4 text-sm">
         <div className="flex items-center gap-2">
-          <span className="text-slate-500">Aktif:</span>
-          <span className="font-semibold text-slate-900">{enabledCount}/{CATEGORIES.length}</span>
+          <span className="text-muted-foreground">Aktif:</span>
+          <span className="font-semibold text-foreground">{enabledCount}/{CATEGORIES.length}</span>
         </div>
         {lowestRate && (
           <div className="flex items-center gap-2">
-            <span className="text-slate-500">Terendah:</span>
+            <span className="text-muted-foreground">Terendah:</span>
             <span className="font-semibold text-emerald-600">{formatRupiah(lowestRate.rate_per_day)}</span>
           </div>
         )}
         {highestRate && (
           <div className="flex items-center gap-2">
-            <span className="text-slate-500">Tertinggi:</span>
+            <span className="text-muted-foreground">Tertinggi:</span>
             <span className="font-semibold text-blue-600">{formatRupiah(highestRate.rate_per_day)}</span>
           </div>
         )}
@@ -223,9 +223,9 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
             <div 
               key={category.key} 
               className={cn(
-                "rounded-xl border transition-all",
-                isEnabled ? colors.bg : 'bg-slate-50/50',
-                isEnabled ? colors.border : 'border-slate-200'
+                "rounded-[14px] border transition-all",
+                isEnabled ? colors.bg : 'bg-muted/50',
+                isEnabled ? colors.border : 'border-border'
               )}
             >
               {/* Header - Always visible */}
@@ -233,19 +233,19 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
                 className={cn(
                   "px-4 py-3 flex items-center justify-between cursor-pointer",
                   isEnabled && "border-b",
-                  isEnabled ? colors.border : 'border-slate-200'
+                  isEnabled ? colors.border : 'border-border'
                 )}
                 onClick={() => isEnabled && toggleExpand(category.key)}
               >
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    "h-9 w-9 rounded-lg flex items-center justify-center text-white",
-                    isEnabled ? colors.accent : 'bg-slate-300'
+                    "h-9 w-9 rounded-[10px] flex items-center justify-center text-white",
+                    isEnabled ? colors.accent : 'bg-muted'
                   )}>
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
-                    <h4 className={cn("font-semibold text-sm", isEnabled ? colors.text : 'text-slate-600')}>
+                    <h4 className={cn("font-semibold text-sm", isEnabled ? colors.text : 'text-muted-foreground')}>
                       {category.label}
                     </h4>
                     {isEnabled && rate.rate_per_day > 0 && (
@@ -271,7 +271,7 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
                     />
                   </div>
                   {isEnabled && (
-                    isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />
+                    isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground/70" /> : <ChevronDown className="h-4 w-4 text-muted-foreground/70" />
                   )}
                 </div>
               </div>
@@ -282,12 +282,12 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
                   <div className="grid grid-cols-3 gap-4">
                     {/* Daily Rate */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-slate-500 flex items-center gap-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         Per Hari
                       </Label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rp</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 text-xs">Rp</span>
                         <Input
                           name={`${category.key}_day`}
                           type="number"
@@ -301,13 +301,13 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
 
                     {/* Hourly Rate */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-slate-500 flex items-center gap-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         Per Jam
                         <span className="text-[10px] normal-case">(opsional)</span>
                       </Label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rp</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 text-xs">Rp</span>
                         <Input
                           name={`${category.key}_hour`}
                           type="number"
@@ -321,7 +321,7 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
 
                     {/* Supervision */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-slate-500 flex items-center gap-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
                         <ShieldCheck className="h-3 w-3" />
                         Supervisi
                       </Label>

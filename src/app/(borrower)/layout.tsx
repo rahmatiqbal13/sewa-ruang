@@ -17,7 +17,7 @@ export default async function BorrowerLayout({ children }: { children: React.Rea
   if (profile.role === 'admin' || profile.role === 'staff') redirect('/admin/dashboard')
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+      <div className="min-h-screen bg-muted">
       <BorrowerNav userName={profile.name} photoUrl={profile.photo_url ?? undefined} />
       <main className="max-w-7xl mx-auto px-4 py-6">
         {children}

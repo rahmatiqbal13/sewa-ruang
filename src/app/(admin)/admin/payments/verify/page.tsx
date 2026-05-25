@@ -136,7 +136,7 @@ export default function PaymentVerificationPage() {
       rejected: { label: 'Ditolak', color: 'bg-red-100 text-red-800' },
     }
     
-    const variant = variants[status] || { label: status, color: 'bg-gray-100 text-gray-800' }
+    const variant = variants[status] || { label: status, color: 'bg-muted text-foreground' }
     return <Badge className={variant.color}>{variant.label}</Badge>
   }
 
@@ -145,13 +145,14 @@ export default function PaymentVerificationPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Verifikasi Pembayaran</h1>
-          <p className="text-gray-500">Verifikasi bukti transfer dari peminjam</p>
+          <h1 className="text-2xl font-bold text-foreground">Verifikasi Pembayaran</h1>
+          <p className="text-muted-foreground">Verifikasi bukti transfer dari peminjam</p>
         </div>
         <Button 
           variant="outline" 
           onClick={fetchProofs}
           disabled={loading}
+          className="rounded-[10px]"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -160,25 +161,25 @@ export default function PaymentVerificationPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card>
+        <Card className="rounded-[14px]">
           <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Menunggu Verifikasi</p>
+            <p className="text-sm text-muted-foreground">Menunggu Verifikasi</p>
             <p className="text-2xl font-bold text-yellow-600">
               {proofs.filter(p => p.status === 'pending').length}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-[14px]">
           <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Terverifikasi Hari Ini</p>
+            <p className="text-sm text-muted-foreground">Terverifikasi Hari Ini</p>
             <p className="text-2xl font-bold text-green-600">
               {proofs.filter(p => p.status === 'verified').length}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-[14px]">
           <CardContent className="p-4">
-            <p className="text-sm text-gray-500">Total Pending</p>
+            <p className="text-sm text-muted-foreground">Total Pending</p>
             <p className="text-2xl font-bold text-blue-600">
               {proofs.length}
             </p>
@@ -188,10 +189,10 @@ export default function PaymentVerificationPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="pending">Menunggu</TabsTrigger>
-          <TabsTrigger value="verified">Terverifikasi</TabsTrigger>
-          <TabsTrigger value="rejected">Ditolak</TabsTrigger>
+        <TabsList className="rounded-[10px]">
+          <TabsTrigger value="pending" className="rounded-[10px]">Menunggu</TabsTrigger>
+          <TabsTrigger value="verified" className="rounded-[10px]">Terverifikasi</TabsTrigger>
+          <TabsTrigger value="rejected" className="rounded-[10px]">Ditolak</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">
@@ -200,18 +201,18 @@ export default function PaymentVerificationPage() {
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             </div>
           ) : proofs.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-muted-foreground">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p>Tidak ada pembayaran {activeTab === 'pending' ? 'yang menunggu verifikasi' : ''}</p>
             </div>
           ) : (
             <div className="grid gap-4">
               {proofs.map((proof) => (
-                <Card key={proof.id} className="overflow-hidden">
+                <Card key={proof.id} className="overflow-hidden rounded-[14px]">
                   <CardContent className="p-0">
                     <div className="flex flex-col md:flex-row">
                       {/* Image Preview */}
-                      <div className="w-full md:w-48 h-48 bg-gray-100 flex-shrink-0">
+                      <div className="w-full md:w-48 h-48 bg-muted flex-shrink-0">
                         <img 
                           src={proof.proof_url} 
                           alt="Bukti Transfer" 
@@ -223,14 +224,14 @@ export default function PaymentVerificationPage() {
                       <div className="flex-1 p-4 space-y-4">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-semibold text-lg">
+                            <h3 className="font-semibold text-lg text-foreground">
                               {proof.bookings.reference_no}
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                               {proof.bookings.users.name} ({proof.bookings.users.email})
                             </p>
                             {proof.bookings.users.phone && (
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-muted-foreground">
                                 {proof.bookings.users.phone}
                               </p>
                             )}
@@ -240,11 +241,11 @@ export default function PaymentVerificationPage() {
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <p className="text-gray-500">Total Booking</p>
-                            <p className="font-semibold">{formatRupiah(proof.bookings.total_amount)}</p>
+                            <p className="text-muted-foreground">Total Booking</p>
+                            <p className="font-semibold text-foreground">{formatRupiah(proof.bookings.total_amount)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Jumlah Transfer</p>
+                            <p className="text-muted-foreground">Jumlah Transfer</p>
                             <p className={`font-semibold ${
                               proof.transfer_amount === proof.bookings.total_amount 
                                 ? 'text-green-600' 
@@ -254,17 +255,17 @@ export default function PaymentVerificationPage() {
                             </p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Bank</p>
-                            <p className="font-semibold">{proof.bank_name}</p>
+                            <p className="text-muted-foreground">Bank</p>
+                            <p className="font-semibold text-foreground">{proof.bank_name}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Tanggal Upload</p>
-                            <p className="font-semibold">{formatDateTime(proof.created_at)}</p>
+                            <p className="text-muted-foreground">Tanggal Upload</p>
+                            <p className="font-semibold text-foreground">{formatDateTime(proof.created_at)}</p>
                           </div>
                         </div>
 
                         {proof.transfer_amount !== proof.bookings.total_amount && (
-                          <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-800">
+                          <div className="bg-red-50 border border-red-200 rounded-[10px] p-2 text-sm text-red-800">
                             <AlertCircle className="h-4 w-4 inline mr-1" />
                             Nominal transfer tidak sesuai!
                           </div>
@@ -274,7 +275,7 @@ export default function PaymentVerificationPage() {
                           <div className="flex gap-2">
                             <Button 
                               onClick={() => openVerifyDialog(proof)}
-                              className="flex-1"
+                              className="flex-1 rounded-[10px]"
                             >
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Verifikasi
@@ -283,7 +284,7 @@ export default function PaymentVerificationPage() {
                         )}
 
                         {proof.status === 'rejected' && proof.rejection_reason && (
-                          <div className="bg-red-50 border border-red-200 rounded p-3 text-sm">
+                          <div className="bg-red-50 border border-red-200 rounded-[10px] p-3 text-sm">
                             <p className="font-medium text-red-900">Alasan Penolakan:</p>
                             <p className="text-red-700">{proof.rejection_reason}</p>
                           </div>
@@ -300,10 +301,10 @@ export default function PaymentVerificationPage() {
 
       {/* Verification Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl rounded-[14px]">
           <DialogHeader>
-            <DialogTitle>Verifikasi Pembayaran</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-foreground">Verifikasi Pembayaran</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Periksa bukti transfer sebelum melakukan verifikasi
             </DialogDescription>
           </DialogHeader>
@@ -311,22 +312,22 @@ export default function PaymentVerificationPage() {
           {selectedProof && (
             <div className="space-y-4">
               {/* Large Image Preview */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border border-border rounded-[10px] overflow-hidden">
                 <img 
                   src={selectedProof.proof_url} 
                   alt="Bukti Transfer" 
-                  className="w-full max-h-96 object-contain bg-gray-100"
+                  className="w-full max-h-96 object-contain bg-muted"
                 />
               </div>
 
               {/* Comparison */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-[10px]">
                 <div>
-                  <p className="text-sm text-gray-500">Total yang Harus Dibayar</p>
-                  <p className="text-xl font-bold">{formatRupiah(selectedProof.bookings.total_amount)}</p>
+                  <p className="text-sm text-muted-foreground">Total yang Harus Dibayar</p>
+                  <p className="text-xl font-bold text-foreground">{formatRupiah(selectedProof.bookings.total_amount)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Jumlah Transfer</p>
+                  <p className="text-sm text-muted-foreground">Jumlah Transfer</p>
                   <p className={`text-xl font-bold ${
                     selectedProof.transfer_amount === selectedProof.bookings.total_amount
                       ? 'text-green-600'
@@ -340,36 +341,37 @@ export default function PaymentVerificationPage() {
               {/* Details */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500">Kode Pembayaran:</span>
-                  <span className="ml-2 font-mono">{selectedProof.bookings.payment_code}</span>
+                  <span className="text-muted-foreground">Kode Pembayaran:</span>
+                  <span className="ml-2 font-mono text-foreground">{selectedProof.bookings.payment_code}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Bank:</span>
-                  <span className="ml-2">{selectedProof.bank_name}</span>
+                  <span className="text-muted-foreground">Bank:</span>
+                  <span className="ml-2 text-foreground">{selectedProof.bank_name}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Atas Nama:</span>
-                  <span className="ml-2">{selectedProof.account_name || '-'}</span>
+                  <span className="text-muted-foreground">Atas Nama:</span>
+                  <span className="ml-2 text-foreground">{selectedProof.account_name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Tanggal Transfer:</span>
-                  <span className="ml-2">{selectedProof.transfer_date || '-'}</span>
+                  <span className="text-muted-foreground">Tanggal Transfer:</span>
+                  <span className="ml-2 text-foreground">{selectedProof.transfer_date || '-'}</span>
                 </div>
               </div>
 
               {selectedProof.notes && (
-                <div className="bg-yellow-50 p-3 rounded text-sm">
+                <div className="bg-yellow-50 p-3 rounded-[10px] text-sm">
                   <span className="font-medium">Catatan:</span> {selectedProof.notes}
                 </div>
               )}
 
               {/* Rejection Reason */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Alasan Penolakan (jika menolak)</label>
+                <label className="text-sm font-medium text-foreground">Alasan Penolakan (jika menolak)</label>
                 <Textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Contoh: Nominal tidak sesuai, bukti tidak jelas, dll"
+                  className="rounded-[10px] border-border"
                 />
               </div>
             </div>
@@ -380,6 +382,7 @@ export default function PaymentVerificationPage() {
               variant="outline" 
               onClick={() => setDialogOpen(false)}
               disabled={processing}
+              className="rounded-[10px]"
             >
               Batal
             </Button>
@@ -387,6 +390,7 @@ export default function PaymentVerificationPage() {
               variant="destructive"
               onClick={() => handleVerify('rejected')}
               disabled={processing || !rejectionReason.trim()}
+              className="rounded-[10px]"
             >
               {processing ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -398,7 +402,7 @@ export default function PaymentVerificationPage() {
             <Button 
               onClick={() => handleVerify('verified')}
               disabled={processing}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 rounded-[10px]"
             >
               {processing ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

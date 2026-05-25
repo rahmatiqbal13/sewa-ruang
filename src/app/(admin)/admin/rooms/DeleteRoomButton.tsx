@@ -62,26 +62,26 @@ export function DeleteRoomButton({ id, roomName }: DeleteRoomButtonProps) {
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger>
-        <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+        <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50 rounded-[10px]">
           <Trash2 className="h-4 w-4 mr-1" />
           Hapus
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent className="rounded-[14px]">
         <AlertDialogHeader>
-          <AlertDialogTitle>Hapus Ruangan?</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogTitle className="text-foreground">Hapus Ruangan?</AlertDialogTitle>
+          <AlertDialogDescription className="text-muted-foreground">
             Apakah Anda yakin ingin menghapus ruangan <strong>&quot;{roomName}&quot;</strong>?
             <br /><br />
             Tindakan ini tidak dapat dibatalkan. Ruangan dengan riwayat peminjaman tidak dapat dihapus.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Batal</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading} className="rounded-[10px]">Batal</AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleDelete}
             disabled={loading}
-            className="bg-red-600 hover:bg-red-700"
+            className="bg-red-600 hover:bg-red-700 rounded-[10px]"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Hapus

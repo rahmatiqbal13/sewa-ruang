@@ -260,7 +260,7 @@ export function DashboardAnalytics() {
               {prefix}{value.toLocaleString('id-ID')}
             </p>
           </div>
-          <div className="p-3 bg-blue-50 rounded-lg">
+          <div className="p-3 bg-blue-50 rounded-[10px]">
             <Icon className="h-6 w-6 text-blue-600" />
           </div>
         </div>
@@ -272,7 +272,7 @@ export function DashboardAnalytics() {
           ) : null}
           <span className={cn(
             "text-sm font-medium",
-            change > 0 ? "text-green-600" : change < 0 ? "text-red-600" : "text-gray-500"
+            change > 0 ? "text-green-600" : change < 0 ? "text-red-600" : "text-muted-foreground"
           )}>
             {change > 0 ? '+' : ''}{change.toFixed(1)}%
           </span>
@@ -291,10 +291,10 @@ export function DashboardAnalytics() {
             key={range}
             onClick={() => setTimeRange(range)}
             className={cn(
-              'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+              'px-3 py-1.5 rounded-[10px] text-sm font-medium transition-colors',
               timeRange === range 
                 ? 'bg-blue-950 text-white' 
-                : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-400'
+                : 'bg-card border border-border text-muted-foreground hover:border-primary/30'
             )}
           >
             {range === '7d' ? '7 Hari' : 
@@ -468,7 +468,7 @@ export function DashboardAnalytics() {
             {stats.recentBookings.map((booking: any) => (
               <div 
                 key={booking.id}
-                className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 rounded-[10px] border border-border hover:bg-muted transition-colors"
               >
                 <div>
                   <p className="font-medium">{booking.users?.name || 'Unknown'}</p>

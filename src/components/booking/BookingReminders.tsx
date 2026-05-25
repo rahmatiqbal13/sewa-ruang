@@ -53,7 +53,7 @@ const STATUS_CONFIG = {
   pending: { label: 'Menunggu', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
   sent: { label: 'Terkirim', color: 'bg-green-100 text-green-700 border-green-200' },
   failed: { label: 'Gagal', color: 'bg-red-100 text-red-700 border-red-200' },
-  cancelled: { label: 'Dibatalkan', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+  cancelled: { label: 'Dibatalkan', color: 'bg-muted text-foreground/80 border-border' },
 }
 
 export function BookingReminders({ bookingId }: BookingRemindersProps) {
@@ -172,7 +172,7 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
       <CardContent>
         {reminders.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <Bell className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+            <Bell className="h-12 w-12 mx-auto mb-3 text-muted-foreground/70" />
             <p>Belum ada pengingat untuk peminjaman ini</p>
             <p className="text-sm mt-1">
               Pengingat akan otomatis dibuat saat booking di-approve
@@ -188,7 +188,7 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
                 <div
                   key={reminder.id}
                   className={cn(
-                    "flex items-start gap-3 p-3 rounded-lg border",
+                    "flex items-start gap-3 p-3 rounded-[10px] border border-border",
                     reminder.status === 'pending' && "bg-yellow-50/50",
                     reminder.status === 'sent' && "bg-green-50/50",
                     reminder.status === 'failed' && "bg-red-50/50"

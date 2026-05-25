@@ -183,11 +183,11 @@ export default function ProfilePage() {
       pending: 'bg-yellow-100 text-yellow-700',
       approved: 'bg-green-100 text-green-700',
       active: 'bg-blue-100 text-blue-700',
-      completed: 'bg-gray-100 text-gray-700',
+      completed: 'bg-muted text-muted-foreground',
       cancelled: 'bg-red-100 text-red-700',
       rejected: 'bg-red-100 text-red-700',
     }
-    return styles[status] || 'bg-gray-100 text-gray-700'
+    return styles[status] || 'bg-muted text-muted-foreground'
   }
 
   function getStatusLabel(status: string) {
@@ -219,9 +219,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b border-border">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -231,7 +231,7 @@ export default function ProfilePage() {
                   Kembali
                 </Button>
               </Link>
-              <h1 className="text-xl font-bold text-slate-900">Profil Saya</h1>
+              <h1 className="text-xl font-bold text-foreground">Profil Saya</h1>
             </div>
           </div>
         </div>
@@ -239,16 +239,16 @@ export default function ProfilePage() {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white p-1 rounded-xl border">
-            <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-blue-950 data-[state=active]:text-white">
+          <TabsList className="bg-card p-1 rounded-[14px] border border-border">
+            <TabsTrigger value="profile" className="rounded-[10px] data-[state=active]:bg-blue-950 data-[state=active]:text-white">
               <User className="h-4 w-4 mr-2" />
               Profil
             </TabsTrigger>
-            <TabsTrigger value="bookings" className="rounded-lg data-[state=active]:bg-blue-950 data-[state=active]:text-white">
+            <TabsTrigger value="bookings" className="rounded-[10px] data-[state=active]:bg-blue-950 data-[state=active]:text-white">
               <Calendar className="h-4 w-4 mr-2" />
               Riwayat Peminjaman
               {bookings.length > 0 && (
-                <span className="ml-2 bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full">
+                <span className="ml-2 bg-muted text-foreground/80 text-xs px-2 py-0.5 rounded-full">
                   {bookings.length}
                 </span>
               )}
@@ -269,7 +269,7 @@ export default function ProfilePage() {
                   {/* Current Photo */}
                   <div className="flex flex-col items-center">
                     {photoUrl ? (
-                      <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-blue-100">
+                      <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-border">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={photoUrl} 
@@ -278,15 +278,15 @@ export default function ProfilePage() {
                         />
                       </div>
                     ) : (
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center border-4 border-blue-50">
-                        <User className="h-16 w-16 text-blue-400" />
+                      <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-border/60">
+                        <User className="h-16 w-16 text-muted-foreground/70" />
                       </div>
                     )}
-                    <p className="mt-3 text-sm font-medium text-slate-900">{profile.name}</p>
-                    <p className="text-xs text-slate-500">{profile.email}</p>
+                    <p className="mt-3 text-sm font-medium text-foreground">{profile.name}</p>
+                    <p className="text-xs text-muted-foreground">{profile.email}</p>
                   </div>
 
-                  <div className="border-t pt-4">
+                  <div className="border-t border-border pt-4">
                     <ImageUpload 
                       value={photoUrl}
                       onChange={setPhotoUrl}
@@ -310,7 +310,7 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-slate-400" />
+                          <User className="h-4 w-4 text-muted-foreground/70" />
                           Nama Lengkap
                         </Label>
                         <Input {...register('name')} className="h-11" />
@@ -319,16 +319,16 @@ export default function ProfilePage() {
 
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-slate-400" />
+                          <Mail className="h-4 w-4 text-muted-foreground/70" />
                           Email
                         </Label>
-                        <Input value={profile.email} disabled className="h-11 bg-slate-50" />
+                        <Input value={profile.email} disabled className="h-11 bg-muted" />
                         <p className="text-xs text-muted-foreground">Email tidak dapat diubah</p>
                       </div>
 
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-slate-400" />
+                          <Phone className="h-4 w-4 text-muted-foreground/70" />
                           Nomor WhatsApp
                         </Label>
                         <Input {...register('phone')} className="h-11" />
@@ -337,10 +337,10 @@ export default function ProfilePage() {
 
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-slate-400" />
+                          <GraduationCap className="h-4 w-4 text-muted-foreground/70" />
                           Kategori Peminjam
                         </Label>
-                        <div className="h-11 px-3 flex items-center rounded-md border bg-slate-50 text-sm text-slate-700">
+                        <div className="h-11 px-3 flex items-center rounded-md border bg-muted text-sm text-foreground/80">
                           {BORROWER_CATEGORIES.find(c => c.value === profile.borrower_category)?.label ?? profile.borrower_category}
                         </div>
                         <p className="text-xs text-muted-foreground">Kategori tidak dapat diubah setelah pendaftaran</p>
@@ -348,7 +348,7 @@ export default function ProfilePage() {
 
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-slate-400" />
+                          <Building className="h-4 w-4 text-muted-foreground/70" />
                           Instansi / Organisasi
                         </Label>
                         <Input {...register('institution')} className="h-11" />
@@ -357,7 +357,7 @@ export default function ProfilePage() {
 
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-slate-400" />
+                          <Package className="h-4 w-4 text-muted-foreground/70" />
                           Kelas / Divisi
                         </Label>
                         <Input {...register('class_division')} className="h-11" />
@@ -366,7 +366,7 @@ export default function ProfilePage() {
 
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-slate-400" />
+                          <CreditCard className="h-4 w-4 text-muted-foreground/70" />
                           NIM / NIP / KTP
                         </Label>
                         <Input {...register('identity_number')} className="h-11" placeholder="Opsional" />
@@ -374,14 +374,14 @@ export default function ProfilePage() {
 
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
-                          <Send className="h-4 w-4 text-slate-400" />
+                          <Send className="h-4 w-4 text-muted-foreground/70" />
                           Username Telegram
                         </Label>
                         <Input {...register('telegram_username')} className="h-11" placeholder="@username (Opsional)" />
                       </div>
                     </div>
 
-                    <div className="flex justify-end pt-4 border-t">
+                    <div className="flex justify-end pt-4 border-t border-border">
                       <Button 
                         type="submit" 
                         className="h-11 px-6 bg-blue-950 hover:bg-blue-900"
@@ -437,11 +437,11 @@ export default function ProfilePage() {
               <CardContent>
                 {bookings.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Package className="h-8 w-8 text-slate-400" />
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Package className="h-8 w-8 text-muted-foreground/70" />
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Belum ada peminjaman</h3>
-                    <p className="text-slate-500 mb-4">Anda belum memiliki riwayat peminjaman</p>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Belum ada peminjaman</h3>
+                    <p className="text-muted-foreground mb-4">Anda belum memiliki riwayat peminjaman</p>
                     <Link href="/catalog">
                       <Button className="bg-blue-950 hover:bg-blue-900">
                         Jelajahi Katalog
@@ -453,24 +453,24 @@ export default function ProfilePage() {
                     {bookings.map((booking) => (
                       <div 
                         key={booking.id}
-                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+                        className="flex items-center justify-between p-4 bg-muted rounded-[14px] hover:bg-muted/80 transition-colors"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-1">
-                            <span className="font-mono text-sm text-slate-600">
+                            <span className="font-mono text-sm text-muted-foreground">
                               {booking.reference_no}
                             </span>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusBadge(booking.status)}`}>
                               {getStatusLabel(booking.status)}
                             </span>
                           </div>
-                          <p className="font-medium text-slate-900">{booking.purpose}</p>
-                          <p className="text-sm text-slate-500">
+                          <p className="font-medium text-foreground">{booking.purpose}</p>
+                          <p className="text-sm text-muted-foreground">
                             {format(new Date(booking.start_datetime), 'dd MMM yyyy', { locale: id })} - {format(new Date(booking.end_datetime), 'dd MMM yyyy', { locale: id })}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-slate-900">
+                          <p className="font-semibold text-foreground">
                             Rp {booking.total_amount?.toLocaleString('id-ID')}
                           </p>
                           <Link href={`/bookings/${booking.id}`}>

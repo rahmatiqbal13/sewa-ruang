@@ -2,11 +2,15 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { 
   Building2, 
   Package, 
@@ -20,12 +24,14 @@ import {
   ArrowRight,
   Clock,
   Tag,
-  Info
+  X,
+  SlidersHorizontal,
+  ChevronDown
 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
-import { ConditionBadge } from '@/components/shared/ConditionBadge'
-import { AvailabilityBadge } from '@/components/shared/AvailabilityBadge'
 import { CalendarView } from '@/components/calendar/CalendarView'
+import { EmptyState } from '@/components/ui/empty-state'
+import { SkeletonCatalogGrid } from '@/components/ui/skeletons'
 
 const PAGE_SIZE = 12
 
@@ -75,6 +81,7 @@ interface EquipmentRow {
   is_active: boolean
   photo_url?: string | null
   equipment_rates: EquipmentRate[] | null
+  category?: string
 }
 
 interface InstitutionProfile {
@@ -104,11 +111,22 @@ const EQUIP_CATEGORY_LABELS: Record<string, string> = {
   'umum': 'Umum'
 }
 
-const ROOM_CATEGORY_LABELS: Record<string, string> = {
-  'perkuliahan': 'Perkuliahan',
-  'event_mahasiswa': 'Event Mahasiswa',
-  'event_umum': 'Event Umum',
-}
+const EQUIPMENT_CATEGORIES = [
+  { value: 'elektronik', label: 'Elektronik' },
+  { value: 'mebel', label: 'Mebel' },
+  { value: 'transportasi', label: 'Transportasi' },
+  { value: 'alat_tes_pengukuran', label: 'Alat Tes & Pengukuran' },
+  { value: 'alat_gym', label: 'Alat Gym' },
+  { value: 'perlengkapan', label: 'Perlengkapan' },
+  { value: 'lainnya', label: 'Lainnya' },
+]
+
+const CAPACITY_RANGES = [
+  { value: '1-10', label: '1-10 orang', min: 1, max: 10 },
+  { value: '11-30', label: '11-30 orang', min: 11, max: 30 },
+  { value: '31-50', label: '31-50 orang', min: 31, max: 50 },
+  { value: '50+', label: '50+ orang', min: 50, max: 9999 },
+]
 
 function getRateByCategory(rates: EquipmentRate[] | null | undefined, category: string): number | null {
   if (!rates || rates.length === 0) return null
@@ -121,6 +139,12 @@ function getPriceRange(rates: EquipmentRate[] | null | undefined): { min: number
   const prices = rates.map(r => r.rate_per_day).filter(p => p > 0)
   if (prices.length === 0) return { min: null, max: null }
   return { min: Math.min(...prices), max: Math.max(...prices) }
+}
+
+function getLowestRoomRate(rates: RoomRate[] | null | undefined): number | null {
+  if (!rates || rates.length === 0) return null
+  const dayRates = rates.map(r => r.rate_per_day).filter((r): r is number => r != null && r > 0)
+  return dayRates.length > 0 ? Math.min(...dayRates) : null
 }
 
 function Paginator({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
@@ -143,21 +167,21 @@ function Paginator({ page, total, onChange }: { page: number; total: number; onC
   }
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-8">
+    <div className="flex items-center justify-center gap-2 mt-10">
       <Button
         variant="outline"
         size="icon"
         onClick={() => onChange(Math.max(1, page - 1))}
         disabled={page === 1}
-        className="h-9 w-9"
+        className="h-10 w-10 rounded-full border-[#E5E7EB] hover:bg-[#F3F4F6]"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-4 w-4 text-[#6B7280]" />
       </Button>
       
       <div className="flex items-center gap-1">
         {getVisiblePages().map((p, i) => (
           p === '...' ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
+            <span key={`ellipsis-${i}`} className="px-2 text-[#9CA3AF]">...</span>
           ) : (
             <Button
               key={p}
@@ -165,8 +189,10 @@ function Paginator({ page, total, onChange }: { page: number; total: number; onC
               size="sm"
               onClick={() => onChange(p as number)}
               className={cn(
-                'h-9 w-9 text-sm font-medium',
-                page === p && 'bg-blue-950 hover:bg-blue-900'
+                'h-10 w-10 text-sm font-medium rounded-full',
+                page === p 
+                  ? 'bg-[#1B3A8C] hover:bg-[#1B3A8C]/90 text-white border-0' 
+                  : 'border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]'
               )}
             >
               {p}
@@ -180,25 +206,21 @@ function Paginator({ page, total, onChange }: { page: number; total: number; onC
         size="icon"
         onClick={() => onChange(Math.min(total, page + 1))}
         disabled={page === total}
-        className="h-9 w-9"
+        className="h-10 w-10 rounded-full border-[#E5E7EB] hover:bg-[#F3F4F6]"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4 text-[#6B7280]" />
       </Button>
     </div>
   )
 }
 
 function RoomCard({ room }: { room: Room & { buildingName: string; displayName: string } }) {
-  const lowestRate = useMemo(() => {
-    if (!room.room_rates || room.room_rates.length === 0) return null
-    const rates = room.room_rates.map(r => r.rate_per_day).filter((r): r is number => r != null && r > 0)
-    return rates.length > 0 ? Math.min(...rates) : null
-  }, [room.room_rates])
+  const lowestRate = useMemo(() => getLowestRoomRate(room.room_rates), [room.room_rates])
 
   return (
-    <Card className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white">
+    <Card className="group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300">
       {/* Image Placeholder */}
-      <div className="relative h-40 bg-gradient-to-br from-blue-100 to-indigo-100 overflow-hidden">
+      <div className="relative aspect-[16/9] bg-[#F3F4F6] overflow-hidden">
         {room.photo_url ? (
           <img 
             src={room.photo_url} 
@@ -207,94 +229,75 @@ function RoomCard({ room }: { room: Room & { buildingName: string; displayName: 
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Building2 className="h-16 w-16 text-blue-300" />
+            <Building2 className="h-12 w-12 text-[#D1D5DB]" />
           </div>
         )}
         
-        {/* Overlay Badge */}
-        <div className="absolute top-3 left-3">
-          <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-xs font-medium">
-            <MapPin className="h-3 w-3 mr-1" />
-            {room.buildingName}
+        {/* Status Badge Overlay */}
+        <div className="absolute top-3 right-3">
+          <Badge className={cn(
+            "text-xs font-medium border-0",
+            room.current_condition === 'good' 
+              ? "bg-emerald-500 text-white" 
+              : "bg-red-500 text-white"
+          )}>
+            {room.current_condition === 'good' ? 'Tersedia' : 'Sedang Digunakan'}
           </Badge>
         </div>
-        
-        {/* Condition Badge */}
-        <div className="absolute top-3 right-3">
-          <ConditionBadge condition={room.current_condition} />
-        </div>
-        
-        {/* Room Code */}
-        {room.room_code && (
-          <div className="absolute bottom-3 left-3">
-            <Badge className="bg-blue-950/90 text-white text-xs font-mono">
-              {room.room_code}
-            </Badge>
-          </div>
-        )}
       </div>
       
       <CardContent className="p-4">
+        {/* Building Pill */}
+        <div className="mb-2">
+          <span className="inline-flex items-center bg-[#F3F4F6] text-[#374151] text-xs rounded-full px-2.5 py-1">
+            <Building2 className="h-3 w-3 mr-1" />
+            {room.buildingName}
+          </span>
+        </div>
+        
         {/* Title */}
-        <h3 className="font-semibold text-slate-900 mb-1 line-clamp-1" title={room.displayName}>
+        <h3 className="font-bold text-[#111827] text-lg mb-1 line-clamp-1" title={room.displayName}>
           {room.displayName}
         </h3>
         
-        {/* Capacity */}
-        {room.capacity && (
-          <div className="flex items-center gap-1.5 text-sm text-slate-500 mb-3">
-            <Users className="h-4 w-4" />
-            <span>Kapasitas {room.capacity} orang</span>
-          </div>
-        )}
+        {/* Room Code & Type */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs bg-[#EFF3FF] text-[#1B3A8C] px-2 py-0.5 rounded">
+            {room.room_code || 'No Code'}
+          </span>
+        </div>
+        
+        {/* Specs */}
+        <div className="flex items-center gap-4 text-sm text-[#6B7280] mb-3">
+          {room.capacity && (
+            <span className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              {room.capacity} orang
+            </span>
+          )}
+        </div>
         
         {/* Price */}
         <div className="mb-4">
           {lowestRate ? (
             <div className="flex items-baseline gap-1">
-              <span className="text-lg font-bold text-emerald-600">{formatRupiah(lowestRate)}</span>
-              <span className="text-sm text-slate-400">/hari</span>
+              <span className="text-[#1B3A8C] font-semibold text-lg">{formatRupiah(lowestRate)}</span>
+              <span className="text-sm text-[#6B7280]">/hari</span>
             </div>
           ) : (
-            <span className="text-sm text-slate-400 italic">Tarif belum diatur</span>
+            <span className="text-sm text-[#9CA3AF] italic">Tarif belum diatur</span>
           )}
         </div>
         
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Dialog>
-            <DialogTrigger
-              className="flex-1"
-              render={<Button variant="outline" size="sm" className="w-full h-9" />}
-            >
-              <CalendarDays className="h-4 w-4 mr-1.5" />
-              Jadwal
-            </DialogTrigger>
-            <DialogContent className="max-w-md p-0">
-              <DialogHeader className="p-4 pb-0">
-                <DialogTitle className="text-base flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4" />
-                  Kalender - {room.displayName}
-                </DialogTitle>
-              </DialogHeader>
-              <CalendarView roomId={room.id} compact className="border-0 shadow-none" />
-            </DialogContent>
-          </Dialog>
-          
-          <Link href={`/rooms/${createSlug(room.name)}/inventory`} className="flex-1">
-            <Button variant="outline" size="sm" className="w-full h-9">
-              <Info className="h-4 w-4 mr-1.5" />
-              Detail
-            </Button>
-          </Link>
-          
-          <Link href="/login" className="flex-[2]">
-            <Button size="sm" className="w-full h-9 bg-blue-950 hover:bg-blue-900">
-              Pesan
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          </Link>
-        </div>
+        {/* Action */}
+        <Link href={`/rooms/${createSlug(room.name)}`}>
+          <Button 
+            variant="ghost" 
+            className="w-full h-10 text-[#1B3A8C] hover:bg-[#EFF3FF] font-medium"
+          >
+            Lihat Detail
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   )
@@ -303,11 +306,12 @@ function RoomCard({ room }: { room: Room & { buildingName: string; displayName: 
 function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } }) {
   const priceRange = getPriceRange(item.equipment_rates)
   const hasRates = item.equipment_rates && item.equipment_rates.length > 0
+  const isAvailable = !item.ketersediaan || item.ketersediaan === 'tersedia'
 
   return (
-    <Card className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white">
+    <Card className="group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300">
       {/* Image Placeholder */}
-      <div className="relative h-40 bg-gradient-to-br from-emerald-100 to-teal-100 overflow-hidden">
+      <div className="relative aspect-square bg-[#F3F4F6] overflow-hidden">
         {item.photo_url ? (
           <img 
             src={item.photo_url} 
@@ -316,101 +320,358 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Package className="h-16 w-16 text-emerald-300" />
+            <Package className="h-12 w-12 text-[#D1D5DB]" />
           </div>
         )}
         
-        {/* Condition Badge */}
+        {/* Status Badge */}
         <div className="absolute top-3 right-3">
-          <ConditionBadge condition={item.current_condition} />
-        </div>
-        
-        {/* Availability Badge */}
-        <div className="absolute bottom-3 left-3">
-          <AvailabilityBadge status={item.ketersediaan ?? 'tersedia'} />
+          <Badge className={cn(
+            "text-xs font-medium border-0",
+            isAvailable 
+              ? "bg-emerald-500 text-white" 
+              : "bg-red-500 text-white"
+          )}>
+            {isAvailable ? 'Tersedia' : 'Sedang Digunakan'}
+          </Badge>
         </div>
       </div>
       
       <CardContent className="p-4">
-        {/* Title & Brand */}
-        <h3 className="font-semibold text-slate-900 mb-0.5 line-clamp-1" title={item.displayName}>
+        {/* Category Pill */}
+        <div className="mb-2">
+          <span className="inline-flex items-center bg-[#F3F4F6] text-[#374151] text-xs rounded-full px-2.5 py-1">
+            {item.category || 'Peralatan'}
+          </span>
+        </div>
+        
+        {/* Title */}
+        <h3 className="font-bold text-[#111827] text-lg mb-1 line-clamp-1" title={item.displayName}>
           {item.displayName}
         </h3>
-        {item.merk && (
-          <p className="text-sm text-slate-500 mb-2">{item.merk}</p>
-        )}
         
-        {/* Description */}
-        {item.description && (
-          <p className="text-xs text-slate-400 line-clamp-2 mb-3">
-            {item.description}
-          </p>
+        {/* Brand */}
+        {item.merk && (
+          <p className="text-sm text-[#6B7280] mb-2">{item.merk}</p>
         )}
         
         {/* Price */}
         <div className="mb-4">
           {hasRates && priceRange.min !== null ? (
             <div className="flex items-baseline gap-1">
-              <span className="text-lg font-bold text-emerald-600">
+              <span className="text-[#1B3A8C] font-semibold text-lg">
                 {formatRupiah(priceRange.min)}
               </span>
-              <span className="text-sm text-slate-400">/hari</span>
+              <span className="text-sm text-[#6B7280]">/hari</span>
               {priceRange.max !== priceRange.min && (
-                <span className="text-xs text-slate-400 ml-1">
+                <span className="text-xs text-[#9CA3AF] ml-1">
                   - {formatRupiah(priceRange.max as number)}
                 </span>
               )}
             </div>
           ) : (
-            <span className="text-sm text-slate-400 italic">Tarif belum diatur</span>
+            <span className="text-sm text-[#9CA3AF] italic">Tarif belum diatur</span>
           )}
         </div>
         
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Dialog>
-            <DialogTrigger
-              className="flex-1"
-              render={<Button variant="outline" size="sm" className="w-full h-9" />}
-            >
-              <CalendarDays className="h-4 w-4 mr-1.5" />
-              Jadwal
-            </DialogTrigger>
-            <DialogContent className="max-w-md p-0">
-              <DialogHeader className="p-4 pb-0">
-                <DialogTitle className="text-base flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4" />
-                  Kalender - {item.displayName}
-                </DialogTitle>
-              </DialogHeader>
-              <CalendarView equipmentId={item.id} compact className="border-0 shadow-none" />
-            </DialogContent>
-          </Dialog>
-          
-          <Link href="/login" className="flex-[2]">
-            <Button size="sm" className="w-full h-9 bg-blue-950 hover:bg-blue-900">
-              Pesan
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          </Link>
+        {/* Stock Indicator */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className={cn(
+            "w-2 h-2 rounded-full",
+            isAvailable ? "bg-emerald-500" : "bg-red-500"
+          )} />
+          <span className="text-xs text-[#6B7280]">
+            {isAvailable ? 'Stok tersedia' : 'Tidak tersedia'}
+          </span>
         </div>
+        
+        {/* Action */}
+        <Button 
+          variant="ghost" 
+          className="w-full h-10 text-[#1B3A8C] hover:bg-[#EFF3FF] font-medium"
+        >
+          Lihat Detail
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Filter Sidebar Component
+function FilterSidebar({ 
+  buildings,
+  assetType,
+  setAssetType,
+  selectedBuildings,
+  setSelectedBuildings,
+  selectedCategories,
+  setSelectedCategories,
+  priceRange,
+  setPriceRange,
+  selectedCapacity,
+  setSelectedCapacity,
+  showAvailableOnly,
+  setShowAvailableOnly,
+  onApply,
+  onReset,
+  isMobile = false
+}: {
+  buildings: BuildingRow[]
+  assetType: 'all' | 'rooms' | 'equipment'
+  setAssetType: (v: 'all' | 'rooms' | 'equipment') => void
+  selectedBuildings: string[]
+  setSelectedBuildings: (v: string[]) => void
+  selectedCategories: string[]
+  setSelectedCategories: (v: string[]) => void
+  priceRange: { min: string; max: string }
+  setPriceRange: (v: { min: string; max: string }) => void
+  selectedCapacity: string[]
+  setSelectedCapacity: (v: string[]) => void
+  showAvailableOnly: boolean
+  setShowAvailableOnly: (v: boolean) => void
+  onApply: () => void
+  onReset: () => void
+  isMobile?: boolean
+}) {
+  const handleBuildingToggle = (id: string) => {
+    setSelectedBuildings(
+      selectedBuildings.includes(id)
+        ? selectedBuildings.filter(b => b !== id)
+        : [...selectedBuildings, id]
+    )
+  }
+
+  const handleCategoryToggle = (value: string) => {
+    setSelectedCategories(
+      selectedCategories.includes(value)
+        ? selectedCategories.filter(c => c !== value)
+        : [...selectedCategories, value]
+    )
+  }
+
+  const handleCapacityToggle = (value: string) => {
+    setSelectedCapacity(
+      selectedCapacity.includes(value)
+        ? selectedCapacity.filter(c => c !== value)
+        : [...selectedCapacity, value]
+    )
+  }
+
+  const content = (
+    <div className="space-y-6">
+      {/* TIPE ASET */}
+      <div>
+        <h4 className="font-semibold text-[#111827] text-sm mb-3">TIPE ASET</h4>
+        <RadioGroup value={assetType} onValueChange={(v) => setAssetType(v as 'all' | 'rooms' | 'equipment')}>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="all" id="type-all" className="border-[#D1D5DB]" />
+              <Label htmlFor="type-all" className="text-sm text-[#374151] cursor-pointer">Semua</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="rooms" id="type-rooms" className="border-[#D1D5DB]" />
+              <Label htmlFor="type-rooms" className="text-sm text-[#374151] cursor-pointer">Ruangan</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="equipment" id="type-equipment" className="border-[#D1D5DB]" />
+              <Label htmlFor="type-equipment" className="text-sm text-[#374151] cursor-pointer">Peralatan</Label>
+            </div>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {/* GEDUNG */}
+      {assetType !== 'equipment' && (
+        <div>
+          <h4 className="font-semibold text-[#111827] text-sm mb-3">GEDUNG</h4>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {buildings.map(building => (
+              <div key={building.id} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`building-${building.id}`}
+                  checked={selectedBuildings.includes(building.id)}
+                  onCheckedChange={() => handleBuildingToggle(building.id)}
+                  className="border-[#D1D5DB]"
+                />
+                <Label htmlFor={`building-${building.id}`} className="text-sm text-[#374151] cursor-pointer">
+                  {building.name}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* KATEGORI ALAT */}
+      {assetType !== 'rooms' && (
+        <div>
+          <h4 className="font-semibold text-[#111827] text-sm mb-3">KATEGORI ALAT</h4>
+          <div className="space-y-2">
+            {EQUIPMENT_CATEGORIES.map(cat => (
+              <div key={cat.value} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`cat-${cat.value}`}
+                  checked={selectedCategories.includes(cat.value)}
+                  onCheckedChange={() => handleCategoryToggle(cat.value)}
+                  className="border-[#D1D5DB]"
+                />
+                <Label htmlFor={`cat-${cat.value}`} className="text-sm text-[#374151] cursor-pointer">
+                  {cat.label}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* HARGA */}
+      <div>
+        <h4 className="font-semibold text-[#111827] text-sm mb-3">HARGA</h4>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">Rp</span>
+            <input
+              type="number"
+              placeholder="Min"
+              value={priceRange.min}
+              onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A8C]/20"
+            />
+          </div>
+          <span className="text-[#9CA3AF]">-</span>
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">Rp</span>
+            <input
+              type="number"
+              placeholder="Max"
+              value={priceRange.max}
+              onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A8C]/20"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* KAPASITAS */}
+      {assetType !== 'equipment' && (
+        <div>
+          <h4 className="font-semibold text-[#111827] text-sm mb-3">KAPASITAS</h4>
+          <div className="space-y-2">
+            {CAPACITY_RANGES.map(range => (
+              <div key={range.value} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`cap-${range.value}`}
+                  checked={selectedCapacity.includes(range.value)}
+                  onCheckedChange={() => handleCapacityToggle(range.value)}
+                  className="border-[#D1D5DB]"
+                />
+                <Label htmlFor={`cap-${range.value}`} className="text-sm text-[#374151] cursor-pointer">
+                  {range.label}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* STATUS */}
+      <div>
+        <h4 className="font-semibold text-[#111827] text-sm mb-3">STATUS</h4>
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="available-only"
+            checked={showAvailableOnly}
+            onCheckedChange={(v) => setShowAvailableOnly(v as boolean)}
+            className="border-[#D1D5DB]"
+          />
+          <Label htmlFor="available-only" className="text-sm text-[#374151] cursor-pointer">
+            Tampilkan tersedia saja
+          </Label>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3 pt-2">
+        <Button 
+          onClick={onApply}
+          className="flex-1 bg-[#1B3A8C] hover:bg-[#1B3A8C]/90 text-white h-10 rounded-lg"
+        >
+          Terapkan Filter
+        </Button>
+        <Button 
+          variant="ghost" 
+          onClick={onReset}
+          className="h-10 px-4 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
+        >
+          Reset
+        </Button>
+      </div>
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <Sheet>
+        <SheetTrigger>
+          <Button 
+            variant="outline" 
+            className="h-10 px-4 border-[#E5E7EB] text-[#374151]"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filter
+            {(selectedBuildings.length + selectedCategories.length + selectedCapacity.length > 0 || showAvailableOnly) && (
+              <Badge className="ml-2 bg-[#1B3A8C] text-white text-xs">
+                {selectedBuildings.length + selectedCategories.length + selectedCapacity.length + (showAvailableOnly ? 1 : 0)}
+              </Badge>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-[320px] sm:w-[400px] p-0">
+          <SheetHeader className="p-6 pb-4 border-b border-[#E5E7EB]">
+            <SheetTitle className="text-[#111827] font-semibold">Filter Katalog</SheetTitle>
+          </SheetHeader>
+          <div className="p-6 overflow-y-auto h-[calc(100vh-120px)]">
+            {content}
+          </div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <Card className="border border-[#E5E7EB] rounded-[14px] shadow-sm sticky top-24">
+      <CardContent className="p-5">
+        <h3 className="font-bold text-[#111827] mb-5">Filter</h3>
+        {content}
       </CardContent>
     </Card>
   )
 }
 
 export function CatalogClient({ buildings, equipment, institution }: Props) {
-  const [activeTab, setActiveTab] = useState('rooms')
-  const [roomSearch, setRoomSearch] = useState('')
-  const [roomBuilding, setRoomBuilding] = useState('all')
-  const [equipSearch, setEquipSearch] = useState('')
-  const [equipAvail, setEquipAvail] = useState('all')
-  const [roomPage, setRoomPage] = useState(1)
-  const [equipPage, setEquipPage] = useState(1)
+  // Tab state: 'all' | 'rooms' | 'equipment'
+  const [activeTab, setActiveTab] = useState<'all' | 'rooms' | 'equipment'>('all')
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+  
+  // Filter states
+  const [selectedBuildings, setSelectedBuildings] = useState<string[]>([])
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' })
+  const [selectedCapacity, setSelectedCapacity] = useState<string[]>([])
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false)
+  
+  // Sort state
+  const [sortBy, setSortBy] = useState<'name' | 'price-low' | 'price-high'>('name')
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
 
-  useEffect(() => { setRoomPage(1) }, [roomSearch, roomBuilding])
-  useEffect(() => { setEquipPage(1) }, [equipSearch, equipAvail])
+  // Reset pagination when filters change
+  useEffect(() => { setCurrentPage(1) }, [searchQuery, selectedBuildings, selectedCategories, selectedCapacity, showAvailableOnly, sortBy, activeTab])
 
+  // Transform rooms data
   const allRooms = useMemo(() =>
     buildings.flatMap(b =>
       b.assets
@@ -420,6 +681,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
     [buildings]
   )
 
+  // Add display names for duplicates
   const roomsWithNumbers = useMemo(() => {
     const nameCount: Record<string, number> = {}
     for (const r of allRooms) nameCount[r.name] = (nameCount[r.name] || 0) + 1
@@ -440,283 +702,283 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
     })
   }, [equipment])
 
-  const stats = useMemo(() => ({
-    gedung: buildings.length,
-    ruangan: allRooms.length,
-    alat: equipment.length,
-    tersedia: equipment.filter(e => !e.ketersediaan || e.ketersediaan === 'tersedia').length,
-  }), [buildings, allRooms, equipment])
+  // Filter rooms
+  const filteredRooms = useMemo(() => {
+    return roomsWithNumbers.filter(r => {
+      const matchSearch = !searchQuery || 
+        r.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (r.room_code?.toLowerCase().includes(searchQuery.toLowerCase()))
+      const matchBuilding = selectedBuildings.length === 0 || selectedBuildings.includes(r.buildingId)
+      const matchCapacity = selectedCapacity.length === 0 || selectedCapacity.some(cap => {
+        const range = CAPACITY_RANGES.find(c => c.value === cap)
+        return range && r.capacity && r.capacity >= range.min && r.capacity <= range.max
+      })
+      const matchAvailable = !showAvailableOnly || r.current_condition === 'good'
+      return matchSearch && matchBuilding && matchCapacity && matchAvailable
+    }).sort((a, b) => {
+      if (sortBy === 'name') return a.displayName.localeCompare(b.displayName)
+      if (sortBy === 'price-low') {
+        const aPrice = getLowestRoomRate(a.room_rates) ?? Infinity
+        const bPrice = getLowestRoomRate(b.room_rates) ?? Infinity
+        return aPrice - bPrice
+      }
+      if (sortBy === 'price-high') {
+        const aPrice = getLowestRoomRate(a.room_rates) ?? 0
+        const bPrice = getLowestRoomRate(b.room_rates) ?? 0
+        return bPrice - aPrice
+      }
+      return 0
+    })
+  }, [roomsWithNumbers, searchQuery, selectedBuildings, selectedCapacity, showAvailableOnly, sortBy])
 
-  const filteredRooms = useMemo(() => roomsWithNumbers.filter(r => {
-    const matchSearch = !roomSearch || 
-      r.displayName.toLowerCase().includes(roomSearch.toLowerCase()) || 
-      (r.room_code?.toLowerCase().includes(roomSearch.toLowerCase()))
-    const matchBuilding = roomBuilding === 'all' || r.buildingId === roomBuilding
-    return matchSearch && matchBuilding
-  }), [roomsWithNumbers, roomSearch, roomBuilding])
+  // Filter equipment
+  const filteredEquipment = useMemo(() => {
+    return equipWithNumbers.filter(e => {
+      const matchSearch = !searchQuery || 
+        e.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (e.merk?.toLowerCase().includes(searchQuery.toLowerCase()))
+      const matchCategory = selectedCategories.length === 0 || selectedCategories.includes(e.category || '')
+      const matchPrice = (!priceRange.min || (getPriceRange(e.equipment_rates).min ?? 0) >= parseInt(priceRange.min)) &&
+        (!priceRange.max || (getPriceRange(e.equipment_rates).max ?? Infinity) <= parseInt(priceRange.max))
+      const matchAvailable = !showAvailableOnly || (!e.ketersediaan || e.ketersediaan === 'tersedia')
+      return matchSearch && matchCategory && matchPrice && matchAvailable
+    }).sort((a, b) => {
+      if (sortBy === 'name') return a.displayName.localeCompare(b.displayName)
+      if (sortBy === 'price-low') {
+        const aPrice = getPriceRange(a.equipment_rates).min ?? Infinity
+        const bPrice = getPriceRange(b.equipment_rates).min ?? Infinity
+        return aPrice - bPrice
+      }
+      if (sortBy === 'price-high') {
+        const aPrice = getPriceRange(a.equipment_rates).max ?? 0
+        const bPrice = getPriceRange(b.equipment_rates).max ?? 0
+        return bPrice - aPrice
+      }
+      return 0
+    })
+  }, [equipWithNumbers, searchQuery, selectedCategories, priceRange, showAvailableOnly, sortBy])
 
-  const filteredEquip = useMemo(() => equipWithNumbers.filter(e => {
-    const matchSearch = !equipSearch || 
-      e.displayName.toLowerCase().includes(equipSearch.toLowerCase()) || 
-      (e.merk?.toLowerCase().includes(equipSearch.toLowerCase()))
-    const matchAvail = equipAvail === 'all' || (e.ketersediaan ?? 'tersedia') === equipAvail
-    return matchSearch && matchAvail
-  }), [equipWithNumbers, equipSearch, equipAvail])
+  // Combine based on active tab
+  const displayItems = useMemo(() => {
+    if (activeTab === 'rooms') return { rooms: filteredRooms, equipment: [] }
+    if (activeTab === 'equipment') return { rooms: [], equipment: filteredEquipment }
+    return { rooms: filteredRooms, equipment: filteredEquipment }
+  }, [activeTab, filteredRooms, filteredEquipment])
 
-  const roomTotalPages = Math.max(1, Math.ceil(filteredRooms.length / PAGE_SIZE))
-  const equipTotalPages = Math.max(1, Math.ceil(filteredEquip.length / PAGE_SIZE))
-  const pagedRooms = filteredRooms.slice((roomPage - 1) * PAGE_SIZE, roomPage * PAGE_SIZE)
-  const pagedEquip = filteredEquip.slice((equipPage - 1) * PAGE_SIZE, equipPage * PAGE_SIZE)
+  const totalItems = displayItems.rooms.length + displayItems.equipment.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
+  
+  // Paginate combined items
+  const paginatedItems = useMemo(() => {
+    const allItems = [
+      ...displayItems.rooms.map(r => ({ type: 'room' as const, data: r })),
+      ...displayItems.equipment.map(e => ({ type: 'equipment' as const, data: e }))
+    ]
+    return allItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  }, [displayItems, currentPage])
+
+  const handleResetFilters = () => {
+    setSelectedBuildings([])
+    setSelectedCategories([])
+    setPriceRange({ min: '', max: '' })
+    setSelectedCapacity([])
+    setShowAvailableOnly(false)
+    setSearchQuery('')
+  }
+
+  const activeFilterCount = selectedBuildings.length + selectedCategories.length + selectedCapacity.length + (showAvailableOnly ? 1 : 0)
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-900 text-white overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-        
-        {/* Decorative Blobs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-        
-        <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-20">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4 leading-tight">
-              {institution?.name || 'Katalog Ruang & Alat'}
+    <div className="min-h-screen bg-white">
+      {/* Page Header */}
+      <div className="bg-[#EFF3FF] py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#111827] mb-3">
+              Katalog Ruang & Alat
             </h1>
-            <p className="text-xl text-blue-200 mb-2">
-              {institution?.short_name}
-            </p>
-            <p className="text-blue-200/80 text-lg">
-              {institution?.description || 'Temukan dan pesan ruang atau alat yang tersedia untuk kegiatan Anda'}
+            <p className="text-[#6B7280] text-base max-w-xl mx-auto">
+              Temukan ruangan dan peralatan laboratorium yang tersedia
             </p>
           </div>
           
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            {[
-              { label: 'Gedung', value: stats.gedung, icon: Building2 },
-              { label: 'Ruangan', value: stats.ruangan, icon: MapPin },
-              { label: 'Total Alat', value: stats.alat, icon: Package },
-              { label: 'Alat Tersedia', value: stats.tersedia, icon: Users },
-            ].map((s, i) => (
-              <div 
-                key={s.label} 
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20 hover:bg-white/20 transition-colors"
+          {/* Search Bar */}
+          <div className="max-w-[560px] mx-auto relative">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#9CA3AF]" />
+            <input
+              type="text"
+              placeholder="Cari ruangan atau alat..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-[52px] pl-14 pr-12 bg-white rounded-full border-0 shadow-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1B3A8C]/20"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-5 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[#F3F4F6]"
               >
-                <s.icon className="h-6 w-6 mx-auto mb-2 text-blue-300" />
-                <p className="text-3xl font-bold">{s.value}</p>
-                <p className="text-sm text-blue-200">{s.label}</p>
-              </div>
-            ))}
+                <X className="h-4 w-4 text-[#9CA3AF]" />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 -mt-8 relative z-10">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Tab Navigation */}
-          <div className="bg-white rounded-2xl shadow-lg p-2">
-            <TabsList className="w-full grid grid-cols-2 h-14 bg-slate-100 p-1 rounded-xl">
-              <TabsTrigger 
-                value="rooms" 
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-950 font-medium transition-all"
-              >
-                <Building2 className="h-5 w-5 mr-2" />
-                Ruangan
-                <Badge variant="secondary" className="ml-2 bg-slate-200 text-slate-700">
-                  {filteredRooms.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="equipment"
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-950 font-medium transition-all"
-              >
-                <Package className="h-5 w-5 mr-2" />
-                Alat & Peralatan
-                <Badge variant="secondary" className="ml-2 bg-slate-200 text-slate-700">
-                  {filteredEquip.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex gap-8">
+          {/* Filter Sidebar - Desktop */}
+          <div className="hidden lg:block w-[280px] flex-shrink-0">
+            <FilterSidebar
+              buildings={buildings}
+              assetType={activeTab}
+              setAssetType={setActiveTab}
+              selectedBuildings={selectedBuildings}
+              setSelectedBuildings={setSelectedBuildings}
+              selectedCategories={selectedCategories}
+              setSelectedCategories={setSelectedCategories}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              selectedCapacity={selectedCapacity}
+              setSelectedCapacity={setSelectedCapacity}
+              showAvailableOnly={showAvailableOnly}
+              setShowAvailableOnly={setShowAvailableOnly}
+              onApply={() => {}}
+              onReset={handleResetFilters}
+            />
           </div>
 
-          {/* Rooms Tab */}
-          <TabsContent value="rooms" className="space-y-6 mt-0">
-            {/* Filters */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Cari ruangan berdasarkan nama atau kode..."
-                      value={roomSearch}
-                      onChange={e => setRoomSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      variant={roomBuilding === 'all' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setRoomBuilding('all')}
-                      className={cn(
-                        "h-11 px-4 rounded-xl",
-                        roomBuilding === 'all' && "bg-blue-950 hover:bg-blue-900"
-                      )}
-                    >
-                      <Filter className="h-4 w-4 mr-2" />
-                      Semua Gedung
-                    </Button>
-                    
-                    {buildings.slice(0, 3).map(b => (
-                      <Button
-                        key={b.id}
-                        variant={roomBuilding === b.id ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setRoomBuilding(b.id)}
-                        className={cn(
-                          "h-11 px-4 rounded-xl hidden sm:inline-flex",
-                          roomBuilding === b.id && "bg-blue-950 hover:bg-blue-900"
-                        )}
-                      >
-                        {b.name}
-                      </Button>
-                    ))}
-                    
-                    {buildings.length > 3 && (
-                      <select
-                        value={roomBuilding}
-                        onChange={e => setRoomBuilding(e.target.value)}
-                        className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                      >
-                        <option value="all">Semua Gedung</option>
-                        {buildings.map(b => (
-                          <option key={b.id} value={b.id}>{b.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
+          {/* Main Grid Area */}
+          <div className="flex-1 min-w-0">
+            {/* Tabs & Sort Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              {/* Tabs */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    activeTab === 'all'
+                      ? "bg-[#1B3A8C] text-white"
+                      : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+                  )}
+                >
+                  Semua
+                </button>
+                <button
+                  onClick={() => setActiveTab('rooms')}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    activeTab === 'rooms'
+                      ? "bg-[#1B3A8C] text-white"
+                      : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+                  )}
+                >
+                  Ruangan ({filteredRooms.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('equipment')}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    activeTab === 'equipment'
+                      ? "bg-[#1B3A8C] text-white"
+                      : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+                  )}
+                >
+                  Peralatan ({filteredEquipment.length})
+                </button>
+              </div>
+
+              {/* Sort & Mobile Filter */}
+              <div className="flex items-center gap-3">
+                {/* Sort Dropdown */}
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'name' | 'price-low' | 'price-high')}
+                    className="appearance-none h-10 pl-4 pr-10 bg-white border border-[#E5E7EB] rounded-lg text-sm text-[#374151] focus:outline-none focus:ring-2 focus:ring-[#1B3A8C]/20 cursor-pointer"
+                  >
+                    <option value="name">Urutkan: Nama</option>
+                    <option value="price-low">Urutkan: Harga Terendah</option>
+                    <option value="price-high">Urutkan: Harga Tertinggi</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280] pointer-events-none" />
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Mobile Filter Button */}
+                <div className="lg:hidden">
+                  <FilterSidebar
+                    buildings={buildings}
+                    assetType={activeTab}
+                    setAssetType={setActiveTab}
+                    selectedBuildings={selectedBuildings}
+                    setSelectedBuildings={setSelectedBuildings}
+                    selectedCategories={selectedCategories}
+                    setSelectedCategories={setSelectedCategories}
+                    priceRange={priceRange}
+                    setPriceRange={setPriceRange}
+                    selectedCapacity={selectedCapacity}
+                    setSelectedCapacity={setSelectedCapacity}
+                    showAvailableOnly={showAvailableOnly}
+                    setShowAvailableOnly={setShowAvailableOnly}
+                    onApply={() => {}}
+                    onReset={handleResetFilters}
+                    isMobile
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* Results Count */}
-            <div className="flex items-center justify-between">
-              <p className="text-slate-600">
-                Menampilkan <span className="font-semibold text-slate-900">{pagedRooms.length}</span> dari{' '}
-                <span className="font-semibold text-slate-900">{filteredRooms.length}</span> ruangan
+            <div className="mb-6">
+              <p className="text-[#6B7280] text-sm">
+                Menampilkan <span className="font-semibold text-[#111827]">{paginatedItems.length}</span> dari{' '}
+                <span className="font-semibold text-[#111827]">{totalItems}</span> hasil
               </p>
             </div>
 
-            {/* Rooms Grid */}
-            {filteredRooms.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
-                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Building2 className="h-10 w-10 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Tidak ada ruangan ditemukan</h3>
-                <p className="text-slate-500">Coba ubah kata kunci pencarian atau filter</p>
-              </div>
+            {/* Catalog Grid */}
+            {totalItems === 0 ? (
+              <EmptyState 
+                variant="search" 
+                actionLabel="Reset Filter"
+                onAction={handleResetFilters}
+              />
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {pagedRooms.map(room => (
-                    <RoomCard key={room.id} room={room} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {paginatedItems.map((item) => (
+                    item.type === 'room' ? (
+                      <RoomCard key={item.data.id} room={item.data as Room & { buildingName: string; displayName: string }} />
+                    ) : (
+                      <EquipmentCard key={item.data.id} item={item.data as EquipmentRow & { displayName: string }} />
+                    )
                   ))}
                 </div>
-                <Paginator page={roomPage} total={roomTotalPages} onChange={setRoomPage} />
+                <Paginator page={currentPage} total={totalPages} onChange={setCurrentPage} />
               </>
             )}
-          </TabsContent>
+          </div>
+        </div>
+      </main>
 
-          {/* Equipment Tab */}
-          <TabsContent value="equipment" className="space-y-6 mt-0">
-            {/* Filters */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Cari alat berdasarkan nama atau merk..."
-                      value={equipSearch}
-                      onChange={e => setEquipSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <select
-                      value={equipAvail}
-                      onChange={e => setEquipAvail(e.target.value)}
-                      className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 min-w-[160px]"
-                    >
-                      <option value="all">Semua Status</option>
-                      <option value="tersedia">✅ Tersedia</option>
-                      <option value="digunakan">🔵 Digunakan</option>
-                      <option value="hilang">❌ Hilang</option>
-                    </select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Results Count */}
-            <div className="flex items-center justify-between">
-              <p className="text-slate-600">
-                Menampilkan <span className="font-semibold text-slate-900">{pagedEquip.length}</span> dari{' '}
-                <span className="font-semibold text-slate-900">{filteredEquip.length}</span> alat
-              </p>
-            </div>
-
-            {/* Equipment Grid */}
-            {filteredEquip.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
-                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package className="h-10 w-10 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Tidak ada alat ditemukan</h3>
-                <p className="text-slate-500">Coba ubah kata kunci pencarian atau filter</p>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {pagedEquip.map(item => (
-                    <EquipmentCard key={item.id} item={item} />
-                  ))}
-                </div>
-                <Paginator page={equipPage} total={equipTotalPages} onChange={setEquipPage} />
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {/* CTA Section */}
-        <div className="mt-16 bg-gradient-to-r from-blue-950 to-indigo-900 rounded-2xl p-8 sm:p-12 text-white text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+      {/* CTA Section */}
+      <section className="bg-[#1B3A8C] py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Siap Meminjam?
           </h2>
-          <p className="text-blue-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-[#EFF3FF] mb-8 max-w-2xl mx-auto">
             Login untuk melakukan pemesanan dan kelola peminjaman Anda dengan mudah
           </p>
           <Link href="/login">
-            <Button size="lg" className="bg-white text-blue-950 hover:bg-blue-50 px-8 h-12 text-base">
+            <Button size="lg" className="bg-white text-[#1B3A8C] hover:bg-[#EFF3FF] px-8 h-12 text-base font-medium rounded-lg">
               Login Sekarang
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           </Link>
         </div>
-      </main>
+      </section>
     </div>
   )
 }

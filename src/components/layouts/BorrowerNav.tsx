@@ -4,8 +4,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Building2, Home, List, FileText, LogOut, User } from 'lucide-react'
+import { Building2, Home, List, FileText, LogOut, User, ChevronDown } from 'lucide-react'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -15,10 +14,10 @@ import { cn } from '@/lib/utils'
 
 interface Props { userName: string; photoUrl?: string }
 
-const mobileNav = [
-  { href: '/dashboard', icon: Home, label: 'Home' },
-  { href: '/catalog', icon: List, label: 'Katalog' },
-  { href: '/bookings', icon: FileText, label: 'Pengajuan' },
+const navLinks = [
+  { href: '/dashboard', icon: Home,     label: 'Beranda' },
+  { href: '/catalog',   icon: List,     label: 'Katalog' },
+  { href: '/bookings',  icon: FileText, label: 'Pengajuan' },
 ]
 
 export function BorrowerNav({ userName, photoUrl }: Props) {
@@ -36,81 +35,86 @@ export function BorrowerNav({ userName, photoUrl }: Props) {
   return (
     <>
       {/* Top navbar */}
-      <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
+      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-md border-b border-border md:shadow-sm md:shadow-black/5">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+          {/* Brand */}
           <div className="flex items-center gap-5">
-            <Link href="/" className="flex items-center gap-2 font-bold text-blue-950">
-              <div className="bg-blue-950 text-white p-1 rounded-md">
-                <Building2 className="h-3.5 w-3.5" />
+            <Link href="/" className="flex items-center gap-2.5 font-semibold">
+              <div className="h-8 w-8 bg-primary rounded-[10px] flex items-center justify-center shrink-0">
+                <Building2 className="h-4 w-4 text-white" />
               </div>
-              <span className="hidden sm:inline text-sm">Sewa Ruang</span>
+              <span className="hidden sm:inline text-sm text-foreground">Sewa Ruang &amp; Alat</span>
             </Link>
+
             {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-1">
-              {mobileNav.map(n => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                    pathname === n.href || pathname.startsWith(n.href + '/')
-                      ? 'bg-blue-50 text-blue-950'
-                      : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'
-                  )}
-                >
-                  <n.icon className="h-4 w-4" />
-                  {n.label}
-                </Link>
-              ))}
+            <nav className="hidden md:flex items-center gap-0.5">
+              {navLinks.map(n => {
+                const active = pathname === n.href || pathname.startsWith(n.href + '/')
+                return (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-sm font-medium transition-colors',
+                      active
+                        ? 'bg-muted text-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <n.icon className="h-3.5 w-3.5" />
+                    {n.label}
+                  </Link>
+                )
+              })}
             </nav>
           </div>
 
+          {/* User menu */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity rounded-xl px-2 py-1.5 hover:bg-zinc-50">
-              <Avatar className="h-8 w-8">
-                {photoUrl ? (
-                  <AvatarImage src={photoUrl} alt={userName} className="object-cover" />
-                ) : null}
-                <AvatarFallback className="bg-blue-950 text-white text-xs font-bold">
+            <DropdownMenuTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity rounded-[10px] px-2 py-1.5 hover:bg-muted outline-none">
+              <Avatar className="h-8 w-8 rounded-[8px]">
+                {photoUrl && <AvatarImage src={photoUrl} alt={userName} className="object-cover" />}
+                <AvatarFallback className="text-xs font-bold text-white bg-primary rounded-[8px]">
                   {userName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden sm:inline text-sm font-medium text-zinc-700">{userName}</span>
+              <span className="hidden sm:inline text-sm font-medium text-foreground">{userName}</span>
+              <ChevronDown className="hidden sm:block h-3.5 w-3.5 text-muted-foreground" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <div className="px-3 py-2 border-b">
-                <p className="text-sm font-medium">{userName}</p>
+            <DropdownMenuContent align="end" className="w-48 rounded-[12px]">
+              <div className="px-3 py-2 border-b border-border">
+                <p className="text-sm font-semibold text-foreground">{userName}</p>
                 <p className="text-xs text-muted-foreground">Peminjam</p>
               </div>
               <Link href="/profile">
-                <DropdownMenuItem className="gap-2 cursor-pointer mt-1">
-                  <User className="h-4 w-4" /> Profil Saya
+                <DropdownMenuItem className="gap-2 cursor-pointer mt-1 text-sm rounded-[8px]">
+                  <User className="h-3.5 w-3.5" /> Profil Saya
                 </DropdownMenuItem>
               </Link>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} variant="destructive" className="gap-2 cursor-pointer">
-                <LogOut className="h-4 w-4" /> Keluar
+              <DropdownMenuItem onClick={handleLogout} variant="destructive" className="gap-2 cursor-pointer text-sm rounded-[8px]">
+                <LogOut className="h-3.5 w-3.5" /> Keluar
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
 
-      {/* Mobile bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t shadow-lg">
-        <div className="grid grid-cols-3">
-          {mobileNav.map(n => {
+      {/* Mobile bottom tab navigation */}
+      <nav className="bottom-nav">
+        <div className="grid grid-cols-3 max-w-md mx-auto">
+          {navLinks.map(n => {
             const active = pathname === n.href || pathname.startsWith(n.href + '/')
             return (
               <Link
                 key={n.href}
                 href={n.href}
                 className={cn(
-                  'flex flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors',
-                  active ? 'text-blue-950' : 'text-zinc-400 hover:text-zinc-700'
+                  'bottom-nav-item',
+                  active ? 'bottom-nav-item-active' : 'bottom-nav-item-inactive'
                 )}
               >
-                <n.icon className={cn('h-5 w-5', active && 'stroke-2')} />
+                <n.icon className={cn('h-5 w-5', active ? 'stroke-[2.5]' : 'stroke-[1.5]')} />
                 {n.label}
               </Link>
             )
@@ -118,8 +122,8 @@ export function BorrowerNav({ userName, photoUrl }: Props) {
         </div>
       </nav>
 
-      {/* Bottom padding spacer for mobile (so content not hidden behind bottom nav) */}
-      <div className="md:hidden h-16" />
+      {/* Bottom spacer for mobile */}
+      <div className="md:hidden h-14" />
     </>
   )
 }

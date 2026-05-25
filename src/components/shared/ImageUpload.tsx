@@ -143,7 +143,7 @@ export function ImageUpload({ value, onChange, bucket = 'equipment-photos', fold
     <div className="space-y-4">
       {/* Preview Area */}
       {preview && isValidUrl(preview) && (
-        <div className="relative w-full h-56 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="relative w-full h-56 bg-muted rounded-[10px] overflow-hidden flex items-center justify-center">
           {/* Use regular img tag for external URLs to avoid Next.js Image validation errors */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -214,7 +214,7 @@ export function ImageUpload({ value, onChange, bucket = 'equipment-photos', fold
         {/* File Upload Tab */}
         <TabsContent value="file" className="space-y-2">
           <Label>Upload dari Galeri</Label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+          <div className="border-2 border-dashed border-border rounded-[10px] p-6 text-center hover:border-border/80 transition-colors">
             <input
               ref={fileInputRef}
               type="file"
@@ -231,14 +231,14 @@ export function ImageUpload({ value, onChange, bucket = 'equipment-photos', fold
               )}
             >
               {uploading ? (
-                <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
+                <Loader2 className="h-8 w-8 text-muted-foreground/70 animate-spin" />
               ) : (
-                <Upload className="h-8 w-8 text-gray-400" />
+                <Upload className="h-8 w-8 text-muted-foreground/70" />
               )}
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-muted-foreground">
                 {uploading ? 'Mengupload...' : 'Klik untuk memilih file'}
               </span>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground/70">
                 JPG, PNG, WEBP (Maks. 5MB)
               </span>
             </label>
@@ -248,7 +248,7 @@ export function ImageUpload({ value, onChange, bucket = 'equipment-photos', fold
         {/* Camera Tab */}
         <TabsContent value="camera" className="space-y-2">
           <Label>Ambil Foto Langsung</Label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+          <div className="border-2 border-dashed border-border rounded-[10px] p-6 text-center hover:border-border/80 transition-colors">
             <input
               ref={cameraInputRef}
               type="file"
@@ -266,14 +266,14 @@ export function ImageUpload({ value, onChange, bucket = 'equipment-photos', fold
               )}
             >
               {uploading ? (
-                <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
+                <Loader2 className="h-8 w-8 text-muted-foreground/70 animate-spin" />
               ) : (
-                <Camera className="h-8 w-8 text-gray-400" />
+                <Camera className="h-8 w-8 text-muted-foreground/70" />
               )}
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-muted-foreground">
                 {uploading ? 'Mengupload...' : 'Klik untuk membuka kamera'}
               </span>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground/70">
                 Akses kamera perangkat Anda
               </span>
             </label>

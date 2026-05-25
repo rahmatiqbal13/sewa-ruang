@@ -33,7 +33,7 @@ type BookingRow = any
 const ROLE_BADGE: Record<string, { label: string; className: string }> = {
   super_admin: { label: 'Super Admin', className: 'bg-purple-100 text-purple-800 border border-purple-200' },
   admin:       { label: 'Admin',       className: 'bg-blue-100 text-blue-800 border border-blue-200' },
-  staff:       { label: 'Staff',       className: 'bg-zinc-100 text-zinc-700 border border-zinc-200' },
+  staff:       { label: 'Staff',       className: 'bg-muted text-muted-foreground border border-border' },
   borrower:    { label: 'Peminjam',    className: 'bg-green-100 text-green-800 border border-green-200' },
 }
 
@@ -43,7 +43,7 @@ const STATUS_COLORS: Record<string, string> = {
   paid:      'bg-emerald-100 text-emerald-700',
   completed: 'bg-green-100 text-green-700',
   rejected:  'bg-red-100 text-red-700',
-  cancelled: 'bg-zinc-100 text-zinc-600',
+  cancelled: 'bg-muted text-muted-foreground',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -134,19 +134,19 @@ export function UserDetailSheet({ user }: { user: UserData }) {
         variant="ghost"
         onClick={handleOpen}
         title="Lihat detail pengguna"
-        className="h-8 w-8 p-0 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50"
+        className="h-8 w-8 p-0 text-muted-foreground/70 hover:text-indigo-600 hover:bg-indigo-50"
       >
         <Info className="h-3.5 w-3.5" />
       </Button>
 
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent className="w-[400px] sm:max-w-[400px] overflow-y-auto p-0">
-          {/* Header gradient */}
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 px-6 py-5">
+          {/* Header */}
+          <div className="bg-indigo-600 px-6 py-5">
             <SheetHeader>
               <SheetTitle className="text-white">
                 <div className="flex items-center gap-3">
-                  <div className="h-11 w-11 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-base shrink-0">
+                  <div className="h-11 w-11 rounded-full bg-card/20 flex items-center justify-center text-white font-bold text-base shrink-0">
                     {initials}
                   </div>
                   <div className="min-w-0">
@@ -183,7 +183,7 @@ export function UserDetailSheet({ user }: { user: UserData }) {
               </SectionTitle>
 
               {/* Current password display */}
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+              <div className="bg-amber-50 border border-amber-100 rounded-[14px] p-3">
                 <p className="text-[10px] text-amber-700 font-medium mb-1.5">Password Tersimpan</p>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -200,8 +200,9 @@ export function UserDetailSheet({ user }: { user: UserData }) {
                   {currentPassword && (
                     <button
                       onClick={() => setShowPassword(v => !v)}
-                      className="shrink-0 h-7 w-7 flex items-center justify-center rounded-md text-amber-600 hover:bg-amber-100 transition-colors"
+                      className="shrink-0 h-7 w-7 flex items-center justify-center rounded-[10px] text-amber-600 hover:bg-amber-100 transition-colors"
                       title={showPassword ? 'Sembunyikan' : 'Tampilkan password'}
+                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -210,7 +211,7 @@ export function UserDetailSheet({ user }: { user: UserData }) {
               </div>
 
               {/* Reset password form */}
-              <div className="border border-dashed border-slate-200 rounded-xl p-3 space-y-2">
+              <div className="border border-dashed border-border rounded-[14px] p-3 space-y-2">
                 <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
                   <RotateCcw className="h-3 w-3" />
                   {currentPassword ? 'Ganti Password' : 'Set Password Baru'}
@@ -229,7 +230,8 @@ export function UserDetailSheet({ user }: { user: UserData }) {
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(v => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      aria-label={showNewPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-muted-foreground"
                     >
                       {showNewPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                     </button>
@@ -237,7 +239,7 @@ export function UserDetailSheet({ user }: { user: UserData }) {
                   <button
                     onClick={handleResetPassword}
                     disabled={savingPassword || !newPassword}
-                    className="h-8 px-3 rounded-md bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0 transition-colors"
+                    className="h-8 px-3 rounded-[10px] bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0 transition-colors"
                   >
                     {savingPassword
                       ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -260,7 +262,7 @@ export function UserDetailSheet({ user }: { user: UserData }) {
               )}
 
               {!loadingBookings && bookings?.length === 0 && (
-                <div className="text-center py-6 text-sm text-muted-foreground bg-zinc-50 rounded-xl border border-dashed">
+                <div className="text-center py-6 text-sm text-muted-foreground bg-muted rounded-[14px] border border-dashed">
                   Belum ada riwayat peminjaman
                 </div>
               )}
@@ -284,15 +286,15 @@ export function UserDetailSheet({ user }: { user: UserData }) {
                         href={`/admin/bookings/${b.id}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-start justify-between gap-2 rounded-xl border p-3 hover:bg-slate-50 transition-colors group"
+                        className="flex items-start justify-between gap-2 rounded-[14px] border p-3 hover:bg-muted transition-colors group"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-mono text-xs text-slate-500">{b.reference_no}</span>
-                            <ExternalLink className="h-3 w-3 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                            <span className="font-mono text-xs text-muted-foreground">{b.reference_no}</span>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground/30 group-hover:text-indigo-400 transition-colors" />
                           </div>
                           {assetName && (
-                            <p className="text-xs text-slate-600 truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {assetName}{extraItems > 0 && ` +${extraItems} lainnya`}
                             </p>
                           )}
@@ -301,12 +303,12 @@ export function UserDetailSheet({ user }: { user: UserData }) {
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           <span className={cn(
                             'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
-                            STATUS_COLORS[b.status] ?? 'bg-zinc-100 text-zinc-600'
+                            STATUS_COLORS[b.status] ?? 'bg-muted text-muted-foreground'
                           )}>
                             {STATUS_LABELS[b.status] ?? b.status}
                           </span>
                           {b.total_amount > 0 && (
-                            <span className="text-xs font-medium text-slate-600">
+                            <span className="text-xs font-medium text-foreground/80">
                               {formatRupiah(b.total_amount)}
                             </span>
                           )}

@@ -154,7 +154,7 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
               <span className="text-muted-foreground">Penuh</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-gray-300" />
+              <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
               <span className="text-muted-foreground">Tidak ada data</span>
             </div>
           </div>
@@ -163,14 +163,14 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
       
       <CardContent className={cn("pt-0", compact && "p-4 pt-0")}>
         {/* Compact Calendar Grid */}
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border border-border rounded-[10px] overflow-hidden">
           {/* Week Headers */}
-          <div className="grid grid-cols-7 bg-slate-50 border-b">
+          <div className="grid grid-cols-7 bg-muted border-b">
             {weekDays.map(day => (
               <div 
                 key={day} 
                 className={cn(
-                  "py-2 text-center font-medium text-slate-600",
+                  "py-2 text-center font-medium text-muted-foreground",
                   compact ? "text-xs py-1.5" : "text-sm"
                 )}
               >
@@ -190,10 +190,10 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
                 <div
                   key={date.toISOString()}
                   className={cn(
-                    "border-b border-r relative cursor-pointer transition-colors hover:bg-slate-50",
+                    "border-b border-r relative cursor-pointer transition-colors hover:bg-muted",
                     compact ? "h-10" : "h-14",
                     (index + 1) % 7 === 0 && "border-r-0",
-                    !isCurrentMonth && "bg-slate-50/50",
+                    !isCurrentMonth && "bg-muted/50",
                     status === 'fully-booked' && "bg-red-50 hover:bg-red-100",
                     status === 'available' && "bg-green-50 hover:bg-green-100",
                     isTodayDate && "bg-blue-50"
@@ -207,7 +207,7 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
                     <span className={cn(
                       "font-medium",
                       compact ? "text-xs" : "text-sm",
-                      !isCurrentMonth && "text-slate-400",
+                      !isCurrentMonth && "text-muted-foreground/70",
                       isTodayDate && "text-blue-600 font-bold"
                     )}>
                       {format(date, 'd')}
@@ -348,9 +348,9 @@ export function MiniCalendar({ roomId, equipmentId }: { roomId?: string; equipme
       </div>
 
       {/* Mini Grid */}
-      <div className="grid grid-cols-7 gap-px bg-slate-200 rounded-lg overflow-hidden border">
+      <div className="grid grid-cols-7 gap-px bg-border rounded-[10px] overflow-hidden border border-border">
         {weekDays.map((day, i) => (
-          <div key={i} className="bg-slate-50 py-1 text-center text-[10px] font-medium text-slate-500">
+          <div key={i} className="bg-muted py-1 text-center text-[10px] font-medium text-muted-foreground">
             {day}
           </div>
         ))}
@@ -362,8 +362,8 @@ export function MiniCalendar({ roomId, equipmentId }: { roomId?: string; equipme
             <div
               key={date.toISOString()}
               className={cn(
-                "bg-white py-1 text-center text-[10px]",
-                !isCurrentMonth && "bg-slate-50 text-slate-400",
+                "bg-card py-1 text-center text-[10px]",
+                !isCurrentMonth && "bg-muted text-muted-foreground/70",
                 status === 'fully-booked' && "bg-red-100",
                 status === 'available' && "bg-green-100",
                 isToday(date) && "bg-blue-100 font-bold text-blue-700"

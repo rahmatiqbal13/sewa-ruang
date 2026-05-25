@@ -41,27 +41,27 @@ export function DeleteTransactionButton({ bookingId, referenceNo, borrowerName }
   return (
     <AlertDialog>
       <AlertDialogTrigger
-        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
         title="Hapus transaksi"
         disabled={deleting}
       >
         {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent className="rounded-[14px]">
         <AlertDialogHeader>
-          <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogTitle className="text-foreground">Hapus Transaksi?</AlertDialogTitle>
+          <AlertDialogDescription className="text-muted-foreground">
             Transaksi <strong>{referenceNo}</strong> atas nama <strong>{borrowerName}</strong>{' '}
             akan dihapus permanen beserta seluruh data pembayaran dan pengembalian terkait.
             Tindakan ini tidak dapat dibatalkan.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+          <AlertDialogCancel disabled={deleting} className="rounded-[10px]">Batal</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={deleting}
-            className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            className="bg-red-600 hover:bg-red-700 focus:ring-red-600 rounded-[10px]"
           >
             Ya, Hapus
           </AlertDialogAction>

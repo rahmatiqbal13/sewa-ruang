@@ -47,19 +47,19 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
       {/* Back Button */}
       <Link 
         href="/admin/rooms"
-        className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Kembali ke daftar ruangan
       </Link>
 
       <div className="flex items-center gap-4 mb-8">
-        <div className="h-14 w-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+        <div className="h-14 w-14 bg-primary rounded-[14px] flex items-center justify-center shadow-lg">
           <DoorOpen className="h-7 w-7 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Edit Ruangan</h1>
-          <p className="text-slate-500">Perbarui informasi ruangan: {roomRes.data.name}</p>
+          <h1 className="text-2xl font-bold text-foreground">Edit Ruangan</h1>
+          <p className="text-muted-foreground">Perbarui informasi ruangan: {roomRes.data.name}</p>
         </div>
       </div>
 

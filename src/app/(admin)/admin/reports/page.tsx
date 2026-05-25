@@ -1,19 +1,6 @@
 import { createAdminClient as createClient } from '@/lib/supabase/server'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { formatDateTime, formatRupiah } from '@/lib/utils'
-import { 
-  Package, 
-  Boxes, 
-  Calendar, 
-  AlertTriangle, 
-  Wrench, 
-  Search,
-  Building
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { formatDateTime, formatRupiah, cn } from '@/lib/utils'
+import { Package, Boxes, Calendar, AlertTriangle, Wrench, Building } from 'lucide-react'
 import Link from 'next/link'
 
 // Types
@@ -60,9 +47,9 @@ const getConditionColor = (condition: string) => {
     good: 'bg-green-100 text-green-800 border-green-200',
     needs_repair: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     damaged: 'bg-red-100 text-red-800 border-red-200',
-    lost: 'bg-gray-100 text-gray-800 border-gray-200'
+    lost: 'bg-muted text-foreground border-border'
   }
-  return colors[condition] || 'bg-gray-100 text-gray-800'
+  return colors[condition] || 'bg-muted text-foreground'
 }
 
 const getKetersediaanLabel = (status: string) => {
@@ -196,158 +183,140 @@ export default async function ReportsPage({
     i.condition === 'damaged'
   ) || []
 
+  const tabDefs = [
+    { value: 'bookings',   label: 'Peminjaman', icon: Calendar },
+    { value: 'equipment',  label: 'Alat',       icon: Package },
+    { value: 'inventory',  label: 'Inventaris', icon: Boxes },
+  ]
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Laporan</h1>
+    <div className="admin-page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Laporan</h1>
+          <p className="page-subtitle">Rekap data peminjaman, alat, dan inventaris</p>
+        </div>
       </div>
 
-      <Tabs defaultValue={tab || 'bookings'} key={tab} className="w-full">
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
-          <TabsTrigger value="bookings" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Peminjaman
-          </TabsTrigger>
-          <TabsTrigger value="equipment" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Alat
-          </TabsTrigger>
-          <TabsTrigger value="inventory" className="flex items-center gap-2">
-            <Boxes className="h-4 w-4" />
-            Inventaris
-          </TabsTrigger>
-        </TabsList>
+      {/* Tab pills (server-side routing) */}
+      <div className="flex gap-1.5">
+        {tabDefs.map(t => (
+          <Link
+            key={t.value}
+            href={`/admin/reports?tab=${t.value}`}
+            className={cn('filter-pill', tab === t.value ? 'filter-pill-active' : 'filter-pill-inactive')}
+          >
+            <t.icon className="h-3 w-3" />
+            {t.label}
+          </Link>
+        ))}
+      </div>
 
-        {/* Tab Peminjaman */}
-        <TabsContent value="bookings" className="mt-6 space-y-6">
-          <form method="get" className="flex gap-3 items-end flex-wrap">
+      {/* ── Peminjaman tab ── */}
+      {tab === 'bookings' && (
+        <div className="space-y-5">
+          <form method="get" className="flex gap-3 items-end flex-wrap bg-card border border-border rounded-[14px] p-4">
             <input type="hidden" name="tab" value="bookings" />
             <div>
-              <label className="text-sm font-medium block mb-1">Dari</label>
-              <input type="date" name="from" defaultValue={fromDate} className="border rounded px-3 py-2 text-sm" />
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Dari</label>
+              <input type="date" name="from" defaultValue={fromDate} className="border border-border rounded-[10px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1">Sampai</label>
-              <input type="date" name="to" defaultValue={toDate} className="border rounded px-3 py-2 text-sm" />
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Sampai</label>
+              <input type="date" name="to" defaultValue={toDate} className="border border-border rounded-[10px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
-            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90">
+            <button type="submit" className="h-9 px-4 bg-primary text-primary-foreground rounded-[10px] text-sm font-medium hover:bg-primary/90 transition-colors">
               Filter
             </button>
           </form>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-sm text-muted-foreground">Total Pengajuan</p>
-                <p className="text-3xl font-bold">{bookings?.length ?? 0}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-sm text-muted-foreground">Total Pendapatan</p>
-                <p className="text-3xl font-bold">{formatRupiah(totalRevenue)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-sm text-muted-foreground">Breakdown Metode</p>
-                {Object.entries(byMethod).map(([method, amount]) => (
-                  <p key={method} className="text-sm">
-                    {method.replace('_', ' ')}: {formatRupiah(amount)}
-                  </p>
-                ))}
-                {Object.keys(byMethod).length === 0 && <p className="text-sm text-muted-foreground">-</p>}
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="mini-stat border-t-indigo-400">
+              <p className="mini-stat-label">Total Pengajuan</p>
+              <p className="mini-stat-value">{bookings?.length ?? 0}</p>
+            </div>
+            <div className="mini-stat border-t-emerald-400">
+              <p className="mini-stat-label">Total Pendapatan</p>
+              <p className="text-lg font-bold text-emerald-600 font-mono">{formatRupiah(totalRevenue)}</p>
+            </div>
+            <div className="mini-stat border-t-blue-400">
+              <p className="mini-stat-label">Breakdown Metode</p>
+              {Object.entries(byMethod).map(([method, amount]) => (
+                <p key={method} className="text-xs text-muted-foreground">
+                  {method.replace(/_/g, ' ')}: <span className="font-semibold">{formatRupiah(amount)}</span>
+                </p>
+              ))}
+              {Object.keys(byMethod).length === 0 && <p className="text-xs text-muted-foreground/70">-</p>}
+            </div>
           </div>
 
-          <Card>
-            <CardHeader><CardTitle className="text-base">Detail Pengajuan</CardTitle></CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Referensi</TableHead>
-                    <TableHead>Peminjam</TableHead>
-                    <TableHead>Instansi</TableHead>
-                    <TableHead>Aset</TableHead>
-                    <TableHead>Tanggal</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+          <div className="bg-card rounded-[14px] border border-border overflow-hidden">
+            <div className="px-4 py-3 border-b border-border/60">
+              <p className="text-sm font-semibold text-foreground">Detail Pengajuan</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="data-table w-full">
+                <thead>
+                  <tr>
+                    <th>Referensi</th>
+                    <th>Peminjam</th>
+                    <th>Instansi</th>
+                    <th>Ruang/Alat</th>
+                    <th>Tanggal</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
                   {bookings?.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Tidak ada data pada periode ini
-                      </TableCell>
-                    </TableRow>
+                    <tr><td colSpan={7} className="text-center text-muted-foreground/70 py-10 text-sm">Tidak ada data pada periode ini</td></tr>
                   )}
                   {bookings?.map((b) => {
                     const firstItem = (b.booking_items as Array<{item_type:string; rooms:{name:string}|null; equipment:{name:string}|null}>)?.[0]
                     const assetName = firstItem?.item_type === 'room' ? firstItem?.rooms?.name : firstItem?.equipment?.name
                     const user = b.users as {name:string;institution:string}|null
                     return (
-                      <TableRow key={b.id}>
-                        <TableCell className="font-mono text-xs">{b.reference_no}</TableCell>
-                        <TableCell className="text-sm">{user?.name}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{user?.institution}</TableCell>
-                        <TableCell className="text-sm">{assetName}</TableCell>
-                        <TableCell className="text-sm">{formatDateTime(b.created_at)}</TableCell>
-                        <TableCell>{formatRupiah(b.total_amount)}</TableCell>
-                        <TableCell className="capitalize text-sm">{b.status}</TableCell>
-                      </TableRow>
+                      <tr key={b.id}>
+                        <td className="font-mono text-xs text-indigo-700">{b.reference_no}</td>
+                        <td className="text-sm">{user?.name}</td>
+                        <td className="text-xs text-muted-foreground">{user?.institution}</td>
+                        <td className="text-sm">{assetName}</td>
+                        <td className="text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
+                        <td className="text-sm font-semibold font-mono">{formatRupiah(b.total_amount)}</td>
+                        <td className="capitalize text-xs text-muted-foreground">{b.status}</td>
+                      </tr>
                     )
                   })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Tab Equipment */}
-        <TabsContent value="equipment" className="mt-6 space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <Card className="bg-blue-50 border-blue-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-blue-600 font-medium">Total Alat</p>
-                <p className="text-3xl font-bold text-blue-900">{equipmentStats.total}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-green-50 border-green-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-green-600 font-medium">Kondisi Baik</p>
-                <p className="text-3xl font-bold text-green-900">{equipmentStats.good}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-yellow-50 border-yellow-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-yellow-600 font-medium">Perlu Perbaikan</p>
-                <p className="text-3xl font-bold text-yellow-900">{equipmentStats.needsRepair}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-red-50 border-red-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-red-600 font-medium">Rusak</p>
-                <p className="text-3xl font-bold text-red-900">{equipmentStats.damaged}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-gray-50 border-gray-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-gray-600 font-medium">Hilang</p>
-                <p className="text-3xl font-bold text-gray-900">{equipmentStats.lost}</p>
-              </CardContent>
-            </Card>
+      {/* ── Alat tab ── */}
+      {tab === 'equipment' && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {[
+              { label: 'Total Alat',      value: equipmentStats.total,       accent: 'border-t-blue-400' },
+              { label: 'Baik',            value: equipmentStats.good,        accent: 'border-t-emerald-400' },
+              { label: 'Perlu Perbaikan', value: equipmentStats.needsRepair, accent: 'border-t-yellow-400' },
+              { label: 'Rusak',           value: equipmentStats.damaged,     accent: 'border-t-red-400' },
+              { label: 'Hilang',          value: equipmentStats.lost,        accent: 'border-t-slate-400' },
+            ].map(s => (
+              <div key={s.label} className={cn('mini-stat', s.accent)}>
+                <p className="mini-stat-label">{s.label}</p>
+                <p className="mini-stat-value">{s.value}</p>
+              </div>
+            ))}
           </div>
 
-          {/* Filter */}
-          <form method="get" className="flex gap-3 items-end flex-wrap">
+          <form method="get" className="flex gap-3 items-end flex-wrap bg-card border border-border rounded-[14px] p-4">
             <input type="hidden" name="tab" value="equipment" />
             <div>
-              <label className="text-sm font-medium block mb-1">Filter Kondisi</label>
-              <select name="equipmentCondition" defaultValue={equipmentCondition || ''} className="border rounded px-3 py-2 text-sm min-w-[200px]">
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Filter Kondisi</label>
+              <select name="equipmentCondition" defaultValue={equipmentCondition || ''} className="border border-border rounded-[10px] px-3 py-2 text-sm min-w-[180px] focus:outline-none">
                 <option value="">Semua Kondisi</option>
                 <option value="good">Baik</option>
                 <option value="needs_repair">Perlu Perbaikan</option>
@@ -355,350 +324,194 @@ export default async function ReportsPage({
                 <option value="lost">Hilang</option>
               </select>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="showInactive"
-                value="true"
-                defaultChecked={showInactiveItems}
-                className="w-4 h-4 rounded border-gray-300"
-              />
-              <span className="text-sm text-gray-700">Tampilkan alat non-aktif</span>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground self-end pb-0.5">
+              <input type="checkbox" name="showInactive" value="true" defaultChecked={showInactiveItems} className="w-4 h-4 rounded border-border" />
+              Tampilkan non-aktif
             </label>
-            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90">
+            <button type="submit" className="h-9 px-4 bg-primary text-primary-foreground rounded-[10px] text-sm font-medium hover:bg-primary/90 transition-colors self-end">
               Filter
             </button>
             {(equipmentCondition || showInactiveItems) && (
-              <Link href="/admin/reports?tab=equipment" className="px-4 py-2 border rounded text-sm hover:bg-gray-50">
+              <Link href="/admin/reports?tab=equipment" className="h-9 px-4 border border-border rounded-[10px] text-sm hover:bg-muted transition-colors flex items-center self-end">
                 Reset
               </Link>
             )}
           </form>
 
-          {/* Daftar Alat Bermasalah - Hanya tampil jika tidak ada filter aktif */}
-          {!equipmentCondition && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  Alat Perlu Perhatian
-                </CardTitle>
-                <CardDescription>
-                  Daftar alat dengan kondisi perlu perbaikan, rusak, atau hilang
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Kode</TableHead>
-                      <TableHead>Nama Alat</TableHead>
-                      <TableHead>Kategori</TableHead>
-                      <TableHead>Kondisi</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Lokasi</TableHead>
-                      <TableHead>Deskripsi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {problematicEquipment.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                          Tidak ada alat dengan kondisi bermasalah
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      problematicEquipment.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-mono text-xs">{item.equipment_code}</TableCell>
-                          <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{item.category}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={getConditionColor(item.current_condition)}>
-                              {getConditionLabel(item.current_condition)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {getKetersediaanLabel(item.ketersediaan)}
-                              </Badge>
-                              {item.status_tindakan !== 'normal' && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Wrench className="h-3 w-3 mr-1" />
-                                  {getStatusTindakanLabel(item.status_tindakan)}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {item.rooms?.name || item.current_location || '-'}
-                          </TableCell>
-                          <TableCell className="text-sm max-w-xs truncate" title={item.description || ''}>
-                            {item.description || '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+          {!equipmentCondition && problematicEquipment.length > 0 && (
+            <div className="bg-card rounded-[14px] border border-amber-200 overflow-hidden">
+              <div className="px-4 py-3 border-b border-amber-100 bg-amber-50/50 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <p className="text-sm font-semibold text-amber-800">Alat Perlu Perhatian ({problematicEquipment.length})</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="data-table w-full">
+                  <thead><tr><th>Kode</th><th>Nama Alat</th><th>Kategori</th><th>Kondisi</th><th>Status</th><th>Lokasi</th><th>Deskripsi</th></tr></thead>
+                  <tbody>
+                    {problematicEquipment.map((item) => (
+                      <tr key={item.id}>
+                        <td className="font-mono text-xs text-indigo-700">{item.equipment_code}</td>
+                        <td className="text-sm font-medium">{item.name}</td>
+                        <td className="text-xs text-muted-foreground">{item.category}</td>
+                        <td><span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full border', getConditionColor(item.current_condition))}>{getConditionLabel(item.current_condition)}</span></td>
+                        <td>
+                          <div className="space-y-0.5">
+                            <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full block w-fit">{getKetersediaanLabel(item.ketersediaan)}</span>
+                            {item.status_tindakan !== 'normal' && (
+                              <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
+                                <Wrench className="h-2.5 w-2.5" />{getStatusTindakanLabel(item.status_tindakan)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-xs text-muted-foreground">{item.rooms?.name || item.current_location || '-'}</td>
+                        <td className="text-xs text-muted-foreground max-w-xs truncate" title={item.description || ''}>{item.description || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
 
-          {/* Semua Equipment (filtered) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Package className="h-5 w-5 text-blue-600" />
+          <div className="bg-card rounded-[14px] border border-border overflow-hidden">
+            <div className="px-4 py-3 border-b border-border/60 flex items-center gap-2">
+              <Package className="h-4 w-4 text-blue-500" />
+              <p className="text-sm font-semibold text-foreground">
                 Daftar Semua Alat
-                {equipmentCondition && (
-                  <Badge variant="outline" className="ml-2">
-                    Filter: {getConditionLabel(equipmentCondition)}
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Kode</TableHead>
-                    <TableHead>Nama Alat</TableHead>
-                    <TableHead>Kategori</TableHead>
-                    <TableHead>Merk</TableHead>
-                    <TableHead>Kondisi</TableHead>
-                    <TableHead>Ketersediaan</TableHead>
-                    <TableHead>Lokasi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {equipment?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        {equipmentCondition 
-                          ? `Tidak ada alat dengan kondisi "${getConditionLabel(equipmentCondition)}"`
-                          : 'Tidak ada data alat'}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    equipment?.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-xs">{item.equipment_code}</TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{item.category}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{item.merk || '-'}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={getConditionColor(item.current_condition)}>
-                            {getConditionLabel(item.current_condition)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="text-xs">
-                            {getKetersediaanLabel(item.ketersediaan)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {item.rooms?.name || item.current_location || '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                {equipmentCondition && <span className="ml-2 text-xs text-muted-foreground/70">— filter: {getConditionLabel(equipmentCondition)}</span>}
+              </p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="data-table w-full">
+                <thead><tr><th>Kode</th><th>Nama Alat</th><th>Kategori</th><th>Merk</th><th>Kondisi</th><th>Ketersediaan</th><th>Lokasi</th></tr></thead>
+                <tbody>
+                  {equipment?.length === 0 && (
+                    <tr><td colSpan={7} className="text-center text-muted-foreground/70 py-10 text-sm">
+                      {equipmentCondition ? `Tidak ada alat dengan kondisi "${getConditionLabel(equipmentCondition)}"` : 'Tidak ada data alat'}
+                    </td></tr>
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  {equipment?.map((item) => (
+                    <tr key={item.id}>
+                      <td className="font-mono text-xs text-indigo-700">{item.equipment_code}</td>
+                      <td className="text-sm font-medium">{item.name}</td>
+                      <td className="text-xs text-muted-foreground">{item.category}</td>
+                      <td className="text-xs text-muted-foreground">{item.merk || '-'}</td>
+                      <td><span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full border', getConditionColor(item.current_condition))}>{getConditionLabel(item.current_condition)}</span></td>
+                      <td><span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{getKetersediaanLabel(item.ketersediaan)}</span></td>
+                      <td className="text-xs text-muted-foreground">{item.rooms?.name || item.current_location || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Tab Inventaris */}
-        <TabsContent value="inventory" className="mt-6 space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Card className="bg-amber-50 border-amber-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-amber-600 font-medium">Total Inventaris</p>
-                <p className="text-3xl font-bold text-amber-900">{inventoryStats.total}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-green-50 border-green-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-green-600 font-medium">Kondisi Baik</p>
-                <p className="text-3xl font-bold text-green-900">{inventoryStats.good}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-yellow-50 border-yellow-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-yellow-600 font-medium">Perlu Perbaikan</p>
-                <p className="text-3xl font-bold text-yellow-900">{inventoryStats.needsRepair}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-red-50 border-red-100">
-              <CardContent className="pt-4">
-                <p className="text-sm text-red-600 font-medium">Rusak</p>
-                <p className="text-3xl font-bold text-red-900">{inventoryStats.damaged}</p>
-              </CardContent>
-            </Card>
+      {/* ── Inventaris tab ── */}
+      {tab === 'inventory' && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Total Inventaris', value: inventoryStats.total,       accent: 'border-t-amber-400' },
+              { label: 'Baik',             value: inventoryStats.good,        accent: 'border-t-emerald-400' },
+              { label: 'Perlu Perbaikan',  value: inventoryStats.needsRepair, accent: 'border-t-yellow-400' },
+              { label: 'Rusak',            value: inventoryStats.damaged,     accent: 'border-t-red-400' },
+            ].map(s => (
+              <div key={s.label} className={cn('mini-stat', s.accent)}>
+                <p className="mini-stat-label">{s.label}</p>
+                <p className="mini-stat-value">{s.value}</p>
+              </div>
+            ))}
           </div>
 
-          {/* Filter */}
-          <form method="get" className="flex gap-3 items-end flex-wrap">
+          <form method="get" className="flex gap-3 items-end flex-wrap bg-card border border-border rounded-[14px] p-4">
             <input type="hidden" name="tab" value="inventory" />
             <div>
-              <label className="text-sm font-medium block mb-1">Filter Kondisi</label>
-              <select name="inventoryCondition" defaultValue={inventoryCondition || ''} className="border rounded px-3 py-2 text-sm min-w-[200px]">
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Filter Kondisi</label>
+              <select name="inventoryCondition" defaultValue={inventoryCondition || ''} className="border border-border rounded-[10px] px-3 py-2 text-sm min-w-[180px] focus:outline-none">
                 <option value="">Semua Kondisi</option>
                 <option value="good">Baik</option>
                 <option value="needs_repair">Perlu Perbaikan</option>
                 <option value="damaged">Rusak</option>
               </select>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="showInactive"
-                value="true"
-                defaultChecked={showInactiveItems}
-                className="w-4 h-4 rounded border-gray-300"
-              />
-              <span className="text-sm text-gray-700">Tampilkan inventaris non-aktif</span>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground self-end pb-0.5">
+              <input type="checkbox" name="showInactive" value="true" defaultChecked={showInactiveItems} className="w-4 h-4 rounded border-border" />
+              Tampilkan non-aktif
             </label>
-            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium hover:bg-primary/90">
+            <button type="submit" className="h-9 px-4 bg-primary text-primary-foreground rounded-[10px] text-sm font-medium hover:bg-primary/90 transition-colors self-end">
               Filter
             </button>
             {(inventoryCondition || showInactiveItems) && (
-              <Link href="/admin/reports?tab=inventory" className="px-4 py-2 border rounded text-sm hover:bg-gray-50">
+              <Link href="/admin/reports?tab=inventory" className="h-9 px-4 border border-border rounded-[10px] text-sm hover:bg-muted transition-colors flex items-center self-end">
                 Reset
               </Link>
             )}
           </form>
 
-          {/* Daftar Inventaris Bermasalah - Hanya tampil jika tidak ada filter aktif */}
-          {!inventoryCondition && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  Inventaris Perlu Perhatian
-                </CardTitle>
-                <CardDescription>
-                  Daftar inventaris dengan kondisi perlu perbaikan atau rusak
-                </CardDescription>
-              </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Kode</TableHead>
-                    <TableHead>Nama Barang</TableHead>
-                    <TableHead>Kategori</TableHead>
-                    <TableHead>Jumlah</TableHead>
-                    <TableHead>Kondisi</TableHead>
-                    <TableHead>Ruangan</TableHead>
-                    <TableHead>Catatan</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {problematicInventory.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Tidak ada inventaris dengan kondisi bermasalah
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    problematicInventory.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-xs">{item.inventory_code}</TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{item.category}</TableCell>
-                        <TableCell className="text-sm font-medium">{item.quantity}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={getConditionColor(item.condition)}>
-                            {getConditionLabel(item.condition)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Building className="h-3 w-3" />
-                            {item.rooms?.name || '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm max-w-xs truncate" title={item.notes || ''}>
-                          {item.notes || '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          {!inventoryCondition && problematicInventory.length > 0 && (
+            <div className="bg-card rounded-[14px] border border-amber-200 overflow-hidden">
+              <div className="px-4 py-3 border-b border-amber-100 bg-amber-50/50 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <p className="text-sm font-semibold text-amber-800">Inventaris Perlu Perhatian ({problematicInventory.length})</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="data-table w-full">
+                  <thead><tr><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Kondisi</th><th>Ruangan</th><th>Catatan</th></tr></thead>
+                  <tbody>
+                    {problematicInventory.map((item) => (
+                      <tr key={item.id}>
+                        <td className="font-mono text-xs text-indigo-700">{item.inventory_code}</td>
+                        <td className="text-sm font-medium">{item.name}</td>
+                        <td className="text-xs text-muted-foreground">{item.category}</td>
+                        <td className="text-sm font-semibold font-mono">{item.quantity}</td>
+                        <td><span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full border', getConditionColor(item.condition))}>{getConditionLabel(item.condition)}</span></td>
+                        <td className="text-xs text-muted-foreground flex items-center gap-1"><Building className="h-3 w-3" />{item.rooms?.name || '-'}</td>
+                        <td className="text-xs text-muted-foreground max-w-xs truncate" title={item.notes || ''}>{item.notes || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
 
-          {/* Semua Inventaris (filtered) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Boxes className="h-5 w-5 text-amber-600" />
+          <div className="bg-card rounded-[14px] border border-border overflow-hidden">
+            <div className="px-4 py-3 border-b border-border/60 flex items-center gap-2">
+              <Boxes className="h-4 w-4 text-amber-500" />
+              <p className="text-sm font-semibold text-foreground">
                 Daftar Semua Inventaris
-                {inventoryCondition && (
-                  <Badge variant="outline" className="ml-2">
-                    Filter: {getConditionLabel(inventoryCondition)}
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Kode</TableHead>
-                    <TableHead>Nama Barang</TableHead>
-                    <TableHead>Kategori</TableHead>
-                    <TableHead>Jumlah</TableHead>
-                    <TableHead>Kondisi</TableHead>
-                    <TableHead>Ruangan</TableHead>
-                    <TableHead>Catatan</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inventory?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        {inventoryCondition 
-                          ? `Tidak ada inventaris dengan kondisi "${getConditionLabel(inventoryCondition)}"`
-                          : 'Tidak ada data inventaris'}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    inventory?.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-xs">{item.inventory_code}</TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{item.category}</TableCell>
-                        <TableCell className="text-sm font-medium">{item.quantity}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={getConditionColor(item.condition)}>
-                            {getConditionLabel(item.condition)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Building className="h-3 w-3" />
-                            {item.rooms?.name || '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm max-w-xs truncate" title={item.notes || ''}>
-                          {item.notes || '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                {inventoryCondition && <span className="ml-2 text-xs text-muted-foreground/70">— filter: {getConditionLabel(inventoryCondition)}</span>}
+              </p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="data-table w-full">
+                <thead><tr><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Kondisi</th><th>Ruangan</th><th>Catatan</th></tr></thead>
+                <tbody>
+                  {inventory?.length === 0 && (
+                    <tr><td colSpan={7} className="text-center text-muted-foreground/70 py-10 text-sm">
+                      {inventoryCondition ? `Tidak ada inventaris dengan kondisi "${getConditionLabel(inventoryCondition)}"` : 'Tidak ada data inventaris'}
+                    </td></tr>
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  {inventory?.map((item) => (
+                    <tr key={item.id}>
+                      <td className="font-mono text-xs text-indigo-700">{item.inventory_code}</td>
+                      <td className="text-sm font-medium">{item.name}</td>
+                      <td className="text-xs text-muted-foreground">{item.category}</td>
+                      <td className="text-sm font-semibold font-mono">{item.quantity}</td>
+                      <td><span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full border', getConditionColor(item.condition))}>{getConditionLabel(item.condition)}</span></td>
+                      <td className="text-xs text-muted-foreground flex items-center gap-1"><Building className="h-3 w-3" />{item.rooms?.name || '-'}</td>
+                      <td className="text-xs text-muted-foreground max-w-xs truncate" title={item.notes || ''}>{item.notes || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

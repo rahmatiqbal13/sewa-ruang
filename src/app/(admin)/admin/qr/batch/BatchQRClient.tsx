@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import QRCode from 'react-qr-code'
 import { Button } from '@/components/ui/button'
-import { Printer, DoorOpen, Package, Boxes, Filter, CheckSquare, Square } from 'lucide-react'
+import { Printer, DoorOpen, Package, Boxes, CheckSquare, Square } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -48,14 +48,6 @@ export function BatchQRClient({
   baseUrl,
   isSuperAdmin
 }: BatchQRClientProps) {
-  // Debug log
-  console.log('BatchQRClient - Props received:', {
-    roomsCount: rooms.length,
-    roomsList: rooms.map(r => ({ id: r.id, name: r.name })),
-    equipmentCount: equipment.length,
-    inventoryCount: inventory.length
-  })
-  
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState('rooms')
   const printRef = useRef<HTMLDivElement>(null)
@@ -304,7 +296,7 @@ export function BatchQRClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Cetak Label QR Massal</h1>
+          <h1 className="text-2xl font-bold text-foreground">Cetak Label QR Massal</h1>
           <p className="text-muted-foreground text-sm">
             Pilih item untuk generate QR Code sekaligus
           </p>
@@ -312,7 +304,7 @@ export function BatchQRClient({
         <Button 
           onClick={handlePrint} 
           disabled={selectedCount === 0}
-          className="gap-2"
+          className="gap-2 rounded-[10px]"
         >
           <Printer className="h-4 w-4" />
           Cetak {selectedCount > 0 && `(${selectedCount})`}
@@ -321,14 +313,14 @@ export function BatchQRClient({
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+        <div className="bg-purple-50 border border-purple-100 rounded-[10px] p-4">
           <p className="text-purple-600 text-sm font-medium">Ruangan</p>
           <p className="text-2xl font-bold text-purple-900">{rooms.length}</p>
           <p className="text-xs text-purple-500">
             {rooms.filter(r => selectedItems.has(r.id)).length} dipilih
           </p>
         </div>
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+        <div className="bg-blue-50 border border-blue-100 rounded-[10px] p-4">
           <p className="text-blue-600 text-sm font-medium">Alat</p>
           <p className="text-2xl font-bold text-blue-900">{equipment.length}</p>
           <p className="text-xs text-blue-500">
@@ -336,7 +328,7 @@ export function BatchQRClient({
           </p>
         </div>
         {isSuperAdmin && (
-          <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
+          <div className="bg-amber-50 border border-amber-100 rounded-[10px] p-4">
             <p className="text-amber-600 text-sm font-medium">Inventaris</p>
             <p className="text-2xl font-bold text-amber-900">{inventory.length}</p>
             <p className="text-xs text-amber-500">
@@ -347,17 +339,17 @@ export function BatchQRClient({
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
-          <TabsTrigger value="rooms" className="flex items-center gap-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3 rounded-[10px]">
+          <TabsTrigger value="rooms" className="flex items-center gap-2 rounded-[10px]">
             <DoorOpen className="h-4 w-4" />
             Ruangan
           </TabsTrigger>
-          <TabsTrigger value="equipment" className="flex items-center gap-2">
+          <TabsTrigger value="equipment" className="flex items-center gap-2 rounded-[10px]">
             <Package className="h-4 w-4" />
             Alat
           </TabsTrigger>
           {isSuperAdmin && (
-            <TabsTrigger value="inventory" className="flex items-center gap-2">
+            <TabsTrigger value="inventory" className="flex items-center gap-2 rounded-[10px]">
               <Boxes className="h-4 w-4" />
               Inventaris
             </TabsTrigger>
@@ -371,6 +363,7 @@ export function BatchQRClient({
               variant="outline" 
               size="sm"
               onClick={() => toggleAll(rooms)}
+              className="rounded-[10px]"
             >
               {rooms.every(r => selectedItems.has(r.id)) ? (
                 <><CheckSquare className="h-4 w-4 mr-2" /> Batal Pilih Semua</>
@@ -378,7 +371,7 @@ export function BatchQRClient({
                 <><Square className="h-4 w-4 mr-2" /> Pilih Semua</>
               )}
             </Button>
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="rounded-[10px]">
               {rooms.filter(r => selectedItems.has(r.id)).length} / {rooms.length} dipilih
             </Badge>
           </div>
@@ -387,23 +380,23 @@ export function BatchQRClient({
               <div 
                 key={room.id} 
                 onClick={() => toggleSelection(room.id)}
-                className={`border rounded-xl p-3 text-center cursor-pointer transition-all hover:shadow-md ${
+                className={`border rounded-[14px] p-3 text-center cursor-pointer transition-all hover:shadow-md ${
                   selectedItems.has(room.id) 
                     ? 'bg-purple-50 border-purple-300 ring-2 ring-purple-200' 
-                    : 'bg-white hover:bg-slate-50'
+                    : 'bg-card hover:bg-muted'
                 }`}
               >
                 <div className="flex justify-center mb-2">
                   <QRCode value={`${baseUrl}/rooms/${createSlug(room.name)}`} size={60} level="L" />
                 </div>
-                <Badge variant="outline" className="font-mono text-[10px] mb-1">
+                <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                   {room.room_code || 'No Code'}
                 </Badge>
-                <p className="text-xs font-semibold leading-tight line-clamp-2">{room.name}</p>
+                <p className="text-xs font-semibold leading-tight line-clamp-2 text-foreground">{room.name}</p>
                 <p className="text-[10px] text-muted-foreground">{room.building_name}</p>
                 {selectedItems.has(room.id) && (
                   <div className="mt-2">
-                    <Badge className="bg-purple-600 text-[10px]">Dipilih</Badge>
+                    <Badge className="bg-purple-600 text-[10px] rounded-[10px]">Dipilih</Badge>
                   </div>
                 )}
               </div>
@@ -418,6 +411,7 @@ export function BatchQRClient({
               variant="outline" 
               size="sm"
               onClick={() => toggleAll(equipment)}
+              className="rounded-[10px]"
             >
               {equipment.every(e => selectedItems.has(e.id)) ? (
                 <><CheckSquare className="h-4 w-4 mr-2" /> Batal Pilih Semua</>
@@ -425,7 +419,7 @@ export function BatchQRClient({
                 <><Square className="h-4 w-4 mr-2" /> Pilih Semua</>
               )}
             </Button>
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="rounded-[10px]">
               {equipment.filter(e => selectedItems.has(e.id)).length} / {equipment.length} dipilih
             </Badge>
           </div>
@@ -434,23 +428,23 @@ export function BatchQRClient({
               <div 
                 key={item.id} 
                 onClick={() => toggleSelection(item.id)}
-                className={`border rounded-xl p-3 text-center cursor-pointer transition-all hover:shadow-md ${
+                className={`border rounded-[14px] p-3 text-center cursor-pointer transition-all hover:shadow-md ${
                   selectedItems.has(item.id) 
                     ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200' 
-                    : 'bg-white hover:bg-slate-50'
+                    : 'bg-card hover:bg-muted'
                 }`}
               >
                 <div className="flex justify-center mb-2">
                   <QRCode value={`${baseUrl}/equipment/${createSlug(item.name)}/scan`} size={60} level="L" />
                 </div>
-                <Badge variant="outline" className="font-mono text-[10px] mb-1">
+                <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                   {item.equipment_code || 'No Code'}
                 </Badge>
-                <p className="text-xs font-semibold leading-tight line-clamp-2">{item.name}</p>
+                <p className="text-xs font-semibold leading-tight line-clamp-2 text-foreground">{item.name}</p>
                 <p className="text-[10px] text-muted-foreground">{item.category}</p>
                 {selectedItems.has(item.id) && (
                   <div className="mt-2">
-                    <Badge className="bg-blue-600 text-[10px]">Dipilih</Badge>
+                    <Badge className="bg-blue-600 text-[10px] rounded-[10px]">Dipilih</Badge>
                   </div>
                 )}
               </div>
@@ -466,6 +460,7 @@ export function BatchQRClient({
                 variant="outline" 
                 size="sm"
                 onClick={() => toggleAll(inventory)}
+                className="rounded-[10px]"
               >
                 {inventory.every(i => selectedItems.has(i.id)) ? (
                   <><CheckSquare className="h-4 w-4 mr-2" /> Batal Pilih Semua</>
@@ -473,7 +468,7 @@ export function BatchQRClient({
                   <><Square className="h-4 w-4 mr-2" /> Pilih Semua</>
                 )}
               </Button>
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="rounded-[10px]">
                 {inventory.filter(i => selectedItems.has(i.id)).length} / {inventory.length} dipilih
               </Badge>
             </div>
@@ -482,23 +477,23 @@ export function BatchQRClient({
                 <div 
                   key={item.id} 
                   onClick={() => toggleSelection(item.id)}
-                  className={`border rounded-xl p-3 text-center cursor-pointer transition-all hover:shadow-md ${
+                  className={`border rounded-[14px] p-3 text-center cursor-pointer transition-all hover:shadow-md ${
                     selectedItems.has(item.id) 
                       ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-200' 
-                      : 'bg-white hover:bg-slate-50'
+                      : 'bg-card hover:bg-muted'
                   }`}
                 >
                   <div className="flex justify-center mb-2">
                     <QRCode value={`${baseUrl}/inventory/${item.id}`} size={60} level="L" />
                   </div>
-                  <Badge variant="outline" className="font-mono text-[10px] mb-1">
+                  <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                     {item.inventory_code || 'No Code'}
                   </Badge>
-                  <p className="text-xs font-semibold leading-tight line-clamp-2">{item.name}</p>
+                  <p className="text-xs font-semibold leading-tight line-clamp-2 text-foreground">{item.name}</p>
                   <p className="text-[10px] text-muted-foreground">{item.room_name}</p>
                   {selectedItems.has(item.id) && (
                     <div className="mt-2">
-                      <Badge className="bg-amber-600 text-[10px]">Dipilih</Badge>
+                      <Badge className="bg-amber-600 text-[10px] rounded-[10px]">Dipilih</Badge>
                     </div>
                   )}
                 </div>
@@ -510,18 +505,18 @@ export function BatchQRClient({
 
       {/* Print Preview */}
       {selectedCount > 0 && (
-        <div className="border-t pt-6">
-          <h3 className="font-semibold mb-4">Preview ({selectedCount} item)</h3>
+        <div className="border-t border-border pt-6">
+          <h3 className="font-semibold mb-4 text-foreground">Preview ({selectedCount} item)</h3>
           <div ref={printRef} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
             {getSelectedItems().slice(0, 12).map(item => (
-              <div key={item.id} className="border rounded p-2 text-center bg-white">
+              <div key={item.id} className="border border-border rounded p-2 text-center bg-card">
                 <QRCode value={item.url} size={50} level="L" />
                 <p className="text-[8px] font-mono mt-1 truncate">{item.code}</p>
-                <p className="text-[8px] truncate">{item.name}</p>
+                <p className="text-[8px] truncate text-foreground">{item.name}</p>
               </div>
             ))}
             {selectedCount > 12 && (
-              <div className="border rounded p-2 text-center bg-slate-50 flex items-center justify-center">
+              <div className="border border-border rounded p-2 text-center bg-muted flex items-center justify-center">
                 <p className="text-xs text-muted-foreground">+{selectedCount - 12} lainnya</p>
               </div>
             )}

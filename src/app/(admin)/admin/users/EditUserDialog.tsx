@@ -66,8 +66,8 @@ export function EditUserDialog({ user }: { user: User }) {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Edit Pengguna: {user.name}</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
-            <div className="text-xs text-muted-foreground bg-zinc-50 rounded-lg px-3 py-2">
-              Email: <span className="font-medium text-zinc-700">{user.email}</span>
+            <div className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2">
+              Email: <span className="font-medium text-foreground">{user.email}</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1 col-span-2">

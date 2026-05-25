@@ -1,8 +1,5 @@
 import { createAdminClient as createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { formatDateTime, cn } from '@/lib/utils'
 import { Package, DoorOpen, Clock, CheckCircle, CreditCard } from 'lucide-react'
@@ -96,28 +93,26 @@ export default async function ReturnsPage({
   ]
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Pengembalian Aset</h1>
-        <p className="text-muted-foreground text-sm">
-          Kelola pengembalian dan pantau status peminjaman
-        </p>
+    <div className="admin-page">
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Pengembalian Alat</h1>
+          <p className="page-subtitle">Kelola pengembalian dan pantau status peminjaman</p>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2">
+      {/* Type tabs */}
+      <div className="flex gap-1.5">
         {tabs.map((tab) => {
           const isActive = activeType === tab.value
           return (
             <Link
               key={tab.value}
               href={`/admin/returns?type=${tab.value}`}
-              className={cn(
-                'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all',
-                isActive ? tab.color : 'bg-white border text-zinc-600 hover:bg-zinc-50'
-              )}
+              className={cn('filter-pill', isActive ? 'filter-pill-active' : 'filter-pill-inactive')}
             >
-              <tab.icon className={cn('h-4 w-4', isActive ? 'text-white' : tab.iconColor)} />
+              <tab.icon className="h-3 w-3" />
               {tab.label}
             </Link>
           )
@@ -125,14 +120,14 @@ export default async function ReturnsPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-          <p className="text-amber-600 text-sm font-medium">Menunggu Pengembalian</p>
-          <p className="text-2xl font-bold text-amber-900">{filteredPending.length}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="mini-stat border-t-amber-400">
+          <p className="mini-stat-label">Menunggu Pengembalian</p>
+          <p className="mini-stat-value">{filteredPending.length}</p>
         </div>
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-          <p className="text-blue-600 text-sm font-medium">Dikembalikan Bulan Ini</p>
-          <p className="text-2xl font-bold text-blue-900">
+        <div className="mini-stat border-t-blue-400">
+          <p className="mini-stat-label">Dikembalikan Bulan Ini</p>
+          <p className="mini-stat-value">
             {(completedReturns || []).filter((r: any) => {
               const now = new Date()
               const d = new Date(r.returned_at)
@@ -140,15 +135,13 @@ export default async function ReturnsPage({
             }).length}
           </p>
         </div>
-        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
-          <p className="text-emerald-600 text-sm font-medium">Total Pengembalian</p>
-          <p className="text-2xl font-bold text-emerald-900">
-            {(completedReturns || []).length}
-          </p>
+        <div className="mini-stat border-t-emerald-400">
+          <p className="mini-stat-label">Total Pengembalian</p>
+          <p className="mini-stat-value">{(completedReturns || []).length}</p>
         </div>
-        <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-          <p className="text-green-600 text-sm font-medium">Selesai Hari Ini</p>
-          <p className="text-2xl font-bold text-green-900">
+        <div className="mini-stat border-t-green-400">
+          <p className="mini-stat-label">Selesai Hari Ini</p>
+          <p className="mini-stat-value">
             {(completedReturns || []).filter((r: any) => {
               const today = new Date().toDateString()
               const returnDate = new Date(r.returned_at).toDateString()
@@ -159,184 +152,155 @@ export default async function ReturnsPage({
       </div>
 
       {/* Pending Returns */}
-      <Card className="border-amber-200">
-        <CardHeader>
-          <CardTitle className="text-base text-amber-800 flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Peminjaman Aktif - Menunggu Pengembalian ({filteredPending.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>No. Referensi</TableHead>
-                <TableHead>Peminjam</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead>Jadwal</TableHead>
-                <TableHead>Status/Pembayaran</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      <div className="bg-card rounded-[14px] border border-amber-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-amber-100 flex items-center gap-2 bg-amber-50/50">
+          <Clock className="h-4 w-4 text-amber-500" />
+          <p className="text-sm font-semibold text-amber-800">
+            Peminjaman Aktif — Menunggu Pengembalian ({filteredPending.length})
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="data-table w-full">
+            <thead>
+              <tr>
+                <th>No. Referensi</th>
+                <th>Peminjam</th>
+                <th>Item</th>
+                <th>Jadwal</th>
+                <th>Status</th>
+                <th className="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
               {filteredPending.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <tr>
+                  <td colSpan={6} className="text-center text-muted-foreground/70 py-10 text-sm">
                     Tidak ada peminjaman yang menunggu pengembalian
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               )}
               {filteredPending.map((booking: any) => {
                 const items = booking.booking_items || []
                 const totalPaid = (booking.payments || [])
                   .filter((p: any) => p.status === 'paid')
                   .reduce((sum: number, p: any) => sum + p.amount, 0)
-                
                 const isOverdue = new Date() > new Date(booking.end_datetime)
-                
                 return (
-                  <TableRow key={booking.id} className={isOverdue ? 'bg-red-50' : ''}>
-                    <TableCell className="font-mono text-sm">
-                      {booking.reference_no}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{(booking.users as { name: string } | null)?.name}</p>
-                        <p className="text-xs text-slate-400">{(booking.users as { phone: string } | null)?.phone}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
+                  <tr key={booking.id} className={isOverdue ? 'bg-red-50/60' : ''}>
+                    <td className="font-mono text-xs text-indigo-700">{booking.reference_no}</td>
+                    <td>
+                      <p className="text-sm font-medium">{(booking.users as { name: string } | null)?.name}</p>
+                      <p className="text-xs text-muted-foreground/70">{(booking.users as { phone: string } | null)?.phone}</p>
+                    </td>
+                    <td>
+                      <div className="space-y-0.5">
                         {items.slice(0, 2).map((item: any, idx: number) => (
-                          <div key={idx} className="text-sm">
-                            {item.item_type === 'room' 
-                              ? item.room?.name 
-                              : item.equipment?.name
-                            }
-                          </div>
-                        ))}
-                        {items.length > 2 && (
-                          <p className="text-xs text-slate-400">+{items.length - 2} lainnya</p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm space-y-1">
-                        <div>
-                          <span className="text-slate-400 text-xs">Mulai:</span>
-                          <br />
-                          {formatDateTime(booking.start_datetime)}
-                        </div>
-                        <div className={isOverdue ? 'text-red-600 font-medium' : ''}>
-                          <span className="text-slate-400 text-xs">Selesai:</span>
-                          <br />
-                          {formatDateTime(booking.end_datetime)}
-                          {isOverdue && <span className="ml-2 text-xs">(Lewat)</span>}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Badge className={statusLabel[booking.status].color}>
-                          {statusLabel[booking.status].label}
-                        </Badge>
-                        {booking.status === 'paid' && (
-                          <p className="text-xs text-emerald-600">
-                            {totalPaid >= booking.total_amount 
-                              ? 'Lunas' 
-                              : `DP: ${(totalPaid / booking.total_amount * 100).toFixed(0)}%`
-                            }
+                          <p key={idx} className="text-xs text-muted-foreground">
+                            {item.item_type === 'room' ? item.room?.name : item.equipment?.name}
                           </p>
-                        )}
+                        ))}
+                        {items.length > 2 && <p className="text-[10px] text-muted-foreground/70">+{items.length - 2} lainnya</p>}
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    </td>
+                    <td>
+                      <div className="text-xs space-y-0.5">
+                        <p className="text-muted-foreground/70">Mulai: <span className="text-muted-foreground">{formatDateTime(booking.start_datetime)}</span></p>
+                        <p className={cn('', isOverdue && 'text-red-600 font-semibold')}>
+                          Selesai: {formatDateTime(booking.end_datetime)}
+                          {isOverdue && <span className="ml-1">(Lewat!)</span>}
+                        </p>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', statusLabel[booking.status]?.color ?? 'bg-muted text-muted-foreground')}>
+                        {statusLabel[booking.status]?.label ?? booking.status}
+                      </span>
+                      {booking.status === 'paid' && (
+                        <p className="text-xs text-emerald-600 mt-1">
+                          {totalPaid >= booking.total_amount ? 'Lunas' : `DP: ${(totalPaid / booking.total_amount * 100).toFixed(0)}%`}
+                        </p>
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex items-center justify-end gap-1.5">
                         {booking.status === 'approved' && (
-                          <Link 
+                          <Link
                             href={`/admin/payments?booking=${booking.id}`}
-                            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-[10px] border border-border bg-card text-muted-foreground hover:bg-muted transition-colors"
                           >
-                            <CreditCard className="h-4 w-4 mr-1" />
-                            Bayar
+                            <CreditCard className="h-3 w-3" /> Bayar
                           </Link>
                         )}
-                        <Link 
+                        <Link
                           href={`/admin/returns/${booking.id}`}
-                          className={buttonVariants({ size: 'sm' })}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-[10px] bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                         >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Proses
+                          <CheckCircle className="h-3 w-3" /> Proses
                         </Link>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 )
               })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Completed Returns */}
       {(completedReturns || []).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              Riwayat Pengembalian
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No. Referensi</TableHead>
-                  <TableHead>Peminjam</TableHead>
-                  <TableHead>Waktu Kembali</TableHead>
-                  <TableHead>Kondisi</TableHead>
-                  <TableHead>Catatan</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        <div className="bg-card rounded-[14px] border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/60 flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-emerald-500" />
+            <p className="text-sm font-semibold text-foreground">Riwayat Pengembalian</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table w-full">
+              <thead>
+                <tr>
+                  <th>No. Referensi</th>
+                  <th>Peminjam</th>
+                  <th>Waktu Kembali</th>
+                  <th>Kondisi</th>
+                  <th>Catatan</th>
+                  <th className="w-10" />
+                </tr>
+              </thead>
+              <tbody>
                 {(completedReturns || []).map((r: any) => {
                   const cond = conditionLabel[r.condition as string]
+                  const condColors: Record<string, string> = {
+                    good: 'bg-emerald-100 text-emerald-800',
+                    minor_damage: 'bg-amber-100 text-amber-800',
+                    major_damage: 'bg-red-100 text-red-800',
+                    lost: 'bg-red-100 text-red-800',
+                  }
                   return (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-mono text-sm">
-                        {r.booking?.reference_no}
-                      </TableCell>
-                      <TableCell>{r.booking?.users?.name}</TableCell>
-                      <TableCell className="text-sm">
+                    <tr key={r.id}>
+                      <td className="font-mono text-xs text-indigo-700">{r.booking?.reference_no}</td>
+                      <td className="text-sm">{r.booking?.users?.name}</td>
+                      <td className="text-xs text-muted-foreground">
                         {formatDateTime(r.returned_at)}
                         {r.is_early_return && (
-                          <Badge variant="outline" className="ml-2 text-amber-600">
-                            Lebih Cepat
-                          </Badge>
+                          <span className="ml-2 text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">Lebih Cepat</span>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={cond?.variant ?? 'secondary'}>
+                      </td>
+                      <td>
+                        <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', condColors[r.condition] ?? 'bg-muted text-muted-foreground')}>
                           {cond?.label ?? r.condition}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                        {r.notes ?? '—'}
-                      </TableCell>
-                      <TableCell>
-                        <DeleteReturnButton
-                          returnId={r.id}
-                          referenceNo={r.booking?.reference_no ?? '-'}
-                        />
-                      </TableCell>
-                    </TableRow>
+                        </span>
+                      </td>
+                      <td className="text-xs text-muted-foreground max-w-[200px] truncate">{r.notes ?? '—'}</td>
+                      <td>
+                        <DeleteReturnButton returnId={r.id} referenceNo={r.booking?.reference_no ?? '-'} />
+                      </td>
+                    </tr>
                   )
                 })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   )

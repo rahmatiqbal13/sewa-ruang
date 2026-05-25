@@ -1,9 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { formatDateTime, formatRupiah } from '@/lib/utils'
+import { formatRupiah } from '@/lib/utils'
 import Link from 'next/link'
 import { Eye, CheckCircle, Clock, Wallet, Settings } from 'lucide-react'
 import { PaymentMethodsPanel } from './PaymentMethodsPanel'
@@ -25,27 +22,24 @@ export default async function PaymentsPage({
   ]
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="admin-page">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Pembayaran</h1>
-        <p className="text-muted-foreground text-sm mt-1">Kelola transaksi dan metode pembayaran</p>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Pembayaran</h1>
+          <p className="page-subtitle">Kelola transaksi dan metode pembayaran</p>
+        </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1.5">
         {tabs.map((t) => (
           <Link
             key={t.key}
             href={t.href}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
-              activeTab === t.key
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-            )}
+            className={cn('filter-pill', activeTab === t.key ? 'filter-pill-active' : 'filter-pill-inactive')}
           >
-            <t.icon className="h-4 w-4" />
+            <t.icon className="h-3 w-3" />
             {t.label}
           </Link>
         ))}
@@ -91,7 +85,7 @@ async function TransaksiTab() {
   const grandTotal       = totalPaid + totalVerifiedVA + totalTraditional
 
   const statusConfig: Record<string, { label: string; color: string }> = {
-    pending:          { label: 'Pending',          color: 'bg-gray-100 text-gray-800' },
+    pending:          { label: 'Pending',          color: 'bg-muted text-foreground' },
     approved:         { label: 'Disetujui',        color: 'bg-blue-100 text-blue-800' },
     pending_payment:  { label: 'Menunggu Bayar',   color: 'bg-orange-100 text-orange-800' },
     payment_uploaded: { label: 'Bukti Diupload',   color: 'bg-yellow-100 text-yellow-800' },
@@ -101,201 +95,188 @@ async function TransaksiTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Total Terkumpul</p>
-            <p className="text-xl font-bold text-green-600">{formatRupiah(grandTotal)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Menunggu Pembayaran</p>
-            <p className="text-xl font-bold text-orange-600">{pendingBookings.length}</p>
-            <p className="text-xs text-muted-foreground">{formatRupiah(pendingBookings.reduce((s, b) => s + b.total_amount, 0))}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Menunggu Verifikasi</p>
-            <p className="text-xl font-bold text-yellow-600">{pendingProofs.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Terverifikasi</p>
-            <p className="text-xl font-bold text-blue-600">
-              {paidBookings.length + (vaPaymentProofs?.filter(p => p.status === 'verified').length ?? 0)}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="mini-stat border-t-emerald-400">
+          <p className="mini-stat-label">Total Terkumpul</p>
+          <p className="text-lg font-bold text-emerald-600 font-mono">{formatRupiah(grandTotal)}</p>
+        </div>
+        <div className="mini-stat border-t-amber-400">
+          <p className="mini-stat-label">Menunggu Pembayaran</p>
+          <p className="mini-stat-value">{pendingBookings.length}</p>
+          <p className="text-[10px] text-muted-foreground/70 font-mono">{formatRupiah(pendingBookings.reduce((s, b) => s + b.total_amount, 0))}</p>
+        </div>
+        <div className="mini-stat border-t-yellow-400">
+          <p className="mini-stat-label">Menunggu Verifikasi</p>
+          <p className="mini-stat-value">{pendingProofs.length}</p>
+        </div>
+        <div className="mini-stat border-t-blue-400">
+          <p className="mini-stat-label">Terverifikasi</p>
+          <p className="mini-stat-value">{paidBookings.length + (vaPaymentProofs?.filter(p => p.status === 'verified').length ?? 0)}</p>
+        </div>
       </div>
 
       {/* Verify button */}
       <div className="flex justify-end">
         <Link href="/admin/payments/verify">
-          <Button variant={pendingProofs.length > 0 ? 'default' : 'outline'} className="gap-2">
-            <CheckCircle className="h-4 w-4" />
+          <Button variant={pendingProofs.length > 0 ? 'default' : 'outline'} size="sm" className="gap-2 rounded-[10px]">
+            <CheckCircle className="h-3.5 w-3.5" />
             Verifikasi Pembayaran
             {pendingProofs.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{pendingProofs.length} menunggu</Badge>
+              <span className="ml-1 bg-card/20 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{pendingProofs.length}</span>
             )}
           </Button>
         </Link>
       </div>
 
       {/* All Transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Wallet className="h-4 w-4" /> Semua Transaksi Pembayaran
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>No. Referensi</TableHead>
-                <TableHead>Peminjam</TableHead>
-                <TableHead>Total Tagihan</TableHead>
-                <TableHead>Kode Bayar</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Aksi</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      <div className="bg-card rounded-[14px] border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/60 flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-muted-foreground/70" />
+          <p className="text-sm font-semibold text-foreground">Semua Transaksi Pembayaran</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="data-table w-full">
+            <thead>
+              <tr>
+                <th>No. Referensi</th>
+                <th>Peminjam</th>
+                <th>Total Tagihan</th>
+                <th>Kode Bayar</th>
+                <th>Status</th>
+                <th>Aksi</th>
+                <th className="w-10" />
+              </tr>
+            </thead>
+            <tbody>
               {(!bookingsWithPayment || bookingsWithPayment.length === 0) && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada transaksi</TableCell>
-                </TableRow>
+                <tr>
+                  <td colSpan={7} className="text-center text-muted-foreground/70 py-10 text-sm">Belum ada transaksi</td>
+                </tr>
               )}
               {bookingsWithPayment?.map((booking) => {
                 const cfg = statusConfig[booking.status] ?? statusConfig.pending
                 return (
-                  <TableRow key={booking.id}>
-                    <TableCell className="font-mono text-sm">{booking.reference_no}</TableCell>
-                    <TableCell>{booking.users?.name ?? '-'}</TableCell>
-                    <TableCell className="font-medium">{formatRupiah(booking.total_amount)}</TableCell>
-                    <TableCell className="font-mono text-xs">{booking.payment_code ?? '-'}</TableCell>
-                    <TableCell><Badge className={cfg.color}>{cfg.label}</Badge></TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Link href={`/admin/bookings/${booking.id}`}>
-                          <Button variant="ghost" size="sm"><Eye className="h-4 w-4 mr-1" />Detail</Button>
+                  <tr key={booking.id}>
+                    <td className="font-mono text-xs text-indigo-700">{booking.reference_no}</td>
+                    <td className="text-sm">{booking.users?.name ?? '-'}</td>
+                    <td className="text-sm font-semibold text-foreground font-mono">{formatRupiah(booking.total_amount)}</td>
+                    <td className="font-mono text-xs text-muted-foreground">{booking.payment_code ?? '-'}</td>
+                    <td><span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', cfg.color)}>{cfg.label}</span></td>
+                    <td>
+                      <div className="flex gap-1.5">
+                        <Link href={`/admin/bookings/${booking.id}`} className="icon-btn" aria-label="Lihat detail">
+                          <Eye className="h-4 w-4" />
                         </Link>
-                        {booking.status === 'pending_payment' && (
-                          <Link href="/admin/payments/verify">
-                            <Button variant="outline" size="sm">Verifikasi</Button>
-                          </Link>
-                        )}
                       </div>
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td>
                       <DeleteTransactionButton
                         bookingId={booking.id}
                         referenceNo={booking.reference_no}
                         borrowerName={booking.users?.name ?? '-'}
                       />
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 )
               })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* VA Proofs */}
       {vaPaymentProofs && vaPaymentProofs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Bukti Transfer VA
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No. Referensi</TableHead>
-                  <TableHead>Peminjam</TableHead>
-                  <TableHead>Bank</TableHead>
-                  <TableHead>Nominal</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        <div className="bg-card rounded-[14px] border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/60 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground/70" />
+            <p className="text-sm font-semibold text-foreground">Bukti Transfer VA</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table w-full">
+              <thead>
+                <tr>
+                  <th>No. Referensi</th>
+                  <th>Peminjam</th>
+                  <th>Bank</th>
+                  <th>Nominal</th>
+                  <th>Status</th>
+                  <th className="w-10" />
+                </tr>
+              </thead>
+              <tbody>
                 {vaPaymentProofs.map((proof) => {
-                  const colors: Record<string, string> = { pending: 'bg-yellow-100 text-yellow-800', verified: 'bg-green-100 text-green-800', rejected: 'bg-red-100 text-red-800' }
+                  const colors: Record<string, string> = { pending: 'bg-yellow-100 text-yellow-800', verified: 'bg-emerald-100 text-emerald-800', rejected: 'bg-red-100 text-red-800' }
                   const labels: Record<string, string> = { pending: 'Menunggu', verified: 'Terverifikasi', rejected: 'Ditolak' }
                   return (
-                    <TableRow key={proof.id}>
-                      <TableCell className="font-mono text-sm">{proof.bookings?.reference_no}</TableCell>
-                      <TableCell>{proof.bookings?.users?.name ?? '-'}</TableCell>
-                      <TableCell>{proof.bank_name ?? '-'}</TableCell>
-                      <TableCell className="font-medium">{formatRupiah(proof.transfer_amount)}</TableCell>
-                      <TableCell><Badge className={colors[proof.status]}>{labels[proof.status]}</Badge></TableCell>
-                      <TableCell>
+                    <tr key={proof.id}>
+                      <td className="font-mono text-xs text-indigo-700">{proof.bookings?.reference_no}</td>
+                      <td className="text-sm">{proof.bookings?.users?.name ?? '-'}</td>
+                      <td className="text-sm">{proof.bank_name ?? '-'}</td>
+                      <td className="text-sm font-semibold font-mono">{formatRupiah(proof.transfer_amount)}</td>
+                      <td><span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', colors[proof.status])}>{labels[proof.status]}</span></td>
+                      <td>
                         <DeletePaymentButton
                           id={proof.id}
                           referenceNo={proof.bookings?.reference_no ?? '-'}
                           type="proof"
                           label="Bukti transfer"
                         />
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   )
                 })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Manual Payments */}
       {traditionalPayments && traditionalPayments.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Pembayaran Manual (Admin Input)</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No. Referensi</TableHead>
-                  <TableHead>Metode</TableHead>
-                  <TableHead>Nominal</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        <div className="bg-card rounded-[14px] border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/60">
+            <p className="text-sm font-semibold text-foreground">Pembayaran Manual (Admin Input)</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="data-table w-full">
+              <thead>
+                <tr>
+                  <th>No. Referensi</th>
+                  <th>Metode</th>
+                  <th>Nominal</th>
+                  <th>Status</th>
+                  <th className="w-10" />
+                </tr>
+              </thead>
+              <tbody>
                 {traditionalPayments.map((p) => {
                   const labels: Record<string, string> = { online: 'Online', manual_cash: 'Tunai', manual_transfer: 'Transfer' }
                   return (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-mono text-sm">{p.bookings?.reference_no}</TableCell>
-                      <TableCell>{labels[p.method] ?? p.method}</TableCell>
-                      <TableCell>{formatRupiah(p.amount)}</TableCell>
-                      <TableCell>
-                        <Badge variant={p.status === 'paid' ? 'default' : 'secondary'}>{p.status === 'paid' ? 'Lunas' : p.status}</Badge>
-                      </TableCell>
-                      <TableCell>
+                    <tr key={p.id}>
+                      <td className="font-mono text-xs text-indigo-700">{p.bookings?.reference_no}</td>
+                      <td className="text-sm">{labels[p.method] ?? p.method}</td>
+                      <td className="text-sm font-semibold font-mono">{formatRupiah(p.amount)}</td>
+                      <td>
+                        <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', p.status === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-muted text-muted-foreground')}>
+                          {p.status === 'paid' ? 'Lunas' : p.status}
+                        </span>
+                      </td>
+                      <td>
                         <DeletePaymentButton
                           id={p.id}
                           referenceNo={p.bookings?.reference_no ?? '-'}
                           label="Pembayaran manual"
                         />
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   )
                 })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   )

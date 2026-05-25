@@ -214,16 +214,16 @@ export function WhatsAppTemplateSelector({ onSelect, selectedStatus }: TemplateS
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-slate-500">Pilih template pesan:</p>
+      <p className="text-xs text-muted-foreground">Pilih template pesan:</p>
       <div className="flex flex-wrap gap-2">
         {templates.map((t) => (
           <button
             key={t.key}
             onClick={() => onSelect(DEFAULT_MESSAGES[t.key])}
-            className={`text-xs px-2 py-1 rounded border transition-colors ${
+            className={`text-xs px-2 py-1 rounded-[10px] border transition-colors ${
               selectedStatus === t.status
                 ? 'bg-green-100 border-green-300 text-green-800'
-                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                : 'bg-card border-border text-muted-foreground hover:bg-muted'
             }`}
           >
             {t.label}

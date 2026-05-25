@@ -166,21 +166,21 @@ export function InventoryForm({
       {/* Back Button */}
       <Link 
         href="/admin/inventory"
-        className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Kembali ke daftar inventaris
       </Link>
 
       <div className="flex items-center gap-4 mb-8">
-        <div className="h-14 w-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/25">
+        <div className="h-14 w-14 bg-amber-600 rounded-[14px] flex items-center justify-center shadow-soft">
           <Boxes className="h-7 w-7 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-foreground">
             {item ? 'Edit Item Inventaris' : 'Tambah Item Inventaris'}
           </h1>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             {item ? 'Perbarui informasi item' : 'Tambahkan barang ke inventaris ruangan'}
           </p>
         </div>
@@ -200,9 +200,9 @@ export function InventoryForm({
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Pilih Gedung & Ruangan */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border">
           <CardContent className="p-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
               <DoorOpen className="h-5 w-5 text-purple-500" />
               Pilih Lokasi
             </h2>
@@ -210,9 +210,9 @@ export function InventoryForm({
             <div className="space-y-4">
               {/* Step 1: Pilih Gedung */}
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">
+                <Label className="text-foreground/80 font-medium">
                   <span className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-slate-500" />
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
                     Langkah 1: Pilih Gedung
                   </span>
                 </Label>
@@ -226,11 +226,11 @@ export function InventoryForm({
                     }
                   }}
                 >
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                  <SelectTrigger className="h-12 rounded-[14px] border-border">
                     {selectedBuildingId ? (
-                      <span className="flex items-center gap-2 text-slate-900">
+                      <span className="flex items-center gap-2 text-foreground">
                         {buildings.find(b => b.id === selectedBuildingId)?.name}
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-muted-foreground/70">
                           ({buildings.find(b => b.id === selectedBuildingId)?.code})
                         </span>
                       </span>
@@ -243,7 +243,7 @@ export function InventoryForm({
                       <SelectItem key={building.id} value={building.id}>
                         <span className="flex items-center gap-2">
                           {building.name}
-                          <span className="text-xs text-slate-400">({building.code})</span>
+                          <span className="text-xs text-muted-foreground/70">({building.code})</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -253,12 +253,12 @@ export function InventoryForm({
 
               {/* Step 2: Pilih Ruangan */}
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">
+                <Label className="text-foreground/80 font-medium">
                   <span className="flex items-center gap-2">
-                    <DoorOpen className="h-4 w-4 text-slate-500" />
+                    <DoorOpen className="h-4 w-4 text-muted-foreground" />
                     Langkah 2: Pilih Ruangan
                     {selectedBuildingId && (
-                      <span className="text-xs text-slate-400 font-normal">
+                      <span className="text-xs text-muted-foreground/70 font-normal">
                         ({filteredRooms.length} ruangan tersedia)
                       </span>
                     )}
@@ -269,12 +269,12 @@ export function InventoryForm({
                   onValueChange={(v) => setValue('room_asset_id', v ?? '')}
                   disabled={!selectedBuildingId}
                 >
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500/20">
+                  <SelectTrigger className="h-12 rounded-[14px] border-border focus:border-amber-500 focus:ring-amber-500/20">
                     {selectedRoom ? (
-                      <span className="flex items-center gap-2 text-slate-900">
+                      <span className="flex items-center gap-2 text-foreground">
                         {selectedRoom.name}
                         {selectedRoom.room_code && (
-                          <span className="text-xs text-slate-400">({selectedRoom.room_code})</span>
+                          <span className="text-xs text-muted-foreground/70">({selectedRoom.room_code})</span>
                         )}
                       </span>
                     ) : (
@@ -287,7 +287,7 @@ export function InventoryForm({
                         <span className="flex items-center gap-2">
                           {room.name}
                           {room.room_code && (
-                            <span className="text-xs text-slate-400">({room.room_code})</span>
+                            <span className="text-xs text-muted-foreground/70">({room.room_code})</span>
                           )}
                         </span>
                       </SelectItem>
@@ -301,14 +301,14 @@ export function InventoryForm({
 
               {/* Selected Room Info */}
               {selectedRoom && (
-                <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="mt-4 p-4 bg-muted rounded-[14px] border border-border">
                   <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
+                    <div className="h-10 w-10 bg-purple-100 rounded-[10px] flex items-center justify-center shrink-0">
                       <DoorOpen className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">{selectedRoom.name}</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="font-semibold text-foreground">{selectedRoom.name}</p>
+                      <p className="text-sm text-muted-foreground">
                         {selectedRoom.building_name} 
                         {selectedRoom.room_code && (
                           <span className="ml-1 font-mono">({selectedRoom.room_code})</span>
@@ -323,9 +323,9 @@ export function InventoryForm({
         </Card>
 
         {/* Informasi Item */}
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="border-border">
           <CardContent className="p-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
               <Boxes className="h-5 w-5 text-amber-500" />
               Informasi Item
             </h2>
@@ -333,8 +333,8 @@ export function InventoryForm({
             <div className="space-y-6">
               {/* Photo Upload */}
               <div className="space-y-3">
-                <Label className="text-slate-700 font-medium flex items-center gap-2">
-                  <Camera className="h-4 w-4 text-slate-400" />
+                <Label className="text-foreground/80 font-medium flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-muted-foreground/70" />
                   Foto Item
                 </Label>
                 <PhotoUpload
@@ -346,13 +346,13 @@ export function InventoryForm({
 
               {/* Name */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-slate-700 font-medium">
+                <Label htmlFor="name" className="text-foreground/80 font-medium">
                   Nama Item <span className="text-red-500">*</span>
                 </Label>
                 <Input 
                   id="name"
                   placeholder="Contoh: Proyektor, AC, Papan Tulis, Meja, Kursi..." 
-                  className="h-12 rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500/20"
+                  className="h-12 rounded-[14px] border-border focus:border-amber-500 focus:ring-amber-500/20"
                   {...register('name')} 
                 />
                 {errors.name && (
@@ -363,7 +363,7 @@ export function InventoryForm({
               {/* Quantity & Inventory Code */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="quantity" className="text-slate-700 font-medium">
+                  <Label htmlFor="quantity" className="text-foreground/80 font-medium">
                     Jumlah <span className="text-red-500">*</span>
                   </Label>
                   <Input 
@@ -371,7 +371,7 @@ export function InventoryForm({
                     type="number"
                     min={1}
                     placeholder="1"
-                    className="h-12 rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500/20"
+                    className="h-12 rounded-[14px] border-border focus:border-amber-500 focus:ring-amber-500/20"
                     {...register('quantity')} 
                   />
                   {errors.quantity && (
@@ -380,21 +380,21 @@ export function InventoryForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="inventory_code" className="text-slate-700 font-medium flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-slate-400" />
+                  <Label htmlFor="inventory_code" className="text-foreground/80 font-medium flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground/70" />
                     Kode Inventaris
-                    <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                       Tidak dapat diubah
                     </span>
                   </Label>
                   <Input
                     id="inventory_code"
                     placeholder="INV-001"
-                    className="h-12 rounded-xl border-slate-200 bg-slate-100 text-slate-600 cursor-not-allowed"
+                    className="h-12 rounded-[14px] border-border bg-muted text-muted-foreground cursor-not-allowed"
                     {...register('inventory_code')}
                     readOnly
                   />
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground/70">
                     {item ? 'Kode inventaris tidak dapat diubah setelah dibuat.' : 'Kode dibuat otomatis berdasarkan urutan terakhir.'}
                   </p>
                 </div>
@@ -402,7 +402,7 @@ export function InventoryForm({
 
               {/* Condition */}
               <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">
+                <Label className="text-foreground/80 font-medium">
                   Kondisi <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid grid-cols-3 gap-3">
@@ -411,13 +411,13 @@ export function InventoryForm({
                       key={cond.value}
                       type="button"
                       onClick={() => setValue('condition', cond.value as FormData['condition'])}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      className={`p-4 rounded-[14px] border-2 text-left transition-all ${
                         watch('condition') === cond.value
                           ? `border-current ${cond.bg} ${cond.color}`
-                          : 'border-slate-200 hover:border-slate-300'
+                          : 'border-border hover:border-muted-foreground/30'
                       }`}
                     >
-                      <span className={`font-medium ${watch('condition') === cond.value ? cond.color : 'text-slate-700'}`}>
+                      <span className={`font-medium ${watch('condition') === cond.value ? cond.color : 'text-foreground/80'}`}>
                         {cond.label}
                       </span>
                     </button>
@@ -427,14 +427,14 @@ export function InventoryForm({
 
               {/* Notes */}
               <div className="space-y-2">
-                <Label htmlFor="notes" className="text-slate-700 font-medium">
+                <Label htmlFor="notes" className="text-foreground/80 font-medium">
                   Catatan
                 </Label>
                 <Textarea 
                   id="notes"
                   placeholder="Catatan tambahan tentang item ini..." 
                   rows={4}
-                  className="rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500/20 resize-none"
+                  className="rounded-[14px] border-border focus:border-amber-500 focus:ring-amber-500/20 resize-none"
                   {...register('notes')} 
                 />
               </div>
@@ -456,7 +456,7 @@ export function InventoryForm({
             type="button" 
             variant="outline" 
             onClick={() => router.back()}
-            className="h-12 px-8 border-slate-200 hover:bg-slate-50"
+            className="h-12 px-8 border-border hover:bg-muted"
           >
             Batal
           </Button>

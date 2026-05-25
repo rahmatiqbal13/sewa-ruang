@@ -53,6 +53,19 @@ const schema = z.object({
   estimated_participants: z.coerce.number().int().min(1).optional(),
   agreed: z.boolean().refine(v => v === true, 'Anda harus menyetujui perjanjian'),
 }).refine((data) => {
+  // Validate end date > start date
+  if (data.start_date && data.end_date) {
+    const start = new Date(data.start_date)
+    const end = new Date(data.end_date)
+    if (end <= start) {
+      return false
+    }
+  }
+  return true
+}, {
+  message: 'Tanggal selesai harus setelah tanggal mulai',
+  path: ['end_date'],
+}).refine((data) => {
   // Validate max 3 days
   if (data.start_date && data.end_date) {
     const start = new Date(data.start_date)
@@ -147,8 +160,9 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
   )
 
   // Form setup
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, formState: { errors, isValid } } = useForm<FormData>({
     resolver: zodResolver(schema) as never,
+    mode: 'onChange',
     defaultValues: {
       start_date: '',
       start_time: '',
@@ -366,21 +380,21 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {/* Profile Info Card */}
       {profile && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <Card className="bg-muted border-border">
           <CardContent className="pt-4 pb-3 space-y-2">
             <div className="flex items-start gap-3">
               <div className="bg-blue-100 p-2 rounded-full">
                 <Info className="h-4 w-4 text-blue-700" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-blue-900">
+                <p className="text-sm text-foreground">
                   <span className="font-semibold">{profile.name}</span>
-                  <span className="text-blue-600"> — {profile.institution}</span>
+                  <span className="text-muted-foreground"> — {profile.institution}</span>
                   {profile.class_division && (
-                    <span className="text-blue-600">, {profile.class_division}</span>
+                    <span className="text-muted-foreground">, {profile.class_division}</span>
                   )}
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Tarif dihitung untuk kategori: <Badge variant="secondary" className="text-xs ml-1">{categoryLabel}</Badge>
                 </p>
               </div>
@@ -418,6 +432,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               <button
                 type="button"
                 onClick={() => setRoomSearch('')}
+                aria-label="Hapus pencarian ruangan"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <XCircle className="h-4 w-4" />
@@ -431,7 +446,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
             </p>
           )}
           
-          <ScrollArea className="h-[250px] border rounded-lg p-3">
+          <ScrollArea className="h-[250px] border border-border rounded-[10px] p-3">
             <div className="space-y-2">
               {filteredRoomItems.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
@@ -443,8 +458,8 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 return (
                   <div 
                     key={room.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      isSelected ? 'bg-blue-50 border-blue-200' : 'hover:bg-slate-50'
+                    className={`flex items-start gap-3 p-3 rounded-[10px] border cursor-pointer transition-colors ${
+                      isSelected ? 'bg-muted border-border' : 'hover:bg-muted'
                     }`}
                     onClick={() => toggleRoom(room.id)}
                   >
@@ -507,6 +522,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               <button
                 type="button"
                 onClick={() => setEquipmentSearch('')}
+                aria-label="Hapus pencarian alat"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <XCircle className="h-4 w-4" />
@@ -520,7 +536,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
             </p>
           )}
           
-          <ScrollArea className="h-[250px] border rounded-lg p-3">
+          <ScrollArea className="h-[250px] border border-border rounded-[10px] p-3">
             <div className="space-y-2">
               {filteredEquipmentItems.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
@@ -536,8 +552,8 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 return (
                   <div 
                     key={equip.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                      isSelected ? 'bg-amber-50 border-amber-200' : 'hover:bg-slate-50'
+                    className={`flex items-start gap-3 p-3 rounded-[10px] border transition-colors ${
+                      isSelected ? 'bg-muted border-border' : 'hover:bg-muted'
                     }`}
                   >
                     <Checkbox 
@@ -571,6 +587,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                           variant="outline" 
                           size="icon" 
                           className="h-7 w-7"
+                          aria-label="Kurangi jumlah"
                           onClick={() => updateEquipmentQuantity(equip.id, quantity - 1)}
                           disabled={quantity <= 1}
                         >
@@ -582,6 +599,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                           variant="outline" 
                           size="icon" 
                           className="h-7 w-7"
+                          aria-label="Tambah jumlah"
                           onClick={() => updateEquipmentQuantity(equip.id, quantity + 1)}
                         >
                           +
@@ -607,17 +625,17 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Info text based on selection */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-muted border border-border rounded-[10px] p-3">
             {hasRooms ? (
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-muted-foreground">
                 Anda meminjam ruangan. Silakan tentukan tanggal dan waktu peminjaman.
               </p>
             ) : hasEquipment ? (
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-muted-foreground">
                 Anda hanya meminjam alat. Silakan tentukan tanggal peminjaman (jam tidak diperlukan).
               </p>
             ) : (
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-muted-foreground">
                 Pilih ruangan atau alat terlebih dahulu untuk mengatur jadwal.
               </p>
             )}
@@ -630,9 +648,11 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 id="start_date"
                 type="date" 
                 min={today}
+                aria-describedby={errors.start_date ? 'start_date-error' : undefined}
+                aria-invalid={!!errors.start_date}
                 {...register('start_date')} 
               />
-              {errors.start_date && <p className="text-sm text-destructive">{errors.start_date.message}</p>}
+              {errors.start_date && <p id="start_date-error" role="alert" className="text-sm text-destructive">{errors.start_date.message}</p>}
             </div>
             
             {hasRooms && (
@@ -641,8 +661,11 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 <Input 
                   id="start_time"
                   type="time" 
+                  aria-describedby={errors.start_time ? 'start_time-error' : undefined}
+                  aria-invalid={!!errors.start_time}
                   {...register('start_time')} 
                 />
+                {errors.start_time && <p id="start_time-error" role="alert" className="text-sm text-destructive">{errors.start_time.message}</p>}
               </div>
             )}
             
@@ -653,9 +676,11 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 type="date" 
                 min={startDate || today}
                 max={startDate ? new Date(new Date(startDate).getTime() + (MAX_BOOKING_DAYS - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
+                aria-describedby={errors.end_date ? 'end_date-error' : undefined}
+                aria-invalid={!!errors.end_date}
                 {...register('end_date')} 
               />
-              {errors.end_date && <p className="text-sm text-destructive">{errors.end_date.message}</p>}
+              {errors.end_date && <p id="end_date-error" role="alert" className="text-sm text-destructive">{errors.end_date.message}</p>}
             </div>
             
             {hasRooms && (
@@ -664,8 +689,11 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 <Input 
                   id="end_time"
                   type="time" 
+                  aria-describedby={errors.end_time ? 'end_time-error' : undefined}
+                  aria-invalid={!!errors.end_time}
                   {...register('end_time')} 
                 />
+                {errors.end_time && <p id="end_time-error" role="alert" className="text-sm text-destructive">{errors.end_time.message}</p>}
               </div>
             )}
           </div>
@@ -747,12 +775,16 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="purpose">Tujuan Peminjaman <span className="text-destructive">*</span></Label>
             <Textarea 
+              id="purpose"
               placeholder="Jelaskan tujuan penggunaan dengan detail (minimal 10 karakter)..."
               rows={4}
+              aria-describedby={errors.purpose ? 'purpose-error' : undefined}
+              aria-invalid={!!errors.purpose}
               {...register('purpose')} 
             />
-            {errors.purpose && <p className="text-sm text-destructive">{errors.purpose.message}</p>}
+            {errors.purpose && <p id="purpose-error" role="alert" className="text-sm text-destructive">{errors.purpose.message}</p>}
           </div>
         </CardContent>
       </Card>
@@ -760,10 +792,13 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
       {/* Agreement */}
       <Card>
         <CardContent className="pt-4">
-          <label className="flex items-start gap-3 cursor-pointer">
+          <label htmlFor="agreed" className="flex items-start gap-3 cursor-pointer">
             <input 
+              id="agreed"
               type="checkbox" 
-              className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
+              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary" 
+              aria-describedby={errors.agreed ? 'agreed-error' : undefined}
+              aria-invalid={!!errors.agreed}
               {...register('agreed')} 
             />
             <span className="text-sm text-muted-foreground leading-relaxed">
@@ -772,15 +807,20 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               kerugian jika terjadi kerusakan atau kehilangan.
             </span>
           </label>
-          {errors.agreed && <p className="text-sm text-destructive mt-2">{errors.agreed.message}</p>}
+          {errors.agreed && <p id="agreed-error" role="alert" className="text-sm text-destructive mt-2">{errors.agreed.message}</p>}
         </CardContent>
       </Card>
 
       {/* Submit Button */}
+      {!hasItems && (
+        <p role="alert" className="text-sm text-destructive">
+          Pilih minimal satu ruangan atau alat
+        </p>
+      )}
       <Button 
         type="submit" 
         className="w-full h-12 text-base" 
-        disabled={loading || !hasItems}
+        disabled={loading || !isValid || !hasItems}
       >
         {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
         {loading ? 'Mengirim Pengajuan...' : hasItems ? 'Kirim Pengajuan' : 'Pilih Item Terlebih Dahulu'}

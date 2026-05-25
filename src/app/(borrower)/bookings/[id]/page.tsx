@@ -149,19 +149,19 @@ export default async function BorrowerBookingDetailPage({ params }: { params: Pr
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Duration */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-            <div className="bg-blue-100 p-2 rounded-lg">
+          <div className="flex items-center gap-3 p-4 bg-muted rounded-[10px] border border-border">
+            <div className="bg-blue-100 p-2 rounded-[10px]">
               <Clock className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-blue-900">
+              <p className="text-sm text-foreground">
                 <span className="font-semibold">Durasi Peminjaman:</span>{' '}
                 {durationDays > 1 
                   ? `${durationDays} hari (${durationHours} jam)` 
                   : `${durationHours} jam`
                 }
               </p>
-              <p className="text-xs text-blue-600 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {formatDateTime(booking.start_datetime)} - {formatDateTime(booking.end_datetime)}
               </p>
             </div>
@@ -172,7 +172,7 @@ export default async function BorrowerBookingDetailPage({ params }: { params: Pr
             <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Item yang Dipinjam</p>
             <div className="space-y-2">
               {bookingItems.map((item, i) => item && (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-lg bg-white">
+                <div key={i} className="flex items-center justify-between p-4 border rounded-[10px] bg-card">
                   <div className="flex items-start gap-3">
                     <div className={`p-2 rounded-lg ${item.type === 'room' ? 'bg-indigo-100' : 'bg-amber-100'}`}>
                       {item.type === 'room' ? (
@@ -250,25 +250,25 @@ export default async function BorrowerBookingDetailPage({ params }: { params: Pr
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 bg-slate-50 rounded-lg">
+            <div className="p-4 bg-muted rounded-[10px]">
               <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-slate-400" />
+                <Calendar className="h-4 w-4 text-muted-foreground/70" />
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Tanggal Mulai</p>
               </div>
               <p className="font-medium">{formatDateTime(booking.start_datetime)}</p>
             </div>
-            <div className="p-4 bg-slate-50 rounded-lg">
+            <div className="p-4 bg-muted rounded-[10px]">
               <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-slate-400" />
+                <Calendar className="h-4 w-4 text-muted-foreground/70" />
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Tanggal Selesai</p>
               </div>
               <p className="font-medium">{formatDateTime(booking.end_datetime)}</p>
             </div>
           </div>
           
-          <div className="p-4 bg-slate-50 rounded-lg">
+          <div className="p-4 bg-muted rounded-[10px]">
             <div className="flex items-center gap-2 mb-2">
-              <Package className="h-4 w-4 text-slate-400" />
+              <Package className="h-4 w-4 text-muted-foreground/70" />
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Tujuan Penggunaan</p>
             </div>
             <p className="text-sm leading-relaxed">{booking.purpose}</p>
@@ -297,7 +297,7 @@ export default async function BorrowerBookingDetailPage({ params }: { params: Pr
           </CardHeader>
           <CardContent className="space-y-3">
             {booking.payments.map(payment => (
-              <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={payment.id} className="flex items-center justify-between p-4 border border-border rounded-[10px]">
                 <div className="flex items-center gap-4">
                   <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
                     payment.status === 'paid' ? 'bg-green-100' : 'bg-amber-100'

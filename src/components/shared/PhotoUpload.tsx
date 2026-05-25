@@ -209,7 +209,7 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
     <div className="space-y-2">
       {/* Preview */}
       {value && isValidUrl(value) ? (
-        <div className={`relative w-full ${aspectRatioClass[aspectRatio]} rounded-xl overflow-hidden border bg-zinc-50 flex items-center justify-center`}>
+        <div className={`relative w-full ${aspectRatioClass[aspectRatio]} rounded-[14px] overflow-hidden border border-border bg-muted flex items-center justify-center`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="Foto" className="object-contain w-full h-full p-3" />
           <button
@@ -221,7 +221,7 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
           </button>
         </div>
       ) : (
-        <div className={`w-full ${aspectRatio === 'auto' ? 'h-44' : aspectRatioClass[aspectRatio]} rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50 flex flex-col items-center justify-center gap-2 text-muted-foreground`}>
+        <div className={`w-full ${aspectRatio === 'auto' ? 'h-44' : aspectRatioClass[aspectRatio]} rounded-[14px] border-2 border-dashed border-border bg-muted flex flex-col items-center justify-center gap-2 text-muted-foreground`}>
           {uploading ? (
             <>
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -229,7 +229,7 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
             </>
           ) : (
             <>
-              <ImageIcon className="h-8 w-8 text-zinc-300" />
+              <ImageIcon className="h-8 w-8 text-muted-foreground/70" />
               <p className="text-sm">Belum ada foto</p>
             </>
           )}
@@ -261,7 +261,7 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
           <DialogHeader>
             <DialogTitle>Ambil Foto</DialogTitle>
           </DialogHeader>
-          <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+          <div className="relative aspect-video bg-black rounded-[10px] overflow-hidden">
             <video
               ref={videoRef}
               autoPlay

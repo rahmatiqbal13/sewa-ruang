@@ -177,11 +177,11 @@ Terima kasih.`
 
         <div className="space-y-4 pt-2">
           {/* Recipient Info */}
-          <div className="bg-slate-50 rounded-lg p-3 text-sm space-y-1">
-            <p><span className="text-slate-500">Kepada:</span> <strong>{borrower?.name}</strong></p>
-            <p><span className="text-slate-500">No. Ref:</span> {booking.reference_no}</p>
-            {borrower?.phone && <p><span className="text-slate-500">WA/Telepon:</span> {borrower.phone}</p>}
-            {borrower?.email && <p><span className="text-slate-500">Email:</span> {borrower.email}</p>}
+          <div className="bg-muted rounded-[10px] p-3 text-sm space-y-1">
+            <p><span className="text-muted-foreground">Kepada:</span> <strong>{borrower?.name}</strong></p>
+            <p><span className="text-muted-foreground">No. Ref:</span> {booking.reference_no}</p>
+            {borrower?.phone && <p><span className="text-muted-foreground">WA/Telepon:</span> {borrower.phone}</p>}
+            {borrower?.email && <p><span className="text-muted-foreground">Email:</span> {borrower.email}</p>}
           </div>
 
           {/* Message Editor */}

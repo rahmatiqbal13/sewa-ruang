@@ -1,8 +1,5 @@
 import { createAdminClient as createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Users, ShieldCheck } from 'lucide-react'
 import { ChangeRoleButton } from './ChangeRoleButton'
 import { EditUserDialog } from './EditUserDialog'
@@ -10,13 +7,13 @@ import { DeleteUserButton } from './DeleteUserButton'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
 import { AddUserDialog } from './AddUserDialog'
 import { UserDetailSheet } from './UserDetailSheet'
-import { formatDateTime } from '@/lib/utils'
+import { formatDateTime, cn } from '@/lib/utils'
 import { isSuperAdmin } from '@/lib/permissions'
 
 const ROLE_BADGE: Record<string, { label: string; className: string }> = {
   super_admin: { label: 'Super Admin', className: 'bg-purple-100 text-purple-800 border border-purple-200' },
   admin:       { label: 'Admin',       className: 'bg-blue-100 text-blue-800 border border-blue-200' },
-  staff:       { label: 'Staff',       className: 'bg-zinc-100 text-zinc-700 border border-zinc-200' },
+  staff:       { label: 'Staff',       className: 'bg-muted text-muted-foreground border border-border' },
   borrower:    { label: 'Peminjam',    className: 'bg-green-100 text-green-800 border border-green-200' },
 }
 
@@ -47,105 +44,113 @@ export default async function UsersPage() {
     redirect('/admin/dashboard')
   }
 
+  const totalByRole = {
+    admin: users?.filter(u => ['super_admin', 'admin', 'staff'].includes(u.role)).length ?? 0,
+    borrower: users?.filter(u => u.role === 'borrower').length ?? 0,
+  }
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="admin-page">
+      {/* Header */}
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            Pengguna
-            <ShieldCheck className="h-5 w-5 text-purple-600" />
+          <h1 className="page-title flex items-center gap-2">
+            Pengguna <ShieldCheck className="h-4 w-4 text-purple-500" />
           </h1>
-          <p className="text-muted-foreground text-sm">Kelola semua akun — Super Admin mode aktif</p>
+          <p className="page-subtitle">Kelola semua akun — Super Admin mode aktif</p>
         </div>
         <AddUserDialog />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Semua Pengguna ({users?.length ?? 0})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>WhatsApp</TableHead>
-                <TableHead>Instansi / Kelas</TableHead>
-                <TableHead>No. Identitas</TableHead>
-                <TableHead>Telegram</TableHead>
-                <TableHead>Terdaftar</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="mini-stat border-t-indigo-400">
+          <p className="mini-stat-label">Total Pengguna</p>
+          <p className="mini-stat-value">{users?.length ?? 0}</p>
+        </div>
+        <div className="mini-stat border-t-purple-400">
+          <p className="mini-stat-label">Admin & Staff</p>
+          <p className="mini-stat-value">{totalByRole.admin}</p>
+        </div>
+        <div className="mini-stat border-t-emerald-400">
+          <p className="mini-stat-label">Peminjam</p>
+          <p className="mini-stat-value">{totalByRole.borrower}</p>
+        </div>
+      </div>
+
+      {/* Users table */}
+      <div className="bg-card rounded-[14px] border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/60 flex items-center gap-2">
+          <Users className="h-4 w-4 text-muted-foreground/70" />
+          <p className="text-sm font-semibold text-foreground/80">Semua Pengguna ({users?.length ?? 0})</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="data-table w-full">
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>Email</th>
+                <th>WhatsApp</th>
+                <th>Instansi / Kelas</th>
+                <th>No. Identitas</th>
+                <th>Telegram</th>
+                <th>Terdaftar</th>
+                <th>Role</th>
+                <th className="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
               {users?.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                    Belum ada pengguna
-                  </TableCell>
-                </TableRow>
+                <tr>
+                  <td colSpan={9} className="text-center text-muted-foreground/70 py-10 text-sm">Belum ada pengguna</td>
+                </tr>
               )}
               {users?.map((u) => {
                 const badge = ROLE_BADGE[u.role]
                 const isSelf = u.id === currentUser?.id
                 return (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium whitespace-nowrap">
+                  <tr key={u.id}>
+                    <td className="font-medium whitespace-nowrap text-sm">
                       {u.name}
-                      {isSelf && <span className="ml-1.5 text-xs text-muted-foreground">(Anda)</span>}
-                    </TableCell>
-                    <TableCell className="text-sm">{u.email}</TableCell>
-                    <TableCell className="text-sm">{u.phone ?? <span className="text-muted-foreground">-</span>}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                      {isSelf && <span className="ml-1.5 text-[10px] text-muted-foreground/70">(Anda)</span>}
+                    </td>
+                    <td className="text-xs text-muted-foreground">{u.email}</td>
+                    <td className="text-xs">{u.phone ?? <span className="text-muted-foreground/30">-</span>}</td>
+                    <td className="text-xs text-muted-foreground">
                       {u.institution ?? '-'}
-                      {u.class_division && <span className="block text-xs">{u.class_division}</span>}
-                    </TableCell>
-                    <TableCell className="text-sm font-mono">
-                      {u.identity_number ?? <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {u.telegram_username ?? <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {formatDateTime(u.created_at)}
-                    </TableCell>
-                    <TableCell>
+                      {u.class_division && <span className="block text-[10px]">{u.class_division}</span>}
+                    </td>
+                    <td className="text-xs font-mono">{u.identity_number ?? <span className="text-muted-foreground/30">-</span>}</td>
+                    <td className="text-xs">{u.telegram_username ?? <span className="text-muted-foreground/30">-</span>}</td>
+                    <td className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(u.created_at)}</td>
+                    <td>
                       {isSelf ? (
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badge?.className}`}>
+                        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold', badge?.className)}>
                           {badge?.label ?? u.role}
                         </span>
                       ) : (
                         <ChangeRoleButton userId={u.id} currentRole={u.role} isSuperAdmin={true} />
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-1 justify-end">
                         <UserDetailSheet user={u} />
                         {!isSelf && (
                           <>
                             <EditUserDialog user={u} />
-                            <ChangePasswordDialog
-                              userId={u.id}
-                              userName={u.name}
-                              plainPassword={u.plain_password}
-                            />
+                            <ChangePasswordDialog userId={u.id} userName={u.name} plainPassword={u.plain_password} />
                             <DeleteUserButton userId={u.id} userName={u.name} />
                           </>
                         )}
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 )
               })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
