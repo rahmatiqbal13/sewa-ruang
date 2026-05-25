@@ -88,25 +88,25 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
         className={cn(
           'group relative flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-200 overflow-hidden cursor-pointer',
           active
-            ? 'bg-sidebar-primary/20 text-sidebar-primary-foreground'
-            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-          item.superAdminOnly && !active && 'border-l-2 border-primary/50 pl-[10px]'
+            ? 'bg-blue-600/15 text-blue-700'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+          item.superAdminOnly && !active && 'border-l-2 border-indigo-400 pl-[10px]'
         )}
       >
         {active && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r-full" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-blue-600 rounded-r-full" />
         )}
 
         <item.icon className={cn(
           'h-4 w-4 shrink-0 transition-colors duration-200',
-          active ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80',
-          item.superAdminOnly && !active && 'text-primary/60'
+          active ? 'text-blue-700' : 'text-slate-400 group-hover:text-slate-600',
+          item.superAdminOnly && !active && 'text-indigo-500'
         )} />
 
         <span className="flex-1">{item.label}</span>
 
-        {active && <ChevronRight className="h-3.5 w-3.5 text-sidebar-foreground/30" />}
-        {item.superAdminOnly && <ShieldCheck className="h-3 w-3 text-primary/50" />}
+        {active && <ChevronRight className="h-3.5 w-3.5 text-blue-400" />}
+        {item.superAdminOnly && <ShieldCheck className="h-3 w-3 text-indigo-400" />}
       </Link>
     )
   }
@@ -114,36 +114,36 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
   const displayName = institution?.short_name || institution?.name || 'RentSpace'
 
   return (
-    <aside className="flex flex-col h-full bg-sidebar">
+    <aside className="flex flex-col h-full bg-slate-900" suppressHydrationWarning>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 shrink-0 border-b border-sidebar-border">
+      <div className="flex items-center gap-3 px-5 py-5 shrink-0 border-b border-slate-700/50">
         {institution?.logo_url ? (
           <SafeImage
             src={institution.logo_url}
             alt={institution.name}
             className="h-9 w-auto rounded-[10px]"
             fallback={
-              <div className="h-9 w-9 rounded-[10px] flex items-center justify-center bg-sidebar-primary/20 border border-sidebar-border">
-                <Building2 className="h-4 w-4 text-sidebar-foreground/80" />
+              <div className="h-9 w-9 rounded-[10px] flex items-center justify-center bg-blue-500/20 border border-slate-600">
+                <Building2 className="h-4 w-4 text-slate-300" />
               </div>
             }
           />
         ) : (
-          <div className="h-9 w-9 rounded-[10px] flex items-center justify-center shrink-0 bg-sidebar-primary/20 border border-sidebar-border">
-            <Building2 className="h-4 w-4 text-sidebar-foreground/80" />
+          <div className="h-9 w-9 rounded-[10px] flex items-center justify-center shrink-0 bg-blue-500/20 border border-slate-600">
+            <Building2 className="h-4 w-4 text-slate-300" />
           </div>
         )}
         <div className="min-w-0">
-          <p className="text-[0.9375rem] font-semibold text-sidebar-primary-foreground leading-tight truncate max-w-[148px]">{displayName}</p>
-          <p className="text-[11px] text-sidebar-foreground/50 tracking-wide mt-0.5">Admin Panel</p>
+          <p className="text-[0.9375rem] font-semibold text-white leading-tight truncate max-w-[148px]">{displayName}</p>
+          <p className="text-[11px] text-slate-400 tracking-wide mt-0.5">Admin Panel</p>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2.5 overflow-y-auto space-y-px"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--sidebar-border) transparent' }}
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
       >
-        <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30">
+        <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
           Menu Utama
         </p>
 
@@ -153,11 +153,11 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
           <>
             <div className="pt-4 pb-2 px-1">
               <div className="flex items-center gap-2">
-                <div className="flex-1 h-px bg-sidebar-border" />
-                <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest px-2 py-1 rounded-md text-sidebar-foreground/40 bg-sidebar-accent">
+                <div className="flex-1 h-px bg-slate-700" />
+                <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest px-2 py-1 rounded-md text-slate-400 bg-slate-800">
                   <ShieldCheck className="h-2.5 w-2.5" /> Super Admin
                 </span>
-                <div className="flex-1 h-px bg-sidebar-border" />
+                <div className="flex-1 h-px bg-slate-700" />
               </div>
             </div>
             {superAdminMenuItems.map(item => <NavLink key={item.href} item={item} />)}
@@ -167,20 +167,20 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
 
       {/* Role badge */}
       <div className="px-3 pb-2">
-        <div className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium bg-sidebar-accent text-sidebar-foreground/50 border border-sidebar-border">
+        <div className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
           <ShieldCheck className="h-3 w-3" />
           {userIsSuperAdmin ? 'Super Administrator' : userRole === 'admin' ? 'Administrator' : 'Staff'}
         </div>
       </div>
 
       {/* Logout */}
-      <div className="p-3 border-t border-sidebar-border">
+      <div className="p-3 border-t border-slate-700">
         <button
           onClick={handleLogout}
-          className="group flex items-center gap-3 px-3 py-2.5 w-full rounded-[10px] text-sm font-medium transition-all duration-200 cursor-pointer text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive"
+          className="group flex items-center gap-3 px-3 py-2.5 w-full rounded-[10px] text-sm font-medium transition-all duration-200 cursor-pointer text-slate-400 hover:bg-red-500/10 hover:text-red-400"
         >
-          <div className="h-7 w-7 rounded-[8px] flex items-center justify-center shrink-0 bg-sidebar-accent">
-            <LogOut className="h-3.5 w-3.5 text-sidebar-foreground/40 group-hover:text-destructive" />
+          <div className="h-7 w-7 rounded-[8px] flex items-center justify-center shrink-0 bg-slate-800">
+            <LogOut className="h-3.5 w-3.5 text-slate-500 group-hover:text-red-400" />
           </div>
           <span>Keluar</span>
         </button>

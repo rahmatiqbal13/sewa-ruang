@@ -150,7 +150,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-xl md:text-2xl font-semibold text-[#111827]">Detail Peminjaman</h1>
-              <span className="font-mono text-sm text-[#1B3A8C] bg-[#1B3A8C]/10 px-2.5 py-1 rounded-full">
+              <span className="font-mono text-sm text-[#2E4DA7] bg-[#2E4DA7]/10 px-2.5 py-1 rounded-full">
                 {booking.reference_no}
               </span>
             </div>
@@ -172,7 +172,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
               <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
-                <User className="h-4 w-4 text-[#1B3A8C]" />
+                <User className="h-4 w-4 text-[#2E4DA7]" />
                 Data Peminjam
               </CardTitle>
             </CardHeader>
@@ -180,7 +180,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               <div className="flex flex-col sm:flex-row sm:items-start gap-5">
                 {/* Avatar */}
                 <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 bg-[#1B3A8C] rounded-full flex items-center justify-center text-white text-xl font-bold shadow-soft">
+                  <div className="h-16 w-16 bg-[#2E4DA7] rounded-full flex items-center justify-center text-white text-xl font-bold shadow-soft">
                     {borrower?.name?.charAt(0).toUpperCase()}
                   </div>
                   <div className="sm:hidden">
@@ -200,7 +200,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                   <div>
                     <p className="text-xs text-[#6B7280] mb-1">Kategori</p>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[#1B3A8C] border-[#1B3A8C]/30">
+                      <Badge variant="outline" className="text-[#2E4DA7] border-[#2E4DA7]/30">
                         {borrower?.role || 'Mahasiswa'}
                       </Badge>
                       {isGratis && (
@@ -268,7 +268,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
               <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
-                <Package className="h-4 w-4 text-[#1B3A8C]" />
+                <Package className="h-4 w-4 text-[#2E4DA7]" />
                 Ruang &amp; Alat yang Dipinjam
               </CardTitle>
             </CardHeader>
@@ -281,7 +281,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <span className="h-8 w-8 bg-[#1B3A8C]/10 rounded-full flex items-center justify-center text-sm font-semibold text-[#1B3A8C] flex-shrink-0">
+                        <span className="h-8 w-8 bg-[#2E4DA7]/10 rounded-full flex items-center justify-center text-sm font-semibold text-[#2E4DA7] flex-shrink-0">
                           {index + 1}
                         </span>
                         <div>
@@ -353,7 +353,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
               <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
-                <CreditCard className="h-4 w-4 text-[#1B3A8C]" />
+                <CreditCard className="h-4 w-4 text-[#2E4DA7]" />
                 Pembayaran
               </CardTitle>
             </CardHeader>
@@ -444,7 +444,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
               <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
-                <Clock className="h-4 w-4 text-[#1B3A8C]" />
+                <Clock className="h-4 w-4 text-[#2E4DA7]" />
                 Status Timeline
               </CardTitle>
             </CardHeader>
@@ -465,7 +465,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                       {/* Icon */}
                       <div className={cn(
                         'relative z-10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0',
-                        isActive ? 'bg-[#1B3A8C] text-white' : 'bg-[#F3F4F6] text-[#9CA3AF]'
+                        isActive ? 'bg-[#2E4DA7] text-white' : 'bg-[#F3F4F6] text-[#9CA3AF]'
                       )}>
                         <StepIcon className="h-5 w-5" />
                       </div>
@@ -477,7 +477,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                       )}>
                         <p className={cn(
                           'font-medium',
-                          isCurrent ? 'text-[#1B3A8C]' : 'text-[#111827]'
+                          isCurrent ? 'text-[#2E4DA7]' : 'text-[#111827]'
                         )}>
                           {step.label}
                         </p>
@@ -614,7 +614,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                     href={`/api/bookings/${id}/formulir`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-1.5 h-10 rounded-[10px] bg-[#1B3A8C]/10 text-[#1B3A8C] hover:bg-[#1B3A8C]/20 transition-colors text-sm font-medium"
+                    className="inline-flex items-center justify-center gap-1.5 h-10 rounded-[10px] bg-[#2E4DA7]/10 text-[#2E4DA7] hover:bg-[#2E4DA7]/20 transition-colors text-sm font-medium"
                   >
                     <Download className="h-4 w-4" />
                     <span className="hidden sm:inline">PDF</span>
@@ -628,7 +628,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#6B7280]">No. Referensi</span>
-                  <span className="font-mono text-[#1B3A8C] font-medium">{booking.reference_no}</span>
+                  <span className="font-mono text-[#2E4DA7] font-medium">{booking.reference_no}</span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between text-sm">

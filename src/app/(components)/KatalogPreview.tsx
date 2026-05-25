@@ -87,7 +87,7 @@ export function KatalogPreview() {
             onClick={() => setActiveTab('ruangan')}
             className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all ${
               activeTab === 'ruangan'
-                ? 'bg-white text-[#1B3A8C] shadow-sm'
+                ? 'bg-white text-[#2E4DA7] shadow-sm'
                 : 'text-[#6B7280] hover:text-[#374151]'
             }`}
           >
@@ -100,7 +100,7 @@ export function KatalogPreview() {
             onClick={() => setActiveTab('peralatan')}
             className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all ${
               activeTab === 'peralatan'
-                ? 'bg-white text-[#1B3A8C] shadow-sm'
+                ? 'bg-white text-[#2E4DA7] shadow-sm'
                 : 'text-[#6B7280] hover:text-[#374151]'
             }`}
           >
@@ -121,7 +121,7 @@ export function KatalogPreview() {
           >
             {/* Photo Placeholder */}
             <div className="h-48 bg-[#F3F4F6] flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#1B3A8C]/5 to-[#2A52C9]/5" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#2E4DA7]/5 to-[#2A52C9]/5" />
               {activeTab === 'ruangan' ? (
                 <Building2 className="h-12 w-12 text-[#9CA3AF]" />
               ) : (
@@ -131,10 +131,10 @@ export function KatalogPreview() {
 
             {/* Content */}
             <div className="p-5">
-              <span className="inline-block px-3 py-1 text-xs font-medium text-[#1B3A8C] bg-[#EFF3FF] rounded-full mb-3">
+              <span className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full mb-3">
                 {item.type}
               </span>
-              <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#1B3A8C] transition-colors">
+              <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#2E4DA7] transition-colors">
                 {item.name}
               </h3>
               {isRoomItem(item) && (
@@ -142,7 +142,7 @@ export function KatalogPreview() {
                   Kapasitas: {item.capacity} orang
                 </p>
               )}
-              <p className="text-[#1B3A8C] font-semibold">{item.price}</p>
+              <p className="text-[#2E4DA7] font-semibold">{item.price}</p>
             </div>
           </div>
         ))}
@@ -152,7 +152,7 @@ export function KatalogPreview() {
       <div className="text-center">
         <Link
           href="/catalog"
-          className="inline-flex items-center gap-2 text-[#1B3A8C] font-medium hover:gap-3 transition-all"
+          className="inline-flex items-center gap-2 text-[#2E4DA7] font-medium hover:gap-3 transition-all"
         >
           Lihat Semua Katalog
           <ArrowRight className="h-4 w-4" />

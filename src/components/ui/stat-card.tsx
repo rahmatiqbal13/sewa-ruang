@@ -38,32 +38,24 @@ interface StatCardProps {
   color: Color
 }
 
-const colorConfig: Record<
-  Color,
-  { borderLeft: string; iconBg: string; iconColor: string }
-> = {
+const colorConfig: Record<Color, { iconBg: string; iconColor: string }> = {
   blue: {
-    borderLeft: "border-l-[#1B3A8C]",
-    iconBg: "bg-[#1B3A8C]/10",
-    iconColor: "text-[#1B3A8C]",
+    iconBg: "bg-[#2E4DA7]/10",
+    iconColor: "text-[#2E4DA7]",
   },
   green: {
-    borderLeft: "border-l-[#10B981]",
     iconBg: "bg-[#10B981]/10",
     iconColor: "text-[#10B981]",
   },
   orange: {
-    borderLeft: "border-l-[#F59E0B]",
     iconBg: "bg-[#F59E0B]/10",
     iconColor: "text-[#F59E0B]",
   },
   red: {
-    borderLeft: "border-l-[#EF4444]",
     iconBg: "bg-[#EF4444]/10",
     iconColor: "text-[#EF4444]",
   },
   purple: {
-    borderLeft: "border-l-[#8B5CF6]",
     iconBg: "bg-[#8B5CF6]/10",
     iconColor: "text-[#8B5CF6]",
   },
@@ -74,13 +66,7 @@ export function StatCard({ title, value, subtitle, iconName, color }: StatCardPr
   const Icon = iconMap[iconName] || CalendarDays
 
   return (
-    <div
-      className={cn(
-        "rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
-        "border-l-4",
-        colors.borderLeft
-      )}
-    >
+    <div className="rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
       <div className="p-4">
         <div className="flex items-start justify-between">
           <div>

@@ -77,7 +77,7 @@ export default function RegisterPage() {
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-[10px] flex items-center justify-center bg-[#1B3A8C]">
+              <div className="h-10 w-10 rounded-[10px] flex items-center justify-center bg-[#2E4DA7]">
                 <Building2 className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -179,7 +179,7 @@ export default function RegisterPage() {
               <Input id="identity_number" placeholder="Nomor identitas" className="h-11 rounded-lg border-[#E5E7EB]" {...register('identity_number')} />
             </div>
 
-            <Button type="submit" className="w-full h-11 bg-[#1B3A8C] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg mt-2" disabled={loading || !isValid}>
+            <Button type="submit" className="w-full h-11 bg-[#2E4DA7] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg mt-2" disabled={loading || !isValid}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Buat Akun
             </Button>
@@ -187,7 +187,7 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-[#6B7280]">
             Sudah punya akun?{' '}
-            <Link href="/login" className="text-[#1B3A8C] hover:underline font-semibold">Masuk</Link>
+            <Link href="/login" className="text-[#2E4DA7] hover:underline font-semibold">Masuk</Link>
           </p>
         </div>
       </div>

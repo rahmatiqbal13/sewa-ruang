@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
               <p className="text-xs text-[#9CA3AF]">
                 Link akan kadaluarsa dalam 1 jam.
               </p>
-              <Link href="/login" className="block mt-2 text-sm text-[#1B3A8C] hover:underline font-medium">
+              <Link href="/login" className="block mt-2 text-sm text-[#2E4DA7] hover:underline font-medium">
                 ← Kembali ke halaman masuk
               </Link>
             </div>
@@ -65,8 +65,8 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#F9FAFB]">
       <div className="w-full max-w-md">
         {/* Mobile logo */}
-        <div className="flex items-center gap-2 font-bold text-[#1B3A8C] mb-8 justify-center">
-          <div className="bg-[#1B3A8C] text-white p-1.5 rounded-[10px]">
+        <div className="flex items-center gap-2 font-bold text-[#2E4DA7] mb-8 justify-center">
+          <div className="bg-[#2E4DA7] text-white p-1.5 rounded-[10px]">
             <Building2 className="h-4 w-4" />
           </div>
           Sewa Ruang & Alat USC
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
             
             <Button 
               type="submit" 
-              className="w-full h-11 bg-[#1B3A8C] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg" 
+              className="w-full h-11 bg-[#2E4DA7] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg" 
               disabled={isPending}
             >
               {isPending ? (
@@ -119,7 +119,7 @@ export default function ForgotPasswordPage() {
 
           <p className="mt-6 text-center text-sm text-[#6B7280]">
             Ingat password?{' '}
-            <Link href="/login" className="text-[#1B3A8C] font-medium hover:underline">
+            <Link href="/login" className="text-[#2E4DA7] font-medium hover:underline">
               Masuk sekarang
             </Link>
           </p>

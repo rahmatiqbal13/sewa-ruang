@@ -106,7 +106,7 @@ export default async function BorrowerDashboard() {
   return (
     <div className="space-y-5 p-4 md:p-6 pb-24">
       {/* Greeting Card */}
-      <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-r from-[#1B3A8C] to-[#2A52C9] p-5 md:p-6">
+      <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-r from-[#2E4DA7] to-[#2A52C9] p-5 md:p-6">
         {/* Decorative circles */}
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
         <div className="absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-white/10" />
@@ -156,7 +156,7 @@ export default async function BorrowerDashboard() {
         >
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-sm font-semibold text-[#1B3A8C]">
+              <span className="font-mono text-sm font-semibold text-[#2E4DA7]">
                 {activeBooking.reference_no}
               </span>
               <StatusBadge status={activeBooking.status as any} />
@@ -169,7 +169,7 @@ export default async function BorrowerDashboard() {
             </p>
             <Link
               href={`/bookings/${activeBooking.id}`}
-              className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-[#1B3A8C] hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-[#2E4DA7] hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
             >
               Lihat Detail
             </Link>
@@ -203,7 +203,7 @@ export default async function BorrowerDashboard() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-semibold text-[#111827]">Pengajuan Terbaru</h3>
-          <Link href="/bookings" className="text-xs font-medium text-[#1B3A8C] hover:underline">
+          <Link href="/bookings" className="text-xs font-medium text-[#2E4DA7] hover:underline">
             Lihat Semua
           </Link>
         </div>
@@ -232,7 +232,7 @@ export default async function BorrowerDashboard() {
                     {getItemName(booking)}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="font-mono text-[11px] text-[#1B3A8C]">
+                    <span className="font-mono text-[11px] text-[#2E4DA7]">
                       {booking.reference_no}
                     </span>
                     <span className="text-xs text-gray-400">·</span>

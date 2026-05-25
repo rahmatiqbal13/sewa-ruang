@@ -37,9 +37,11 @@ export function AdminShell({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => { setSidebarOpen(false) }, [pathname])
+  useEffect(() => { setMounted(true) }, [])
 
   // Swipe gesture for sidebar
   const minSwipeDistance = 50
@@ -85,7 +87,9 @@ export function AdminShell({
 
   return (
     <div 
-      className="flex min-h-screen bg-background"
+      className="flex min-h-screen bg-slate-50"
+      suppressHydrationWarning
+      data-hydration-id="admin-shell"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -98,16 +102,33 @@ export function AdminShell({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — render placeholder during SSR to avoid hydration mismatch */}
       <div className={cn(
         'fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out lg:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
-        <AdminSidebar 
-          onClose={() => setSidebarOpen(false)} 
-          userRole={userRole}
-          institution={institution}
-        />
+        {mounted ? (
+          <AdminSidebar 
+            onClose={() => setSidebarOpen(false)} 
+            userRole={userRole}
+            institution={institution}
+          />
+        ) : (
+          <aside className="flex flex-col h-full bg-slate-900" aria-hidden="true">
+            <div className="flex items-center gap-3 px-5 py-5 shrink-0 border-b border-slate-700/50">
+              <div className="h-9 w-9 rounded-[10px] bg-blue-500/20 border border-slate-600" />
+              <div className="min-w-0 space-y-1.5">
+                <div className="h-4 w-28 bg-slate-700 rounded" />
+                <div className="h-3 w-16 bg-slate-700 rounded" />
+              </div>
+            </div>
+            <div className="flex-1 py-3 px-2.5 space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-9 bg-slate-800/50 rounded-[10px]" />
+              ))}
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* Main area */}

@@ -23,16 +23,12 @@ export default async function AdminDashboard() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
-  const [
-    { count: pendingCount },
-    { count: todayCount },
-    { data: monthPaymentsRaw },
-    { data: lastMonthPaymentsRaw },
-    { data: recentBookingsRaw },
-    { count: totalAssetsCount },
-    { count: roomCount },
-    { count: availableEquipmentCount },
-  ] = await Promise.all([
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const val = <T,>(r: PromiseSettledResult<any>, key: 'count' | 'data', fallback: T): T =>
+    r.status === 'fulfilled' ? (r.value?.[key] ?? fallback) : fallback
+
+  const [r0, r1, r2, r3, r4, r5, r6, r7] = await Promise.allSettled([
     sb.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     sb.from('bookings').select('*', { count: 'exact', head: true }).gte('created_at', startOfDay),
     sb.from('payments').select('amount').eq('status', 'paid').gte('paid_at', startOfMonth),
@@ -45,6 +41,15 @@ export default async function AdminDashboard() {
     sb.from('rooms').select('*', { count: 'exact', head: true }).eq('is_active', true),
     sb.from('equipment').select('*', { count: 'exact', head: true }).eq('ketersediaan', 'tersedia').eq('is_active', true),
   ])
+
+  const pendingCount: number = val(r0, 'count', 0)
+  const todayCount: number = val(r1, 'count', 0)
+  const monthPaymentsRaw = val(r2, 'data', null)
+  const lastMonthPaymentsRaw = val(r3, 'data', null)
+  const recentBookingsRaw = val(r4, 'data', null)
+  const totalAssetsCount: number = val(r5, 'count', 0)
+  const roomCount: number = val(r6, 'count', 0)
+  const availableEquipmentCount: number = val(r7, 'count', 0)
   
   const monthPayments = monthPaymentsRaw as Array<{amount:number}> | null
   const lastMonthPayments = lastMonthPaymentsRaw as Array<{amount:number}> | null
@@ -122,7 +127,7 @@ export default async function AdminDashboard() {
                 <CardTitle className="text-base font-semibold text-[#111827]">Pengajuan Terbaru</CardTitle>
                 <Link 
                   href="/admin/bookings" 
-                  className="text-xs font-medium text-[#1B3A8C] hover:underline flex items-center gap-1"
+                  className="text-xs font-medium text-[#2E4DA7] hover:underline flex items-center gap-1"
                 >
                   Lihat Semua
                   <ChevronRight className="h-3 w-3" />

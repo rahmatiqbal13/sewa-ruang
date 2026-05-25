@@ -106,7 +106,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",
       "application-name": institution?.short_name || "Sewa Ruang",
-      "msapplication-TileColor": "#1B3A8C",
+      "msapplication-TileColor": "#2E4DA7",
       "msapplication-config": "/icons/browserconfig.xml",
     },
   };
@@ -121,7 +121,7 @@ export default function RootLayout({
     <html lang="id" className={`${dmSans.variable} ${dmMono.variable} h-full antialiased`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#1B3A8C" />
+        <meta name="theme-color" content="#2E4DA7" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans">

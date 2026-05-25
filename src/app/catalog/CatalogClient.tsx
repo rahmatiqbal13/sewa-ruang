@@ -191,7 +191,7 @@ function Paginator({ page, total, onChange }: { page: number; total: number; onC
               className={cn(
                 'h-10 w-10 text-sm font-medium rounded-full',
                 page === p 
-                  ? 'bg-[#1B3A8C] hover:bg-[#1B3A8C]/90 text-white border-0' 
+                  ? 'bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 text-white border-0' 
                   : 'border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]'
               )}
             >
@@ -262,7 +262,7 @@ function RoomCard({ room }: { room: Room & { buildingName: string; displayName: 
         
         {/* Room Code & Type */}
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs bg-[#EFF3FF] text-[#1B3A8C] px-2 py-0.5 rounded">
+          <span className="text-xs bg-[#EFF3FF] text-[#2E4DA7] px-2 py-0.5 rounded">
             {room.room_code || 'No Code'}
           </span>
         </div>
@@ -281,7 +281,7 @@ function RoomCard({ room }: { room: Room & { buildingName: string; displayName: 
         <div className="mb-4">
           {lowestRate ? (
             <div className="flex items-baseline gap-1">
-              <span className="text-[#1B3A8C] font-semibold text-lg">{formatRupiah(lowestRate)}</span>
+              <span className="text-[#2E4DA7] font-semibold text-lg">{formatRupiah(lowestRate)}</span>
               <span className="text-sm text-[#6B7280]">/hari</span>
             </div>
           ) : (
@@ -293,7 +293,7 @@ function RoomCard({ room }: { room: Room & { buildingName: string; displayName: 
         <Link href={`/rooms/${createSlug(room.name)}`}>
           <Button 
             variant="ghost" 
-            className="w-full h-10 text-[#1B3A8C] hover:bg-[#EFF3FF] font-medium"
+            className="w-full h-10 text-[#2E4DA7] hover:bg-[#EFF3FF] font-medium"
           >
             Lihat Detail
           </Button>
@@ -359,7 +359,7 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
         <div className="mb-4">
           {hasRates && priceRange.min !== null ? (
             <div className="flex items-baseline gap-1">
-              <span className="text-[#1B3A8C] font-semibold text-lg">
+              <span className="text-[#2E4DA7] font-semibold text-lg">
                 {formatRupiah(priceRange.min)}
               </span>
               <span className="text-sm text-[#6B7280]">/hari</span>
@@ -388,7 +388,7 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
         {/* Action */}
         <Button 
           variant="ghost" 
-          className="w-full h-10 text-[#1B3A8C] hover:bg-[#EFF3FF] font-medium"
+          className="w-full h-10 text-[#2E4DA7] hover:bg-[#EFF3FF] font-medium"
         >
           Lihat Detail
         </Button>
@@ -535,7 +535,7 @@ function FilterSidebar({
               placeholder="Min"
               value={priceRange.min}
               onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A8C]/20"
+              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
             />
           </div>
           <span className="text-[#9CA3AF]">-</span>
@@ -546,7 +546,7 @@ function FilterSidebar({
               placeholder="Max"
               value={priceRange.max}
               onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B3A8C]/20"
+              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
             />
           </div>
         </div>
@@ -594,7 +594,7 @@ function FilterSidebar({
       <div className="flex gap-3 pt-2">
         <Button 
           onClick={onApply}
-          className="flex-1 bg-[#1B3A8C] hover:bg-[#1B3A8C]/90 text-white h-10 rounded-lg"
+          className="flex-1 bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 text-white h-10 rounded-lg"
         >
           Terapkan Filter
         </Button>
@@ -620,7 +620,7 @@ function FilterSidebar({
             <Filter className="h-4 w-4 mr-2" />
             Filter
             {(selectedBuildings.length + selectedCategories.length + selectedCapacity.length > 0 || showAvailableOnly) && (
-              <Badge className="ml-2 bg-[#1B3A8C] text-white text-xs">
+              <Badge className="ml-2 bg-[#2E4DA7] text-white text-xs">
                 {selectedBuildings.length + selectedCategories.length + selectedCapacity.length + (showAvailableOnly ? 1 : 0)}
               </Badge>
             )}
@@ -810,7 +810,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
               placeholder="Cari ruangan atau alat..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-[52px] pl-14 pr-12 bg-white rounded-full border-0 shadow-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1B3A8C]/20"
+              className="w-full h-[52px] pl-14 pr-12 bg-white rounded-full border-0 shadow-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
             />
             {searchQuery && (
               <button
@@ -859,7 +859,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     activeTab === 'all'
-                      ? "bg-[#1B3A8C] text-white"
+                      ? "bg-[#2E4DA7] text-white"
                       : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                   )}
                 >
@@ -870,7 +870,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     activeTab === 'rooms'
-                      ? "bg-[#1B3A8C] text-white"
+                      ? "bg-[#2E4DA7] text-white"
                       : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                   )}
                 >
@@ -881,7 +881,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     activeTab === 'equipment'
-                      ? "bg-[#1B3A8C] text-white"
+                      ? "bg-[#2E4DA7] text-white"
                       : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                   )}
                 >
@@ -896,7 +896,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as 'name' | 'price-low' | 'price-high')}
-                    className="appearance-none h-10 pl-4 pr-10 bg-white border border-[#E5E7EB] rounded-lg text-sm text-[#374151] focus:outline-none focus:ring-2 focus:ring-[#1B3A8C]/20 cursor-pointer"
+                    className="appearance-none h-10 pl-4 pr-10 bg-white border border-[#E5E7EB] rounded-lg text-sm text-[#374151] focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20 cursor-pointer"
                   >
                     <option value="name">Urutkan: Nama</option>
                     <option value="price-low">Urutkan: Harga Terendah</option>
@@ -963,7 +963,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
       </main>
 
       {/* CTA Section */}
-      <section className="bg-[#1B3A8C] py-16">
+      <section className="bg-[#2E4DA7] py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Siap Meminjam?
@@ -972,7 +972,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
             Login untuk melakukan pemesanan dan kelola peminjaman Anda dengan mudah
           </p>
           <Link href="/login">
-            <Button size="lg" className="bg-white text-[#1B3A8C] hover:bg-[#EFF3FF] px-8 h-12 text-base font-medium rounded-lg">
+            <Button size="lg" className="bg-white text-[#2E4DA7] hover:bg-[#EFF3FF] px-8 h-12 text-base font-medium rounded-lg">
               Login Sekarang
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>

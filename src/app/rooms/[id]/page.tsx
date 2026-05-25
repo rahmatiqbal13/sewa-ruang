@@ -115,7 +115,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             <span className="font-medium">Kembali ke Katalog</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-[#1B3A8C]" />
+            <Building2 className="h-5 w-5 text-[#2E4DA7]" />
             <span className="font-bold text-[#111827]">Sewa Ruang & Alat</span>
           </div>
         </div>
@@ -124,9 +124,9 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-[#6B7280] mb-6">
-          <Link href="/catalog" className="hover:text-[#1B3A8C]">Katalog</Link>
+          <Link href="/catalog" className="hover:text-[#2E4DA7]">Katalog</Link>
           <span>/</span>
-          <Link href="/catalog" className="hover:text-[#1B3A8C]">Ruangan</Link>
+          <Link href="/catalog" className="hover:text-[#2E4DA7]">Ruangan</Link>
           <span>/</span>
           <span className="text-[#111827] font-medium">{room.name}</span>
         </nav>
@@ -209,27 +209,27 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                   {room.capacity && (
                     <div className="bg-[#F9FAFB] rounded-xl p-4 text-center">
-                      <Users className="h-5 w-5 text-[#1B3A8C] mx-auto mb-2" />
+                      <Users className="h-5 w-5 text-[#2E4DA7] mx-auto mb-2" />
                       <p className="text-xs text-[#6B7280] mb-1">Kapasitas</p>
                       <p className="font-semibold text-[#111827]">{room.capacity} orang</p>
                     </div>
                   )}
                   {room.floor !== null && (
                     <div className="bg-[#F9FAFB] rounded-xl p-4 text-center">
-                      <Layers className="h-5 w-5 text-[#1B3A8C] mx-auto mb-2" />
+                      <Layers className="h-5 w-5 text-[#2E4DA7] mx-auto mb-2" />
                       <p className="text-xs text-[#6B7280] mb-1">Lantai</p>
                       <p className="font-semibold text-[#111827]">Lantai {room.floor}</p>
                     </div>
                   )}
                   {room.room_type && (
                     <div className="bg-[#F9FAFB] rounded-xl p-4 text-center">
-                      <Building2 className="h-5 w-5 text-[#1B3A8C] mx-auto mb-2" />
+                      <Building2 className="h-5 w-5 text-[#2E4DA7] mx-auto mb-2" />
                       <p className="text-xs text-[#6B7280] mb-1">Tipe</p>
                       <p className="font-semibold text-[#111827]">{room.room_type}</p>
                     </div>
                   )}
                   <div className="bg-[#F9FAFB] rounded-xl p-4 text-center">
-                    <MapPin className="h-5 w-5 text-[#1B3A8C] mx-auto mb-2" />
+                    <MapPin className="h-5 w-5 text-[#2E4DA7] mx-auto mb-2" />
                     <p className="text-xs text-[#6B7280] mb-1">Gedung</p>
                     <p className="font-semibold text-[#111827]">{room.buildings?.name ?? '-'}</p>
                   </div>
@@ -252,7 +252,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                     <h3 className="font-semibold text-[#111827] mb-3">Fasilitas</h3>
                     <div className="flex flex-wrap gap-2">
                       {room.facilities.map((f: string, i: number) => (
-                        <Badge key={i} variant="secondary" className="bg-[#EFF3FF] text-[#1B3A8C] hover:bg-[#EFF3FF]/80 text-xs px-3 py-1">
+                        <Badge key={i} variant="secondary" className="bg-[#EFF3FF] text-[#2E4DA7] hover:bg-[#EFF3FF]/80 text-xs px-3 py-1">
                           {f}
                         </Badge>
                       ))}
@@ -264,18 +264,18 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
             {/* Inventory Link */}
             <Link href={`/rooms/${slug}/inventory`}>
-              <Card className="border border-[#E5E7EB] rounded-[14px] shadow-sm hover:shadow-md hover:border-[#1B3A8C]/30 transition-all cursor-pointer group">
+              <Card className="border border-[#E5E7EB] rounded-[14px] shadow-sm hover:shadow-md hover:border-[#2E4DA7]/30 transition-all cursor-pointer group">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-[#EFF3FF] rounded-lg flex items-center justify-center">
-                      <Package className="h-5 w-5 text-[#1B3A8C]" />
+                      <Package className="h-5 w-5 text-[#2E4DA7]" />
                     </div>
                     <div>
                       <p className="font-semibold text-[#111827]">Lihat Inventaris Ruangan</p>
                       <p className="text-sm text-[#6B7280]">Daftar peralatan yang tersedia di ruangan ini</p>
                     </div>
                   </div>
-                  <ArrowRight className="h-5 w-5 text-[#6B7280] group-hover:text-[#1B3A8C] transition-colors" />
+                  <ArrowRight className="h-5 w-5 text-[#6B7280] group-hover:text-[#2E4DA7] transition-colors" />
                 </CardContent>
               </Card>
             </Link>
@@ -303,7 +303,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-[#1B3A8C]">{formatRupiah(rate.rate_per_day)}</p>
+                          <p className="font-bold text-[#2E4DA7]">{formatRupiah(rate.rate_per_day)}</p>
                           <p className="text-xs text-[#6B7280]">/hari</p>
                         </div>
                       </div>
@@ -326,7 +326,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                     </Link>
                   ) : room.is_for_rent ? (
                     <Link href={`/booking/new?room_id=${id}`}>
-                      <Button className="w-full h-12 bg-[#1B3A8C] hover:bg-[#1B3A8C]/90 text-white font-medium">
+                      <Button className="w-full h-12 bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 text-white font-medium">
                         Ajukan Peminjaman
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
@@ -345,7 +345,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               <Card className="border border-[#E5E7EB] rounded-[14px] shadow-sm bg-[#EFF3FF]">
                 <CardContent className="p-4">
                   <p className="text-sm text-[#6B7280] mb-1">Tarif Dasar</p>
-                  <p className="text-2xl font-bold text-[#1B3A8C]">{formatRupiah(room.base_price)}</p>
+                  <p className="text-2xl font-bold text-[#2E4DA7]">{formatRupiah(room.base_price)}</p>
                   <p className="text-xs text-[#6B7280]">per hari</p>
                 </CardContent>
               </Card>
