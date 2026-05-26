@@ -3,80 +3,128 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Building2, Wrench, ArrowRight } from 'lucide-react'
+import { formatRupiah } from '@/lib/utils'
+import { SafeImage } from '@/components/shared/SafeImage'
 
-// Type definitions
-interface RoomItem {
+interface PreviewRoom {
   id: string
   name: string
-  type: string
-  capacity: number
-  price: string
+  room_code: string | null
+  capacity: number | null
+  photo_url: string | null
+  rate_per_day: number | null
 }
 
-interface EquipmentItem {
+interface PreviewEquipment {
   id: string
   name: string
-  type: string
-  price: string
+  category: string | null
+  photo_url: string | null
+  rate_per_day: number | null
 }
 
-type CatalogItem = RoomItem | EquipmentItem
-
-// Static placeholder data for catalog preview
-const roomsData: RoomItem[] = [
-  {
-    id: '1',
-    name: 'Ruang Seminar A101',
-    type: 'Ruang Kelas',
-    capacity: 50,
-    price: 'Rp 500.000/hari',
-  },
-  {
-    id: '2',
-    name: 'Laboratorium Komputer',
-    type: 'Lab',
-    capacity: 30,
-    price: 'Rp 750.000/hari',
-  },
-  {
-    id: '3',
-    name: 'Aula Utama',
-    type: 'Aula',
-    capacity: 200,
-    price: 'Rp 1.500.000/hari',
-  },
-]
-
-const equipmentData: EquipmentItem[] = [
-  {
-    id: '1',
-    name: 'Proyektor Epson',
-    type: 'Elektronik',
-    price: 'Rp 150.000/hari',
-  },
-  {
-    id: '2',
-    name: 'Sound System',
-    type: 'Elektronik',
-    price: 'Rp 300.000/hari',
-  },
-  {
-    id: '3',
-    name: 'Kursi Lipat',
-    type: 'Mebel',
-    price: 'Rp 10.000/unit',
-  },
-]
-
-// Type guard to check if item is a RoomItem
-function isRoomItem(item: CatalogItem): item is RoomItem {
-  return 'capacity' in item
+interface KatalogPreviewProps {
+  rooms: PreviewRoom[]
+  equipment: PreviewEquipment[]
 }
 
-export function KatalogPreview() {
+const CATEGORY_LABELS: Record<string, string> = {
+  elektronik: 'Elektronik',
+  mebel: 'Mebel',
+  transportasi: 'Transportasi',
+  alat_tes_pengukuran: 'Alat Tes & Pengukuran',
+  alat_gym: 'Alat Gym',
+  perlengkapan: 'Perlengkapan',
+  lainnya: 'Lainnya',
+}
+
+function RoomCard({ room }: { room: PreviewRoom }) {
+  return (
+    <div className="group bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden hover:shadow-lg transition-all duration-300">
+      {/* Photo */}
+      <div className="h-48 bg-[#F3F4F6] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2E4DA7]/5 to-[#2A52C9]/5" />
+        {room.photo_url ? (
+          <SafeImage
+            src={room.photo_url}
+            alt={room.name}
+            className="w-full h-full object-cover"
+            fallbackClassName="w-full h-full flex items-center justify-center"
+            fallback={<Building2 className="h-12 w-12 text-[#9CA3AF]" />}
+          />
+        ) : (
+          <Building2 className="h-12 w-12 text-[#9CA3AF] relative z-10" />
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-5">
+        <span className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full mb-3">
+          {room.room_code || 'Ruangan'}
+        </span>
+        <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#2E4DA7] transition-colors">
+          {room.name}
+        </h3>
+        {room.capacity != null && (
+          <p className="text-sm text-[#6B7280] mb-3">
+            Kapasitas: {room.capacity} orang
+          </p>
+        )}
+        <p className="text-[#2E4DA7] font-semibold">
+          {room.rate_per_day != null && room.rate_per_day > 0
+            ? `${formatRupiah(room.rate_per_day)}/hari`
+            : 'Tarif belum diatur'
+          }
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function EquipmentCard({ item }: { item: PreviewEquipment }) {
+  return (
+    <div className="group bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden hover:shadow-lg transition-all duration-300">
+      {/* Photo */}
+      <div className="h-48 bg-[#F3F4F6] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2E4DA7]/5 to-[#2A52C9]/5" />
+        {item.photo_url ? (
+          <SafeImage
+            src={item.photo_url}
+            alt={item.name}
+            className="w-full h-full object-cover"
+            fallbackClassName="w-full h-full flex items-center justify-center"
+            fallback={<Wrench className="h-12 w-12 text-[#9CA3AF]" />}
+          />
+        ) : (
+          <Wrench className="h-12 w-12 text-[#9CA3AF] relative z-10" />
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-5">
+        <span className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full mb-3">
+          {CATEGORY_LABELS[item.category ?? ''] || item.category || 'Peralatan'}
+        </span>
+        <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#2E4DA7] transition-colors">
+          {item.name}
+        </h3>
+        <p className="text-[#2E4DA7] font-semibold">
+          {item.rate_per_day != null && item.rate_per_day > 0
+            ? `${formatRupiah(item.rate_per_day)}/hari`
+            : 'Tarif belum diatur'
+          }
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export function KatalogPreview({ rooms, equipment }: KatalogPreviewProps) {
   const [activeTab, setActiveTab] = useState<'ruangan' | 'peralatan'>('ruangan')
 
-  const displayData = activeTab === 'ruangan' ? roomsData : equipmentData
+  const hasRooms = rooms.length > 0
+  const hasEquipment = equipment.length > 0
+  const showEmpty = activeTab === 'ruangan' ? !hasRooms : !hasEquipment
 
   return (
     <div>
@@ -114,37 +162,19 @@ export function KatalogPreview() {
 
       {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        {displayData.map((item) => (
-          <div
-            key={item.id}
-            className="group bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden hover:shadow-lg transition-all duration-300"
-          >
-            {/* Photo Placeholder */}
-            <div className="h-48 bg-[#F3F4F6] flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#2E4DA7]/5 to-[#2A52C9]/5" />
-              {activeTab === 'ruangan' ? (
-                <Building2 className="h-12 w-12 text-[#9CA3AF]" />
-              ) : (
-                <Wrench className="h-12 w-12 text-[#9CA3AF]" />
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="p-5">
-              <span className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full mb-3">
-                {item.type}
-              </span>
-              <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#2E4DA7] transition-colors">
-                {item.name}
-              </h3>
-              {isRoomItem(item) && (
-                <p className="text-sm text-[#6B7280] mb-3">
-                  Kapasitas: {item.capacity} orang
-                </p>
-              )}
-              <p className="text-[#2E4DA7] font-semibold">{item.price}</p>
-            </div>
+        {showEmpty && (
+          <div className="col-span-full text-center py-12 text-[#6B7280]">
+            <p className="text-lg font-medium">Belum ada data tersedia</p>
+            <p className="text-sm mt-1">Silakan cek katalog lengkap untuk melihat semua item.</p>
           </div>
+        )}
+
+        {activeTab === 'ruangan' && rooms.map((room) => (
+          <RoomCard key={room.id} room={room} />
+        ))}
+
+        {activeTab === 'peralatan' && equipment.map((item) => (
+          <EquipmentCard key={item.id} item={item} />
         ))}
       </div>
 

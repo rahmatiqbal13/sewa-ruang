@@ -2,64 +2,46 @@ import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { AdminShell } from '@/components/layouts/AdminShell'
+import { isSuperAdmin } from '@/lib/permissions'
 
-// Server-side fetch institution profile
 async function getInstitutionProfile() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return null
-    }
-    
+    if (!supabaseUrl || !supabaseKey) return null
     const supabase = createSupabaseClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+      auth: { autoRefreshToken: false, persistSession: false },
     })
-    
-    const { data, error } = await supabase
-      .from('institution_profile')
-      .select('*')
-      .single()
-    
-    if (error || !data) {
-      return null
-    }
-    
-    return data
-  } catch (error) {
-    console.error('Error fetching institution profile:', error)
+    const { data } = await supabase.from('institution_profile').select('*').single()
+    return data ?? null
+  } catch {
     return null
   }
 }
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // createClient (anon) hanya untuk auth.getUser() — token ada di cookie user
+export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // createAdminClient (service role) untuk role check — bypass RLS agar tidak
-  // tergantung pada policy users table yang bisa berubah
-  const adminDb = await createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await ((adminDb as any).from('users') as any)
+  const adminDb = (await createAdminClient()) as any
+  const { data: profile } = await adminDb
+    .from('users')
     .select('role, name, photo_url')
     .eq('id', user.id)
     .single() as { data: { role: string; name: string; photo_url: string | null } | null }
 
-  if (!profile || !['super_admin', 'admin', 'staff'].includes(profile.role)) {
-    redirect('/dashboard')
+  // Hanya super_admin yang boleh masuk ke route group ini
+  if (!profile || !isSuperAdmin(profile.role)) {
+    redirect('/admin/dashboard')
   }
 
   const institution = await getInstitutionProfile()
 
   return (
-    <AdminShell 
-      userName={profile.name} 
+    <AdminShell
+      userName={profile.name}
       userRole={profile.role}
       photoUrl={profile.photo_url ?? undefined}
       institution={institution}

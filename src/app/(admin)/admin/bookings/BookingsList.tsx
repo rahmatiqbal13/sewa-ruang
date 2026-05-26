@@ -29,6 +29,14 @@ import { ContactButtons } from '@/components/shared/ContactButtons'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/ui/empty-state'
 
+function buildPageUrl(page: number, status: string): string {
+  const params = new URLSearchParams()
+  if (status) params.set('status', status)
+  if (page > 1) params.set('page', String(page))
+  const qs = params.toString()
+  return `/admin/bookings${qs ? `?${qs}` : ''}`
+}
+
 const STATUS_TABS = [
   { value: '', label: 'Semua', color: 'bg-[#2E4DA7]', bg: 'bg-[#F3F4F6]' },
   { value: 'pending', label: 'Menunggu', color: 'bg-amber-500', bg: 'bg-amber-50' },
@@ -68,14 +76,16 @@ interface BookingsListProps {
   bookings: Booking[]
   statusCounts: Record<string, number>
   currentStatus: string
+  totalCount: number
+  currentPage: number
+  totalPages: number
 }
 
 const ITEMS_PER_PAGE = 10
 
-export function BookingsList({ bookings, statusCounts, currentStatus }: BookingsListProps) {
+export function BookingsList({ bookings, statusCounts, currentStatus, totalCount, currentPage, totalPages }: BookingsListProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [messageDialogOpen, setMessageDialogOpen] = useState(false)
   const [resending, setResending] = useState<string | null>(null)
@@ -200,21 +210,17 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
 
   function clearFilters() {
     setSearchQuery('')
-    setCurrentPage(1)
   }
 
-  // Filter bookings by search
-  const filteredBookings = bookings.filter(b => 
+  // Client-side search hanya untuk halaman yang sedang dimuat
+  const filteredBookings = bookings.filter(b =>
     b.reference_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
     b.users?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     b.users?.institution.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginatedBookings = filteredBookings.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  const paginatedBookings = filteredBookings
 
-  const totalCount = bookings.length
   const hasSelection = selectedItems.size > 0
 
   // Check for overdue bookings
@@ -383,7 +389,7 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
 
       {/* Count line */}
       <p className="text-xs text-[#6B7280]">
-        Menampilkan {paginatedBookings.length} dari {filteredBookings.length} pengajuan
+        Menampilkan {paginatedBookings.length} dari {searchQuery ? filteredBookings.length : totalCount} pengajuan
         {totalPages > 1 && ` · Halaman ${currentPage} / ${totalPages}`}
       </p>
 
@@ -596,27 +602,35 @@ export function BookingsList({ bookings, statusCounts, currentStatus }: Bookings
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Pagination — URL-based agar state tidak hilang saat navigasi */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="page-btn">
+          <Link
+            href={buildPageUrl(currentPage - 1, currentStatus)}
+            aria-disabled={currentPage === 1}
+            className={currentPage === 1 ? 'page-btn pointer-events-none opacity-40' : 'page-btn'}
+          >
             <ChevronLeft className="h-4 w-4" /> Sebelumnya
-          </button>
+          </Link>
           <div className="flex items-center gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => {
               if (n === 1 || n === totalPages || (n >= currentPage - 1 && n <= currentPage + 1))
                 return (
-                  <button key={n} onClick={() => setCurrentPage(n)} className={n === currentPage ? 'page-btn-active' : 'page-btn-num'}>
+                  <Link key={n} href={buildPageUrl(n, currentStatus)} className={n === currentPage ? 'page-btn-active' : 'page-btn-num'}>
                     {n}
-                  </button>
+                  </Link>
                 )
               if (n === 2 || n === totalPages - 1) return <span key={n} className="text-[#6B7280]/40 text-sm px-1">…</span>
               return null
             })}
           </div>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="page-btn">
+          <Link
+            href={buildPageUrl(currentPage + 1, currentStatus)}
+            aria-disabled={currentPage === totalPages}
+            className={currentPage === totalPages ? 'page-btn pointer-events-none opacity-40' : 'page-btn'}
+          >
             Selanjutnya <ChevronRightIcon className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       )}
     </div>

@@ -62,10 +62,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
 
-    // Check if booking is in correct status
-    if (!['payment_uploaded', 'pending_payment'].includes(booking.status)) {
-      return NextResponse.json({ 
-        error: `Cannot verify payment for booking status: ${booking.status}` 
+    // Hanya booking dengan bukti yang sudah diupload yang bisa diverifikasi
+    if (booking.status !== 'payment_uploaded') {
+      return NextResponse.json({
+        error: `Pembayaran hanya dapat diverifikasi setelah bukti transfer diupload. Status saat ini: ${booking.status}`
       }, { status: 400 })
     }
 

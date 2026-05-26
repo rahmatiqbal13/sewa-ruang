@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -51,10 +52,10 @@ const mainMenuItems: NavItem[] = [
 ]
 
 const superAdminMenuItems: NavItem[] = [
-  { label: 'Kelola Pengguna', href: '/admin/users',     icon: Users,     superAdminOnly: true },
-  { label: 'Database',        href: '/admin/database',  icon: Database,  superAdminOnly: true },
-  { label: 'System Logs',     href: '/admin/logs',      icon: FileText,  superAdminOnly: true },
-  { label: 'Trash/Recycle',   href: '/admin/trash',     icon: Trash2,    superAdminOnly: true },
+  { label: 'Kelola Pengguna', href: '/super-admin/users',     icon: Users,     superAdminOnly: true },
+  { label: 'Database',        href: '/super-admin/database',  icon: Database,  superAdminOnly: true },
+  { label: 'System Logs',     href: '/super-admin/logs',      icon: FileText,  superAdminOnly: true },
+  { label: 'Trash/Recycle',   href: '/super-admin/trash',     icon: Trash2,    superAdminOnly: true },
 ]
 
 interface AdminSidebarProps {
@@ -77,7 +78,13 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
   }
 
   function NavLink({ item }: { item: NavItem }) {
-    const active = pathname === item.href || pathname.startsWith(item.href + '/')
+    const [isActive, setIsActive] = useState(false)
+
+    useEffect(() => {
+      if (pathname) {
+        setIsActive(pathname === item.href || pathname.startsWith(item.href + '/'))
+      }
+    }, [pathname, item.href])
 
     if (item.superAdminOnly && !userIsSuperAdmin) return null
 
@@ -87,25 +94,25 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
         onClick={onClose}
         className={cn(
           'group relative flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-200 overflow-hidden cursor-pointer',
-          active
+          isActive
             ? 'bg-blue-600/15 text-blue-700'
             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-          item.superAdminOnly && !active && 'border-l-2 border-indigo-400 pl-[10px]'
+          item.superAdminOnly && !isActive && 'border-l-2 border-indigo-400 pl-[10px]'
         )}
       >
-        {active && (
+        {isActive && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-blue-600 rounded-r-full" />
         )}
 
         <item.icon className={cn(
           'h-4 w-4 shrink-0 transition-colors duration-200',
-          active ? 'text-blue-700' : 'text-slate-400 group-hover:text-slate-600',
-          item.superAdminOnly && !active && 'text-indigo-500'
+          isActive ? 'text-blue-700' : 'text-slate-400 group-hover:text-slate-600',
+          item.superAdminOnly && !isActive && 'text-indigo-500'
         )} />
 
         <span className="flex-1">{item.label}</span>
 
-        {active && <ChevronRight className="h-3.5 w-3.5 text-blue-400" />}
+        {isActive && <ChevronRight className="h-3.5 w-3.5 text-blue-400" />}
         {item.superAdminOnly && <ShieldCheck className="h-3 w-3 text-indigo-400" />}
       </Link>
     )

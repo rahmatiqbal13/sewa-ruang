@@ -45,15 +45,37 @@ async function getLandingData() {
       { count: roomCount },
       { count: equipmentCount },
       { count: bookingCount },
+      { data: previewRooms, error: roomsError },
+      { data: previewEquipment, error: equipmentError },
     ] = await Promise.all([
       supabase.from('institution_profile').select('*').single(),
       supabase.from('rooms').select('*', { count: 'exact', head: true }),
       supabase.from('equipment').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('bookings').select('*', { count: 'exact', head: true }),
+      supabase
+        .from('rooms')
+        .select('id, name, room_code, capacity, photo_url, rate_per_day')
+        .eq('is_active', true)
+        .eq('is_for_rent', true)
+        .order('name')
+        .limit(3),
+      supabase
+        .from('equipment')
+        .select('id, name, category, photo_url, rate_per_day')
+        .eq('is_active', true)
+        .eq('current_condition', 'good')
+        .order('name')
+        .limit(3),
     ])
 
     if (instError) {
-      console.error('Error fetching institution:', instError)
+      console.error('Error fetching institution:', JSON.stringify(instError))
+    }
+    if (roomsError) {
+      console.error('Error fetching preview rooms:', JSON.stringify(roomsError, null, 2))
+    }
+    if (equipmentError) {
+      console.error('Error fetching preview equipment:', JSON.stringify(equipmentError, null, 2))
     }
 
     return {
@@ -61,6 +83,8 @@ async function getLandingData() {
       roomCount: roomCount || 0,
       equipmentCount: equipmentCount || 0,
       bookingCount: bookingCount || 0,
+      previewRooms: previewRooms ?? [],
+      previewEquipment: previewEquipment ?? [],
     }
   } catch (error) {
     console.error('Error fetching landing data:', error)
@@ -147,6 +171,8 @@ export default async function HomePage() {
   const roomCount = data?.roomCount || 0
   const equipmentCount = data?.equipmentCount || 0
   const bookingCount = data?.bookingCount || 0
+  const previewRooms = data?.previewRooms ?? []
+  const previewEquipment = data?.previewEquipment ?? []
   const currentYear = new Date().getFullYear()
 
   return (
@@ -357,7 +383,7 @@ export default async function HomePage() {
             </div>
 
             {/* Katalog Preview Component */}
-            <KatalogPreview />
+            <KatalogPreview rooms={previewRooms} equipment={previewEquipment} />
 
           </div>
         </section>

@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
+import { createBookingAction } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -279,95 +279,38 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
 
   async function onSubmit(data: unknown) {
     const formData = data as FormData
-    
+
     if (!hasItems) {
       toast.error('Pilih minimal satu ruangan atau alat')
       return
     }
 
-    // Validate time if rooms are selected
-    if (hasRooms && (!formData.start_time || !formData.end_time)) {
-      toast.error('Waktu mulai dan selesai wajib diisi untuk peminjaman ruangan')
-      return
-    }
-
     setLoading(true)
-    const supabase = createClient()
-    
-    // Set default time if no rooms selected
-    const startTime = hasRooms ? formData.start_time : '00:00'
-    const endTime = hasRooms ? formData.end_time : '23:59'
-    
-    const start = new Date(`${formData.start_date}T${startTime}`)
-    const end = new Date(`${formData.end_date}T${endTime}`)
 
-    if (end <= start) {
-      toast.error('Waktu selesai harus setelah waktu mulai')
-      setLoading(false)
-      return
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = supabase as any
-
-    // Calculate total and snapshot
-    const hours = Math.ceil((end.getTime() - start.getTime()) / 3600000)
-    const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
-
-    const snapshotRate: Record<string, unknown> = {
-      borrower_category: borrowerCategory,
-      rate_category: rateCategory,
-      hours,
-      days,
-      rooms: selectedRoomList.map(r => ({ id: r.id, name: r.name, rate_per_hour: r.rate_per_hour })),
-      equipment: selectedEquipmentList.map(e => ({ id: e.id, name: e.name, rate_per_day: getRateForEquipment(e), quantity: e.quantity })),
-    }
-
-    // Insert booking (reference_no akan di-generate otomatis oleh database)
-    const { data: booking, error } = await sb.from('bookings').insert({
-      user_id: profile!.id,
-      status: 'pending',
+    const result = await createBookingAction({
+      start_date: formData.start_date,
+      start_time: formData.start_time,
+      end_date: formData.end_date,
+      end_time: formData.end_time,
       purpose: formData.purpose,
-      start_datetime: start.toISOString(),
-      end_datetime: end.toISOString(),
-      total_amount: estimatedTotal,
-      snapshot_rate: snapshotRate,
-    }).select('id').single() as { data: { id: string } | null; error: { message: string } | null }
+      room_ids: selectedRoomList.map(r => r.id),
+      equipment_items: selectedEquipmentList.map(e => ({ id: e.id, quantity: e.quantity })),
+    })
 
-    if (error || !booking) {
-      toast.error(error?.message ?? 'Gagal membuat pengajuan')
+    if (!result.success) {
+      toast.error(result.error)
       setLoading(false)
       return
     }
-
-    // Insert booking items
-    const bookingItems = [
-      ...selectedRoomList.map(room => ({
-        booking_id: booking.id,
-        item_type: 'room' as const,
-        room_id: room.id,
-        equipment_id: null,
-        quantity: 1,
-      })),
-      ...selectedEquipmentList.map(equip => ({
-        booking_id: booking.id,
-        item_type: 'equipment' as const,
-        room_id: null,
-        equipment_id: equip.id,
-        quantity: equip.quantity,
-      })),
-    ]
-
-    await sb.from('booking_items').insert(bookingItems)
 
     toast.success('Pengajuan berhasil dikirim!')
-    
+
     // Notifikasi ke admin (async, tidak block user)
     fetch('/api/notifications/booking-submitted', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ booking_id: booking.id }),
-    }).catch(() => {/* Silent fail */})
+      body: JSON.stringify({ booking_id: result.bookingId }),
+    }).catch(() => { /* Silent fail */ })
 
     router.push('/bookings')
     router.refresh()

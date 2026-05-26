@@ -112,14 +112,24 @@ export async function POST(req: Request) {
       }, { status: 500 })
     }
 
-    // Update booking status
-    await (supabase.from('bookings') as any)
+    // Update booking status (with full rollback on failure)
+    const { error: statusError } = await (supabase.from('bookings') as any)
       .update({
         status: 'payment_uploaded',
         payment_proof_url: publicUrl,
         updated_at: new Date().toISOString()
       })
       .eq('id', bookingId)
+
+    if (statusError) {
+      console.error('Status update error:', statusError)
+      // Rollback: hapus record proof dan file yang sudah diupload
+      await (supabase.from('payment_proofs') as any).delete().eq('id', proofData.id)
+      await supabase.storage.from('payments').remove([fileName])
+      return NextResponse.json({
+        error: 'Gagal memperbarui status booking. Silakan coba lagi.'
+      }, { status: 500 })
+    }
 
     // Send notification to admin
     try {
