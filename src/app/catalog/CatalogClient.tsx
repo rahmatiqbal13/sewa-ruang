@@ -386,12 +386,14 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
         </div>
         
         {/* Action */}
-        <Button 
-          variant="ghost" 
-          className="w-full h-10 text-[#2E4DA7] hover:bg-[#EFF3FF] font-medium"
-        >
-          Lihat Detail
-        </Button>
+        <Link href={`/equipment/${item.id}`}>
+          <Button 
+            variant="ghost" 
+            className="w-full h-10 text-[#2E4DA7] hover:bg-[#EFF3FF] font-medium"
+          >
+            Lihat Detail
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   )
