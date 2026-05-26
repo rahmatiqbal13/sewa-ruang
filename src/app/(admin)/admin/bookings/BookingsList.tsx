@@ -510,10 +510,10 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                           <ContactButtons booking={{ id: booking.id, reference_no: booking.reference_no, status: booking.status, start_datetime: booking.start_datetime, end_datetime: booking.end_datetime, users: booking.users ? { name: booking.users.name, email: booking.users.email || undefined, phone: booking.users.phone || undefined, telegram_username: booking.users.telegram_username || undefined } : null, booking_items: booking.booking_items }} />
                         )}
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <div className="icon-btn" role="button" aria-label="Menu lainnya">
+                          <DropdownMenuTrigger>
+                            <span className="icon-btn inline-flex items-center justify-center" aria-label="Menu lainnya">
                               <MoreHorizontal className="h-3.5 w-3.5" />
-                            </div>
+                            </span>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-[10px]">
                             <DropdownMenuItem
