@@ -59,7 +59,7 @@ function RoomCard({ room }: { room: PreviewRoom }) {
 
       {/* Content */}
       <div className="p-5">
-        <span className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full mb-3">
+        <span suppressHydrationWarning className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full mb-3">
           {room.room_code || 'Ruangan'}
         </span>
         <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#2E4DA7] transition-colors">
@@ -70,7 +70,7 @@ function RoomCard({ room }: { room: PreviewRoom }) {
             Kapasitas: {room.capacity} orang
           </p>
         )}
-        <p className="text-[#2E4DA7] font-semibold">
+        <p suppressHydrationWarning className="text-[#2E4DA7] font-semibold">
           {room.rate_per_day != null && room.rate_per_day > 0
             ? `${formatRupiah(room.rate_per_day)}/hari`
             : 'Tarif belum diatur'

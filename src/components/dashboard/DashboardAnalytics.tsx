@@ -341,8 +341,8 @@ export function DashboardAnalytics() {
             <CardTitle className="text-lg">Tren Peminjaman Harian</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[300px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
                 <LineChart data={stats.dailyBookings}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis 
