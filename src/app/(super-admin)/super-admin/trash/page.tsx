@@ -1,21 +1,20 @@
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Trash2, AlertCircle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default async function TrashPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (await createAdminClient()) as any
+  const sb = createAdminDbClient()
 
   // Fetch soft-deleted equipment (is_active = false)
-  const { data: deletedEquipment } = await supabase
+  const { data: deletedEquipment } = await sb
     .from('equipment')
     .select('id, name, equipment_code, updated_at')
     .eq('is_active', false)
     .order('updated_at', { ascending: false })
-    .limit(50)
+    .limit(50) as any
 
-  const { data: deletedRooms } = await supabase
+  const { data: deletedRooms } = await sb
     .from('rooms')
     .select('id, name, room_code, updated_at')
     .eq('is_active', false)

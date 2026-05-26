@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { InventoryForm } from '../InventoryForm'
 
@@ -9,8 +9,7 @@ export default async function NewInventoryPage({
 }) {
   const { roomId } = await searchParams
   const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -29,14 +28,14 @@ export default async function NewInventoryPage({
   }
 
   // Get all buildings
-  const { data: buildingsData } = await supabase
+  const { data: buildingsData } = await sb
     .from('buildings')
     .select('id, name, code')
     .eq('is_active', true)
     .order('name')
 
   // Get all rooms with building info
-  const { data: roomsData } = await supabase
+  const { data: roomsData } = await sb
     .from('rooms')
     .select('id, name, room_code, building_id, buildings(name, code)')
     .eq('is_active', true)

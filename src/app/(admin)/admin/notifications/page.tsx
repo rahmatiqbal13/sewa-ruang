@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { BellRing, Mail, Settings2, FileText } from 'lucide-react'
@@ -12,15 +12,13 @@ export default async function NotificationsPage({
   searchParams: Promise<{ tab?: string }>
 }) {
   const { tab = 'channels' } = await searchParams
-  const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
 
   const [{ data: channelConfigs }, { data: templates }, { data: notifications }] = await Promise.all([
-    sb.from('notification_channel_configs').select('*') as Promise<{ data: Array<{ id: string; channel: string; is_enabled: boolean; config: Record<string, string> }> | null }>,
-    sb.from('notification_templates').select('*') as Promise<{ data: Array<{ id: string; event_type: string; channel: string; user_category: string | null; subject: string | null; body: string; is_active: boolean }> | null }>,
-    sb.from('notifications').select('*, users!user_id(name, email)').order('created_at', { ascending: false }).limit(50) as Promise<{ data: Array<{ id: string; title: string; body: string; type: string; is_read: boolean; created_at: string; users: { name: string; email: string } | null }> | null }>,
-  ])
+    sb.from('notification_channel_configs').select('*'),
+    sb.from('notification_templates').select('*'),
+    sb.from('notifications').select('*, users!user_id(name, email)').order('created_at', { ascending: false }).limit(50),
+  ]) as any
 
   const tabs = [
     { key: 'channels', label: 'Saluran', icon: Settings2 },
@@ -84,7 +82,7 @@ export default async function NotificationsPage({
             {notifications?.length === 0 && (
               <p className="text-center text-muted-foreground py-10 text-sm">Belum ada notifikasi</p>
             )}
-            {notifications?.map((n) => (
+            {notifications?.map((n: any) => (
               <div key={n.id} className="flex items-start justify-between gap-4 px-6 py-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">

@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { RoomsPageClient } from './RoomsPageClient'
 
 export const revalidate = 30
@@ -15,13 +15,11 @@ export default async function RoomsPage({
   searchParams: Promise<SearchParams>
 }) {
   const { for_rent, building: buildingFilter, floor: floorFilter } = await searchParams
-  const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
 
   try {
     // Get all buildings for filter dropdown (include floor_count)
-    const { data: buildings, error: buildingsError } = await supabase
+    const { data: buildings, error: buildingsError } = await sb
       .from('buildings')
       .select('id, name, code, floor_count')
       .eq('is_active', true)
@@ -36,7 +34,7 @@ export default async function RoomsPage({
     let roomsQuery = sb
       .from('rooms')
       .select('id, name, room_code, floor_number, capacity, rate_per_hour, rate_per_day, current_condition, is_active, is_for_rent, photo_url, description, building_id')
-      .order('name')
+      .order('name') as any
 
     // Apply building filter
     if (buildingFilter) {

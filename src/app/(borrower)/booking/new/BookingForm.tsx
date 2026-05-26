@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 import type { BookableItem, RoomItem, EquipmentItem, UserProfile, UserBorrowerCategory, RateCategory } from './page'
+import { mapUserToRateCategory } from './shared'
 
 interface SelectedRoom extends RoomItem {
   selected: boolean
@@ -101,12 +102,16 @@ function getRateCategory(userCategory: UserBorrowerCategory | null): RateCategor
   return map[userCategory ?? 'mahasiswa'] ?? 'mahasiswa_s1'
 }
 
-function getRateForEquipment(equipment: EquipmentItem): number {
-  return equipment.rates[0]?.rate_per_day ?? 0
+function getRateForEquipment(equipment: EquipmentItem, borrowerCategory: UserBorrowerCategory): number {
+  const rateCategory = mapUserToRateCategory(borrowerCategory)
+  const rate = equipment.rates.find(r => r.user_category === rateCategory)
+  return rate?.rate_per_day ?? equipment.rates[0]?.rate_per_day ?? 0
 }
 
-function requiresSupervision(equipment: EquipmentItem): boolean {
-  return equipment.rates[0]?.requires_supervision ?? false
+function requiresSupervision(equipment: EquipmentItem, borrowerCategory: UserBorrowerCategory): boolean {
+  const rateCategory = mapUserToRateCategory(borrowerCategory)
+  const rate = equipment.rates.find(r => r.user_category === rateCategory)
+  return rate?.requires_supervision ?? equipment.rates[0]?.requires_supervision ?? false
 }
 
 interface BookingFormProps {
@@ -240,7 +245,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     // Calculate equipment (daily rate)
     const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
     selectedEquipmentList.forEach(equip => {
-      const ratePerDay = getRateForEquipment(equip)
+      const ratePerDay = getRateForEquipment(equip, borrowerCategory)
       const equipTotal = days * ratePerDay * equip.quantity
       total += equipTotal
       breakdown.push({
@@ -490,7 +495,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 const selected = selectedEquipment.find(e => e.id === equip.id)
                 const isSelected = selected?.selected ?? false
                 const quantity = selected?.quantity ?? 1
-                const rate = getRateForEquipment(equip)
+                const rate = getRateForEquipment(equip, borrowerCategory)
                 
                 return (
                   <div 
@@ -510,7 +515,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                         {equip.equipment_code && (
                           <Badge variant="outline" className="text-xs font-mono">{equip.equipment_code}</Badge>
                         )}
-                        {requiresSupervision(equip) && (
+                        {requiresSupervision(equip, borrowerCategory) && (
                           <Badge variant="destructive" className="text-[10px]">Perlu Pendamping</Badge>
                         )}
                       </div>

@@ -157,7 +157,7 @@ export default function BatchQRClientPage() {
           name: r.name,
           code: r.room_code,
           type: 'room',
-          url: `${baseUrl}/rooms/${createSlug(r.name)}`,
+           url: `${baseUrl}/admin/scan?type=room&id=${createSlug(r.name)}`,
           meta: r.building_name
         })
       }
@@ -170,7 +170,7 @@ export default function BatchQRClientPage() {
           name: e.name,
           code: e.equipment_code,
           type: 'equipment',
-          url: `${baseUrl}/equipment/${createSlug(e.name)}/scan`,
+          url: `${baseUrl}/admin/scan?type=equipment&id=${createSlug(e.name)}`,
           meta: e.category
         })
       }
@@ -184,7 +184,7 @@ export default function BatchQRClientPage() {
             name: i.name,
             code: i.inventory_code,
             type: 'inventory',
-            url: `${baseUrl}/inventory/${i.id}`,
+            url: `${baseUrl}/admin/scan?type=inventory&id=${i.id}`,
             meta: i.room_name
           })
         }
@@ -328,7 +328,7 @@ export default function BatchQRClientPage() {
                 }`}
               >
                 <div className="flex justify-center mb-2">
-                  <QRCode value={`${baseUrl}/rooms/${createSlug(room.name)}`} size={60} level="L" />
+                  <QRCode value={`${baseUrl}/admin/scan?type=room&id=${createSlug(room.name)}`} size={60} level="L" />
                 </div>
                 <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                   {room.room_code || 'No Code'}
@@ -381,7 +381,7 @@ export default function BatchQRClientPage() {
                 }`}
               >
                 <div className="flex justify-center mb-2">
-                  <QRCode value={`${baseUrl}/equipment/${createSlug(item.name)}/scan`} size={60} level="L" />
+                    <QRCode value={`${baseUrl}/admin/scan?type=equipment&id=${createSlug(item.name)}`} size={60} level="L" />
                 </div>
                 <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                   {item.equipment_code || 'No Code'}
@@ -430,7 +430,7 @@ export default function BatchQRClientPage() {
                   }`}
                 >
                   <div className="flex justify-center mb-2">
-                    <QRCode value={`${baseUrl}/inventory/${item.id}`} size={60} level="L" />
+                    <QRCode value={`${baseUrl}/admin/scan?type=inventory&id=${item.id}`} size={60} level="L" />
                   </div>
                   <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                     {item.inventory_code || 'No Code'}

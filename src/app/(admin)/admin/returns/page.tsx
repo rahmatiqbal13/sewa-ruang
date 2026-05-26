@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { formatDateTime, cn } from '@/lib/utils'
@@ -13,9 +13,7 @@ export default async function ReturnsPage({
   const { type } = await searchParams
   const activeType = type === 'room' ? 'room' : 'equipment'
 
-  const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
 
   // Fetch ALL approved/paid bookings (not just overdue)
   // These are bookings that need to be returned

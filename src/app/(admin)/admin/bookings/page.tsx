@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { BookingsList } from './BookingsList'
 
 const ITEMS_PER_PAGE = 10
@@ -13,11 +13,10 @@ export default async function AdminBookingsPage({
   const from = (currentPage - 1) * ITEMS_PER_PAGE
   const to = from + ITEMS_PER_PAGE - 1
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (await createAdminClient()) as any
+  const sb = createAdminDbClient()
 
   // ── Single query dengan nested join — menggantikan 4 query terpisah ───────
-  let query = supabase
+  let query = sb
     .from('bookings')
     .select(
       `
@@ -35,7 +34,7 @@ export default async function AdminBookingsPage({
     .order('created_at', { ascending: false })
     .range(from, to)
 
-  if (status) query = query.eq('status', status)
+  if (status) query = (query as any).eq('status', status)
 
   const { data: bookings, count } = await query
 
@@ -43,7 +42,7 @@ export default async function AdminBookingsPage({
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
 
   // ── Status counts (lightweight query, hanya kolom status) ─────────────────
-  const { data: allStatuses } = await supabase
+  const { data: allStatuses } = await sb
     .from('bookings')
     .select('status')
 

@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { RoomInventoryList } from './RoomInventoryList'
 
@@ -32,9 +32,7 @@ export default async function InventoryPage({
   params: Promise<{ roomId: string }> 
 }) {
   const { roomId: slug } = await params
-  const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
 
   try {
     // Find room by slug

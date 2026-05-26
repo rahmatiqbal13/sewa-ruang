@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -10,7 +9,7 @@ import {
   Building2, LayoutDashboard, Package, CalendarDays,
   CreditCard, RotateCcw, BarChart3, QrCode, Boxes,
   LogOut, Users, Settings, BellRing, DoorOpen, ShieldCheck,
-  ChevronRight, Database, FileText, Trash2
+  ChevronRight, Database, FileText, Trash2, Scan
 } from 'lucide-react'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { isSuperAdmin, UserRole } from '@/lib/permissions'
@@ -46,6 +45,7 @@ const mainMenuItems: NavItem[] = [
   { label: 'Pembayaran',          href: '/admin/payments',         icon: CreditCard },
   { label: 'Pengembalian',        href: '/admin/returns',          icon: RotateCcw },
   { label: 'QR Code',             href: '/admin/qr',               icon: QrCode },
+  { label: 'Scan QR',             href: '/admin/scan',             icon: Scan },
   { label: 'Laporan',             href: '/admin/reports',          icon: BarChart3 },
   { label: 'Notifikasi',          href: '/admin/notifications',    icon: BellRing },
   { label: 'Pengaturan',          href: '/admin/settings',         icon: Settings },
@@ -78,13 +78,7 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
   }
 
   function NavLink({ item }: { item: NavItem }) {
-    const [isActive, setIsActive] = useState(false)
-
-    useEffect(() => {
-      if (pathname) {
-        setIsActive(pathname === item.href || pathname.startsWith(item.href + '/'))
-      }
-    }, [pathname, item.href])
+    const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
 
     if (item.superAdminOnly && !userIsSuperAdmin) return null
 

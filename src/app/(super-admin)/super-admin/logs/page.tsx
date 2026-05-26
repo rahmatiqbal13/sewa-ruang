@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { FileText, Clock, Database, User, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -71,15 +71,14 @@ export default async function LogsPage({
 }: {
   searchParams: Promise<{ page?: string; table?: string }>
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (await createAdminClient()) as any
+  const sb = createAdminDbClient()
 
   const { page: pageParam, table: tableFilter } = await searchParams
   const page = parseInt(pageParam ?? '1')
   const limit = 20
   const offset = (page - 1) * limit
 
-  let query = supabase
+  let query = sb
     .from('activity_logs')
     .select('*', { count: 'exact' })
     .order('performed_at', { ascending: false })
@@ -95,7 +94,7 @@ export default async function LogsPage({
 
   const totalPages = Math.ceil((count ?? 0) / limit)
 
-  const { data: tableStats } = await supabase
+  const { data: tableStats } = await sb
     .from('activity_logs')
     .select('table_name')
     .then(({ data }: { data: Array<{ table_name: string }> | null }) => {

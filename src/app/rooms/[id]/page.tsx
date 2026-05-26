@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -56,10 +56,9 @@ const USER_CATEGORY_LABELS: Record<string, string> = {
 export default async function RoomDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: slug } = await params
   const supabase = await createClient()
+  const sb = createAdminDbClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
 
   // Find room by slug
   const { data: allRooms } = await sb.from('rooms').select('id, name').eq('is_active', true)

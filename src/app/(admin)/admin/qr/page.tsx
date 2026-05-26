@@ -166,7 +166,7 @@ export default function QRPage() {
             <div className="lg:col-span-2">
               {selectedRoom ? (
                 <QRCodeDisplay
-                  url={`${baseUrl}/rooms/${createSlug(selectedRoom.name)}`}
+                  url={`${baseUrl}/admin/scan?type=room&id=${createSlug(selectedRoom.name)}`}
                   name={selectedRoom.name}
                   code={selectedRoom.room_code}
                   type="room"
@@ -207,7 +207,7 @@ export default function QRPage() {
             <div className="lg:col-span-2">
               {selectedEquipment ? (
                 <QRCodeDisplay
-                  url={`${baseUrl}/equipment/${createSlug(selectedEquipment.name)}/scan`}
+                  url={`${baseUrl}/admin/scan?type=equipment&id=${createSlug(selectedEquipment.name)}`}
                   name={selectedEquipment.name}
                   code={selectedEquipment.equipment_code}
                   type="equipment"
@@ -249,7 +249,7 @@ export default function QRPage() {
               <div className="lg:col-span-2">
                 {selectedInventory ? (
                   <QRCodeDisplay
-                    url={`${baseUrl}/inventory/${selectedInventory.id}`}
+                    url={`${baseUrl}/admin/scan?type=inventory&id=${selectedInventory.id}`}
                     name={selectedInventory.name}
                     code={selectedInventory.inventory_code}
                     type="inventory"

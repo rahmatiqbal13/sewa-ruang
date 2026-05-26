@@ -1,10 +1,9 @@
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Database, AlertTriangle, Users, HardDrive, Activity } from 'lucide-react'
 
 export default async function DatabasePage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (await createAdminClient()) as any
+  const sb = createAdminDbClient()
 
   const [
     { count: usersCount },
@@ -12,10 +11,10 @@ export default async function DatabasePage() {
     { count: roomsCount },
     { count: equipmentCount },
   ] = await Promise.all([
-    supabase.from('users').select('*', { count: 'exact', head: true }),
-    supabase.from('bookings').select('*', { count: 'exact', head: true }),
-    supabase.from('rooms').select('*', { count: 'exact', head: true }),
-    supabase.from('equipment').select('*', { count: 'exact', head: true }),
+    sb.from('users').select('*', { count: 'exact', head: true }),
+    sb.from('bookings').select('*', { count: 'exact', head: true }),
+    sb.from('rooms').select('*', { count: 'exact', head: true }),
+    sb.from('equipment').select('*', { count: 'exact', head: true }),
   ])
 
   const stats = [

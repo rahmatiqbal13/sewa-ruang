@@ -1,4 +1,4 @@
-import { createAdminClient as createClient, createAdminDbClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -43,8 +43,7 @@ function slugMatchesEquipment(slug: string, equipmentName: string): boolean {
 export default async function EditEquipmentPage({ params }: Props) {
   const { slug } = await params
   const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -81,7 +80,7 @@ export default async function EditEquipmentPage({ params }: Props) {
     .from('equipment')
     .select('*')
     .eq('id', equipmentId)
-    .single()
+    .single() as any
 
   if (!equipment) {
     notFound()
@@ -105,7 +104,7 @@ export default async function EditEquipmentPage({ params }: Props) {
     .from('rooms')
     .select('id, name, room_code, building_id, floor_number')
     .eq('is_active', true)
-    .order('name')
+    .order('name') as any
 
   // Get count of existing equipment names only (not the list)
   const { count: existingCount } = await sb
@@ -117,8 +116,7 @@ export default async function EditEquipmentPage({ params }: Props) {
     'use server'
     
     const supabase = await createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sba = supabase as any
+    const sba = createAdminDbClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -208,7 +206,7 @@ export default async function EditEquipmentPage({ params }: Props) {
         is_active,
         photo_url,
         updated_at: new Date().toISOString(),
-      })
+      } as any)
       .eq('id', equipmentId)
 
     if (error) {

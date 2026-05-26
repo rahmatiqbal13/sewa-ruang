@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { EquipmentList } from './EquipmentList'
 
 export const revalidate = 30
@@ -24,18 +24,17 @@ export default async function EquipmentPage({
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
+  const sb = createAdminDbClient()
+
   // Check if user is super admin
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: userProfile } = await (supabase.from('users') as any)
+  const { data: userProfile } = await sb
+    .from('users')
     .select('role')
     .eq('id', user!.id)
     .single()
-  
+
   const isSuperAdmin = userProfile?.role === 'super_admin'
-  
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
 
   // Build base query for counting
   let countQuery = sb.from('equipment').select('*', { count: 'exact', head: true })

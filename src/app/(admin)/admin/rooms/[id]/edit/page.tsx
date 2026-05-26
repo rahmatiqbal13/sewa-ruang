@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { RoomForm } from '../../RoomForm'
 import Link from 'next/link'
@@ -10,9 +10,7 @@ function createSlug(name: string): string {
 
 export default async function EditRoomPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: slug } = await params
-  const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
 
   // Find room by slug
   const { data: allRooms } = await sb.from('rooms').select('id, name')
@@ -24,14 +22,14 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
     sb.from('rooms')
       .select('id, name, building_id, floor_number, room_sequence, description, capacity, is_for_rent, photo_url')
       .eq('id', id)
-      .single(),
+      .single() as any,
     sb.from('buildings')
       .select('id, name, code, floor_count')
       .eq('is_active', true)
-      .order('name'),
+      .order('name') as any,
     sb.from('room_rates')
       .select('usage_category, rate_per_hour, rate_per_day')
-      .eq('room_id', id),
+      .eq('room_id', id) as any,
   ])
 
   if (!roomRes.data) notFound()

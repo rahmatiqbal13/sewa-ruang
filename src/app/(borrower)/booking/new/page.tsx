@@ -33,23 +33,13 @@ export type EquipmentItem = {
 
 export type BookableItem = RoomItem | EquipmentItem
 
+import { mapUserToRateCategory } from './shared'
+
 // User borrower_category from users table
 export type UserBorrowerCategory = 'mahasiswa' | 'pascasarjana' | 'dosen_karyawan' | 'kerjasama' | 'umum'
 
 // Equipment rates category
 export type RateCategory = 'mahasiswa_s1' | 'mahasiswa_s2' | 'dosen' | 'mou_unesa' | 'umum'
-
-// Map user category to rate category
-export function mapUserToRateCategory(userCategory: UserBorrowerCategory | null): RateCategory {
-  const map: Record<UserBorrowerCategory, RateCategory> = {
-    'mahasiswa': 'mahasiswa_s1',
-    'pascasarjana': 'mahasiswa_s2',
-    'dosen_karyawan': 'dosen',
-    'kerjasama': 'mou_unesa',
-    'umum': 'umum',
-  }
-  return map[userCategory ?? 'mahasiswa'] ?? 'mahasiswa_s1'
-}
 
 export type UserProfile = {
   id: string
@@ -57,18 +47,6 @@ export type UserProfile = {
   institution: string
   class_division: string
   borrower_category: UserBorrowerCategory | null
-}
-
-// Helper function to map user category to rate category
-function getRateCategory(userCategory: UserBorrowerCategory | null): RateCategory {
-  const map: Record<UserBorrowerCategory, RateCategory> = {
-    'mahasiswa': 'mahasiswa_s1',
-    'pascasarjana': 'mahasiswa_s2',
-    'dosen_karyawan': 'dosen',
-    'kerjasama': 'mou_unesa',
-    'umum': 'umum',
-  }
-  return map[userCategory ?? 'mahasiswa'] ?? 'mahasiswa_s1'
 }
 
 export default async function NewBookingPage() {
@@ -88,7 +66,7 @@ export default async function NewBookingPage() {
     .single() as { data: UserProfile | null }
 
   const borrowerCategory: UserBorrowerCategory = profile?.borrower_category ?? 'mahasiswa'
-  const rateCategory = getRateCategory(borrowerCategory)
+  const rateCategory = mapUserToRateCategory(borrowerCategory)
 
   // Fetch rooms with building info
   const { data: rooms } = await sb.from('rooms')

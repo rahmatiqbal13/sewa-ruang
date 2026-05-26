@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -44,9 +44,7 @@ function createSlug(name: string): string {
 
 export default async function RoomDetailPage({ params }: Props) {
   const { id: slug } = await params
-  const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
 
   // Find room by slug
   const { data: allRooms } = await sb.from('rooms').select('id, name')
@@ -62,7 +60,7 @@ export default async function RoomDetailPage({ params }: Props) {
       buildings(id, name, code, floor_count)
     `)
     .eq('id', id)
-    .single()
+    .single() as any
 
   if (!room) {
     notFound()

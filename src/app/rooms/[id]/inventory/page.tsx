@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Building2, Clock, Package2, ImageOff } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
@@ -13,10 +13,7 @@ function createSlug(name: string): string {
 
 export default async function PublicInventoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: slug } = await params
-  const supabase = await createClient()
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
 
   // Find room by slug
   const { data: allRooms } = await sb.from('rooms').select('id, name').eq('is_active', true)
@@ -28,13 +25,13 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
     sb.from('rooms')
       .select('id, name, room_code, description, photo_url, buildings(name, code)')
       .eq('id', id)
-      .single() as Promise<{data:{id:string;name:string;room_code:string|null;description:string|null;photo_url:string|null;buildings:{name:string;code:string}|null}|null}>,
+      .single(),
     sb.from('room_inventory_items')
       .select('id, name, quantity, condition, notes, photo_url, inventory_code, last_updated_at')
       .eq('room_asset_id', id)
       .eq('is_active', true)
-      .order('name') as Promise<{data:Array<{id:string;name:string;quantity:number;condition:string;notes:string|null;photo_url:string|null;inventory_code:string|null;last_updated_at:string}>|null}>,
-  ])
+      .order('name'),
+  ]) as any
 
   if (!room) notFound()
 

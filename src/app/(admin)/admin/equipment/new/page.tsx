@@ -1,11 +1,10 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { EquipmentForm } from '../EquipmentForm'
 
 export default async function NewEquipmentPage() {
   const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -28,7 +27,7 @@ export default async function NewEquipmentPage() {
     .from('buildings')
     .select('id, name, code')
     .eq('is_active', true)
-    .order('name')
+    .order('name') as any
 
   // Get rooms for storage dropdown
   const { data: rooms } = await sb

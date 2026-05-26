@@ -162,17 +162,51 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
   }
 
   // ── Fetch equipment rates from DB (server-side) ──────────────────────────
-  type RateRow = { equipment_id: string; rate_per_day: number }
+  type RateRow = { equipment_id: string; rate_per_day: number | string }
   let ratesMap = new Map<string, number>()
 
+  function toNumber(v: number | string | null | undefined): number {
+    if (v == null) return 0
+    const n = typeof v === 'number' ? v : Number(v)
+    return isNaN(n) ? 0 : n
+  }
+
   if (hasEquipment) {
-    const { data: rates } = await supabase
+    const { data: rates, error: ratesError } = await supabase
       .from('equipment_rates')
       .select('equipment_id, rate_per_day')
       .in('equipment_id', equipIds)
       .eq('user_category', rateCategory)
 
-    ratesMap = new Map((rates as RateRow[] ?? []).map(r => [r.equipment_id, r.rate_per_day]))
+    if (ratesError) {
+      console.error('Error fetching equipment rates:', ratesError)
+    }
+
+    console.log('Rate category:', rateCategory)
+    console.log('Equipment IDs:', equipIds)
+    console.log('Rates fetched:', rates)
+
+    ratesMap = new Map((rates as RateRow[] ?? []).map(r => [r.equipment_id, toNumber(r.rate_per_day)]))
+
+    // Fallback: if any equipment has no rate for this category, try to get ANY rate for it
+    for (const item of equipment_items) {
+      if (!ratesMap.has(item.id) || ratesMap.get(item.id) === 0) {
+        const { data: fallbackRates } = await supabase
+          .from('equipment_rates')
+          .select('equipment_id, rate_per_day')
+          .eq('equipment_id', item.id)
+          .order('rate_per_day', { ascending: false })
+          .limit(1)
+
+        if (fallbackRates && fallbackRates.length > 0) {
+          const fallbackRate = fallbackRates[0] as RateRow
+          ratesMap.set(item.id, toNumber(fallbackRate.rate_per_day))
+          console.log(`Fallback rate for ${item.id}:`, fallbackRate.rate_per_day)
+        }
+      }
+    }
+
+    console.log('Final ratesMap:', Array.from(ratesMap.entries()))
   }
 
   // ── Calculate total SERVER-SIDE (tidak percaya nilai dari client) ─────────
@@ -206,6 +240,9 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
       quantity: e.quantity,
     })),
   }
+
+  console.log('Booking total_amount:', totalAmount)
+  console.log('Snapshot rate:', snapshotRate)
 
   // ── Insert booking ────────────────────────────────────────────────────────
   const { data: booking, error: bookingError } = await supabase
@@ -252,6 +289,27 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
     // Rollback: hapus booking yang sudah dibuat
     await supabase.from('bookings').delete().eq('id', booking.id)
     return { success: false, error: 'Gagal menyimpan item peminjaman. Silakan coba lagi.' }
+  }
+
+  // ── Insert equipment booking slots for tracking ────────────────────────────
+  if (hasEquipment) {
+    const slotRange = `["${startDt.toISOString()}", "${endDt.toISOString()}"]`
+    const equipmentSlots = equipment_items.map(e => ({
+      equipment_id: e.id,
+      booking_id: booking.id,
+      slot: slotRange,
+      quantity: e.quantity,
+      status: 'pending',
+    }))
+
+    const { error: slotsError } = await supabase
+      .from('equipment_booking_slots')
+      .insert(equipmentSlots)
+
+    if (slotsError) {
+      console.error('Error inserting equipment booking slots:', slotsError)
+      // Don't fail the booking, just log
+    }
   }
 
   return { success: true, bookingId: booking.id, referenceNo: booking.reference_no }

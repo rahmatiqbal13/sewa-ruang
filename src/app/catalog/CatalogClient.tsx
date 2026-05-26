@@ -26,7 +26,14 @@ import {
   Tag,
   X,
   SlidersHorizontal,
-  ChevronDown
+  ChevronDown,
+  Landmark,
+  Hash,
+  Layers,
+  DoorOpen,
+  List,
+  Calendar,
+  Info
 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import { CalendarView } from '@/components/calendar/CalendarView'
@@ -51,10 +58,11 @@ interface Room {
   capacity: number | null
   current_condition: string
   room_code: string | null
+  floor_number: number | null
+  photo_url: string | null
   is_active: boolean
   is_for_rent: boolean | null
   room_rates: RoomRate[] | null
-  photo_url?: string | null
 }
 
 interface BuildingRow { 
@@ -66,8 +74,8 @@ interface BuildingRow {
 
 interface EquipmentRate {
   user_category: string
-  rate_per_day: number
-  rate_per_hour: number | null
+  rate_per_day: number | string | null
+  rate_per_hour: number | string | null
   requires_supervision: boolean
 }
 
@@ -128,15 +136,21 @@ const CAPACITY_RANGES = [
   { value: '50+', label: '50+ orang', min: 50, max: 9999 },
 ]
 
+function toNumber(v: number | string | null | undefined): number | null {
+  if (v == null) return null
+  const n = typeof v === 'number' ? v : Number(v)
+  return isNaN(n) ? null : n
+}
+
 function getRateByCategory(rates: EquipmentRate[] | null | undefined, category: string): number | null {
   if (!rates || rates.length === 0) return null
   const rate = rates.find(r => r.user_category === category)
-  return rate ? rate.rate_per_day : null
+  return rate ? toNumber(rate.rate_per_day) : null
 }
 
 function getPriceRange(rates: EquipmentRate[] | null | undefined): { min: number | null; max: number | null } {
   if (!rates || rates.length === 0) return { min: null, max: null }
-  const prices = rates.map(r => r.rate_per_day).filter(p => p > 0)
+  const prices = rates.map(r => toNumber(r.rate_per_day)).filter((p): p is number => p != null && p > 0)
   if (prices.length === 0) return { min: null, max: null }
   return { min: Math.min(...prices), max: Math.max(...prices) }
 }
@@ -214,91 +228,123 @@ function Paginator({ page, total, onChange }: { page: number; total: number; onC
   )
 }
 
-function RoomCard({ room }: { room: Room & { buildingName: string; displayName: string } }) {
+function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <Icon className="h-3.5 w-3.5 text-[#6B7280] shrink-0" />
+      <span className="text-xs text-[#6B7280] w-16 shrink-0">{label}</span>
+      <span className="text-xs text-[#111827] font-medium">: {value}</span>
+    </div>
+  )
+}
+
+function RoomCard({ room }: { room: Room & { buildingName: string; buildingCode?: string; displayName: string } }) {
   const lowestRate = useMemo(() => getLowestRoomRate(room.room_rates), [room.room_rates])
+  const slug = createSlug(room.name)
 
   return (
-    <Card className="group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300">
-      {/* Image Placeholder */}
-      <div className="relative aspect-[16/9] bg-[#F3F4F6] overflow-hidden">
-        {room.photo_url ? (
-          <img 
-            src={room.photo_url} 
-            alt={room.displayName}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Building2 className="h-12 w-12 text-[#D1D5DB]" />
-          </div>
-        )}
-        
-        {/* Status Badge Overlay */}
-        <div className="absolute top-3 right-3">
-          <Badge className={cn(
-            "text-xs font-medium border-0",
-            room.current_condition === 'good' 
-              ? "bg-emerald-500 text-white" 
-              : "bg-red-500 text-white"
-          )}>
-            {room.current_condition === 'good' ? 'Tersedia' : 'Sedang Digunakan'}
-          </Badge>
-        </div>
-      </div>
-      
-      <CardContent className="p-4">
-        {/* Building Pill */}
-        <div className="mb-2">
-          <span className="inline-flex items-center bg-[#F3F4F6] text-[#374151] text-xs rounded-full px-2.5 py-1">
-            <Building2 className="h-3 w-3 mr-1" />
-            {room.buildingName}
-          </span>
-        </div>
-        
-        {/* Title */}
-        <h3 className="font-bold text-[#111827] text-lg mb-1 line-clamp-1" title={room.displayName}>
-          {room.displayName}
-        </h3>
-        
-        {/* Room Code & Type */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs bg-[#EFF3FF] text-[#2E4DA7] px-2 py-0.5 rounded">
-            {room.room_code || 'No Code'}
-          </span>
-        </div>
-        
-        {/* Specs */}
-        <div className="flex items-center gap-4 text-sm text-[#6B7280] mb-3">
-          {room.capacity && (
-            <span className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              {room.capacity} orang
+    <Card className="group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col">
+      {/* Card Body - Horizontal Layout */}
+      <div className="flex flex-col sm:flex-row">
+        {/* Left: Info */}
+        <div className="flex-1 p-4 min-w-0">
+          {/* Location Header */}
+          <div className="flex items-center gap-1.5 mb-3">
+            <MapPin className="h-4 w-4 text-[#2E4DA7] shrink-0" />
+            <span className="text-sm font-bold text-[#2E4DA7]">
+              {room.buildingName}
             </span>
-          )}
-        </div>
-        
-        {/* Price */}
-        <div className="mb-4">
+          </div>
+
+          {/* Info Rows */}
+          <div className="space-y-0.5">
+            {room.buildingCode && (
+              <InfoRow icon={Landmark} label="Unit" value={room.buildingCode} />
+            )}
+            <InfoRow icon={Building2} label="Gedung" value={room.buildingName} />
+            <InfoRow icon={DoorOpen} label="Ruangan" value={room.displayName} />
+            {room.floor_number != null && (
+              <InfoRow icon={Layers} label="Lantai" value={room.floor_number} />
+            )}
+            {room.room_code && (
+              <InfoRow icon={Hash} label="Nomor" value={room.room_code} />
+            )}
+            {room.capacity != null && (
+              <InfoRow icon={Users} label="Kapasitas" value={`${room.capacity} Orang`} />
+            )}
+          </div>
+
+          {/* Price (if available) */}
           {lowestRate ? (
-            <div className="flex items-baseline gap-1">
-              <span className="text-[#2E4DA7] font-semibold text-lg">{formatRupiah(lowestRate)}</span>
-              <span className="text-sm text-[#6B7280]">/hari</span>
+            <div className="mt-3 flex items-baseline gap-1">
+              <span className="text-[#2E4DA7] font-semibold text-sm">{formatRupiah(lowestRate)}</span>
+              <span className="text-xs text-[#6B7280]">/hari</span>
             </div>
           ) : (
-            <span className="text-sm text-[#9CA3AF] italic">Tarif belum diatur</span>
+            <div className="mt-3 text-xs text-[#9CA3AF] italic">Tarif belum diatur</div>
           )}
         </div>
-        
-        {/* Action */}
-        <Link href={`/rooms/${createSlug(room.name)}`}>
-          <Button 
-            variant="ghost" 
-            className="w-full h-10 text-[#2E4DA7] hover:bg-[#EFF3FF] font-medium"
-          >
-            Lihat Detail
-          </Button>
-        </Link>
-      </CardContent>
+
+        {/* Right: Photo */}
+        <div className="sm:w-48 md:w-56 shrink-0 p-4 pt-0 sm:pt-4">
+          <div className="relative aspect-[4/3] bg-[#F3F4F6] rounded-[10px] overflow-hidden">
+            {room.photo_url ? (
+              <img 
+                src={room.photo_url} 
+                alt={room.displayName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Building2 className="h-10 w-10 text-[#D1D5DB]" />
+              </div>
+            )}
+            {/* Status Badge */}
+            <div className="absolute top-2 right-2">
+              <Badge className={cn(
+                "text-[10px] font-medium border-0 px-2 py-0.5",
+                room.current_condition === 'good' 
+                  ? "bg-emerald-500 text-white" 
+                  : "bg-red-500 text-white"
+              )}>
+                {room.current_condition === 'good' ? 'Tersedia' : 'Sedang Digunakan'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Action Buttons */}
+      <div className="px-4 pb-4 pt-0 mt-auto">
+        <div className="flex items-center gap-2">
+          <Link href={`/rooms/${slug}`} className="flex-1">
+            <Button 
+              className="w-full h-9 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg"
+            >
+              <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+              Booking
+            </Button>
+          </Link>
+          <Link href={`/rooms/${slug}`} className="flex-1">
+            <Button 
+              variant="outline"
+              className="w-full h-9 border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-xs font-medium rounded-lg"
+            >
+              <List className="h-3.5 w-3.5 mr-1.5" />
+              Jadwal
+            </Button>
+          </Link>
+          <Link href={`/rooms/${slug}`} className="flex-1">
+            <Button 
+              variant="outline"
+              className="w-full h-9 border-[#2E4DA7] text-[#2E4DA7] hover:bg-[#EFF3FF] text-xs font-medium rounded-lg"
+            >
+              <Calendar className="h-3.5 w-3.5 mr-1.5" />
+              Kalender
+            </Button>
+          </Link>
+        </div>
+      </div>
     </Card>
   )
 }
@@ -386,7 +432,7 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
         </div>
         
         {/* Action */}
-        <Link href={`/equipment/${item.id}`}>
+        <Link href={`/equipment/${createSlug(item.name)}`}>
           <Button 
             variant="ghost" 
             className="w-full h-10 text-[#2E4DA7] hover:bg-[#EFF3FF] font-medium"
@@ -614,20 +660,22 @@ function FilterSidebar({
   if (isMobile) {
     return (
       <Sheet>
-        <SheetTrigger>
-          <Button 
-            variant="outline" 
-            className="h-10 px-4 border-[#E5E7EB] text-[#374151]"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-            {(selectedBuildings.length + selectedCategories.length + selectedCapacity.length > 0 || showAvailableOnly) && (
-              <Badge className="ml-2 bg-[#2E4DA7] text-white text-xs">
-                {selectedBuildings.length + selectedCategories.length + selectedCapacity.length + (showAvailableOnly ? 1 : 0)}
-              </Badge>
-            )}
-          </Button>
-        </SheetTrigger>
+        <SheetTrigger
+          render={
+            <button
+              type="button"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-[10px] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-[#E5E7EB] bg-white shadow-sm hover:bg-[#F3F4F6] hover:text-[#111827] h-10 px-4 text-[#374151]"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+              {(selectedBuildings.length + selectedCategories.length + selectedCapacity.length > 0 || showAvailableOnly) && (
+                <Badge className="ml-2 bg-[#2E4DA7] text-white text-xs">
+                  {selectedBuildings.length + selectedCategories.length + selectedCapacity.length + (showAvailableOnly ? 1 : 0)}
+                </Badge>
+              )}
+            </button>
+          }
+        />
         <SheetContent side="right" className="w-[320px] sm:w-[400px] p-0">
           <SheetHeader className="p-6 pb-4 border-b border-[#E5E7EB]">
             <SheetTitle className="text-[#111827] font-semibold">Filter Katalog</SheetTitle>
@@ -678,7 +726,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
     buildings.flatMap(b =>
       b.assets
         .filter(a => a.is_active && a.is_for_rent !== false)
-        .map(a => ({ ...a, buildingName: b.name, buildingId: b.id }))
+        .map(a => ({ ...a, buildingName: b.name, buildingCode: b.code, buildingId: b.id }))
     ),
     [buildings]
   )
@@ -931,6 +979,23 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
               </div>
             </div>
 
+            {/* Info Banner - Rooms */}
+            {(activeTab === 'all' || activeTab === 'rooms') && (
+              <div className="mb-6 p-4 rounded-[10px] bg-amber-50 border border-amber-200">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="text-sm text-amber-800 space-y-1">
+                    <p className="font-medium">Informasi:</p>
+                    <ul className="list-disc list-inside space-y-0.5 text-xs">
+                      <li>Pastikan <strong>tanggal</strong> dan <strong>waktu</strong> peminjaman ruangan belum digunakan oleh orang lain.</li>
+                      <li>Ruangan yang masih dalam proses ACC tidak dapat dipesan, selama belum ditolak oleh verifikator.</li>
+                      <li>Untuk informasi lebih lanjut silakan hubungi admin.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Results Count */}
             <div className="mb-6">
               <p className="text-[#6B7280] text-sm">
@@ -951,7 +1016,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {paginatedItems.map((item) => (
                     item.type === 'room' ? (
-                      <RoomCard key={item.data.id} room={item.data as Room & { buildingName: string; displayName: string }} />
+                      <RoomCard key={item.data.id} room={item.data as Room & { buildingName: string; buildingCode?: string; displayName: string }} />
                     ) : (
                       <EquipmentCard key={item.data.id} item={item.data as EquipmentRow & { displayName: string }} />
                     )

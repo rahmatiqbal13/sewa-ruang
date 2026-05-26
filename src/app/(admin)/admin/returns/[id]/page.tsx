@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CompleteReturnForm } from './CompleteReturnForm'
@@ -10,10 +10,9 @@ import { buttonVariants } from '@/components/ui/button'
 
 export default async function RecordReturnPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
+  const sb = createAdminDbClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: booking } = await (supabase.from('bookings') as any)
+  const { data: booking } = await (sb.from('bookings') as any)
     .select(`
       *,
       users!user_id(name, email, phone, institution),
@@ -30,7 +29,7 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
   if (!booking) notFound()
 
   // Check if already returned
-  const { data: existingReturn } = await supabase
+  const { data: existingReturn } = await sb
     .from('returns')
     .select('id')
     .eq('booking_id', id)

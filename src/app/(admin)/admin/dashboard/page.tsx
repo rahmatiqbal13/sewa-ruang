@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatCard } from '@/components/ui/stat-card'
 import {
@@ -14,17 +14,13 @@ import { EmptyState } from '@/components/ui/empty-state'
 export const revalidate = 60
 
 export default async function AdminDashboard() {
-  const supabase = await createClient()
+  const sb = createAdminDbClient()
 
   const today = new Date()
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
   const startOfDay = new Date(today.setHours(0,0,0,0)).toISOString()
   const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const val = <T,>(r: PromiseSettledResult<any>, key: 'count' | 'data', fallback: T): T =>
     r.status === 'fulfilled' ? (r.value?.[key] ?? fallback) : fallback
 

@@ -6,6 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button'
 import { QrCode, Download, Share2, Printer } from 'lucide-react'
 
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 interface EquipmentQRCodeProps {
   equipmentId: string
   equipmentName: string
@@ -18,8 +22,9 @@ export function EquipmentQRCode({ equipmentId, equipmentName, equipmentCode }: E
 
   useEffect(() => {
     if (isOpen && equipmentId) {
-      // Generate QR code with equipment scan URL
-      const scanUrl = `${window.location.origin}/assets/${equipmentId}/scan`
+      const slug = createSlug(equipmentName)
+      // Generate QR code with admin scan URL
+      const scanUrl = `${window.location.origin}/admin/scan?type=equipment&id=${slug}`
       
       QRCode.toDataURL(scanUrl, {
         width: 400,

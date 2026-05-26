@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { BuildingForm } from '../../BuildingForm'
 
@@ -8,9 +8,7 @@ function createSlug(name: string): string {
 
 export default async function EditBuildingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: slug } = await params
-  const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
 
   try {
     const { data: allBuildings } = await sb.from('buildings').select('id, name')

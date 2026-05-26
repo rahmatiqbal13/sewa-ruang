@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,11 +19,10 @@ import { ContactButtons } from '@/components/shared/ContactButtons'
 
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
+  const sb = createAdminDbClient()
 
   // Fetch booking with user data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: booking } = await (supabase.from('bookings') as any)
+  const { data: booking } = await (sb.from('bookings') as any)
     .select(`
       id, reference_no, status, start_datetime, end_datetime,
       total_amount, purpose, created_at, admin_notes, snapshot_rate,
@@ -35,7 +34,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   if (!booking) notFound()
 
   // Fetch booking items separately
-  const { data: bookingItemsData } = await (supabase.from('booking_items') as any)
+  const { data: bookingItemsData } = await (sb.from('booking_items') as any)
     .select(`
       id, item_type, quantity, room_id, equipment_id
     `)
@@ -48,7 +47,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   
   let roomsData: any[] = []
   if (roomIds.length > 0) {
-    const { data: rooms } = await (supabase.from('rooms') as any)
+    const { data: rooms } = await (sb.from('rooms') as any)
       .select('id, name, room_code, building_id, buildings(name)')
       .in('id', roomIds)
     roomsData = rooms || []
@@ -61,7 +60,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   
   let equipmentData: any[] = []
   if (equipmentIds.length > 0) {
-    const { data: equipment } = await (supabase.from('equipment') as any)
+    const { data: equipment } = await (sb.from('equipment') as any)
       .select('id, name, equipment_code')
       .in('id', equipmentIds)
     equipmentData = equipment || []
@@ -84,7 +83,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   })
 
   // Fetch payments
-  const { data: payments } = await (supabase.from('payments') as any)
+  const { data: payments } = await (sb.from('payments') as any)
     .select('id, method, amount, status, paid_at, proof_url')
     .eq('booking_id', id)
     .order('created_at', { ascending: false })

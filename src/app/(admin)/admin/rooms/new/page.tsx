@@ -1,11 +1,11 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { RoomForm } from '../RoomForm'
 import Link from 'next/link'
 import { ArrowLeft, DoorOpen } from 'lucide-react'
 
 export default async function NewRoomPage() {
-  const supabase = await createClient()
-  const { data: buildings } = await supabase
+  const sb = createAdminDbClient()
+  const { data: buildings } = await sb
     .from('buildings')
     .select('id, name, code, floor_count')
     .eq('is_active', true)

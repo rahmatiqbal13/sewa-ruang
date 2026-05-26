@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { Users, ShieldCheck } from 'lucide-react'
 import { ChangeRoleButton } from './ChangeRoleButton'
 import { EditUserDialog } from './EditUserDialog'
@@ -16,12 +16,12 @@ const ROLE_BADGE: Record<string, { label: string; className: string }> = {
 }
 
 export default async function UsersPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (await createAdminClient()) as any
+  const supabase = await createClient()
+  const sb = createAdminDbClient()
 
   const { data: { user: currentUser } } = await supabase.auth.getUser()
 
-  const { data: users } = await supabase
+  const { data: users } = await sb
     .from('users')
     .select('id, name, email, role, phone, institution, class_division, identity_number, telegram_username, plain_password, created_at')
     .order('role')

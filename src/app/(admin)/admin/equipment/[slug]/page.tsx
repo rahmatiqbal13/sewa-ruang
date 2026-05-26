@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -7,13 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   ArrowLeft, Package, MapPin, Building2, Calendar, 
   Clock, Tag, AlertTriangle, QrCode, Edit, History,
-  CheckCircle2, XCircle, AlertCircle
+  CheckCircle2, XCircle, AlertCircle, ClipboardCheck
 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { EquipmentQRCode } from '../EquipmentQRCode'
 import { SoftDeleteButton, RestoreButton } from '../SoftDeleteButtons'
+import { CheckForm } from './CheckForm'
 
 const CATEGORY_LABELS: Record<string, string> = {
   elektronik: 'Elektronik',
@@ -65,8 +66,7 @@ function slugMatchesEquipment(slug: string, equipmentName: string): boolean {
 export default async function EquipmentDetailPage({ params }: Props) {
   const { slug } = await params
   const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const sb = createAdminDbClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -108,7 +108,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
       storage_room:storage_room_id(id, name, room_code, buildings(name, code))
     `)
     .eq('id', equipmentId)
-    .single()
+    .single() as any
 
   if (!equipment) {
     notFound()
@@ -124,7 +124,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
   // Get active and upcoming bookings
   const now = new Date().toISOString()
   
-  const { data: activeBookings } = await sb
+  let { data: activeBookings } = await sb
     .from('equipment_booking_slots')
     .select(`
       id,
@@ -142,10 +142,52 @@ export default async function EquipmentDetailPage({ params }: Props) {
     .eq('equipment_id', equipmentId)
     .gte('slot', `["${now}"]`)
     .order('slot', { ascending: true })
-    .limit(10)
+    .limit(10) as any
+
+  // Fallback: check booking_items for legacy bookings without equipment_booking_slots
+  if (!activeBookings || activeBookings.length === 0) {
+    const { data: activeBookingList } = await sb
+      .from('bookings')
+      .select('id, reference_no, user_id, purpose, status, start_datetime, end_datetime')
+      .in('status', ['pending', 'approved', 'paid', 'active'])
+      .gte('end_datetime', now)
+      .order('start_datetime', { ascending: true })
+      .limit(10)
+
+    const activeBookingIds = (activeBookingList ?? []).map((b: {id: string}) => b.id)
+
+    if (activeBookingIds.length > 0) {
+      const { data: legacyItems } = await sb
+        .from('booking_items')
+        .select('id, quantity, booking_id')
+        .eq('equipment_id', equipmentId)
+        .eq('item_type', 'equipment')
+        .in('booking_id', activeBookingIds)
+
+      if (legacyItems && legacyItems.length > 0) {
+        activeBookings = legacyItems.map((item: any) => {
+          const b = (activeBookingList as any[]).find((ab: any) => ab.id === item.booking_id)
+          if (!b) return null
+          return {
+            id: item.id,
+            slot: `["${b.start_datetime}", "${b.end_datetime}"]`,
+            quantity: item.quantity,
+            status: b.status,
+            booking: {
+              id: b.id,
+              booking_code: b.reference_no,
+              user: { full_name: b.user_id, email: '' },
+              purpose: b.purpose,
+              status: b.status,
+            }
+          }
+        }).filter(Boolean)
+      }
+    }
+  }
 
   // Get booking history (past bookings)
-  const { data: pastBookings } = await sb
+  let { data: pastBookings } = await sb
     .from('equipment_booking_slots')
     .select(`
       id,
@@ -163,10 +205,65 @@ export default async function EquipmentDetailPage({ params }: Props) {
     .eq('equipment_id', equipmentId)
     .lt('slot', `["${now}"]`)
     .order('slot', { ascending: false })
-    .limit(5)
+    .limit(5) as any
 
-  const ketersediaanConfig = KETERSEDIAAN_CONFIG[equipment.ketersediaan as keyof typeof KETERSEDIAAN_CONFIG] || 
-    { label: equipment.ketersediaan, color: 'bg-muted text-foreground/80', icon: AlertCircle }
+  // Fallback for past bookings
+  if (!pastBookings || pastBookings.length === 0) {
+    const { data: pastBookingList } = await sb
+      .from('bookings')
+      .select('id, reference_no, user_id, purpose, status, start_datetime, end_datetime')
+      .in('status', ['pending', 'approved', 'paid', 'active', 'completed', 'cancelled'])
+      .lt('end_datetime', now)
+      .order('start_datetime', { ascending: false })
+      .limit(5)
+
+    const pastBookingIds = (pastBookingList ?? []).map((b: {id: string}) => b.id)
+
+    if (pastBookingIds.length > 0) {
+      const { data: legacyPastItems } = await sb
+        .from('booking_items')
+        .select('id, quantity, booking_id')
+        .eq('equipment_id', equipmentId)
+        .eq('item_type', 'equipment')
+        .in('booking_id', pastBookingIds)
+
+      if (legacyPastItems && legacyPastItems.length > 0) {
+        pastBookings = legacyPastItems.map((item: any) => {
+          const b = (pastBookingList as any[]).find((pb: any) => pb.id === item.booking_id)
+          if (!b) return null
+          return {
+            id: item.id,
+            slot: `["${b.start_datetime}", "${b.end_datetime}"]`,
+            quantity: item.quantity,
+            status: b.status,
+            booking: {
+              id: b.id,
+              booking_code: b.reference_no,
+              user: { full_name: b.user_id, email: '' },
+              purpose: b.purpose,
+              status: b.status,
+            }
+          }
+        }).filter(Boolean)
+      }
+    }
+  }
+
+  // Get equipment check logs
+  const { data: checkLogs } = await sb
+    .from('equipment_checks')
+    .select('id, checked_at, condition, notes, checked_by_name')
+    .eq('equipment_id', equipmentId)
+    .order('checked_at', { ascending: false })
+    .limit(10)
+
+  // Check if equipment is currently borrowed (has active booking)
+  const hasActiveBooking = activeBookings && activeBookings.length > 0
+
+  const ketersediaanConfig = hasActiveBooking
+    ? KETERSEDIAAN_CONFIG['digunakan']
+    : (KETERSEDIAAN_CONFIG[equipment.ketersediaan as keyof typeof KETERSEDIAAN_CONFIG] || 
+       { label: equipment.ketersediaan, color: 'bg-muted text-foreground/80', icon: AlertCircle })
 
   const statusTindakanConfig = STATUS_TINDAKAN_CONFIG[equipment.status_tindakan as keyof typeof STATUS_TINDAKAN_CONFIG] ||
     { label: equipment.status_tindakan, color: 'bg-muted text-foreground/80' }
@@ -224,6 +321,24 @@ export default async function EquipmentDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Active Booking Warning */}
+      {hasActiveBooking && activeBookings && activeBookings.length > 0 && (
+        <div className="mb-6 p-4 rounded-[10px] bg-orange-50 border border-orange-200">
+          <div className="flex items-start gap-3">
+            <Clock className="h-5 w-5 text-orange-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-orange-800">Alat Sedang Dipinjam</p>
+              <p className="text-sm text-orange-700 mt-1">
+                {activeBookings.length} peminjaman aktif saat ini.
+                {activeBookings[0]?.booking?.booking_code && (
+                  <span> Kode booking: {activeBookings[0].booking.booking_code}</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Photo & Basic Info */}
@@ -606,6 +721,71 @@ export default async function EquipmentDetailPage({ params }: Props) {
                       </div>
                     )
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Equipment Checks - Form & Log */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4" /> Pengecekan Kondisi
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CheckForm equipmentId={equipment.id} slug={slug} />
+            </CardContent>
+          </Card>
+
+          {checkLogs && checkLogs.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <History className="h-4 w-4" /> Riwayat Pengecekan
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {checkLogs.map((log: {
+                    id: string
+                    checked_at: string
+                    condition: string
+                    notes: string | null
+                    checked_by_name: string | null
+                  }) => (
+                    <div
+                      key={log.id}
+                      className="flex items-start justify-between p-3 bg-muted rounded-[10px] text-sm"
+                    >
+                      <div className="flex items-start gap-3">
+                        <ClipboardCheck className="h-4 w-4 text-muted-foreground/70 mt-0.5" />
+                        <div>
+                          <p className="font-medium capitalize">
+                            {log.condition === 'good' ? 'Baik' :
+                             log.condition === 'needs_repair' ? 'Perlu Perbaikan' :
+                             log.condition === 'damaged' ? 'Rusak' :
+                             log.condition === 'lost' ? 'Hilang' : log.condition}
+                          </p>
+                          {log.notes && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{log.notes}</p>
+                          )}
+                          {log.checked_by_name && (
+                            <p className="text-xs text-muted-foreground/70 mt-0.5">
+                              Oleh: {log.checked_by_name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {new Date(log.checked_at).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

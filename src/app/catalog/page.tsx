@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { CatalogClient } from './CatalogClient'
 import { PublicHeader, PublicFooter } from '@/components/shared/PublicLayout'
 
@@ -21,6 +22,8 @@ interface Room {
   capacity: number;
   current_condition: string;
   room_code: string;
+  floor_number: number | null;
+  photo_url: string | null;
   is_active: boolean;
   is_for_rent: boolean;
   room_rates: RoomRate[];
@@ -89,7 +92,10 @@ export default async function CatalogPage() {
   })
 
   // Fetch institution profile and data in parallel
-  const [institution, { data: buildingsData }, { data: roomsData }, { data: equipmentData }] = await Promise.all([
+  // Use admin client for equipment to bypass RLS on equipment_rates
+  const adminDb = createAdminDbClient()
+
+  const [institution, { data: buildingsData }, { data: roomsData }, { data: equipmentData, error: equipmentError }] = await Promise.all([
     getInstitutionProfile(),
     supabase
       .from('buildings')
@@ -98,14 +104,14 @@ export default async function CatalogPage() {
       .order('name'),
     supabase
       .from('rooms')
-      .select('id, name, building_id, capacity, current_condition, room_code, is_active, is_for_rent, room_rates(usage_category, rate_per_hour, rate_per_day)')
+      .select('id, name, building_id, capacity, current_condition, room_code, floor_number, photo_url, is_active, is_for_rent, room_rates(usage_category, rate_per_hour, rate_per_day)')
       .eq('is_active', true)
       .eq('is_for_rent', true)
       .order('name'),
-    supabase
+    adminDb
       .from('equipment')
       .select(`
-        id, name, description, current_condition, ketersediaan, merk, is_active, photo_url,
+        id, name, description, category, current_condition, ketersediaan, merk, is_active, photo_url,
         equipment_rates(user_category, rate_per_day, rate_per_hour, requires_supervision)
       `)
       .eq('is_active', true)
@@ -113,6 +119,54 @@ export default async function CatalogPage() {
       .neq('ketersediaan', 'tidak_tersedia')
       .order('name'),
   ] as const)
+
+  if (equipmentError) {
+    console.error('Error fetching equipment:', equipmentError)
+  }
+
+  // Exclude equipment with active bookings
+  const now = new Date().toISOString()
+  const equipmentIds = (equipmentData ?? []).map(e => e.id)
+  let activeBookingEquipIds: string[] = []
+
+  if (equipmentIds.length > 0) {
+    // Check equipment_booking_slots
+    const { data: activeSlots } = await adminDb
+      .from('equipment_booking_slots')
+      .select('equipment_id')
+      .in('equipment_id', equipmentIds)
+      .gte('slot', `["${now}"]`)
+
+    const slotIds = new Set((activeSlots ?? []).map(s => s.equipment_id))
+
+    // Fallback: check booking_items for legacy bookings
+    // First get active booking IDs
+    const { data: activeBookings } = await adminDb
+      .from('bookings')
+      .select('id')
+      .in('status', ['pending', 'approved', 'paid', 'active'])
+      .gte('end_datetime', now)
+
+    const activeBookingIds = (activeBookings ?? []).map(b => b.id)
+
+    let legacyIds = new Set<string>()
+    if (activeBookingIds.length > 0) {
+      const { data: legacyItems } = await adminDb
+        .from('booking_items')
+        .select('equipment_id')
+        .in('equipment_id', equipmentIds)
+        .eq('item_type', 'equipment')
+        .in('booking_id', activeBookingIds)
+
+      legacyIds = new Set((legacyItems ?? []).map(i => i.equipment_id).filter((id): id is string => id !== null))
+    }
+
+    activeBookingEquipIds = Array.from(new Set([...slotIds, ...legacyIds]))
+  }
+
+  const availableEquipment = (equipmentData ?? []).filter(
+    e => !activeBookingEquipIds.includes(e.id)
+  )
 
   // Transform data buildings untuk compatibility dengan CatalogClient
   const transformedBuildings = (buildingsData as unknown as Building[] | null)?.map((building) => ({
@@ -129,7 +183,7 @@ export default async function CatalogPage() {
       <main className="flex-1">
         <CatalogClient
           buildings={transformedBuildings}
-          equipment={equipmentData ?? []}
+          equipment={availableEquipment}
           institution={institution}
         />
       </main>

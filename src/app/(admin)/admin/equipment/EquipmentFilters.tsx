@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { Filter, X, Tag, Search, EyeOff, CalendarPlus } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,9 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
   const showInactive = searchParams.get('showInactive') === 'true'
   const todayOnly = searchParams.get('todayOnly') === 'true'
   const inactiveOnly = searchParams.get('inactiveOnly') === 'true'
+
+  const [searchValue, setSearchValue] = useState(search)
+  useEffect(() => { setSearchValue(search) }, [search])
 
   const buildUrl = useCallback((params: Record<string, string>) => {
     const next = {
@@ -56,7 +59,8 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
             name="search"
             type="text"
             placeholder="Cari nama, kode, atau merk..."
-            defaultValue={search}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
             className="pl-10"
           />
         </div>

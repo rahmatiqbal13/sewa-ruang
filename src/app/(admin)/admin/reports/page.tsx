@@ -1,4 +1,4 @@
-import { createAdminClient as createClient } from '@/lib/supabase/server'
+import { createAdminDbClient } from '@/lib/supabase/server'
 import { formatDateTime, formatRupiah, cn } from '@/lib/utils'
 import { Package, Boxes, Calendar, AlertTriangle, Wrench, Building } from 'lucide-react'
 import Link from 'next/link'
@@ -85,13 +85,10 @@ export default async function ReportsPage({
 }) {
   const { from, to, tab = 'bookings', equipmentCondition, inventoryCondition, showInactive } = await searchParams
   const showInactiveItems = showInactive === 'true'
-  const supabase = await createClient()
+  const sb = createAdminDbClient()
 
   const fromDate = from ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
   const toDate = to ?? new Date().toISOString().split('T')[0]
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
 
   // Fetch booking data
   const [{ data: bookingsRaw }, { data: paymentsRaw }] = await Promise.all([

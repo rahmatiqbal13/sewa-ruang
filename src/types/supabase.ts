@@ -28,6 +28,7 @@ export interface Database {
           email_verified_at: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['users']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['users']['Insert']>
       }
@@ -44,6 +45,7 @@ export interface Database {
           created_by: string
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['buildings']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['buildings']['Insert']>
       }
@@ -57,13 +59,16 @@ export interface Database {
           capacity: number
           room_type: string
           base_price: number
+          current_condition: string
           is_active: boolean
           is_for_rent: boolean
           photo_url: string | null
           description: string | null
           facilities: string[] | null
           created_at: string
+          updated_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['rooms']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['rooms']['Insert']>
       }
@@ -83,10 +88,35 @@ export interface Database {
           sumber: string | null
           is_active: boolean
           photo_url: string | null
+          tgl_terakhir_cek: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['equipment']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['equipment']['Insert']>
+      }
+      equipment_rates: {
+        Row: {
+          id: string
+          equipment_id: string
+          user_category: string
+          rate_per_day: number
+          rate_per_hour: number | null
+          requires_supervision: boolean
+          created_at: string
+          updated_at: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'equipment_rates_equipment_id_fkey'
+            columns: ['equipment_id']
+            isOneToOne: false
+            referencedRelation: 'equipment'
+            referencedColumns: ['id']
+          }
+        ]
+        Insert: Omit<Database['public']['Tables']['equipment_rates']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['equipment_rates']['Insert']>
       }
       room_inventories: {
         Row: {
@@ -99,8 +129,10 @@ export interface Database {
           condition: string
           is_active: boolean
           notes: string | null
+          last_updated_at: string
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['room_inventories']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['room_inventories']['Insert']>
       }
@@ -123,6 +155,7 @@ export interface Database {
           current_location: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['assets']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['assets']['Insert']>
       }
@@ -130,6 +163,7 @@ export interface Database {
         Row: {
           id: string
           reference_no: string
+          payment_code: string | null
           user_id: string
           status: BookingStatus
           purpose: string
@@ -142,11 +176,13 @@ export interface Database {
           admin_notes: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['bookings']['Row'], 'id' | 'reference_no' | 'created_at'>
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>
       }
       booking_assets: {
         Row: { id: string; booking_id: string; asset_id: string }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['booking_assets']['Row'], 'id'>
         Update: never
       }
@@ -162,6 +198,7 @@ export interface Database {
           rate_per_day: number | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['booking_items']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['booking_items']['Insert']>
       }
@@ -176,6 +213,7 @@ export interface Database {
           status: 'pending' | 'refund_pending' | 'completed' | 'cancelled'
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['booking_early_returns']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['booking_early_returns']['Insert']>
       }
@@ -188,6 +226,7 @@ export interface Database {
           agreed_by: string
           agreement_pdf_url: string | null
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['booking_agreements']['Row'], 'id'>
         Update: never
       }
@@ -204,6 +243,7 @@ export interface Database {
           notes: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['booking_extensions']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['booking_extensions']['Insert']>
       }
@@ -221,6 +261,7 @@ export interface Database {
           expires_at: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['booking_waitlists']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['booking_waitlists']['Insert']>
       }
@@ -236,6 +277,7 @@ export interface Database {
           recorded_by: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['payments']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['payments']['Insert']>
       }
@@ -252,6 +294,7 @@ export interface Database {
           photo_url: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['returns']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['returns']['Insert']>
       }
@@ -264,11 +307,13 @@ export interface Database {
           condition: InventoryCondition
           inventory_code: string | null
           notes: string | null
+          photo_url: string | null
           is_active: boolean
           last_updated_by: string | null
           last_updated_at: string
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['room_inventory_items']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['room_inventory_items']['Insert']>
       }
@@ -283,6 +328,7 @@ export interface Database {
           notes: string | null
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['asset_tracking_logs']['Row'], 'id' | 'created_at'>
         Update: never
       }
@@ -296,6 +342,7 @@ export interface Database {
           created_by: string
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['schedule_blocks']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['schedule_blocks']['Insert']>
       }
@@ -309,6 +356,7 @@ export interface Database {
           is_read: boolean
           created_at: string
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at'>
         Update: Pick<Database['public']['Tables']['notifications']['Row'], 'is_read'>
       }
@@ -320,6 +368,7 @@ export interface Database {
           event_type: string
           is_enabled: boolean
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['notification_preferences']['Row'], 'id'>
         Update: Pick<Database['public']['Tables']['notification_preferences']['Row'], 'is_enabled'>
       }
@@ -333,8 +382,37 @@ export interface Database {
           created_at: string
           is_active: boolean
         }
+        Relationships: []
         Insert: Omit<Database['public']['Tables']['agreement_templates']['Row'], 'id' | 'version' | 'created_at'>
         Update: Pick<Database['public']['Tables']['agreement_templates']['Row'], 'is_active'>
+      }
+      equipment_checks: {
+        Row: {
+          id: string
+          equipment_id: string
+          condition: string
+          notes: string | null
+          checked_by_name: string | null
+          checked_at: string
+          created_at: string
+        }
+        Relationships: []
+        Insert: Omit<Database['public']['Tables']['equipment_checks']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['equipment_checks']['Insert']>
+      }
+      equipment_booking_slots: {
+        Row: {
+          id: string
+          equipment_id: string
+          booking_id: string
+          slot: string
+          quantity: number
+          status: string
+          created_at: string
+        }
+        Relationships: []
+        Insert: Omit<Database['public']['Tables']['equipment_booking_slots']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['equipment_booking_slots']['Insert']>
       }
     }
     Views: Record<string, never>
