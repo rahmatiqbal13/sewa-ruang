@@ -69,7 +69,7 @@ export async function PublicHeader({ showAuth = true }: PublicHeaderProps) {
           )}
           <div className="hidden sm:block">
             <h1 className="font-bold text-lg text-foreground leading-tight">
-              {institution?.name || 'Tim Admin USC'}
+              {institution?.name || 'Sewa Ruang & Alat'}
             </h1>
             {institution?.short_name && (
               <p className="text-xs text-muted-foreground">{institution.short_name}</p>
@@ -138,7 +138,7 @@ export async function PublicFooter({ showContact = true }: PublicFooterProps) {
                 <Building2 className="h-6 w-6 text-blue-400" />
               )}
               <h3 className="font-bold text-foreground">
-                {institution?.name || 'Tim Admin USC'}
+              {institution?.name || 'Sewa Ruang & Alat'}
               </h3>
             </div>
             {institution?.description && (
@@ -190,7 +190,7 @@ export async function PublicFooter({ showContact = true }: PublicFooterProps) {
 
         {/* Copyright */}
         <div className="border-t border-border/60 mt-8 pt-6 text-center text-sm text-muted-foreground">
-          <p>© {currentYear} {institution?.name || 'Tim Admin USC'}. All rights reserved.</p>
+          <p>© {currentYear} {institution?.name || 'Sewa Ruang & Alat'}. All rights reserved.</p>
           {institution?.website && (
             <a 
               href={institution.website} 

@@ -164,7 +164,7 @@ export function WhatsAppButton({
         finalMessage = processTemplate(template)
       } else {
         // Fallback ke default
-        finalMessage = 'Halo, saya admin Tim Admin USC. Ada yang bisa saya bantu?'
+        finalMessage = 'Halo, saya admin. Ada yang bisa saya bantu?'
       }
 
       // Buka wa.me link

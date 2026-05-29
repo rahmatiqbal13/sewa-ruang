@@ -130,7 +130,7 @@ export function PaymentMethodsPanel() {
             </div>
             <div>
               <Label className="text-foreground">Atas Nama</Label>
-              <Input value={newVA.accountName} onChange={e => setNewVA({ ...newVA, accountName: e.target.value })} placeholder="Direktorat Olahraga Unesa" className="rounded-[10px] border-border" />
+              <Input value={newVA.accountName} onChange={e => setNewVA({ ...newVA, accountName: e.target.value })} placeholder="Nama Pemilik Rekening" className="rounded-[10px] border-border" />
             </div>
             <div>
               <Label className="text-foreground">Kategori</Label>

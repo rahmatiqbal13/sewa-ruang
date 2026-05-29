@@ -62,7 +62,7 @@ export default function LoginPage() {
             <div className="h-10 w-10 rounded-[10px] flex items-center justify-center bg-white/10 border border-white/20">
               <Building2 className="h-5 w-5 text-white" />
             </div>
-            <span className="text-white font-bold text-lg">Sewa Ruang & Alat USC</span>
+            <span className="text-white font-bold text-lg">Sewa Ruang & Alat</span>
           </div>
 
           <div className="flex-1 flex flex-col justify-center max-w-sm">
@@ -92,7 +92,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-white/40 text-xs">
-            &copy; {new Date().getFullYear()} USC. All rights reserved.
+            &copy; {new Date().getFullYear()} Sewa Ruang & Alat. All rights reserved.
           </p>
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function LoginPage() {
             <div className="h-9 w-9 rounded-[10px] flex items-center justify-center bg-[#0891B2]">
               <Building2 className="h-4 w-4 text-white" />
             </div>
-            <span className="text-base">Sewa Ruang & Alat USC</span>
+            <span className="text-base">Sewa Ruang & Alat</span>
           </div>
 
           <div className="mb-6">
@@ -128,7 +128,7 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="nama@unesa.ac.id"
+                  placeholder="email@institusi.ac.id"
                   aria-describedby={errors.email ? 'email-error' : undefined}
                   aria-invalid={!!errors.email}
                   className="h-11 rounded-lg border-[#E5E7EB] pl-10"

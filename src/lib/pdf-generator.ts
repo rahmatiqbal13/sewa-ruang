@@ -31,7 +31,7 @@ export async function generatePDFHtml(options: PDFTemplateOptions): Promise<stri
 
   const logoHtml = institution?.logo_url
     ? `<img src="${institution.logo_url}" alt="${institution.name}" style="max-height: 50px; max-width: 150px;" />`
-    : `<h2 style="color: #1e40af; margin: 0; font-size: 20px;">${institution?.name || 'Tim Admin USC'}</h2>`
+    : (institution?.name ? `<h2 style="color: #1e40af; margin: 0; font-size: 20px;">${institution.name}</h2>` : '')
 
   const contactHtml = []
   if (institution?.address) contactHtml.push(institution.address)
@@ -229,7 +229,7 @@ export async function generatePDFHtml(options: PDFTemplateOptions): Promise<stri
           : ''}
       </div>
       <div class="header-info">
-        <strong>${institution?.name || 'Tim Admin USC'}</strong><br/>
+        ${institution?.name ? `<strong>${institution.name}</strong><br/>` : ''}
         ${contactHtml.join('<br/>')}
       </div>
     </header>
@@ -247,7 +247,7 @@ export async function generatePDFHtml(options: PDFTemplateOptions): Promise<stri
     ${showFooter ? `
     <footer class="footer">
       <div class="footer-institution">
-        <strong>${institution?.name || 'Tim Admin USC'}</strong><br/>
+        ${institution?.name ? `<strong>${institution.name}</strong><br/>` : ''}
         Dokumen ini digenerate secara otomatis oleh sistem
       </div>
       <div class="footer-contact">
@@ -420,7 +420,7 @@ export async function generateAgreementHtml(data: {
         <tr style="border: none;">
           <td style="border: none; width: 50%; vertical-align: top;">
             <p><strong>Pihak Pertama:</strong></p>
-            <p>${institution?.name || 'Tim Admin USC'}</p>
+            ${institution?.name ? `<p>${institution.name}</p>` : ''}
             <p class="text-small text-gray">${institution?.address || ''}</p>
           </td>
           <td style="border: none; width: 50%; vertical-align: top;">
@@ -458,7 +458,7 @@ export async function generateAgreementHtml(data: {
     <div class="signature-section">
       <div class="signature-box">
         <p class="text-small">Pihak Pertama,</p>
-        <p class="text-small text-gray">${institution?.name || 'Tim Admin USC'}</p>
+        ${institution?.name ? `<p class="text-small text-gray">${institution.name}</p>` : ''}
         <div class="signature-line">
           <p class="text-small">(____________________)</p>
           <p class="text-small">Nama & Tanda Tangan</p>
@@ -597,10 +597,10 @@ export async function generateUSCBookingDocument(data: {
 
   const logoHtml = inst?.logo_url
     ? `<img src="${inst.logo_url}" style="height:55px;width:auto;" />`
-    : `<div style="width:55px;height:55px;background:${navy};border-radius:4px;color:white;font-weight:bold;font-size:8pt;text-align:center;line-height:55px;">UNESA</div>`
+    : (inst?.short_name ? `<div style="width:55px;height:55px;background:${navy};border-radius:4px;color:white;font-weight:bold;font-size:8pt;text-align:center;line-height:55px;">${inst.short_name}</div>` : '')
 
   const contactParts = [
-    inst?.address || 'Jl. Kampus Unesa Lidah Wetan Surabaya, 60213',
+    inst?.address || '',
     inst?.email   ? `E. ${inst.email}`   : null,
     inst?.website ? `www. ${inst.website}` : null,
   ].filter(Boolean).join('<br/>')
@@ -613,14 +613,14 @@ export async function generateUSCBookingDocument(data: {
             <tr>
               <td style="vertical-align:middle;padding-right:10px;">${logoHtml}</td>
               <td style="vertical-align:middle;">
-                <div style="font-size:12pt;font-weight:bold;color:${navy};line-height:1.3;">${inst?.name || 'UNIVERSITAS NEGERI SURABAYA'}</div>
-                <div style="font-size:9pt;font-weight:bold;color:${navy};">${inst?.short_name || 'DIREKTORAT UNESA SCIENCE CENTER'}</div>
+                ${inst?.name ? `<div style="font-size:12pt;font-weight:bold;color:${navy};line-height:1.3;">${inst.name}</div>` : ''}
+                ${inst?.short_name ? `<div style="font-size:9pt;font-weight:bold;color:${navy};">${inst.short_name}</div>` : ''}
               </td>
             </tr>
           </table>
         </td>
         <td style="vertical-align:middle;text-align:right;font-size:7.5pt;line-height:1.7;color:#444;">
-          <strong>Kampus Unesa 2</strong><br/>${contactParts}
+          ${contactParts ? contactParts : ''}
         </td>
       </tr>
     </table>
@@ -714,7 +714,7 @@ export async function generateUSCBookingDocument(data: {
       <strong>Catatan Penting:</strong>
       <ul style="margin:4px 0 0 16px;padding:0;">
         <li>Sertakan nomor referensi <strong>${data.referenceNo}</strong> pada keterangan transfer.</li>
-        <li>Bukti Transfer dapat dikirim ke nomor Whatsapp: <strong>+62 896-7704-2940 (Iqbal)</strong></li>
+        ${inst?.phone ? `<li>Bukti Transfer dapat dikirim ke nomor Whatsapp: <strong>${inst.phone}</strong></li>` : ''}
       </ul>
     </div>`
 
@@ -849,14 +849,14 @@ export async function generateUSCBookingDocument(data: {
 
   <div style="font-size:9.5pt;line-height:1.7;margin-bottom:15px;color:#333;">
     Dengan menandatangani formulir ini, pemohon menyatakan telah membaca, memahami, dan menyetujui 
-    semua syarat dan ketentuan yang berlaku terkait peminjaman sarana dan prasarana di Unesa Science Center, 
+    semua syarat dan ketentuan yang berlaku terkait peminjaman sarana dan prasarana${inst?.name ? ` di ${inst.name}` : ''}, 
     termasuk kewajiban pembayaran sesuai rincian yang tercantum pada invoice di halaman sebelumnya.
   </div>
 
   <table style="width:100%;border-collapse:collapse;margin-top:10px;">
     <tr>
       <td style="border:1px solid ${border};text-align:center;padding:8px;height:110px;vertical-align:top;width:50%;">
-        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">Admin USC</div>
+        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">${inst?.short_name || inst?.name || 'Admin'}</div>
         <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
       </td>
       <td style="border:1px solid ${border};text-align:center;padding:8px;height:110px;vertical-align:top;width:50%;border-left:none;">

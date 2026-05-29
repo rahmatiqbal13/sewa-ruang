@@ -45,19 +45,7 @@ export async function getInstitutionProfile(): Promise<InstitutionProfile | null
       .single()
     
     if (error || !data) {
-      // Return default jika tidak ada data
-      return {
-        id: 'default',
-        name: 'Tim Admin USC',
-        short_name: 'SC UNESA',
-        logo_url: null,
-        address: null,
-        phone: null,
-        email: null,
-        website: null,
-        description: null,
-        operating_hours: null,
-      }
+      return null
     }
     
     // Update cache
@@ -71,21 +59,7 @@ export async function getInstitutionProfile(): Promise<InstitutionProfile | null
   }
 }
 
-// Get default profile (untuk fallback)
-export function getDefaultInstitutionProfile(): InstitutionProfile {
-  return {
-    id: 'default',
-    name: 'Tim Admin USC',
-    short_name: 'SC UNESA',
-    logo_url: null,
-    address: null,
-    phone: null,
-    email: null,
-    website: null,
-    description: null,
-    operating_hours: null,
-  }
-}
+
 
 // Format alamat lengkap
 export function formatAddress(profile: InstitutionProfile | null): string {

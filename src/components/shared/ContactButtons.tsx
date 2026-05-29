@@ -76,7 +76,7 @@ Pengajuan peminjaman Anda telah kami terima dengan detail:
 Kami akan segera memproses pengajuan Anda.
 
 Terima kasih,
-Tim Admin USC`
+Admin`
   },
   'booking_approved': {
     subject: '{{nama}} - {{no_booking}} | ✅ Pengajuan Disetujui',
@@ -93,7 +93,7 @@ Selamat! Pengajuan peminjaman Anda telah DISETUJUI.
 Silakan lakukan pembayaran untuk mengkonfirmasi peminjaman Anda.
 
 Terima kasih,
-Tim Admin USC`
+Admin`
   },
   'booking_rejected': {
     subject: '{{nama}} - {{no_booking}} | Pengajuan Ditolak',
@@ -111,7 +111,7 @@ Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
 Silakan hubungi kami untuk informasi lebih lanjut.
 
 Terima kasih,
-Tim Admin USC`
+Admin`
   },
   'booking_cancelled': {
     subject: '{{nama}} - {{no_booking}} | Peminjaman Dibatalkan',
@@ -127,7 +127,7 @@ Peminjaman Anda telah dibatalkan.
 Jika Anda memiliki pertanyaan, silakan hubungi kami.
 
 Terima kasih,
-Tim Admin USC`
+Admin`
   },
   'payment_received': {
     subject: '{{nama}} - {{no_booking}} | 💳 Pembayaran Diterima',
@@ -144,7 +144,7 @@ Pembayaran untuk peminjaman Anda telah kami terima.
 Peminjaman Anda telah dikonfirmasi. Harap datang tepat waktu sesuai jadwal.
 
 Terima kasih,
-Tim Admin USC`
+Admin`
   },
 }
 
@@ -347,7 +347,7 @@ export function ContactButtons({
 
     const message = templates.whatsapp 
       ? processTemplate(templates.whatsapp)
-      : `Halo ${user?.name}, saya admin Tim Admin USC.`
+      : `Halo ${user?.name}, saya admin.`
 
     const formattedNumber = user?.phone?.replace(/\D/g, '') || ''
     const waLink = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`
@@ -358,7 +358,7 @@ export function ContactButtons({
   const handleTelegram = () => {
     const message = templates.telegram 
       ? processTemplate(templates.telegram)
-      : `Halo ${user?.name}, saya admin Tim Admin USC.`
+      : `Halo ${user?.name}, saya admin.`
 
     let tgLink = ''
     

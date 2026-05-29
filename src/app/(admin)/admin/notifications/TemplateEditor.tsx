@@ -72,27 +72,27 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
     email: {
       default: {
         subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima',
-        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima dengan detail:\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nKami akan segera memproses pengajuan Anda.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima dengan detail:\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nKami akan segera memproses pengajuan Anda.\n\nTerima kasih,\nAdmin',
       },
       mahasiswa_s1: {
         subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima (Mahasiswa S1)',
-        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\nSebagai Mahasiswa S1, Anda berhak mendapatkan peminjaman GRATIS untuk keperluan perkuliahan.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n\nKami akan segera memverifikasi pengajuan Anda.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\nSebagai Mahasiswa S1, Anda berhak mendapatkan peminjaman GRATIS untuk keperluan perkuliahan.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n\nKami akan segera memverifikasi pengajuan Anda.\n\nTerima kasih,\nAdmin',
       },
       mahasiswa_s2: {
         subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima',
-        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\nSebagai Mahasiswa Pascasarjana, silakan tunggu konfirmasi dari kami.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\nSebagai Mahasiswa Pascasarjana, silakan tunggu konfirmasi dari kami.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nTerima kasih,\nAdmin',
       },
       dosen: {
         subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima',
-        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\nSebagai Dosen/Karyawan UNESA, Anda mendapatkan prioritas dalam proses persetujuan.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\nSebagai Dosen/Karyawan, Anda mendapatkan prioritas dalam proses persetujuan.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nTerima kasih,\nAdmin',
       },
       umum: {
         subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima',
-        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nSilakan lakukan pembayaran setelah pengajuan disetujui.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nSilakan lakukan pembayaran setelah pengajuan disetujui.\n\nTerima kasih,\nAdmin',
       },
       kerjasama: {
         subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima (Kerjasama)',
-        body: 'Halo {{nama}},\n\nPengajuan peminjaman dari institusi kerjasama Anda telah kami terima.\n\nSebagai mitra kerjasama, Anda mendapatkan tarif khusus.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nPengajuan peminjaman dari institusi kerjasama Anda telah kami terima.\n\nSebagai mitra kerjasama, Anda mendapatkan tarif khusus.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nTerima kasih,\nAdmin',
       },
     },
     whatsapp: {
@@ -107,7 +107,7 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
       default: { body: '📋 Halo {{nama}}!\n\nPengajuan peminjaman *{{ruangan}}* (Ref: `{{no_booking}}`) telah diterima dan sedang diproses.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nKami akan segera memberikan konfirmasi.' },
       mahasiswa_s1: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\nSebagai Mahasiswa S1, peminjaman untuk perkuliahan GRATIS!\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nKami akan verifikasi segera.' },
       mahasiswa_s2: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima dan diproses.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nTunggu konfirmasi dari kami.' },
-      dosen: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\nPrioritas Dosen/Karyawan UNESA.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSegera kami proses.' },
+      dosen: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\nPrioritas Dosen/Karyawan.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSegera kami proses.' },
       umum: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nTunggu persetujuan dan lakukan pembayaran.' },
       kerjasama: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\nMitra Kerjasama - Tarif Khusus\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSegera kami proses.' },
     },
@@ -116,27 +116,27 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
     email: {
       default: {
         subject: '{{nama}} - {{no_booking}} | ✅ Disetujui',
-        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi peminjaman.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi peminjaman.\n\nTerima kasih,\nAdmin',
       },
       mahasiswa_s1: {
         subject: '{{nama}} - {{no_booking}} | ✅ Disetujui & LUNAS (Gratis)',
-        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI dan LUNAS.\n\nSebagai Mahasiswa S1 untuk keperluan perkuliahan, peminjaman ini GRATIS.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: DISETUJUI & LUNAS\n💰 Biaya: GRATIS\n\nPeminjaman Anda telah dikonfirmasi. Harap datang tepat waktu.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI dan LUNAS.\n\nSebagai Mahasiswa S1 untuk keperluan perkuliahan, peminjaman ini GRATIS.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: DISETUJUI & LUNAS\n💰 Biaya: GRATIS\n\nPeminjaman Anda telah dikonfirmasi. Harap datang tepat waktu.\n\nTerima kasih,\nAdmin',
       },
       mahasiswa_s2: {
         subject: '{{nama}} - {{no_booking}} | ✅ Disetujui',
-        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi peminjaman.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi peminjaman.\n\nTerima kasih,\nAdmin',
       },
       dosen: {
         subject: '{{nama}} - {{no_booking}} | ✅ Disetujui',
-        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\nSebagai Dosen/Karyawan, Anda mendapatkan kemudahan dalam proses peminjaman.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\nSebagai Dosen/Karyawan, Anda mendapatkan kemudahan dalam proses peminjaman.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi.\n\nTerima kasih,\nAdmin',
       },
       umum: {
         subject: '{{nama}} - {{no_booking}} | ✅ Disetujui',
-        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSegera lakukan pembayaran untuk mengamankan jadwal Anda.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSegera lakukan pembayaran untuk mengamankan jadwal Anda.\n\nTerima kasih,\nAdmin',
       },
       kerjasama: {
         subject: '{{nama}} - {{no_booking}} | ✅ Disetujui (Kerjasama)',
-        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\nSebagai mitra kerjasama, Anda mendapatkan tarif khusus yang lebih hemat.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi.\n\nTerima kasih,\nTim Admin USC',
+        body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\nSebagai mitra kerjasama, Anda mendapatkan tarif khusus yang lebih hemat.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi.\n\nTerima kasih,\nAdmin',
       },
     },
     whatsapp: {
@@ -174,7 +174,7 @@ Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
 Silakan hubungi kami untuk informasi lebih lanjut.
 
 Terima kasih,
-Tim Admin USC`,
+Admin`,
       },
       mahasiswa_s1: {
         subject: '{{nama}} - {{no_booking}} | ❌ Ditolak',
@@ -194,7 +194,7 @@ Jika Anda mahasiswa S1, pastikan pengajuan untuk keperluan perkuliahan dan sesua
 Silakan hubungi kami untuk informasi lebih lanjut.
 
 Terima kasih,
-Tim Admin USC`,
+Admin`,
       },
       mahasiswa_s2: { subject: '{{nama}} - {{no_booking}} | ❌ Ditolak', body: `Halo {{nama}},
 
@@ -210,7 +210,7 @@ Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
 Silakan hubungi kami untuk informasi lebih lanjut.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       dosen: { subject: '{{nama}} - {{no_booking}} | ❌ Ditolak', body: `Halo {{nama}},
 
 Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
@@ -225,7 +225,7 @@ Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
 Silakan hubungi admin untuk alternatif jadwal atau ruangan lain.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       umum: { subject: '{{nama}} - {{no_booking}} | ❌ Ditolak', body: `Halo {{nama}},
 
 Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
@@ -240,7 +240,7 @@ Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
 Silakan ajukan kembali dengan jadwal atau ruangan alternatif.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       kerjasama: { subject: '{{nama}} - {{no_booking}} | ❌ Ditolak', body: `Halo {{nama}},
 
 Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
@@ -255,7 +255,7 @@ Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
 Silakan hubungi kami untuk membahas alternatif yang tersedia.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
     },
     whatsapp: {
       default: { body: `Mohon maaf {{nama}}, pengajuan *{{no_booking}}* tidak dapat disetujui.
@@ -372,7 +372,7 @@ Peminjaman Anda telah dibatalkan.
 Jika Anda memiliki pertanyaan, silakan hubungi kami.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       mahasiswa_s1: { subject: '{{nama}} - {{no_booking}} | 🚫 Dibatalkan', body: `Halo {{nama}},
 
 Peminjaman Anda telah dibatalkan.
@@ -387,7 +387,7 @@ Peminjaman Anda telah dibatalkan.
 Jika pembatalan dilakukan oleh sistem, silakan hubungi admin untuk pengajuan ulang.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       mahasiswa_s2: { subject: '{{nama}} - {{no_booking}} | 🚫 Dibatalkan', body: `Halo {{nama}},
 
 Peminjaman Anda telah dibatalkan.
@@ -400,7 +400,7 @@ Peminjaman Anda telah dibatalkan.
 {{catatan_admin}}
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       dosen: { subject: '{{nama}} - {{no_booking}} | 🚫 Dibatalkan', body: `Halo {{nama}},
 
 Peminjaman Anda telah dibatalkan.
@@ -415,7 +415,7 @@ Peminjaman Anda telah dibatalkan.
 Silakan hubungi kami jika ingin menjadwalkan ulang.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       umum: { subject: '{{nama}} - {{no_booking}} | 🚫 Dibatalkan', body: `Halo {{nama}},
 
 Peminjaman Anda telah dibatalkan.
@@ -428,7 +428,7 @@ Peminjaman Anda telah dibatalkan.
 {{catatan_admin}}
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       kerjasama: { subject: '{{nama}} - {{no_booking}} | 🚫 Dibatalkan', body: `Halo {{nama}},
 
 Peminjaman Anda telah dibatalkan.
@@ -443,7 +443,7 @@ Peminjaman Anda telah dibatalkan.
 Silakan hubungi kami untuk penjadwalan ulang.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
     },
     whatsapp: {
       default: { body: `Halo {{nama}}, peminjaman *{{no_booking}}* telah dibatalkan.
@@ -535,7 +535,7 @@ Pembayaran untuk peminjaman Anda telah kami terima.
 Peminjaman Anda telah dikonfirmasi. Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       mahasiswa_s1: { subject: '{{nama}} - {{no_booking}} | ✅ Konfirmasi Gratis', body: `Halo {{nama}},
 
 Peminjaman Anda telah dikonfirmasi LUNAS.
@@ -550,7 +550,7 @@ Peminjaman Anda telah dikonfirmasi LUNAS.
 Peminjaman telah dikonfirmasi. Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       mahasiswa_s2: { subject: '{{nama}} - {{no_booking}} | 💳 Lunas', body: `Halo {{nama}},
 
 Pembayaran untuk peminjaman Anda telah kami terima.
@@ -564,7 +564,7 @@ Pembayaran untuk peminjaman Anda telah kami terima.
 Peminjaman Anda telah dikonfirmasi. Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       dosen: { subject: '{{nama}} - {{no_booking}} | 💳 Lunas', body: `Halo {{nama}},
 
 Pembayaran untuk peminjaman Anda telah kami terima.
@@ -578,7 +578,7 @@ Pembayaran untuk peminjaman Anda telah kami terima.
 Peminjaman Anda telah dikonfirmasi. Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       umum: { subject: '{{nama}} - {{no_booking}} | 💳 Lunas', body: `Halo {{nama}},
 
 Pembayaran untuk peminjaman Anda telah kami terima.
@@ -592,7 +592,7 @@ Pembayaran untuk peminjaman Anda telah kami terima.
 Peminjaman Anda telah dikonfirmasi. Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       kerjasama: { subject: '{{nama}} - {{no_booking}} | 💳 Lunas', body: `Halo {{nama}},
 
 Pembayaran untuk peminjaman Anda telah kami terima.
@@ -606,7 +606,7 @@ Pembayaran untuk peminjaman Anda telah kami terima.
 Peminjaman Anda telah dikonfirmasi. Terima kasih atas kerjasamanya.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
     },
     whatsapp: {
       default: { body: `💳 Halo {{nama}}! Pembayaran untuk *{{no_booking}}* telah diterima.
@@ -724,7 +724,7 @@ Ini adalah pengingat bahwa peminjaman Anda akan segera dimulai:
 Harap datang tepat waktu sesuai jadwal.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       mahasiswa_s1: { subject: '{{nama}} - {{no_booking}} | ⏰ Pengingat', body: `Halo {{nama}},
 
 ⏰ Pengingat: Peminjaman Anda akan dimulai besok!
@@ -738,7 +738,7 @@ Tim Admin USC` },
 Pastikan Anda datang tepat waktu dan membawa kartu identitas.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       mahasiswa_s2: { subject: '{{nama}} - {{no_booking}} | ⏰ Pengingat', body: `Halo {{nama}},
 
 ⏰ Pengingat: Peminjaman Anda akan dimulai besok!
@@ -752,7 +752,7 @@ Tim Admin USC` },
 Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       dosen: { subject: '{{nama}} - {{no_booking}} | ⏰ Pengingat', body: `Halo {{nama}},
 
 ⏰ Pengingat: Peminjaman Anda akan dimulai besok!
@@ -766,7 +766,7 @@ Tim Admin USC` },
 Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       umum: { subject: '{{nama}} - {{no_booking}} | ⏰ Pengingat', body: `Halo {{nama}},
 
 ⏰ Pengingat: Peminjaman Anda akan dimulai besok!
@@ -780,7 +780,7 @@ Tim Admin USC` },
 Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
       kerjasama: { subject: '{{nama}} - {{no_booking}} | ⏰ Pengingat', body: `Halo {{nama}},
 
 ⏰ Pengingat: Peminjaman Anda akan dimulai besok!
@@ -794,7 +794,7 @@ Tim Admin USC` },
 Harap datang tepat waktu.
 
 Terima kasih,
-Tim Admin USC` },
+Admin` },
     },
     whatsapp: {
       default: { body: `⏰ *Pengingat Peminjaman*

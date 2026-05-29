@@ -189,10 +189,12 @@ export default async function HomePage() {
               {/* Left Content */}
               <div className="text-center lg:text-left">
                 {/* Eyebrow */}
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full text-white/70 text-sm font-medium mb-5">
-                  <Building2 className="h-4 w-4" />
-                  USC UNESA
-                </div>
+                {institution?.short_name && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full text-white/70 text-sm font-medium mb-5">
+                    <Building2 className="h-4 w-4" />
+                    {institution.short_name}
+                  </div>
+                )}
 
                 {/* H1 */}
                 <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold text-white leading-[1.15] mb-4">
@@ -294,11 +296,8 @@ export default async function HomePage() {
                 const rawValue = stat.key === 'rooms' ? roomCount 
                   : stat.key === 'equipment' ? equipmentCount 
                   : stat.key === 'bookings' ? bookingCount 
-                  : 98
-                // Use realistic fallback for demo if count is 0
-                const value = rawValue === 0 
-                  ? (stat.key === 'rooms' ? 20 : stat.key === 'equipment' ? 100 : 500) 
-                  : rawValue
+                  : 0
+                const value = rawValue
                 const displayValue = stat.key === 'satisfaction' ? `${value}%` : `${value}+`
                 return (
                   <div key={stat.label} className="text-center">
@@ -471,9 +470,11 @@ export default async function HomePage() {
                   <span className="font-bold text-lg text-white">{institution?.short_name || 'USC'}</span>
                 </div>
               </div>
-              <p className="text-sm leading-relaxed text-gray-400 mb-4">
-                Unit Sarana dan Prasarana Universitas Negeri Surabaya. Mengelola peminjaman ruangan dan peralatan untuk mendukung kegiatan akademik dan non-akademik.
-              </p>
+              {institution?.description && (
+                <p className="text-sm leading-relaxed text-gray-400 mb-4">
+                  {institution.description}
+                </p>
+              )}
             </div>
 
             {/* Link Cepat */}
@@ -540,7 +541,7 @@ export default async function HomePage() {
           {/* Copyright Bar */}
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-500">
-              &copy; {currentYear} {institution?.name || 'USC UNESA'}. All rights reserved.
+              &copy; {currentYear} {institution?.name || 'Sewa Ruang & Alat'}. All rights reserved.
             </p>
             {institution?.website && (
               <a
