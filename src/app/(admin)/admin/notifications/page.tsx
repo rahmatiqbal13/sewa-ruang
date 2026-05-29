@@ -89,10 +89,27 @@ export default async function NotificationsPage({
                     <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <p className="font-medium text-sm truncate">{n.title}</p>
                     {!n.is_read && <Badge variant="secondary" className="text-xs shrink-0">Belum dibaca</Badge>}
+                    {n.status && (
+                      <Badge 
+                        variant={n.status === 'sent' ? 'default' : 'destructive'} 
+                        className="text-xs shrink-0 capitalize"
+                      >
+                        {n.status}
+                      </Badge>
+                    )}
+                    {n.channel && (
+                      <Badge variant="outline" className="text-xs shrink-0 capitalize">
+                        {n.channel}
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2 pl-5">{n.body}</p>
                   <p className="text-xs text-muted-foreground mt-1 pl-5">
-                    Kepada: {(n.users as { name: string } | null)?.name ?? '-'} · {formatDateTime(n.created_at)}
+                    Kepada: {(n.users as { name: string } | null)?.name ?? '-'} 
+                    {n.recipient ? ` (${n.recipient})` : ''}
+                    {' · '}
+                    {formatDateTime(n.created_at)}
+                    {n.error_message ? ` · Error: ${n.error_message}` : ''}
                   </p>
                 </div>
                 <Badge variant="outline" className="shrink-0 text-xs capitalize">{n.type.replace(/_/g, ' ')}</Badge>

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 interface TemplateData {
@@ -14,11 +14,28 @@ interface TemplateData {
 export async function saveTemplate(data: TemplateData) {
   try {
     const supabase = await createClient()
+    const adminDb = createAdminDbClient()
 
-    // Insert/Update template (RLS sudah disabled, jadi bisa langsung)
+    // Verify user is admin
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return { error: 'Unauthorized - Silakan login' }
+    }
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!['admin', 'super_admin'].includes((userData as { role: string } | null)?.role ?? '')) {
+      return { error: 'Forbidden - Hanya admin yang bisa menyimpan template' }
+    }
+
+    // Insert/Update template using service role bypass RLS
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase
-      .from('notification_templates') as any)
+    const { error } = await adminDb
+      .from('notification_templates')
       .upsert(
         {
           event_type: data.event_type,
@@ -28,6 +45,7 @@ export async function saveTemplate(data: TemplateData) {
           body: data.body,
           is_active: true,
           updated_at: new Date().toISOString(),
+          updated_by: user.id,
         } as any,
         { onConflict: 'event_type,channel,user_category' }
       )
@@ -40,8 +58,9 @@ export async function saveTemplate(data: TemplateData) {
     revalidatePath('/admin/notifications')
     return { success: true }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Server action error:', error)
-    return { error: error.message || 'Terjadi kesalahan' }
+    const msg = error instanceof Error ? error.message : 'Terjadi kesalahan'
+    return { error: msg }
   }
 }

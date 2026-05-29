@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 interface ChannelConfig {
@@ -12,6 +12,7 @@ interface ChannelConfig {
 export async function saveChannelConfig(data: ChannelConfig) {
   try {
     const supabase = await createClient()
+    const adminDb = createAdminDbClient()
     
     // Get current user
     const { data: { user } } = await supabase.auth.getUser()
@@ -21,9 +22,8 @@ export async function saveChannelConfig(data: ChannelConfig) {
     }
 
     // Check user role
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: userData, error: userError } = await (supabase
-      .from('users') as any)
+    const { data: userData, error: userError } = await supabase
+      .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
@@ -39,8 +39,8 @@ export async function saveChannelConfig(data: ChannelConfig) {
 
     // Insert/Update using service role bypass RLS
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase
-      .from('notification_channel_configs') as any)
+    const { error } = await adminDb
+      .from('notification_channel_configs')
       .upsert(
         {
           channel: data.channel,
@@ -60,8 +60,9 @@ export async function saveChannelConfig(data: ChannelConfig) {
     revalidatePath('/admin/notifications')
     return { success: true }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Server action error:', error)
-    return { error: error.message || 'Terjadi kesalahan' }
+    const msg = error instanceof Error ? error.message : 'Terjadi kesalahan'
+    return { error: msg }
   }
 }

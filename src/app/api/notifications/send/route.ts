@@ -131,12 +131,12 @@ export async function POST(req: NextRequest) {
       .from('bookings')
       .select(`
         id, reference_no, status, start_datetime, end_datetime,
-        total_amount, admin_notes,
+        total_amount, admin_notes, user_id,
         users!user_id(name, email, phone, institution, borrower_category),
         booking_items(
           item_type,
-          rooms:room_id(name),
-          equipment:equipment_id(name)
+          rooms:room_id(name, room_type, current_condition),
+          equipment:equipment_id(name, category, current_condition, ketersediaan, status_tindakan)
         )
       `)
       .eq('id', bookingId)
@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
 
       await adminSbQ.from('notifications').insert({
         booking_id: bookingId,
-        user_id: booking.users ? null : null, // log against booking, not admin
+        user_id: booking.user_id ?? null,
         channel,
         recipient,
         status: result.success ? 'sent' : 'failed',

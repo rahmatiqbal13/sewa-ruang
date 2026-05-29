@@ -349,16 +349,50 @@ export interface Database {
       notifications: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          booking_id: string | null
           type: string
           title: string
           body: string
+          channel: string | null
+          recipient: string | null
+          status: string | null
+          error_message: string | null
           is_read: boolean
           created_at: string
         }
         Relationships: []
         Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at'>
         Update: Pick<Database['public']['Tables']['notifications']['Row'], 'is_read'>
+      }
+      notification_channel_configs: {
+        Row: {
+          id: string
+          channel: NotificationChannel
+          is_enabled: boolean
+          config: Record<string, unknown>
+          updated_at: string
+          updated_by: string | null
+        }
+        Relationships: []
+        Insert: Omit<Database['public']['Tables']['notification_channel_configs']['Row'], 'id' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['notification_channel_configs']['Insert']>
+      }
+      notification_templates: {
+        Row: {
+          id: string
+          event_type: string
+          channel: NotificationChannel
+          user_category: string
+          subject: string | null
+          body: string
+          is_active: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Relationships: []
+        Insert: Omit<Database['public']['Tables']['notification_templates']['Row'], 'id' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['notification_templates']['Insert']>
       }
       notification_preferences: {
         Row: {

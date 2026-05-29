@@ -30,7 +30,12 @@ const EVENT_TYPES = [
   { key: 'booking_rejected', label: 'Peminjaman Ditolak', desc: 'Template yang dikirim saat peminjaman ditolak' },
   { key: 'booking_cancelled', label: 'Peminjaman Dibatalkan', desc: 'Template yang dikirim saat peminjaman dibatalkan' },
   { key: 'payment_received', label: 'Pembayaran Diterima', desc: 'Template yang dikirim saat pembayaran lunas' },
-  { key: 'reminder', label: 'Pengingat Peminjaman', desc: 'Template pengingat otomatis sebelum peminjaman' },
+  { key: 'booking_reminder', label: 'Pengingat Peminjaman', desc: 'Template pengingat otomatis sebelum peminjaman' },
+  // Asset / facility management events
+  { key: 'equipment_condition_changed', label: 'Perubahan Kondisi Alat', desc: 'Template saat kondisi fisik alat berubah (Baik, Rusak, dll)' },
+  { key: 'equipment_status_changed', label: 'Perubahan Status Tindakan Alat', desc: 'Template saat status tindakan alat berubah (Normal, Perawatan, Afkir, dll)' },
+  { key: 'equipment_availability_changed', label: 'Perubahan Ketersediaan Alat', desc: 'Template saat ketersediaan alat berubah (Tersedia, Digunakan, Hilang)' },
+  { key: 'room_status_changed', label: 'Perubahan Status Ruangan', desc: 'Template saat status/kondisi ruangan berubah' },
 ]
 type UserCategory = 'default' | 'mahasiswa_s1' | 'mahasiswa_s2' | 'dosen' | 'umum' | 'kerjasama'
 
@@ -64,6 +69,14 @@ const VARIABLES = [
   { key: '{{kategori_pengguna}}', desc: 'Kategori pengguna (Mahasiswa S1, Dosen, dll)' },
   { key: '{{total_biaya}}', desc: 'Total biaya peminjaman' },
   { key: '{{tipe_peminjaman}}', desc: 'Tipe: Ruangan saja/Alat saja/Campuran' },
+  // Room details
+  { key: '{{tipe_ruangan}}', desc: 'Tipe ruangan yang dipesan' },
+  { key: '{{kondisi_ruangan}}', desc: 'Kondisi ruangan yang dipesan' },
+  // Equipment details
+  { key: '{{kategori_alat}}', desc: 'Kategori alat (Elektronik, Mebel, dll)' },
+  { key: '{{kondisi_alat}}', desc: 'Kondisi alat (Baik, Rusak, Hilang, dll)' },
+  { key: '{{ketersediaan_alat}}', desc: 'Ketersediaan alat (Tersedia, Digunakan, Hilang)' },
+  { key: '{{status_tindakan_alat}}', desc: 'Status tindakan alat (Normal, Perawatan, Afkir)' },
 ]
 
 // Default templates per user category
@@ -707,6 +720,110 @@ Pembayaran *{{no_booking}}* telah diterima.
 📅 {{tanggal_mulai}} — {{tanggal_selesai}}
 
 ✅ Terima kasih atas kerjasamanya.` },
+    },
+  },
+  equipment_condition_changed: {
+    email: {
+      default: { subject: 'Perubahan Kondisi Alat', body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}\n\nTerima kasih,\nAdmin' },
+      mahasiswa_s1: { subject: 'Perubahan Kondisi Alat', body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}\n\nTerima kasih,\nAdmin' },
+      mahasiswa_s2: { subject: 'Perubahan Kondisi Alat', body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}\n\nTerima kasih,\nAdmin' },
+      dosen: { subject: 'Perubahan Kondisi Alat', body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}\n\nTerima kasih,\nAdmin' },
+      umum: { subject: 'Perubahan Kondisi Alat', body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}\n\nTerima kasih,\nAdmin' },
+      kerjasama: { subject: 'Perubahan Kondisi Alat', body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}\n\nTerima kasih,\nAdmin' },
+    },
+    whatsapp: {
+      default: { body: 'Halo {{nama}}, kondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Kondisi: {{kondisi_alat}}.' },
+      mahasiswa_s1: { body: 'Halo {{nama}}, kondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Kondisi: {{kondisi_alat}}.' },
+      mahasiswa_s2: { body: 'Halo {{nama}}, kondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Kondisi: {{kondisi_alat}}.' },
+      dosen: { body: 'Halo {{nama}}, kondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Kondisi: {{kondisi_alat}}.' },
+      umum: { body: 'Halo {{nama}}, kondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Kondisi: {{kondisi_alat}}.' },
+      kerjasama: { body: 'Halo {{nama}}, kondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Kondisi: {{kondisi_alat}}.' },
+    },
+    telegram: {
+      default: { body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}' },
+      mahasiswa_s1: { body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}' },
+      mahasiswa_s2: { body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}' },
+      dosen: { body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}' },
+      umum: { body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}' },
+      kerjasama: { body: 'Halo {{nama}},\n\nKondisi alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKondisi: {{kondisi_alat}}' },
+    },
+  },
+  equipment_status_changed: {
+    email: {
+      default: { subject: 'Perubahan Status Tindakan Alat', body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus Tindakan: {{status_tindakan_alat}}\n\nTerima kasih,\nAdmin' },
+      mahasiswa_s1: { subject: 'Perubahan Status Tindakan Alat', body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus Tindakan: {{status_tindakan_alat}}\n\nTerima kasih,\nAdmin' },
+      mahasiswa_s2: { subject: 'Perubahan Status Tindakan Alat', body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus Tindakan: {{status_tindakan_alat}}\n\nTerima kasih,\nAdmin' },
+      dosen: { subject: 'Perubahan Status Tindakan Alat', body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus Tindakan: {{status_tindakan_alat}}\n\nTerima kasih,\nAdmin' },
+      umum: { subject: 'Perubahan Status Tindakan Alat', body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus Tindakan: {{status_tindakan_alat}}\n\nTerima kasih,\nAdmin' },
+      kerjasama: { subject: 'Perubahan Status Tindakan Alat', body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus Tindakan: {{status_tindakan_alat}}\n\nTerima kasih,\nAdmin' },
+    },
+    whatsapp: {
+      default: { body: 'Halo {{nama}}, status tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Status: {{status_tindakan_alat}}.' },
+      mahasiswa_s1: { body: 'Halo {{nama}}, status tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Status: {{status_tindakan_alat}}.' },
+      mahasiswa_s2: { body: 'Halo {{nama}}, status tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Status: {{status_tindakan_alat}}.' },
+      dosen: { body: 'Halo {{nama}}, status tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Status: {{status_tindakan_alat}}.' },
+      umum: { body: 'Halo {{nama}}, status tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Status: {{status_tindakan_alat}}.' },
+      kerjasama: { body: 'Halo {{nama}}, status tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Status: {{status_tindakan_alat}}.' },
+    },
+    telegram: {
+      default: { body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus: {{status_tindakan_alat}}' },
+      mahasiswa_s1: { body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus: {{status_tindakan_alat}}' },
+      mahasiswa_s2: { body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus: {{status_tindakan_alat}}' },
+      dosen: { body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus: {{status_tindakan_alat}}' },
+      umum: { body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus: {{status_tindakan_alat}}' },
+      kerjasama: { body: 'Halo {{nama}},\n\nStatus tindakan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nStatus: {{status_tindakan_alat}}' },
+    },
+  },
+  equipment_availability_changed: {
+    email: {
+      default: { subject: 'Perubahan Ketersediaan Alat', body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}\n\nTerima kasih,\nAdmin' },
+      mahasiswa_s1: { subject: 'Perubahan Ketersediaan Alat', body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}\n\nTerima kasih,\nAdmin' },
+      mahasiswa_s2: { subject: 'Perubahan Ketersediaan Alat', body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}\n\nTerima kasih,\nAdmin' },
+      dosen: { subject: 'Perubahan Ketersediaan Alat', body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}\n\nTerima kasih,\nAdmin' },
+      umum: { subject: 'Perubahan Ketersediaan Alat', body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}\n\nTerima kasih,\nAdmin' },
+      kerjasama: { subject: 'Perubahan Ketersediaan Alat', body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman {{no_booking}} telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}\n\nTerima kasih,\nAdmin' },
+    },
+    whatsapp: {
+      default: { body: 'Halo {{nama}}, ketersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Ketersediaan: {{ketersediaan_alat}}.' },
+      mahasiswa_s1: { body: 'Halo {{nama}}, ketersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Ketersediaan: {{ketersediaan_alat}}.' },
+      mahasiswa_s2: { body: 'Halo {{nama}}, ketersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Ketersediaan: {{ketersediaan_alat}}.' },
+      dosen: { body: 'Halo {{nama}}, ketersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Ketersediaan: {{ketersediaan_alat}}.' },
+      umum: { body: 'Halo {{nama}}, ketersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Ketersediaan: {{ketersediaan_alat}}.' },
+      kerjasama: { body: 'Halo {{nama}}, ketersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui. Alat: {{daftar_alat}}. Ketersediaan: {{ketersediaan_alat}}.' },
+    },
+    telegram: {
+      default: { body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}' },
+      mahasiswa_s1: { body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}' },
+      mahasiswa_s2: { body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}' },
+      dosen: { body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}' },
+      umum: { body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}' },
+      kerjasama: { body: 'Halo {{nama}},\n\nKetersediaan alat dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nAlat: {{daftar_alat}}\nKetersediaan: {{ketersediaan_alat}}' },
+    },
+  },
+  room_status_changed: {
+    email: {
+      default: { subject: 'Perubahan Status Ruangan', body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman {{no_booking}} telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}\n\nTerima kasih,\nAdmin' },
+      mahasiswa_s1: { subject: 'Perubahan Status Ruangan', body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman {{no_booking}} telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}\n\nTerima kasih,\nAdmin' },
+      mahasiswa_s2: { subject: 'Perubahan Status Ruangan', body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman {{no_booking}} telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}\n\nTerima kasih,\nAdmin' },
+      dosen: { subject: 'Perubahan Status Ruangan', body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman {{no_booking}} telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}\n\nTerima kasih,\nAdmin' },
+      umum: { subject: 'Perubahan Status Ruangan', body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman {{no_booking}} telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}\n\nTerima kasih,\nAdmin' },
+      kerjasama: { subject: 'Perubahan Status Ruangan', body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman {{no_booking}} telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}\n\nTerima kasih,\nAdmin' },
+    },
+    whatsapp: {
+      default: { body: 'Halo {{nama}}, status ruangan dalam peminjaman *{{no_booking}}* telah diperbarui. Ruangan: {{daftar_ruangan}}. Tipe: {{tipe_ruangan}}. Kondisi: {{kondisi_ruangan}}.' },
+      mahasiswa_s1: { body: 'Halo {{nama}}, status ruangan dalam peminjaman *{{no_booking}}* telah diperbarui. Ruangan: {{daftar_ruangan}}. Tipe: {{tipe_ruangan}}. Kondisi: {{kondisi_ruangan}}.' },
+      mahasiswa_s2: { body: 'Halo {{nama}}, status ruangan dalam peminjaman *{{no_booking}}* telah diperbarui. Ruangan: {{daftar_ruangan}}. Tipe: {{tipe_ruangan}}. Kondisi: {{kondisi_ruangan}}.' },
+      dosen: { body: 'Halo {{nama}}, status ruangan dalam peminjaman *{{no_booking}}* telah diperbarui. Ruangan: {{daftar_ruangan}}. Tipe: {{tipe_ruangan}}. Kondisi: {{kondisi_ruangan}}.' },
+      umum: { body: 'Halo {{nama}}, status ruangan dalam peminjaman *{{no_booking}}* telah diperbarui. Ruangan: {{daftar_ruangan}}. Tipe: {{tipe_ruangan}}. Kondisi: {{kondisi_ruangan}}.' },
+      kerjasama: { body: 'Halo {{nama}}, status ruangan dalam peminjaman *{{no_booking}}* telah diperbarui. Ruangan: {{daftar_ruangan}}. Tipe: {{tipe_ruangan}}. Kondisi: {{kondisi_ruangan}}.' },
+    },
+    telegram: {
+      default: { body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}' },
+      mahasiswa_s1: { body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}' },
+      mahasiswa_s2: { body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}' },
+      dosen: { body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}' },
+      umum: { body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}' },
+      kerjasama: { body: 'Halo {{nama}},\n\nStatus ruangan dalam peminjaman *{{no_booking}}* telah diperbarui.\n\nRuangan: {{daftar_ruangan}}\nTipe: {{tipe_ruangan}}\nKondisi: {{kondisi_ruangan}}' },
     },
   },
   booking_reminder: {

@@ -109,9 +109,9 @@ export async function exportEquipmentToExcel(selectedIds: string[], allEquipment
       'Tarif Dosen (Jam)': rateMap['dosen']?.hour || '-',
       'Dosen Perlu Supervisi': rateMap['dosen']?.supervision ? 'Ya' : 'Tidak',
       
-      'Tarif MoU (Hari)': rateMap['mou_unesa']?.day || '-',
-      'Tarif MoU (Jam)': rateMap['mou_unesa']?.hour || '-',
-      'MoU Perlu Supervisi': rateMap['mou_unesa']?.supervision ? 'Ya' : 'Tidak',
+      'Tarif MoU (Hari)': rateMap['kerjasama']?.day || '-',
+      'Tarif MoU (Jam)': rateMap['kerjasama']?.hour || '-',
+      'MoU Perlu Supervisi': rateMap['kerjasama']?.supervision ? 'Ya' : 'Tidak',
       
       'Tarif Umum (Hari)': rateMap['umum']?.day || '-',
       'Tarif Umum (Jam)': rateMap['umum']?.hour || '-',

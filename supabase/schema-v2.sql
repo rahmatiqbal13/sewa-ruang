@@ -458,10 +458,15 @@ CREATE TABLE IF NOT EXISTS public.asset_tracking_logs (
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  booking_id UUID REFERENCES public.bookings(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
   title TEXT NOT NULL,
   body TEXT NOT NULL,
+  channel TEXT,
+  recipient TEXT,
+  status TEXT DEFAULT 'sent',
+  error_message TEXT,
   is_read BOOLEAN NOT NULL DEFAULT false,
   link TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -489,12 +494,13 @@ CREATE TABLE IF NOT EXISTS public.notification_templates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   event_type TEXT NOT NULL,
   channel notification_channel NOT NULL,
+  user_category TEXT NOT NULL DEFAULT 'default',
   subject TEXT,
   body TEXT NOT NULL DEFAULT '',
   is_active BOOLEAN NOT NULL DEFAULT true,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_by UUID REFERENCES public.users(id),
-  UNIQUE(event_type, channel)
+  UNIQUE(event_type, channel, user_category)
 );
 
 -- ============================================================
