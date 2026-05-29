@@ -161,12 +161,12 @@ export default async function ReturnsPage({
           <table className="data-table w-full">
             <thead>
               <tr>
-                <th>No. Referensi</th>
-                <th>Peminjam</th>
-                <th>Item</th>
-                <th>Jadwal</th>
-                <th>Status</th>
-                <th className="text-right">Aksi</th>
+                <th scope="col">No. Referensi</th>
+                <th scope="col">Peminjam</th>
+                <th scope="col">Item</th>
+                <th scope="col">Jadwal</th>
+                <th scope="col">Status</th>
+                <th scope="col" className="text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -256,12 +256,12 @@ export default async function ReturnsPage({
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>No. Referensi</th>
-                  <th>Peminjam</th>
-                  <th>Waktu Kembali</th>
-                  <th>Kondisi</th>
-                  <th>Catatan</th>
-                  <th className="w-10" />
+                  <th scope="col">No. Referensi</th>
+                  <th scope="col">Peminjam</th>
+                  <th scope="col">Waktu Kembali</th>
+                  <th scope="col">Kondisi</th>
+                  <th scope="col">Catatan</th>
+                  <th scope="col" className="w-10" />
                 </tr>
               </thead>
               <tbody>

@@ -25,8 +25,8 @@ export default async function LegacyAssetScanPage({ params }: { params: Promise<
       .single()
 
     if (!asset) notFound()
-    redirect(`/admin/scan?type=equipment&id=${createSlug(asset.name)}`)
+    redirect(`/scan?type=equipment&id=${createSlug(asset.name)}`)
   }
 
-  redirect(`/admin/scan?type=equipment&id=${createSlug(eq.name)}`)
+  redirect(`/scan?type=equipment&id=${createSlug(eq.name)}`)
 }

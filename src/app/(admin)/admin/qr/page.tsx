@@ -19,7 +19,13 @@ export default function QRPage() {
   const [selectedInventory, setSelectedInventory] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('rooms')
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const [baseUrl, setBaseUrl] = useState(process.env.NEXT_PUBLIC_APP_URL || '')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin)
+    }
+  }, [])
 
   function createSlug(name: string): string {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -166,7 +172,7 @@ export default function QRPage() {
             <div className="lg:col-span-2">
               {selectedRoom ? (
                 <QRCodeDisplay
-                  url={`${baseUrl}/admin/scan?type=room&id=${createSlug(selectedRoom.name)}`}
+                  url={`${baseUrl}/scan?type=room&id=${createSlug(selectedRoom.name)}`}
                   name={selectedRoom.name}
                   code={selectedRoom.room_code}
                   type="room"
@@ -207,7 +213,7 @@ export default function QRPage() {
             <div className="lg:col-span-2">
               {selectedEquipment ? (
                 <QRCodeDisplay
-                  url={`${baseUrl}/admin/scan?type=equipment&id=${createSlug(selectedEquipment.name)}`}
+                  url={`${baseUrl}/scan?type=equipment&id=${createSlug(selectedEquipment.name)}`}
                   name={selectedEquipment.name}
                   code={selectedEquipment.equipment_code}
                   type="equipment"
@@ -249,7 +255,7 @@ export default function QRPage() {
               <div className="lg:col-span-2">
                 {selectedInventory ? (
                   <QRCodeDisplay
-                    url={`${baseUrl}/admin/scan?type=inventory&id=${selectedInventory.id}`}
+                    url={`${baseUrl}/scan?type=inventory&id=${selectedInventory.id}`}
                     name={selectedInventory.name}
                     code={selectedInventory.inventory_code}
                     type="inventory"

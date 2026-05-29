@@ -31,6 +31,8 @@ export function SafeImage({ src, alt, className = '', fallbackClassName = '', fa
       src={src}
       alt={alt}
       className={className}
+      loading="lazy"
+      decoding="async"
       suppressHydrationWarning
       onError={() => {
         console.error('Failed to load image:', src)

@@ -43,7 +43,13 @@ export default function BatchQRClientPage() {
   const [printFormat, setPrintFormat] = useState<PrintFormat>('a4-3col')
   const printRef = useRef<HTMLDivElement>(null)
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+  const [baseUrl, setBaseUrl] = useState(process.env.NEXT_PUBLIC_APP_URL || '')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin)
+    }
+  }, [])
 
   function createSlug(name: string): string {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -157,7 +163,7 @@ export default function BatchQRClientPage() {
           name: r.name,
           code: r.room_code,
           type: 'room',
-           url: `${baseUrl}/admin/scan?type=room&id=${createSlug(r.name)}`,
+           url: `${baseUrl}/scan?type=room&id=${createSlug(r.name)}`,
           meta: r.building_name
         })
       }
@@ -170,7 +176,7 @@ export default function BatchQRClientPage() {
           name: e.name,
           code: e.equipment_code,
           type: 'equipment',
-          url: `${baseUrl}/admin/scan?type=equipment&id=${createSlug(e.name)}`,
+          url: `${baseUrl}/scan?type=equipment&id=${createSlug(e.name)}`,
           meta: e.category
         })
       }
@@ -184,7 +190,7 @@ export default function BatchQRClientPage() {
             name: i.name,
             code: i.inventory_code,
             type: 'inventory',
-            url: `${baseUrl}/admin/scan?type=inventory&id=${i.id}`,
+            url: `${baseUrl}/scan?type=inventory&id=${i.id}`,
             meta: i.room_name
           })
         }
@@ -328,7 +334,7 @@ export default function BatchQRClientPage() {
                 }`}
               >
                 <div className="flex justify-center mb-2">
-                  <QRCode value={`${baseUrl}/admin/scan?type=room&id=${createSlug(room.name)}`} size={60} level="L" />
+                  <QRCode value={`${baseUrl}/scan?type=room&id=${createSlug(room.name)}`} size={60} level="L" />
                 </div>
                 <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                   {room.room_code || 'No Code'}
@@ -381,7 +387,7 @@ export default function BatchQRClientPage() {
                 }`}
               >
                 <div className="flex justify-center mb-2">
-                    <QRCode value={`${baseUrl}/admin/scan?type=equipment&id=${createSlug(item.name)}`} size={60} level="L" />
+                    <QRCode value={`${baseUrl}/scan?type=equipment&id=${createSlug(item.name)}`} size={60} level="L" />
                 </div>
                 <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                   {item.equipment_code || 'No Code'}
@@ -430,7 +436,7 @@ export default function BatchQRClientPage() {
                   }`}
                 >
                   <div className="flex justify-center mb-2">
-                    <QRCode value={`${baseUrl}/admin/scan?type=inventory&id=${item.id}`} size={60} level="L" />
+                    <QRCode value={`${baseUrl}/scan?type=inventory&id=${item.id}`} size={60} level="L" />
                   </div>
                   <Badge variant="outline" className="font-mono text-[10px] mb-1 rounded-[10px]">
                     {item.inventory_code || 'No Code'}

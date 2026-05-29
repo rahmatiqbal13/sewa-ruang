@@ -220,7 +220,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
     <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
       {/* Informasi Dasar */}
       <Card className="border-border shadow-sm rounded-[14px]">
-        <CardContent className="p-8">
+        <CardContent className="p-4 md:p-8">
           <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
             <DoorOpen className="h-5 w-5 text-primary" />
             Informasi Ruangan
@@ -262,7 +262,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
               <Input 
                 id="name"
                 placeholder="Contoh: Ruang Seminar A" 
-                className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
+                className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
                 {...register('name')} 
               />
               {errors.name && (
@@ -283,7 +283,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                   setValue('floor_number', 1)
                 }}
               >
-                <SelectTrigger className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20">
+                <SelectTrigger className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20">
                   {selectedBuilding ? (
                     <span className="text-foreground">{selectedBuilding.name} ({selectedBuilding.code})</span>
                   ) : (
@@ -312,7 +312,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                   value={watch('floor_number')?.toString() || '1'}
                   onValueChange={(v) => setValue('floor_number', parseInt(v ?? '1'))}
                 >
-                  <SelectTrigger className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20">
+                  <SelectTrigger className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20">
                     {watch('floor_number') ? (
                       <span className="text-foreground">Lantai {watch('floor_number')}</span>
                     ) : (
@@ -340,7 +340,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                   min={1}
                   max={99}
                   placeholder="1"
-                  className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
+                  className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
                   {...register('room_sequence')}
                 />
                 {errors.room_sequence && (
@@ -361,7 +361,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                 type="number"
                 min={1}
                 placeholder="30"
-                className="h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
+                className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
                 {...register('capacity')}
               />
               {errors.capacity && (
@@ -402,7 +402,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
       {/* Tarif Sewa */}
       {isForRent && (
         <Card className="border-border shadow-sm rounded-[14px]">
-          <CardContent className="p-8">
+          <CardContent className="p-4 md:p-8">
           <h2 className="text-lg font-semibold text-foreground mb-2">Tarif Sewa per Kategori</h2>
           <p className="text-muted-foreground mb-6">Atur harga per kategori penggunaan (kosongkan jika tidak tersedia)</p>
           

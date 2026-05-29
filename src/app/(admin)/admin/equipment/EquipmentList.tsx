@@ -309,9 +309,9 @@ export function EquipmentList({
               !item.is_active && "opacity-60 grayscale"
             )}>
               {/* Photo - Clickable to detail */}
-              <Link
+                <Link
                 href={`/admin/equipment/${createSlug(item.name)}`}
-                className="relative h-44 bg-muted flex items-center justify-center p-2 block"
+                className="relative h-36 sm:h-40 md:h-44 bg-muted flex items-center justify-center p-2 block"
               >
                 {item.photo_url ? (
                   <div className="relative w-full h-full flex items-center justify-center">
@@ -329,14 +329,14 @@ export function EquipmentList({
                 )}
                 {item.equipment_code && (
                   <div className="absolute top-2 left-2">
-                    <span className="bg-card/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded-[10px] font-mono text-blue-700 border border-blue-200">
+                    <span className="bg-card/90 backdrop-blur text-[11px] font-bold px-2 py-0.5 rounded-[10px] font-mono text-blue-700 border border-blue-200">
                       {item.equipment_code}
                     </span>
                   </div>
                 )}
                 <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                   {!item.is_active && (
-                    <span className="bg-muted-foreground text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <span className="bg-muted-foreground text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
                       Nonaktif
                     </span>
                   )}
@@ -348,7 +348,7 @@ export function EquipmentList({
                 {/* Category Badge */}
                 {item.category && (
                   <div className="absolute bottom-2 left-2">
-                    <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <span className="bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
                       {CATEGORY_LABELS[item.category] || item.category}
                     </span>
                   </div>
@@ -484,17 +484,17 @@ export function EquipmentList({
             <table className="data-table">
               <thead>
                 <tr>
-                  <th className="w-10">
+                  <th scope="col" className="w-10">
                     <SelectAllCheckbox checked={isAllSelected} onCheckedChange={toggleAll} disabled={equipment.length === 0} />
                   </th>
-                  <th>Kode</th>
-                  <th>Nama Alat</th>
-                  <th>Kategori</th>
-                  <th>Kondisi</th>
-                  <th>Status</th>
-                  <th>Lokasi</th>
-                  <th>Tarif/Hari</th>
-                  <th className="text-right">Aksi</th>
+                  <th scope="col">Kode</th>
+                  <th scope="col">Nama Alat</th>
+                  <th scope="col">Kategori</th>
+                  <th scope="col">Kondisi</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Lokasi</th>
+                  <th scope="col">Tarif/Hari</th>
+                  <th scope="col" className="text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

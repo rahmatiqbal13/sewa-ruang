@@ -147,6 +147,18 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    min-height: 100dvh; /* Fix iPhone URL bar height issue */
+    min-height: 100vh; /* Fallback */
+  }
+
+  /* Remove tap highlight on mobile */
+  button, a, [role="button"], input, textarea, select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ensure focused inputs stay visible when virtual keyboard opens */
+  input:focus, textarea:focus, select:focus {
+    scroll-margin-bottom: 300px;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -192,7 +204,7 @@
 
   /* ─── Filter pill tabs ────────────────────────────── */
   .filter-pill {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer select-none;
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer select-none min-h-[44px];
   }
 
   .filter-pill-active {
@@ -226,11 +238,11 @@
 
   /* ─── Icon-only action buttons ────────────────────── */
   .icon-btn {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-[10px] text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-150 cursor-pointer;
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-150 cursor-pointer;
   }
 
   .icon-btn-danger {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-[10px] text-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-150 cursor-pointer;
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-150 cursor-pointer;
   }
 
   /* ─── Empty state ─────────────────────────────────── */
@@ -320,6 +332,20 @@
   /* Text utilities */
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Safe area utilities (iPhone notch / Dynamic Island) */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   /* Animation Utilities */

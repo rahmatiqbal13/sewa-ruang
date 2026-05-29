@@ -83,6 +83,10 @@ export async function POST(req: Request) {
       paymentCode = updatedBooking.payment_code
     }
 
+    // Get base URL from request origin
+    const { origin } = new URL(req.url)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || origin
+
     // Generate QR content
     const qrContent = generateQRContent({
       referenceNo: booking.reference_no,
@@ -91,7 +95,8 @@ export async function POST(req: Request) {
       bankName: bankAccount.bank_name,
       accountNumber: bankAccount.account_number,
       accountName: bankAccount.account_name,
-      userName: booking.users?.name ?? booking.users?.email ?? 'Peminjam'
+      userName: booking.users?.name ?? booking.users?.email ?? 'Peminjam',
+      baseUrl
     })
 
     // Generate QR code data URL
@@ -142,7 +147,8 @@ function generateQRContent({
   bankName,
   accountNumber,
   accountName,
-  userName
+  userName,
+  baseUrl
 }: {
   referenceNo: string
   amount: number
@@ -151,6 +157,7 @@ function generateQRContent({
   accountNumber: string
   accountName: string
   userName?: string
+  baseUrl: string
 }) {
   return `
 ================================
@@ -177,7 +184,7 @@ atau 3 digit terakhir unik
 untuk verifikasi otomatis
 
 Upload bukti transfer di:
-${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/booking/payment/${referenceNo}
+${baseUrl}/booking/payment/${referenceNo}
 
 ================================
 `.trim()

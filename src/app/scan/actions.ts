@@ -118,21 +118,21 @@ export async function getEntityCurrentLocation(type: string, slug: string) {
 export async function getUserRole() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) return { role: null, error: 'Unauthorized' }
-  
+
   const { data: profile } = await supabase
     .from('users')
     .select('role')
     .eq('id', user.id)
     .single()
-  
+
   return { role: profile?.role || null, error: null }
 }
 
 export async function getEntityDetails(type: string, slug: string) {
   const adminDb = createAdminDbClient()
-  
+
   if (type === 'room') {
     // Fetch room by slug
     const { data: allRooms, error: roomsError } = await (adminDb.from('rooms') as any)
@@ -208,7 +208,7 @@ export async function getEntityDetails(type: string, slug: string) {
       pastBookings,
     }
   }
-  
+
   if (type === 'equipment') {
     // Fetch equipment by slug
     const { data: allEq } = await (adminDb.from('equipment') as any)
@@ -288,15 +288,15 @@ export async function getEntityDetails(type: string, slug: string) {
       rates: rates || [],
     }
   }
-  
+
   if (type === 'inventory') {
     const { data: inv } = await (adminDb.from('room_inventories') as any)
       .select('id, name, inventory_code, quantity, condition, notes, photo_url, room_id, rooms(name, room_code, buildings(name))')
       .eq('id', slug)
       .single()
-    
+
     if (!inv) return null
-    
+
     return {
       type: 'inventory',
       name: inv.name,
@@ -310,7 +310,7 @@ export async function getEntityDetails(type: string, slug: string) {
       buildingName: inv.rooms?.buildings?.name || '-',
     }
   }
-  
+
   return null
 }
 
@@ -334,17 +334,17 @@ export async function updateEntityFromScan(formData: FormData) {
   // Auth check: only admin and super_admin can update
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     return { error: 'Anda harus login untuk melakukan update' }
   }
-  
+
   const { data: profile } = await supabase
     .from('users')
     .select('role')
     .eq('id', user.id)
     .single()
-  
+
   if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
     return { error: 'Anda tidak memiliki izin untuk melakukan update. Hanya Admin dan Super Admin yang dapat mengubah status.' }
   }

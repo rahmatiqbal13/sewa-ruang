@@ -116,7 +116,7 @@ export function BuildingForm({ building }: { building?: Building }) {
       </div>
 
       <Card className="border-border">
-        <CardContent className="p-8">
+        <CardContent className="p-4 md:p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Photo Upload */}
             <div className="space-y-3">
@@ -156,7 +156,7 @@ export function BuildingForm({ building }: { building?: Building }) {
                 <Input
                   id="code"
                   placeholder="A / B / LAB"
-                  className="h-12 rounded-[14px] border-border uppercase font-mono focus:border-indigo-500 focus:ring-indigo-500/20"
+                  className="h-10 md:h-12 rounded-[10px] md:rounded-[14px] border-border uppercase font-mono focus:border-indigo-500 focus:ring-indigo-500/20"
                   {...register('code')}
                   onChange={(e) => {
                     const upperValue = e.target.value.toUpperCase()
@@ -179,7 +179,7 @@ export function BuildingForm({ building }: { building?: Building }) {
                   min={1} 
                   max={99} 
                   placeholder="1" 
-                  className="h-12 rounded-[14px] border-border focus:border-indigo-500 focus:ring-indigo-500/20"
+                  className="h-10 md:h-12 rounded-[10px] md:rounded-[14px] border-border focus:border-indigo-500 focus:ring-indigo-500/20"
                   {...register('floor_count')} 
                 />
                 {errors.floor_count && (

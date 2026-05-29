@@ -404,26 +404,26 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                <th className="px-4 py-3 text-left w-10">
+                <th scope="col" className="px-4 py-3 text-left w-10">
                   <Checkbox 
                     checked={filteredBookings.length > 0 && selectedItems.size === filteredBookings.length}
                     onCheckedChange={toggleSelectAll}
                     className="border-[#D1D5DB] data-[state=checked]:bg-[#0891B2] data-[state=checked]:border-[#0891B2]"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
                   Ref
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
                   Peminjam
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
                   Ruang/Alat
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-right text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
                   Aksi
                 </th>
               </tr>

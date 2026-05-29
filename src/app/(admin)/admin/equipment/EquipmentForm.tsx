@@ -299,7 +299,7 @@ export function EquipmentForm({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Informasi Dasar */}
         <Card className="border-border">
-          <CardContent className="p-8">
+          <CardContent className="p-4 md:p-8">
             <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
               <Tag className="h-5 w-5 text-teal-500" />
               Informasi Dasar
@@ -328,7 +328,7 @@ export function EquipmentForm({
                   <Input 
                     id="name"
                     placeholder="Contoh: Grip Strength Dynamometer" 
-                    className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-10 md:h-12 rounded-[10px] md:rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
                     {...register('name')} 
                   />
                   {errors.name && (
@@ -359,7 +359,7 @@ export function EquipmentForm({
                   <Input 
                     id="merk"
                     placeholder="Contoh: Takei" 
-                    className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-10 md:h-12 rounded-[10px] md:rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
                     {...register('merk')} 
                   />
                 </div>
@@ -412,7 +412,7 @@ export function EquipmentForm({
 
         {/* Status & Kondisi */}
         <Card className="border-border">
-          <CardContent className="p-8">
+          <CardContent className="p-4 md:p-8">
             <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               Status & Kondisi
@@ -508,7 +508,7 @@ export function EquipmentForm({
 
         {/* Lokasi */}
         <Card className="border-border">
-          <CardContent className="p-8">
+          <CardContent className="p-4 md:p-8">
             <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-red-500" />
               Lokasi

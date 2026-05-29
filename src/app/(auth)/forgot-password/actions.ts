@@ -5,6 +5,7 @@ import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 import nodemailer from 'nodemailer'
 import { z } from 'zod'
+import { headers } from 'next/headers'
 
 const schema = z.object({
   email: z.string().email('Email tidak valid'),
@@ -94,12 +95,18 @@ export async function sendPasswordResetEmail(
       }
     }
 
+    // Determine base URL from headers or env
+    const headersList = await headers()
+    const host = headersList.get('host') || 'localhost'
+    const protocol = headersList.get('x-forwarded-proto') || 'https'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`
+
     // Generate password reset link using Supabase Auth Admin API
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: 'recovery',
       email: email,
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`,
+        redirectTo: `${baseUrl}/auth/callback?next=/reset-password`,
       },
     })
 
@@ -120,6 +127,7 @@ export async function sendPasswordResetEmail(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: (userData as any).name || email.split('@')[0],
         resetLink,
+        baseUrl,
       })
     } catch (emailError) {
       console.error('Failed to send reset email:', emailError)
@@ -150,10 +158,12 @@ async function sendCustomResetEmail({
   to,
   name,
   resetLink,
+  baseUrl,
 }: {
   to: string
   name: string
   resetLink: string
+  baseUrl: string
 }) {
   // Create transporter
   const transporter = nodemailer.createTransport({
@@ -167,7 +177,7 @@ async function sendCustomResetEmail({
   })
 
   const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Sistem Sewa Ruang & Alat'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = baseUrl
 
   const emailHtml = `
 <!DOCTYPE html>

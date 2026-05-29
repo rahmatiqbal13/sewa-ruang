@@ -371,7 +371,7 @@ export function InventoryList({
                 )}
               >
                 {/* Photo Section */}
-                <div className="relative h-44 bg-muted flex items-center justify-center p-2">
+                <div className="relative h-36 sm:h-40 md:h-44 bg-muted flex items-center justify-center p-2">
                   {item.photo_url ? (
                     <div className="relative w-full h-full flex items-center justify-center">
                       <SafeImage
@@ -391,7 +391,7 @@ export function InventoryList({
                   {/* Inventory Code Badge */}
                   {item.inventory_code && (
                     <div className="absolute top-2 left-2">
-                      <span className="bg-card/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded-[10px] font-mono text-amber-700 border border-amber-200">
+                      <span className="bg-card/90 backdrop-blur text-[11px] font-bold px-2 py-0.5 rounded-[10px] font-mono text-amber-700 border border-amber-200">
                         {item.inventory_code}
                       </span>
                     </div>
@@ -509,7 +509,7 @@ export function InventoryList({
             <table className="w-full">
               <thead className="bg-muted border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground w-10">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground w-10">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
@@ -517,13 +517,13 @@ export function InventoryList({
                       className="h-4 w-4 rounded border-border text-blue-600"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Foto</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Kode</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nama Item</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Lokasi</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Jumlah</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Kondisi</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Aksi</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Foto</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Kode</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Nama Item</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Lokasi</th>
+                  <th scope="col" className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Jumlah</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Kondisi</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">

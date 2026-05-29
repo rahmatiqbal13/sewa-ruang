@@ -56,8 +56,6 @@ async function getInstitutionMetadata() {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#F9FAFB" },
     { media: "(prefers-color-scheme: dark)", color: "#0b0f19" },

@@ -253,17 +253,17 @@ export default async function ReportsPage({
             </div>
             <div className="overflow-x-auto">
               <table className="data-table w-full">
-                <thead>
-                  <tr>
-                    <th>Referensi</th>
-                    <th>Peminjam</th>
-                    <th>Instansi</th>
-                    <th>Ruang/Alat</th>
-                    <th>Tanggal</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
+              <thead>
+                <tr>
+                  <th scope="col">Referensi</th>
+                  <th scope="col">Peminjam</th>
+                  <th scope="col">Instansi</th>
+                  <th scope="col">Ruang/Alat</th>
+                  <th scope="col">Tanggal</th>
+                  <th scope="col">Total</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
                 <tbody>
                   {bookings?.length === 0 && (
                     <tr><td colSpan={7} className="text-center text-muted-foreground/70 py-10 text-sm">Tidak ada data pada periode ini</td></tr>
@@ -343,7 +343,7 @@ export default async function ReportsPage({
               </div>
               <div className="overflow-x-auto">
                 <table className="data-table w-full">
-                  <thead><tr><th>Kode</th><th>Nama Alat</th><th>Kategori</th><th>Kondisi</th><th>Status</th><th>Lokasi</th><th>Deskripsi</th></tr></thead>
+                  <thead><tr><th scope="col">Kode</th><th scope="col">Nama Alat</th><th scope="col">Kategori</th><th scope="col">Kondisi</th><th scope="col">Status</th><th scope="col">Lokasi</th><th scope="col">Deskripsi</th></tr></thead>
                   <tbody>
                     {problematicEquipment.map((item) => (
                       <tr key={item.id}>
@@ -381,7 +381,7 @@ export default async function ReportsPage({
             </div>
             <div className="overflow-x-auto">
               <table className="data-table w-full">
-                <thead><tr><th>Kode</th><th>Nama Alat</th><th>Kategori</th><th>Merk</th><th>Kondisi</th><th>Ketersediaan</th><th>Lokasi</th></tr></thead>
+                <thead><tr><th scope="col">Kode</th><th scope="col">Nama Alat</th><th scope="col">Kategori</th><th scope="col">Merk</th><th scope="col">Kondisi</th><th scope="col">Ketersediaan</th><th scope="col">Lokasi</th></tr></thead>
                 <tbody>
                   {equipment?.length === 0 && (
                     <tr><td colSpan={7} className="text-center text-muted-foreground/70 py-10 text-sm">
@@ -456,7 +456,7 @@ export default async function ReportsPage({
               </div>
               <div className="overflow-x-auto">
                 <table className="data-table w-full">
-                  <thead><tr><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Kondisi</th><th>Ruangan</th><th>Catatan</th></tr></thead>
+                  <thead><tr><th scope="col">Kode</th><th scope="col">Nama Barang</th><th scope="col">Kategori</th><th scope="col">Jumlah</th><th scope="col">Kondisi</th><th scope="col">Ruangan</th><th scope="col">Catatan</th></tr></thead>
                   <tbody>
                     {problematicInventory.map((item) => (
                       <tr key={item.id}>
@@ -485,7 +485,7 @@ export default async function ReportsPage({
             </div>
             <div className="overflow-x-auto">
               <table className="data-table w-full">
-                <thead><tr><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Kondisi</th><th>Ruangan</th><th>Catatan</th></tr></thead>
+                <thead><tr><th scope="col">Kode</th><th scope="col">Nama Barang</th><th scope="col">Kategori</th><th scope="col">Jumlah</th><th scope="col">Kondisi</th><th scope="col">Ruangan</th><th scope="col">Catatan</th></tr></thead>
                 <tbody>
                   {inventory?.length === 0 && (
                     <tr><td colSpan={7} className="text-center text-muted-foreground/70 py-10 text-sm">

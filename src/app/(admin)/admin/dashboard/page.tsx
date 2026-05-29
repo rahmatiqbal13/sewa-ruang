@@ -62,14 +62,14 @@ export default async function AdminDashboard() {
       {/* PAGE HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#111827]">Dashboard</h1>
-          <p className="text-sm text-[#6B7280] mt-0.5">
+          <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Ringkasan aktivitas sistem
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#10B981]/10 rounded-full border border-[#10B981]/20">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full border border-[#10B981]/20">
           <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
-          <span className="text-xs font-medium text-[#047857]">Sistem Aktif</span>
+          <span className="text-xs font-medium text-emerald-700">Sistem Aktif</span>
         </div>
       </div>
 
@@ -107,9 +107,9 @@ export default async function AdminDashboard() {
         {/* LEFT COLUMN */}
         <div className="lg:col-span-2 space-y-5">
           {/* Analytics Card */}
-          <Card className="rounded-[14px] border-[#E5E7EB] shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <Card className="rounded-[14px] border-border shadow-soft">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold text-[#111827]">Analitik</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground">Analitik</CardTitle>
             </CardHeader>
             <CardContent>
               <DashboardAnalyticsLoader />
@@ -117,13 +117,13 @@ export default async function AdminDashboard() {
           </Card>
 
           {/* Recent Bookings Table Card */}
-          <Card className="rounded-[14px] border-[#E5E7EB] shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <Card className="rounded-[14px] border-border shadow-soft">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold text-[#111827]">Pengajuan Terbaru</CardTitle>
+                <CardTitle className="text-base font-semibold text-foreground">Pengajuan Terbaru</CardTitle>
                 <Link 
                   href="/admin/bookings" 
-                  className="text-xs font-medium text-[#0891B2] hover:underline flex items-center gap-1"
+                  className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
                 >
                   Lihat Semua
                   <ChevronRight className="h-3 w-3" />
@@ -135,12 +135,12 @@ export default async function AdminDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#E5E7EB]">
-                        <th className="text-left py-3 px-2 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wide">Ref</th>
-                        <th className="text-left py-3 px-2 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wide">Peminjam</th>
-                        <th className="text-left py-3 px-2 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wide">Ruang/Alat</th>
-                        <th className="text-left py-3 px-2 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wide">Status</th>
-                        <th className="text-left py-3 px-2 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wide">Tanggal</th>
+                      <tr className="border-b border-border">
+                        <th scope="col" className="text-left py-3 px-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Ref</th>
+                        <th scope="col" className="text-left py-3 px-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Peminjam</th>
+                        <th scope="col" className="text-left py-3 px-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Ruang/Alat</th>
+                        <th scope="col" className="text-left py-3 px-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                        <th scope="col" className="text-left py-3 px-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Tanggal</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -154,21 +154,21 @@ export default async function AdminDashboard() {
                             className="border-b border-[#F3F4F6] hover:bg-[#FAFAFA] transition-colors"
                           >
                             <td className="py-3 px-2">
-                              <span className="font-mono text-xs text-[#6B7280]">{booking.reference_no}</span>
+                              <span className="font-mono text-xs text-muted-foreground">{booking.reference_no}</span>
                             </td>
                             <td className="py-3 px-2">
-                              <span className="text-sm text-[#111827] font-medium">
+                              <span className="text-sm text-foreground font-medium">
                                 {(booking.users as {name:string}|null)?.name || '-'}
                               </span>
                             </td>
                             <td className="py-3 px-2">
-                              <span className="text-sm text-[#374151] truncate max-w-[120px] block">{itemName}</span>
+                              <span className="text-sm text-foreground/80 truncate max-w-[120px] block">{itemName}</span>
                             </td>
                             <td className="py-3 px-2">
                               <BookingStatusBadge status={booking.status} />
                             </td>
                             <td className="py-3 px-2">
-                              <span className="text-xs text-[#6B7280]">{formatDateTime(booking.created_at)}</span>
+                              <span className="text-xs text-muted-foreground">{formatDateTime(booking.created_at)}</span>
                             </td>
                           </tr>
                         )
@@ -186,68 +186,68 @@ export default async function AdminDashboard() {
         {/* RIGHT COLUMN */}
         <div className="space-y-5">
           {/* Quick Links Card */}
-          <Card className="rounded-[14px] border-[#E5E7EB] shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <Card className="rounded-[14px] border-border shadow-soft">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold text-[#111827]">Akses Cepat</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground">Akses Cepat</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-2">
               <Link 
                 href="/admin/equipment/new"
-                className="flex items-center justify-between p-3 bg-[#F9FAFB] hover:bg-[#F3F4F6] rounded-[10px] transition-colors group"
+                className="flex items-center justify-between p-3 bg-muted hover:bg-muted rounded-[10px] transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 bg-[#8B5CF6]/10 rounded-[8px] flex items-center justify-center">
                     <Plus className="h-4 w-4 text-[#8B5CF6]" />
                   </div>
-                  <span className="text-sm font-medium text-[#111827]">Tambah Alat</span>
+                  <span className="text-sm font-medium text-foreground">Tambah Alat</span>
                 </div>
-                <ArrowUpRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#6B7280] transition-colors" />
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground/70 group-hover:text-muted-foreground transition-colors" />
               </Link>
               
               <Link 
                 href="/admin/reports"
-                className="flex items-center justify-between p-3 bg-[#F9FAFB] hover:bg-[#F3F4F6] rounded-[10px] transition-colors group"
+                className="flex items-center justify-between p-3 bg-muted hover:bg-muted rounded-[10px] transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 bg-[#10B981]/10 rounded-[8px] flex items-center justify-center">
+                  <div className="h-9 w-9 bg-emerald-500/10 rounded-[8px] flex items-center justify-center">
                     <FileText className="h-4 w-4 text-[#10B981]" />
                   </div>
-                  <span className="text-sm font-medium text-[#111827]">Laporan</span>
+                  <span className="text-sm font-medium text-foreground">Laporan</span>
                 </div>
-                <ArrowUpRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#6B7280] transition-colors" />
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground/70 group-hover:text-muted-foreground transition-colors" />
               </Link>
               
               <Link 
                 href="/admin/qr"
-                className="flex items-center justify-between p-3 bg-[#F9FAFB] hover:bg-[#F3F4F6] rounded-[10px] transition-colors group"
+                className="flex items-center justify-between p-3 bg-muted hover:bg-muted rounded-[10px] transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 bg-[#F59E0B]/10 rounded-[8px] flex items-center justify-center">
                     <QrCode className="h-4 w-4 text-[#F59E0B]" />
                   </div>
-                  <span className="text-sm font-medium text-[#111827]">Generate QR</span>
+                  <span className="text-sm font-medium text-foreground">Generate QR</span>
                 </div>
-                <ArrowUpRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#6B7280] transition-colors" />
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground/70 group-hover:text-muted-foreground transition-colors" />
               </Link>
             </CardContent>
           </Card>
 
           {/* Asset Availability Mini Card */}
-          <Card className="rounded-[14px] border-[#E5E7EB] shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <Card className="rounded-[14px] border-border shadow-soft">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold text-[#111827]">Ketersediaan Alat</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground">Ketersediaan Alat</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-[#6B7280]">Ruangan Aktif</span>
-                  <span className="text-sm font-semibold text-[#111827]">{roomCount ?? 0} ruang</span>
+                  <span className="text-sm text-muted-foreground">Ruangan Aktif</span>
+                  <span className="text-sm font-semibold text-foreground">{roomCount ?? 0} ruang</span>
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-[#6B7280]">Alat Tersedia</span>
-                  <span className="text-sm font-semibold text-[#111827]">
+                  <span className="text-sm text-muted-foreground">Alat Tersedia</span>
+                  <span className="text-sm font-semibold text-foreground">
                     {availableEquipmentCount ?? 0} / {totalAssetsCount ?? 0}
                   </span>
                 </div>

@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { ApprovalButtons } from './ApprovalButtons'
 import { RecordPaymentButton } from '../../payments/RecordPaymentButton'
-import { formatDateTime, formatRupiah } from '@/lib/utils'
+import { formatDateTime, formatRupiah, cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { 
   ArrowLeft, User, Mail, Phone, Building2, 
@@ -785,7 +785,4 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   )
 }
 
-// Helper function
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
-}
+// cn() imported from @/lib/utils - no duplicate needed

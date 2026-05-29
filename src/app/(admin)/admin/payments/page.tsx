@@ -139,13 +139,13 @@ async function TransaksiTab() {
           <table className="data-table w-full">
             <thead>
               <tr>
-                <th>No. Referensi</th>
-                <th>Peminjam</th>
-                <th>Total Tagihan</th>
-                <th>Kode Bayar</th>
-                <th>Status</th>
-                <th>Aksi</th>
-                <th className="w-10" />
+                <th scope="col">No. Referensi</th>
+                <th scope="col">Peminjam</th>
+                <th scope="col">Total Tagihan</th>
+                <th scope="col">Kode Bayar</th>
+                <th scope="col">Status</th>
+                <th scope="col">Aksi</th>
+                <th scope="col" className="w-10" />
               </tr>
             </thead>
             <tbody>
@@ -194,16 +194,16 @@ async function TransaksiTab() {
           </div>
           <div className="overflow-x-auto">
             <table className="data-table w-full">
-              <thead>
-                <tr>
-                  <th>No. Referensi</th>
-                  <th>Peminjam</th>
-                  <th>Bank</th>
-                  <th>Nominal</th>
-                  <th>Status</th>
-                  <th className="w-10" />
-                </tr>
-              </thead>
+            <thead>
+              <tr>
+                <th scope="col">No. Referensi</th>
+                <th scope="col">Peminjam</th>
+                <th scope="col">Bank</th>
+                <th scope="col">Nominal</th>
+                <th scope="col">Status</th>
+                <th scope="col" className="w-10" />
+              </tr>
+            </thead>
               <tbody>
                 {vaPaymentProofs.map((proof) => {
                   const colors: Record<string, string> = { pending: 'bg-yellow-100 text-yellow-800', verified: 'bg-emerald-100 text-emerald-800', rejected: 'bg-red-100 text-red-800' }
@@ -240,15 +240,15 @@ async function TransaksiTab() {
           </div>
           <div className="overflow-x-auto">
             <table className="data-table w-full">
-              <thead>
-                <tr>
-                  <th>No. Referensi</th>
-                  <th>Metode</th>
-                  <th>Nominal</th>
-                  <th>Status</th>
-                  <th className="w-10" />
-                </tr>
-              </thead>
+            <thead>
+              <tr>
+                <th scope="col">No. Referensi</th>
+                <th scope="col">Metode</th>
+                <th scope="col">Nominal</th>
+                <th scope="col">Status</th>
+                <th scope="col" className="w-10" />
+              </tr>
+            </thead>
               <tbody>
                 {traditionalPayments.map((p) => {
                   const labels: Record<string, string> = { online: 'Online', manual_cash: 'Tunai', manual_transfer: 'Transfer' }

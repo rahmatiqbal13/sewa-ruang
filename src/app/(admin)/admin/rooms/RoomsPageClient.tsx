@@ -259,7 +259,7 @@ export function RoomsPageClient({
               )}
             >
               {/* Photo */}
-              <div className="relative h-40 bg-muted overflow-hidden flex items-center justify-center p-2">
+              <div className="relative h-36 sm:h-40 bg-muted overflow-hidden flex items-center justify-center p-2">
                 <div
                   className={cn('absolute top-2.5 left-2.5 z-10 bg-card rounded-[10px] p-1 shadow-sm transition-all', isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}
                   onClick={(e) => e.stopPropagation()}
@@ -274,19 +274,19 @@ export function RoomsPageClient({
                 )}
 
                 {room.room_code && (
-                  <span className="absolute bottom-2 left-2 bg-card/90 backdrop-blur text-[10px] font-bold font-mono px-2 py-0.5 rounded-[10px] text-indigo-700 border border-indigo-100">
+                  <span className="absolute bottom-2 left-2 bg-card/90 backdrop-blur text-[11px] font-bold font-mono px-2 py-0.5 rounded-[10px] text-indigo-700 border border-indigo-100">
                     {room.room_code}
                   </span>
                 )}
 
                 <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1">
-                  <Badge variant={room.is_active ? 'success' : 'secondary'} className="text-[10px]">
+                  <Badge variant={room.is_active ? 'success' : 'secondary'} className="text-xs">
                     {room.is_active ? 'Aktif' : 'Nonaktif'}
                   </Badge>
                   {hasIsForRent && (
                     isForRent
-                      ? <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5"><Tag className="h-2.5 w-2.5" /> Sewa</span>
-                      : <span className="bg-muted-foreground text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5"><EyeOff className="h-2.5 w-2.5" /> Non-sewa</span>
+                      ? <span className="bg-emerald-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5"><Tag className="h-3 w-3" /> Sewa</span>
+                      : <span className="bg-muted-foreground text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5"><EyeOff className="h-3 w-3" /> Non-sewa</span>
                   )}
                 </div>
               </div>
