@@ -24,6 +24,7 @@ interface Room {
   room_code: string;
   floor_number: number | null;
   photo_url: string | null;
+  door_photo_url?: string | null;
   is_active: boolean;
   is_for_rent: boolean;
   room_rates: RoomRate[];

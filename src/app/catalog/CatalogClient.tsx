@@ -62,6 +62,7 @@ interface Room {
   room_code: string | null
   floor_number: number | null
   photo_url: string | null
+  door_photo_url?: string | null
   is_active: boolean
   is_for_rent: boolean | null
   room_rates: RoomRate[] | null

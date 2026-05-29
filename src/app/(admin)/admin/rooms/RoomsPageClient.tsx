@@ -41,6 +41,7 @@ interface Room {
   is_active: boolean
   is_for_rent?: boolean
   photo_url: string | null
+  door_photo_url?: string | null
   buildings: Building | null
   floor?: number | null
   room_type?: string

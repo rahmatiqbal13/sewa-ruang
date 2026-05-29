@@ -43,6 +43,7 @@ const schema = z.object({
   is_for_rent: z.boolean(),
   description: z.string().optional(),
   photo_url: z.string().optional(),
+  door_photo_url: z.string().optional(),
   rates: z.object({
     perkuliahan: rateSchema.optional().default({ rate_per_hour: '', rate_per_day: '' }),
     event_mahasiswa: rateSchema.optional().default({ rate_per_hour: '', rate_per_day: '' }),
@@ -61,7 +62,7 @@ interface RoomRate { usage_category: string; rate_per_hour: number | null; rate_
 interface Room {
   id: string; name: string; building_id: string; floor_number: number; room_sequence: number
   description: string | null; capacity: number | null; is_for_rent: boolean
-  photo_url: string | null; room_rates: RoomRate[]
+  photo_url: string | null; door_photo_url: string | null; room_rates: RoomRate[]
 }
 
 export function RoomForm({ room, buildings }: { room?: Room; buildings: Building[] }) {
@@ -98,6 +99,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
       is_for_rent: true,
       description: '',
       photo_url: '',
+      door_photo_url: '',
       rates: {
         perkuliahan: { rate_per_hour: '', rate_per_day: '' },
         event_mahasiswa: { rate_per_hour: '', rate_per_day: '' },
@@ -118,6 +120,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
         is_for_rent: room.is_for_rent,
         description: room.description || '',
         photo_url: room.photo_url || '',
+        door_photo_url: room.door_photo_url || '',
         rates: buildDefaultRates(),
       })
     }
@@ -151,6 +154,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
         capacity: data.capacity || null,
         is_for_rent: data.is_for_rent,
         photo_url: data.photo_url || null,
+        door_photo_url: data.door_photo_url || null,
       }
 
       let roomId = room?.id
@@ -232,6 +236,20 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
               <PhotoUpload
                 value={watch('photo_url')}
                 onChange={(url) => setValue('photo_url', url ?? '')}
+                folder="rooms"
+              />
+            </div>
+
+            {/* Door Photo Upload */}
+            <div className="space-y-3">
+              <Label className="text-foreground font-medium flex items-center gap-2">
+                <Camera className="h-4 w-4 text-muted-foreground" />
+                Foto Pintu Ruangan
+              </Label>
+              <p className="text-xs text-muted-foreground">Membantu peminjam menemukan lokasi ruangan</p>
+              <PhotoUpload
+                value={watch('door_photo_url')}
+                onChange={(url) => setValue('door_photo_url', url ?? '')}
                 folder="rooms"
               />
             </div>

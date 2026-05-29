@@ -66,14 +66,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
   const { data: room } = await sb
     .from('rooms')
-    .select('*, buildings(name, code, address)')
+    .select('id, name, room_code, floor, capacity, room_type, base_price, description, facilities, photo_url, is_for_rent, buildings(name, code, address)')
     .eq('id', id)
     .eq('is_active', true)
     .single() as { data: {
       id: string; name: string; room_code: string; floor: number | null
       capacity: number | null; room_type: string | null; base_price: number
       description: string | null; facilities: string[] | null; photo_url: string | null
-      is_for_rent: boolean; buildings: { name: string; code: string; address: string | null } | null
+      door_photo_url?: string | null; is_for_rent: boolean; buildings: { name: string; code: string; address: string | null } | null
     } | null }
 
   if (!room) notFound()
@@ -162,19 +162,36 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                     <DoorOpen className="h-24 w-24 text-[#D1D5DB]" />
                   </div>
                 )}
-                
+
                 {/* Status Badge */}
                 <div className="absolute top-4 right-4">
                   <Badge className={cn(
                     "text-sm font-medium border-0 px-3 py-1",
-                    isAvailable 
-                      ? "bg-emerald-500 text-white" 
+                    isAvailable
+                      ? "bg-emerald-500 text-white"
                       : "bg-red-500 text-white"
                   )}>
                     {isAvailable ? 'Tersedia' : 'Sedang Digunakan'}
                   </Badge>
                 </div>
               </div>
+
+              {/* Door Photo */}
+              {room.door_photo_url && (
+                <div className="border-t border-[#E5E7EB]">
+                  <div className="p-4 bg-[#F9FAFB]">
+                    <p className="text-xs font-semibold text-[#6B7280] mb-2 uppercase tracking-wide">Foto Pintu Ruangan</p>
+                    <div className="aspect-[16/9] max-h-40 bg-[#F3F4F6] rounded-[10px] overflow-hidden">
+                      <SafeImage
+                        src={room.door_photo_url}
+                        alt={`Pintu ${room.name}`}
+                        className="object-cover w-full h-full"
+                        fallbackClassName="w-full h-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </Card>
 
             {/* Room Info */}

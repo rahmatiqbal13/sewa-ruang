@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { QRScanner } from '@/components/scan/QRScanner'
-import { processScan, updateEntityFromScan } from './actions'
+import { processScan, updateEntityFromScan, getBuildingsAndRooms, getEntityCurrentLocation } from './actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { 
-  Scan, CheckCircle2, AlertCircle, ArrowLeft, 
-  Package, Building2, ClipboardList, MapPin 
+import {
+  Scan, CheckCircle2, AlertCircle, ArrowLeft,
+  Package, Building2, ClipboardList, MapPin, Home
 } from 'lucide-react'
 
 const CONDITIONS = [
@@ -30,6 +30,30 @@ const TYPE_ICONS: Record<string, typeof Package> = {
   inventory: ClipboardList,
 }
 
+interface RoomOption {
+  id: string
+  name: string
+  buildingId: string
+  buildingName: string
+  label: string
+}
+
+interface BuildingOption {
+  id: string
+  name: string
+  code: string
+}
+
+interface EntityLocation {
+  name: string
+  condition: string
+  buildingId: string | null
+  buildingName: string
+  roomId: string | null
+  roomName: string
+  locationText: string
+}
+
 export default function ScanPageClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -38,9 +62,40 @@ export default function ScanPageClient() {
   const [scannedData, setScannedData] = useState<{ type: string; id: string } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
+  const [buildings, setBuildings] = useState<BuildingOption[]>([])
+  const [rooms, setRooms] = useState<RoomOption[]>([])
+  const [currentLocation, setCurrentLocation] = useState<EntityLocation | null>(null)
+  const [selectedBuilding, setSelectedBuilding] = useState('')
+  const [selectedRoom, setSelectedRoom] = useState('')
 
   const type = searchParams.get('type')
   const id = searchParams.get('id')
+
+  useEffect(() => {
+    getBuildingsAndRooms().then((data) => {
+      setBuildings(data.buildings)
+      setRooms(data.rooms)
+    }).catch(() => {
+      setBuildings([])
+      setRooms([])
+    })
+  }, [])
+
+  useEffect(() => {
+    if (type && id) {
+      getEntityCurrentLocation(type, id).then((loc) => {
+        if (loc) {
+          setCurrentLocation(loc)
+          if (loc.buildingId) setSelectedBuilding(loc.buildingId)
+          if (loc.roomId) setSelectedRoom(loc.roomId)
+        }
+      }).catch(() => setCurrentLocation(null))
+    }
+  }, [type, id])
+
+  const filteredRooms = selectedBuilding
+    ? rooms.filter((r) => r.buildingId === selectedBuilding)
+    : rooms
 
   const handleScan = useCallback(async (text: string) => {
     setScanResult(text)
@@ -71,6 +126,8 @@ export default function ScanPageClient() {
     } else {
       setSubmitMessage(`Berhasil memperbarui ${result.entityName}!`)
       e.currentTarget.reset()
+      setSelectedBuilding('')
+      setSelectedRoom('')
     }
   }
 
@@ -138,6 +195,24 @@ export default function ScanPageClient() {
             <input type="hidden" name="type" value={type} />
             <input type="hidden" name="id" value={id} />
 
+            {/* Current Location Display */}
+            {currentLocation && (
+              <div className="p-4 rounded-[10px] bg-[#F9FAFB] border border-[#E5E7EB] space-y-2">
+                <p className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">Lokasi Saat Ini</p>
+                <div className="flex items-start gap-3">
+                  <Home className="h-5 w-5 text-[#0891B2] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-[#111827]">
+                      {currentLocation.buildingName !== '-' ? currentLocation.buildingName : 'Belum ditentukan'}
+                    </p>
+                    <p className="text-sm text-[#6B7280]">
+                      {currentLocation.roomName !== '-' ? currentLocation.roomName : 'Ruangan belum ditentukan'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1.5">
                 Kondisi Saat Ini
@@ -161,19 +236,59 @@ export default function ScanPageClient() {
               </div>
             </div>
 
+            {/* Building Selection */}
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1.5">
-                Lokasi Saat Ini
+                Update Lokasi — Gedung
               </label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
-                <input
-                  type="text"
-                  name="location"
-                  placeholder="Contoh: Laboratorium A, Rak 2..."
-                  className="w-full h-10 rounded-[10px] border border-border bg-muted/50 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
-                />
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 z-10" />
+                <select
+                  name="building_id"
+                  value={selectedBuilding}
+                  onChange={(e) => {
+                    setSelectedBuilding(e.target.value)
+                    setSelectedRoom('')
+                  }}
+                  className="w-full h-10 rounded-[10px] border border-border bg-muted/50 pl-10 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20 appearance-none"
+                >
+                  <option value="">Pilih gedung...</option>
+                  {buildings.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} {b.code ? `(${b.code})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
+            </div>
+
+            {/* Room Selection */}
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">
+                Update Lokasi — Ruangan
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 z-10" />
+                <select
+                  name="room_id"
+                  value={selectedRoom}
+                  onChange={(e) => setSelectedRoom(e.target.value)}
+                  disabled={!selectedBuilding}
+                  className="w-full h-10 rounded-[10px] border border-border bg-muted/50 pl-10 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20 appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {selectedBuilding ? 'Pilih ruangan...' : 'Pilih gedung terlebih dahulu'}
+                  </option>
+                  {filteredRooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {selectedBuilding && filteredRooms.length === 0 && (
+                <p className="text-xs text-amber-600 mt-1">Tidak ada ruangan di gedung ini</p>
+              )}
             </div>
 
             <div>

@@ -56,7 +56,9 @@ export default async function RoomDetailPage({ params }: Props) {
   const { data: room } = await sb
     .from('rooms')
     .select(`
-      *,
+      id, name, building_id, floor_number, room_sequence, room_code, description, capacity,
+      rate_per_hour, rate_per_day, is_active, is_for_rent, operating_hours, current_condition,
+      photo_url, created_by, created_at, updated_at,
       buildings(id, name, code, floor_count)
     `)
     .eq('id', id)
@@ -120,9 +122,9 @@ export default async function RoomDetailPage({ params }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Room Info */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Photo */}
-          <Card className="rounded-[14px]">
-            <div className="aspect-video bg-muted flex items-center justify-center">
+          {/* Photos */}
+          <Card className="rounded-[14px] overflow-hidden">
+            <div className="aspect-video bg-muted flex items-center justify-center relative">
               {room.photo_url ? (
                 <SafeImage
                   src={room.photo_url}
@@ -133,6 +135,20 @@ export default async function RoomDetailPage({ params }: Props) {
                 <Building2 className="h-16 w-16 text-border" />
               )}
             </div>
+            {room.door_photo_url && (
+              <div className="border-t border-border">
+                <div className="p-3 bg-muted/50">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Foto Pintu</p>
+                  <div className="aspect-[16/9] max-h-32 bg-muted rounded-[10px] overflow-hidden">
+                    <SafeImage
+                      src={room.door_photo_url}
+                      alt={`Pintu ${room.name}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </Card>
 
           {/* Room Details */}
