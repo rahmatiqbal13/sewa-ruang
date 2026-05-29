@@ -11,40 +11,42 @@ import { cn } from '@/lib/utils'
 import { saveTemplate } from './templateActions'
 
 type Channel = 'email' | 'whatsapp' | 'telegram'
-type UserCategory = 'default' | 'mahasiswa_s1' | 'mahasiswa_s2' | 'dosen_karyawan' | 'umum' | 'kerjasama'
 
 interface Template {
-  id?: string
+  id: string
   event_type: string
   channel: Channel
   user_category: string
-  subject?: string | null
+  subject: string | null
   body: string
   is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
 const EVENT_TYPES = [
-  { key: 'booking_submitted', label: 'Pengajuan Baru', desc: 'Saat peminjam mengajukan peminjaman baru' },
-  { key: 'booking_approved', label: 'Pengajuan Disetujui', desc: 'Saat admin menyetujui pengajuan' },
-  { key: 'booking_rejected', label: 'Pengajuan Ditolak', desc: 'Saat admin menolak pengajuan' },
-  { key: 'booking_cancelled', label: 'Pengajuan Dibatalkan', desc: 'Saat peminjam atau admin membatalkan' },
-  { key: 'payment_received', label: 'Pembayaran Diterima', desc: 'Saat pembayaran dikonfirmasi oleh admin' },
-  { key: 'booking_reminder', label: 'Pengingat Jadwal', desc: 'Pengingat H-1 sebelum jadwal peminjaman' },
+  { key: 'booking_submitted', label: 'Pengajuan Dibuat', desc: 'Template yang dikirim saat peminjaman baru diajukan' },
+  { key: 'booking_approved', label: 'Peminjaman Disetujui', desc: 'Template yang dikirim saat peminjaman disetujui admin' },
+  { key: 'booking_rejected', label: 'Peminjaman Ditolak', desc: 'Template yang dikirim saat peminjaman ditolak' },
+  { key: 'booking_cancelled', label: 'Peminjaman Dibatalkan', desc: 'Template yang dikirim saat peminjaman dibatalkan' },
+  { key: 'payment_received', label: 'Pembayaran Diterima', desc: 'Template yang dikirim saat pembayaran lunas' },
+  { key: 'reminder', label: 'Pengingat Peminjaman', desc: 'Template pengingat otomatis sebelum peminjaman' },
+]
+type UserCategory = 'default' | 'mahasiswa_s1' | 'mahasiswa_s2' | 'dosen' | 'umum' | 'kerjasama'
+
+const USER_CATEGORIES: { key: UserCategory; label: string; icon: React.ElementType; desc: string }[] = [
+  { key: 'default', label: 'Default (Semua)', icon: Users, desc: 'Template default untuk semua kategori' },
+  { key: 'mahasiswa_s1', label: 'Mahasiswa S1', icon: GraduationCap, desc: 'Template khusus untuk Mahasiswa S1' },
+  { key: 'mahasiswa_s2', label: 'Mahasiswa S2/S3', icon: GraduationCap, desc: 'Template untuk Mahasiswa Pascasarjana' },
+  { key: 'dosen', label: 'Dosen & Karyawan', icon: Briefcase, desc: 'Template untuk Dosen dan Karyawan' },
+  { key: 'umum', label: 'Umum', icon: Users, desc: 'Template untuk pengguna umum' },
+  { key: 'kerjasama', label: 'Kerjasama/MoU', icon: Handshake, desc: 'Template untuk institusi kerjasama' },
 ]
 
 const CHANNELS: { key: Channel; label: string; icon: React.ElementType; color: string }[] = [
   { key: 'email', label: 'Email', icon: Mail, color: 'text-blue-600' },
   { key: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, color: 'text-green-600' },
   { key: 'telegram', label: 'Telegram', icon: Send, color: 'text-sky-500' },
-]
-
-const USER_CATEGORIES: { key: UserCategory; label: string; icon: React.ElementType; desc: string }[] = [
-  { key: 'default', label: 'Default (Semua)', icon: Users, desc: 'Template default untuk semua kategori' },
-  { key: 'mahasiswa_s1', label: 'Mahasiswa S1', icon: GraduationCap, desc: 'Template khusus untuk Mahasiswa S1' },
-  { key: 'mahasiswa_s2', label: 'Mahasiswa S2/S3', icon: GraduationCap, desc: 'Template untuk Mahasiswa Pascasarjana' },
-  { key: 'dosen_karyawan', label: 'Dosen/Karyawan', icon: Briefcase, desc: 'Template untuk Dosen dan Karyawan' },
-  { key: 'umum', label: 'Umum', icon: Users, desc: 'Template untuk pengguna umum' },
-  { key: 'kerjasama', label: 'Kerjasama/MoU', icon: Handshake, desc: 'Template untuk institusi kerjasama' },
 ]
 
 const VARIABLES = [
@@ -80,7 +82,7 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
         subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima',
         body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\nSebagai Mahasiswa Pascasarjana, silakan tunggu konfirmasi dari kami.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nTerima kasih,\nTim Admin USC',
       },
-      dosen_karyawan: {
+      dosen: {
         subject: '{{nama}} - {{no_booking}} | Pengajuan Diterima',
         body: 'Halo {{nama}},\n\nPengajuan peminjaman Anda telah kami terima.\n\nSebagai Dosen/Karyawan UNESA, Anda mendapatkan prioritas dalam proses persetujuan.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n⏰ Status: Menunggu Persetujuan\n\nTerima kasih,\nTim Admin USC',
       },
@@ -97,7 +99,7 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
       default: { body: 'Halo {{nama}}! Pengajuan peminjaman *{{ruangan}}* (Ref: {{no_booking}}) untuk {{tanggal_mulai}} s/d {{tanggal_selesai}} telah kami terima dan sedang diproses. Kami akan segera memberikan konfirmasi. Terima kasih!' },
       mahasiswa_s1: { body: 'Halo {{nama}}! Pengajuan *{{no_booking}}* telah diterima. Sebagai Mahasiswa S1, Anda bisa meminjam GRATIS untuk perkuliahan. Kami akan segera memverifikasi. Terima kasih!' },
       mahasiswa_s2: { body: 'Halo {{nama}}! Pengajuan *{{no_booking}}* telah diterima dan sedang diproses. Kami akan segera memberikan konfirmasi. Terima kasih!' },
-      dosen_karyawan: { body: 'Halo {{nama}}! Pengajuan *{{no_booking}}* telah diterima. Sebagai Dosen/Karyawan, Anda mendapat prioritas proses. Kami akan segera konfirmasi. Terima kasih!' },
+      dosen: { body: 'Halo {{nama}}! Pengajuan *{{no_booking}}* telah diterima. Sebagai Dosen/Karyawan, Anda mendapat prioritas proses. Kami akan segera konfirmasi. Terima kasih!' },
       umum: { body: 'Halo {{nama}}! Pengajuan *{{no_booking}}* telah diterima. Silakan tunggu persetujuan dan lakukan pembayaran. Terima kasih!' },
       kerjasama: { body: 'Halo {{nama}}! Pengajuan *{{no_booking}}* dari institusi kerjasama telah diterima. Anda mendapat tarif khusus. Kami akan segera konfirmasi. Terima kasih!' },
     },
@@ -105,7 +107,7 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
       default: { body: '📋 Halo {{nama}}!\n\nPengajuan peminjaman *{{ruangan}}* (Ref: `{{no_booking}}`) telah diterima dan sedang diproses.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nKami akan segera memberikan konfirmasi.' },
       mahasiswa_s1: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\nSebagai Mahasiswa S1, peminjaman untuk perkuliahan GRATIS!\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nKami akan verifikasi segera.' },
       mahasiswa_s2: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima dan diproses.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nTunggu konfirmasi dari kami.' },
-      dosen_karyawan: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\nPrioritas Dosen/Karyawan UNESA.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSegera kami proses.' },
+      dosen: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\nPrioritas Dosen/Karyawan UNESA.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSegera kami proses.' },
       umum: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nTunggu persetujuan dan lakukan pembayaran.' },
       kerjasama: { body: '📋 Halo {{nama}}!\n\nPengajuan *{{no_booking}}* diterima.\n\nMitra Kerjasama - Tarif Khusus\n\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSegera kami proses.' },
     },
@@ -124,7 +126,7 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
         subject: '{{nama}} - {{no_booking}} | ✅ Disetujui',
         body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi peminjaman.\n\nTerima kasih,\nTim Admin USC',
       },
-      dosen_karyawan: {
+      dosen: {
         subject: '{{nama}} - {{no_booking}} | ✅ Disetujui',
         body: 'Halo {{nama}},\n\nSelamat! Pengajuan peminjaman Anda telah DISETUJUI.\n\nSebagai Dosen/Karyawan, Anda mendapatkan kemudahan dalam proses peminjaman.\n\n📋 No. Booking: {{no_booking}}\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 Tanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n✅ Status: Disetujui\n\nSilakan lakukan pembayaran untuk mengkonfirmasi.\n\nTerima kasih,\nTim Admin USC',
       },
@@ -141,7 +143,7 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
       default: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah DISETUJUI.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
       mahasiswa_s1: { body: '🎓 Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah DISETUJUI & LUNAS!\n\nSebagai Mahasiswa S1, peminjaman ini GRATIS untuk perkuliahan.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\n✅ Sudah dikonfirmasi, datang tepat waktu!' },
       mahasiswa_s2: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah DISETUJUI.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
-      dosen_karyawan: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah DISETUJUI.\n\nPrioritas Dosen/Karyawan.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
+      dosen: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah DISETUJUI.\n\nPrioritas Dosen/Karyawan.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
       umum: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah DISETUJUI.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSegera lakukan pembayaran untuk mengamankan jadwal.' },
       kerjasama: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah DISETUJUI.\n\nMitra Kerjasama - Tarif Khusus\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
     },
@@ -149,7 +151,7 @@ const DEFAULT_BODIES: Record<string, Record<Channel, Record<UserCategory, { subj
       default: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah *DISETUJUI*.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
       mahasiswa_s1: { body: '🎓 Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah *DISETUJUI* & *LUNAS*!\n\nGRATIS untuk Mahasiswa S1 (Perkuliahan)\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\n✅ Sudah dikonfirmasi!' },
       mahasiswa_s2: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah *DISETUJUI*.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
-      dosen_karyawan: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah *DISETUJUI*.\n\nPrioritas Dosen/Karyawan\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
+      dosen: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah *DISETUJUI*.\n\nPrioritas Dosen/Karyawan\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
       umum: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah *DISETUJUI*.\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSegera lakukan pembayaran untuk mengamankan jadwal.' },
       kerjasama: { body: '✅ Selamat {{nama}}!\n\nPengajuan *{{no_booking}}* telah *DISETUJUI*.\n\nMitra Kerjasama\n\n🏢 {{daftar_ruangan}}\n{{daftar_alat}}\n📅 {{tanggal_mulai}} — {{tanggal_selesai}}\n\nSilakan lakukan pembayaran untuk konfirmasi.' },
     },
@@ -209,7 +211,7 @@ Silakan hubungi kami untuk informasi lebih lanjut.
 
 Terima kasih,
 Tim Admin USC` },
-      dosen_karyawan: { subject: '{{nama}} - {{no_booking}} | ❌ Ditolak', body: `Halo {{nama}},
+      dosen: { subject: '{{nama}} - {{no_booking}} | ❌ Ditolak', body: `Halo {{nama}},
 
 Mohon maaf, pengajuan peminjaman Anda tidak dapat disetujui.
 
@@ -278,7 +280,7 @@ Jika untuk perkuliahan, silakan hubungi admin untuk bantuan.` },
 {{daftar_alat}}
 
 Silakan hubungi admin untuk informasi lebih lanjut.` },
-      dosen_karyawan: { body: `Mohon maaf {{nama}}, pengajuan *{{no_booking}}* tidak dapat disetujui.
+      dosen: { body: `Mohon maaf {{nama}}, pengajuan *{{no_booking}}* tidak dapat disetujui.
 
 🏢 {{daftar_ruangan}}
 {{daftar_alat}}
@@ -328,7 +330,7 @@ Pengajuan *{{no_booking}}* tidak dapat disetujui.
 {{daftar_alat}}
 
 {{catatan_admin}}` },
-      dosen_karyawan: { body: `❌ Mohon maaf {{nama}},
+      dosen: { body: `❌ Mohon maaf {{nama}},
 
 Pengajuan *{{no_booking}}* tidak dapat disetujui.
 
@@ -399,7 +401,7 @@ Peminjaman Anda telah dibatalkan.
 
 Terima kasih,
 Tim Admin USC` },
-      dosen_karyawan: { subject: '{{nama}} - {{no_booking}} | 🚫 Dibatalkan', body: `Halo {{nama}},
+      dosen: { subject: '{{nama}} - {{no_booking}} | 🚫 Dibatalkan', body: `Halo {{nama}},
 
 Peminjaman Anda telah dibatalkan.
 
@@ -465,7 +467,7 @@ Silakan hubungi admin jika ingin mengajukan ulang.` },
 🏢 {{daftar_ruangan}}
 {{daftar_alat}}
 📅 {{tanggal_mulai}} — {{tanggal_selesai}}` },
-      dosen_karyawan: { body: `Halo {{nama}}, peminjaman *{{no_booking}}* telah dibatalkan.
+      dosen: { body: `Halo {{nama}}, peminjaman *{{no_booking}}* telah dibatalkan.
 
 🏢 {{daftar_ruangan}}
 {{daftar_alat}}
@@ -501,7 +503,7 @@ Silakan hubungi admin jika ingin mengajukan ulang.` },
 🏢 {{daftar_ruangan}}
 {{daftar_alat}}
 📅 {{tanggal_mulai}} — {{tanggal_selesai}}` },
-      dosen_karyawan: { body: `🚫 Peminjaman *{{no_booking}}* telah dibatalkan.
+      dosen: { body: `🚫 Peminjaman *{{no_booking}}* telah dibatalkan.
 
 🏢 {{daftar_ruangan}}
 {{daftar_alat}}
@@ -563,7 +565,7 @@ Peminjaman Anda telah dikonfirmasi. Harap datang tepat waktu.
 
 Terima kasih,
 Tim Admin USC` },
-      dosen_karyawan: { subject: '{{nama}} - {{no_booking}} | 💳 Lunas', body: `Halo {{nama}},
+      dosen: { subject: '{{nama}} - {{no_booking}} | 💳 Lunas', body: `Halo {{nama}},
 
 Pembayaran untuk peminjaman Anda telah kami terima.
 
@@ -628,7 +630,7 @@ Peminjaman dikonfirmasi!` },
 📅 {{tanggal_mulai}} — {{tanggal_selesai}}
 
 Peminjaman dikonfirmasi!` },
-      dosen_karyawan: { body: `💳 Halo {{nama}}! Pembayaran untuk *{{no_booking}}* telah diterima.
+      dosen: { body: `💳 Halo {{nama}}! Pembayaran untuk *{{no_booking}}* telah diterima.
 
 🏢 {{daftar_ruangan}}
 {{daftar_alat}}
@@ -678,7 +680,7 @@ Pembayaran *{{no_booking}}* telah diterima.
 📅 {{tanggal_mulai}} — {{tanggal_selesai}}
 
 ✅ Peminjaman dikonfirmasi.` },
-      dosen_karyawan: { body: `💳 Halo {{nama}}!
+      dosen: { body: `💳 Halo {{nama}}!
 
 Pembayaran *{{no_booking}}* telah diterima.
 
@@ -751,7 +753,7 @@ Harap datang tepat waktu.
 
 Terima kasih,
 Tim Admin USC` },
-      dosen_karyawan: { subject: '{{nama}} - {{no_booking}} | ⏰ Pengingat', body: `Halo {{nama}},
+      dosen: { subject: '{{nama}} - {{no_booking}} | ⏰ Pengingat', body: `Halo {{nama}},
 
 ⏰ Pengingat: Peminjaman Anda akan dimulai besok!
 
@@ -822,7 +824,7 @@ Halo {{nama}}! Peminjaman *{{no_booking}}* akan dimulai:
 📅 {{tanggal_mulai}}
 
 Harap datang tepat waktu!` },
-      dosen_karyawan: { body: `⏰ *Pengingat Peminjaman*
+      dosen: { body: `⏰ *Pengingat Peminjaman*
 
 Halo {{nama}}! Peminjaman *{{no_booking}}* akan dimulai:
 
@@ -881,7 +883,7 @@ Peminjaman *{{no_booking}}* dimulai {{tanggal_mulai}}.
 {{daftar_alat}}
 
 Harap datang tepat waktu!` },
-      dosen_karyawan: { body: `⏰ *Pengingat Peminjaman*
+      dosen: { body: `⏰ *Pengingat Peminjaman*
 
 Halo {{nama}}!
 

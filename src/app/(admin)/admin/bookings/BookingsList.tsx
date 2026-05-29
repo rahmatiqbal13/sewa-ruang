@@ -38,7 +38,7 @@ function buildPageUrl(page: number, status: string): string {
 }
 
 const STATUS_TABS = [
-  { value: '', label: 'Semua', color: 'bg-[#2E4DA7]', bg: 'bg-[#F3F4F6]' },
+  { value: '', label: 'Semua', color: 'bg-[#0891B2]', bg: 'bg-[#F3F4F6]' },
   { value: 'pending', label: 'Menunggu', color: 'bg-amber-500', bg: 'bg-amber-50' },
   { value: 'approved', label: 'Disetujui', color: 'bg-blue-600', bg: 'bg-blue-50' },
   { value: 'paid', label: 'Lunas', color: 'bg-emerald-600', bg: 'bg-emerald-50' },
@@ -264,13 +264,13 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
           <h1 className="text-xl md:text-2xl font-semibold text-[#111827]">
             Manajemen Peminjaman
           </h1>
-          <Badge className="bg-[#2E4DA7] text-white px-2.5 py-1 text-xs font-medium">
+          <Badge className="bg-[#0891B2] text-white px-2.5 py-1 text-xs font-medium">
             {totalCount}
           </Badge>
         </div>
         <Link
           href="/admin/bookings/new"
-          className="inline-flex items-center gap-2 h-10 px-4 text-sm font-medium rounded-[10px] bg-[#2E4DA7] text-white hover:bg-[#2E4DA7]/90 transition-colors shadow-soft"
+          className="inline-flex items-center gap-2 h-10 px-4 text-sm font-medium rounded-[10px] bg-[#0891B2] text-white hover:bg-[#0891B2]/90 transition-colors shadow-soft"
         >
           <Plus className="h-4 w-4" />
           Tambah
@@ -290,14 +290,14 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                 className={cn(
                   'inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all duration-150',
                   isActive 
-                    ? 'border-b-2 border-[#2E4DA7] text-[#2E4DA7] font-semibold' 
+                    ? 'border-b-2 border-[#0891B2] text-[#0891B2] font-semibold' 
                     : 'border-b-2 border-transparent text-[#6B7280] hover:text-[#374151]'
                 )}
               >
                 {tab.label}
                 <span className={cn(
                   'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
-                  isActive ? 'bg-[#2E4DA7]/10 text-[#2E4DA7]' : 'bg-[#F3F4F6] text-[#6B7280]'
+                  isActive ? 'bg-[#0891B2]/10 text-[#0891B2]' : 'bg-[#F3F4F6] text-[#6B7280]'
                 )}>
                   {count}
                 </span>
@@ -318,7 +318,7 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                 placeholder="Cari ref / nama / instansi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10 text-sm border-[#E5E7EB] rounded-[10px] focus:border-[#2E4DA7] focus:ring-2 focus:ring-[#2E4DA7]/15"
+                className="pl-10 h-10 text-sm border-[#E5E7EB] rounded-[10px] focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/15"
               />
             </div>
           </div>
@@ -340,8 +340,8 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
 
       {/* Bulk Action Bar */}
       {hasSelection && (
-        <div className="bg-[#2E4DA7]/5 border border-[#2E4DA7]/20 rounded-[10px] p-3 flex flex-wrap items-center justify-between gap-3">
-          <span className="text-[#2E4DA7] font-semibold text-sm">
+        <div className="bg-[#0891B2]/5 border border-[#0891B2]/20 rounded-[10px] p-3 flex flex-wrap items-center justify-between gap-3">
+          <span className="text-[#0891B2] font-semibold text-sm">
             {selectedItems.size} item dipilih
           </span>
           <div className="flex items-center gap-2">
@@ -368,7 +368,7 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
               variant="outline"
               onClick={handleBulkExport}
               disabled={bulkActionLoading === 'export'}
-              className="border-[#2E4DA7] text-[#2E4DA7] hover:bg-[#2E4DA7]/5 h-8"
+              className="border-[#0891B2] text-[#0891B2] hover:bg-[#0891B2]/5 h-8"
             >
               {bulkActionLoading === 'export' ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
               Export
@@ -408,7 +408,7 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                   <Checkbox 
                     checked={filteredBookings.length > 0 && selectedItems.size === filteredBookings.length}
                     onCheckedChange={toggleSelectAll}
-                    className="border-[#D1D5DB] data-[state=checked]:bg-[#2E4DA7] data-[state=checked]:border-[#2E4DA7]"
+                    className="border-[#D1D5DB] data-[state=checked]:bg-[#0891B2] data-[state=checked]:border-[#0891B2]"
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
@@ -440,22 +440,22 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                     className={cn(
                       'border-b border-[#E5E7EB] transition-colors',
                       overdue ? 'border-l-[3px] border-l-[#EF4444] bg-[#FFF5F5]/50' : '',
-                      isSelected ? 'bg-[#2E4DA7]/5' : 'hover:bg-[#FAFAFA]'
+                      isSelected ? 'bg-[#0891B2]/5' : 'hover:bg-[#FAFAFA]'
                     )}
                   >
                     <td className="px-4 py-3">
                       <Checkbox 
                         checked={isSelected}
                         onCheckedChange={() => toggleSelectItem(booking.id)}
-                        className="border-[#D1D5DB] data-[state=checked]:bg-[#2E4DA7] data-[state=checked]:border-[#2E4DA7]"
+                        className="border-[#D1D5DB] data-[state=checked]:bg-[#0891B2] data-[state=checked]:border-[#0891B2]"
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-[#2E4DA7] font-medium">{booking.reference_no}</span>
+                      <span className="font-mono text-xs text-[#0891B2] font-medium">{booking.reference_no}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-[#2E4DA7]/10 flex items-center justify-center text-[#2E4DA7] font-semibold text-xs">
+                        <div className="h-8 w-8 rounded-full bg-[#0891B2]/10 flex items-center justify-center text-[#0891B2] font-semibold text-xs">
                           {booking.users?.name?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div>
@@ -560,10 +560,10 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                     <Checkbox 
                       checked={selectedItems.has(booking.id)}
                       onCheckedChange={() => toggleSelectItem(booking.id)}
-                      className="border-[#D1D5DB] data-[state=checked]:bg-[#2E4DA7] data-[state=checked]:border-[#2E4DA7]"
+                      className="border-[#D1D5DB] data-[state=checked]:bg-[#0891B2] data-[state=checked]:border-[#0891B2]"
                     />
                     <div>
-                      <span className="font-mono text-[11px] text-[#2E4DA7] font-medium">{booking.reference_no}</span>
+                      <span className="font-mono text-[11px] text-[#0891B2] font-medium">{booking.reference_no}</span>
                       <p className="font-semibold text-[#111827] text-sm mt-0.5">{booking.users?.name}</p>
                     </div>
                   </div>

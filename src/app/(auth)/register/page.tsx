@@ -15,20 +15,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Building2, Loader2, User } from 'lucide-react'
 import { ImageUpload } from '@/components/shared/ImageUpload'
 
-const BORROWER_CATEGORIES = [
-  { value: 'mahasiswa',       label: 'Mahasiswa' },
-  { value: 'pascasarjana',    label: 'Mahasiswa Pascasarjana' },
-  { value: 'dosen_karyawan',  label: 'Dosen / Karyawan' },
-  { value: 'kerjasama',       label: 'Kerjasama' },
-  { value: 'umum',            label: 'Umum' },
-]
+import { BORROWER_CATEGORIES } from '@/lib/categories'
 
 const schema = z.object({
   name: z.string().min(1, 'Nama wajib diisi').min(3, 'Nama minimal 3 karakter'),
   email: z.string().min(1, 'Email wajib diisi').email('Email tidak valid'),
   password: z.string().min(1, 'Password wajib diisi').min(6, 'Password minimal 6 karakter'),
   phone: z.string().min(1, 'Nomor WhatsApp wajib diisi').regex(/^(\+62|0)[0-9]{9,12}$/, 'Format WhatsApp tidak valid (contoh: 08123456789 atau +628123456789)'),
-  borrower_category: z.enum(['mahasiswa', 'pascasarjana', 'dosen_karyawan', 'kerjasama', 'umum'], { message: 'Kategori peminjam wajib dipilih' }),
+  borrower_category: z.enum(['mahasiswa_s1', 'mahasiswa_s2', 'dosen', 'kerjasama', 'umum'], { message: 'Kategori peminjam wajib dipilih' }),
   institution: z.string().min(2, 'Instansi wajib diisi').max(100),
   class_division: z.string().min(1, 'Kelas/Divisi wajib diisi').max(50),
   identity_number: z.string().max(20).optional(),
@@ -77,7 +71,7 @@ export default function RegisterPage() {
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-[10px] flex items-center justify-center bg-[#2E4DA7]">
+              <div className="h-10 w-10 rounded-[10px] flex items-center justify-center bg-[#0891B2]">
                 <Building2 className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -150,7 +144,7 @@ export default function RegisterPage() {
                 <SelectTrigger id="borrower_category" className="h-11 rounded-lg border-[#E5E7EB]" aria-describedby={errors.borrower_category ? 'borrower_category-error' : undefined} aria-invalid={!!errors.borrower_category}><SelectValue placeholder="Pilih kategori Anda..." /></SelectTrigger>
                 <SelectContent>
                   {BORROWER_CATEGORIES.map(c => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -179,7 +173,7 @@ export default function RegisterPage() {
               <Input id="identity_number" placeholder="Nomor identitas" className="h-11 rounded-lg border-[#E5E7EB]" {...register('identity_number')} />
             </div>
 
-            <Button type="submit" className="w-full h-11 bg-[#2E4DA7] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg mt-2" disabled={loading || !isValid}>
+            <Button type="submit" className="w-full h-11 bg-[#0891B2] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg mt-2" disabled={loading || !isValid}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Buat Akun
             </Button>
@@ -187,7 +181,7 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-[#6B7280]">
             Sudah punya akun?{' '}
-            <Link href="/login" className="text-[#2E4DA7] hover:underline font-semibold">Masuk</Link>
+            <Link href="/login" className="text-[#0891B2] hover:underline font-semibold">Masuk</Link>
           </p>
         </div>
       </div>

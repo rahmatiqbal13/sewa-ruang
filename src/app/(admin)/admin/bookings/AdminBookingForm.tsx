@@ -18,6 +18,13 @@ import { Loader2, Plus, Trash2, User, Calendar, Package, ArrowLeft, Search } fro
 import { format, addHours } from 'date-fns'
 import { id } from 'date-fns/locale'
 import Link from 'next/link'
+import {
+  BORROWER_CATEGORIES,
+  EVENT_TYPES,
+  type BorrowerCategory,
+  isFreeBooking,
+  getBorrowerCategoryLabel,
+} from '@/lib/categories'
 
 const schema = z.object({
   borrower_name: z.string().min(2, 'Nama peminjam wajib diisi'),
@@ -25,7 +32,8 @@ const schema = z.object({
   borrower_phone: z.string().optional(),
   borrower_institution: z.string().min(2, 'Instansi wajib diisi'),
   borrower_class: z.string().optional(),
-  member_type: z.enum(['mahasiswa_s1', 'mahasiswa_s2', 'dosen_karyawan', 'umum', 'kerjasama']),
+  borrower_category: z.enum(['mahasiswa_s1', 'mahasiswa_s2', 'dosen', 'umum', 'kerjasama']),
+  event_type: z.enum(['perkuliahan', 'event_mahasiswa', 'event_umum', 'penelitian', 'lainnya']),
   purpose: z.string().min(5, 'Tujuan peminjaman wajib diisi'),
   start_datetime: z.string().min(1, 'Tanggal mulai wajib diisi'),
   end_datetime: z.string().min(1, 'Tanggal selesai wajib diisi'),
@@ -38,24 +46,6 @@ const schema = z.object({
 })
 
 type FormData = z.infer<typeof schema>
-
-// Map member type to equipment_rates user_category
-const memberTypeToEquipmentCategory: Record<string, string> = {
-  'mahasiswa_s1': 'mahasiswa_s1',
-  'mahasiswa_s2': 'mahasiswa_s2',
-  'dosen_karyawan': 'dosen',
-  'umum': 'umum',
-  'kerjasama': 'mou_unesa',
-}
-
-// Map member type to room_rates usage_category  
-const memberTypeToRoomCategory: Record<string, string> = {
-  'mahasiswa_s1': 'mahasiswa',
-  'mahasiswa_s2': 'pascasarjana',
-  'dosen_karyawan': 'dosen',
-  'umum': 'umum',
-  'kerjasama': 'kerjasama',
-}
 
 interface RoomRate {
   usage_category: string
@@ -101,7 +91,8 @@ export function AdminBookingForm() {
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      member_type: 'mahasiswa_s1',
+      borrower_category: 'mahasiswa_s1',
+      event_type: 'lainnya',
       items: [{ item_type: 'room', room_id: '', equipment_id: '', quantity: 1 }],
       start_datetime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       end_datetime: format(addHours(new Date(), 2), "yyyy-MM-dd'T'HH:mm"),
@@ -116,7 +107,7 @@ export function AdminBookingForm() {
   const watchItems = watch('items')
   const watchStart = watch('start_datetime')
   const watchEnd = watch('end_datetime')
-  const watchMemberType = watch('member_type')
+  const watchBorrowerCategory = watch('borrower_category')
 
   // Load rooms and equipment with their rates
   useEffect(() => {
@@ -172,56 +163,64 @@ export function AdminBookingForm() {
     loadData()
   }, [])
 
-  // Get rate for specific member type
-  const getRoomRate = (room: Room, memberType: string) => {
-    const category = memberTypeToRoomCategory[memberType]
-    const rate = room.rates.find(r => r.usage_category === category)
-    return rate || room.rates[0] || { rate_per_hour: null, rate_per_day: null }
+  // Get rate for specific borrower category (direct lookup, no mapping)
+  const getRoomRate = (room: Room, borrowerCategory: string) => {
+    const rate = room.rates.find(r => r.usage_category === borrowerCategory)
+      ?? room.rates.find(r => r.usage_category === 'umum') // fallback
+    return rate || { rate_per_hour: null, rate_per_day: null }
   }
 
-  const getEquipmentRate = (eq: Equipment, memberType: string) => {
-    const category = memberTypeToEquipmentCategory[memberType]
-    const rate = eq.rates.find(r => r.user_category === category)
-    return rate || eq.rates[0] || { rate_per_hour: null, rate_per_day: null }
+  const getEquipmentRate = (eq: Equipment, borrowerCategory: string) => {
+    const rate = eq.rates.find(r => r.user_category === borrowerCategory)
+      ?? eq.rates.find(r => r.user_category === 'umum') // fallback
+    return rate || { rate_per_hour: null, rate_per_day: null }
   }
 
-  // Calculate total based on member type rates
+  // Calculate total based on borrower category rates + event type
   useEffect(() => {
-    if (!watchStart || !watchEnd || !watchMemberType) return
-    
+    if (!watchStart || !watchEnd || !watchBorrowerCategory) return
+
     const start = new Date(watchStart)
     const end = new Date(watchEnd)
     const hours = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60)))
     const days = Math.ceil(hours / 24)
-    
+
+    const eventType = watch('event_type')
+    const isGratis = isFreeBooking(watchBorrowerCategory, eventType)
+
     let total = 0
-    
-    watchItems?.forEach((item: any) => {
-      if (item.item_type === 'room' && item.room_id) {
-        const room = rooms.find(r => r.id === item.room_id)
-        if (room) {
-          const rate = getRoomRate(room, watchMemberType)
-          if (hours > 12 && rate.rate_per_day) {
-            total += rate.rate_per_day * days * item.quantity
-          } else if (rate.rate_per_hour) {
-            total += rate.rate_per_hour * hours * item.quantity
+
+    if (!isGratis) {
+      watchItems?.forEach((item: any) => {
+        if (item.item_type === 'room' && item.room_id) {
+          const room = rooms.find(r => r.id === item.room_id)
+          if (room) {
+            const rate = getRoomRate(room, watchBorrowerCategory)
+            if (hours > 12 && rate.rate_per_day) {
+              total += rate.rate_per_day * days * item.quantity
+            } else if (rate.rate_per_hour) {
+              total += rate.rate_per_hour * hours * item.quantity
+            } else if (rate.rate_per_day) {
+              total += rate.rate_per_day * days * item.quantity
+            }
+          }
+        } else if (item.item_type === 'equipment' && item.equipment_id) {
+          const eq = equipment.find(e => e.id === item.equipment_id)
+          if (eq) {
+            const rate = getEquipmentRate(eq, watchBorrowerCategory)
+            // Equipment is always charged per day regardless of hours
+            if (rate.rate_per_day) {
+              total += rate.rate_per_day * days * item.quantity
+            } else if (rate.rate_per_hour) {
+              total += rate.rate_per_hour * hours * item.quantity
+            }
           }
         }
-      } else if (item.item_type === 'equipment' && item.equipment_id) {
-        const eq = equipment.find(e => e.id === item.equipment_id)
-        if (eq) {
-          const rate = getEquipmentRate(eq, watchMemberType)
-          if (hours > 12 && rate.rate_per_day) {
-            total += rate.rate_per_day * days * item.quantity
-          } else if (rate.rate_per_hour) {
-            total += rate.rate_per_hour * hours * item.quantity
-          }
-        }
-      }
-    })
-    
+      })
+    }
+
     setTotalAmount(total)
-  }, [watchItems, watchStart, watchEnd, watchMemberType, rooms, equipment])
+  }, [watchItems, watchStart, watchEnd, watchBorrowerCategory, rooms, equipment])
 
   // Filter items based on search
   const getFilteredItems = (type: 'room' | 'equipment') => {
@@ -258,6 +257,29 @@ export function AdminBookingForm() {
         return
       }
 
+      // Prevent booking with zero total if there are items that should have rates
+      if (totalAmount === 0 && data.items.length > 0) {
+        const itemsWithoutRate = data.items.filter((item: any) => {
+          if (item.item_type === 'room' && item.room_id) {
+            const room = rooms.find(r => r.id === item.room_id)
+            if (!room) return true
+            const rate = getRoomRate(room, data.borrower_category)
+            return !rate.rate_per_hour && !rate.rate_per_day
+          } else if (item.item_type === 'equipment' && item.equipment_id) {
+            const eq = equipment.find(e => e.id === item.equipment_id)
+            if (!eq) return true
+            const rate = getEquipmentRate(eq, data.borrower_category)
+            return !rate.rate_per_hour && !rate.rate_per_day
+          }
+          return false
+        })
+        if (itemsWithoutRate.length > 0) {
+          toast.error('Beberapa item tidak memiliki tarif. Silakan periksa pengaturan tarif sebelum membuat peminjaman.')
+          setLoading(false)
+          return
+        }
+      }
+
       const dateStr = format(new Date(), 'yyyyMMdd')
       const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase()
       const referenceNo = `BK${dateStr}-${randomStr}`
@@ -269,31 +291,31 @@ export function AdminBookingForm() {
         if (firstItem.item_type === 'room' && firstItem.room_id) {
           const room = rooms.find(r => r.id === firstItem.room_id)
           if (room) {
-            const rate = getRoomRate(room, data.member_type)
+            const rate = getRoomRate(room, data.borrower_category)
             snapshotRate = { 
               item_type: 'room',
               item_name: room.name,
               rate_per_hour: rate.rate_per_hour,
               rate_per_day: rate.rate_per_day,
-              member_type: data.member_type
+              borrower_category: data.borrower_category
             }
           }
         } else if (firstItem.item_type === 'equipment' && firstItem.equipment_id) {
           const eq = equipment.find(e => e.id === firstItem.equipment_id)
           if (eq) {
-            const rate = getEquipmentRate(eq, data.member_type)
+            const rate = getEquipmentRate(eq, data.borrower_category)
             snapshotRate = { 
               item_type: 'equipment',
               item_name: eq.name,
               rate_per_hour: rate.rate_per_hour,
               rate_per_day: rate.rate_per_day,
-              member_type: data.member_type
+              borrower_category: data.borrower_category
             }
           }
         }
       }
 
-      // Include borrower info in snapshot_rate until new columns are added
+      // Include borrower info in snapshot_rate
       snapshotRate = {
         ...snapshotRate,
         borrower_name: data.borrower_name,
@@ -301,7 +323,8 @@ export function AdminBookingForm() {
         borrower_phone: data.borrower_phone,
         borrower_institution: data.borrower_institution,
         borrower_class: data.borrower_class,
-        member_type: data.member_type,
+        borrower_category: data.borrower_category,
+        event_type: data.event_type,
         created_by_admin: true,
       }
 
@@ -311,6 +334,7 @@ export function AdminBookingForm() {
           reference_no: referenceNo,
           user_id: user.id,
           purpose: `${data.borrower_name} - ${data.borrower_institution}: ${data.purpose}`,
+          event_type: data.event_type,
           start_datetime: data.start_datetime,
           end_datetime: data.end_datetime,
           total_amount: totalAmount,
@@ -401,20 +425,34 @@ export function AdminBookingForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Jenis Member <span className="text-red-500">*</span></Label>
+                <Label>Kategori Peminjam <span className="text-red-500">*</span></Label>
                 <Select
-                  value={watch('member_type')}
-                  onValueChange={(v) => setValue('member_type', v as FormData['member_type'])}
+                  value={watch('borrower_category')}
+                  onValueChange={(v) => setValue('borrower_category', v as FormData['borrower_category'])}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Pilih jenis member" />
+                    <SelectValue placeholder="Pilih kategori peminjam" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mahasiswa_s1">Mahasiswa Sarjana (S1)</SelectItem>
-                    <SelectItem value="mahasiswa_s2">Mahasiswa Pasca Sarjana (S2/S3)</SelectItem>
-                    <SelectItem value="dosen_karyawan">Dosen/Karyawan</SelectItem>
-                    <SelectItem value="umum">Umum</SelectItem>
-                    <SelectItem value="kerjasama">Kerjasama/MoU</SelectItem>
+                    {BORROWER_CATEGORIES.map(cat => (
+                      <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Jenis Kegiatan <span className="text-red-500">*</span></Label>
+                <Select
+                  value={watch('event_type')}
+                  onValueChange={(v) => setValue('event_type', v as FormData['event_type'])}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih jenis kegiatan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EVENT_TYPES.map(et => (
+                      <SelectItem key={et.key} value={et.key}>{et.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -469,8 +507,8 @@ export function AdminBookingForm() {
               const selectedEquipment = currentItem?.equipment_id ? getSelectedEquipment(currentItem.equipment_id) : null
               
               // Get rates for selected member type
-              const roomRate = selectedRoom ? getRoomRate(selectedRoom, watchMemberType) : null
-              const equipmentRate = selectedEquipment ? getEquipmentRate(selectedEquipment, watchMemberType) : null
+              const roomRate = selectedRoom ? getRoomRate(selectedRoom, watchBorrowerCategory) : null
+              const equipmentRate = selectedEquipment ? getEquipmentRate(selectedEquipment, watchBorrowerCategory) : null
 
               return (
                 <div key={field.id} className="p-4 border rounded-[10px] space-y-4">
@@ -535,8 +573,8 @@ export function AdminBookingForm() {
                         <SelectContent>
                           {(currentItem?.item_type === 'room' ? rooms : equipment).map((item: any) => {
                             const rate = currentItem?.item_type === 'room' 
-                              ? getRoomRate(item, watchMemberType)
-                              : getEquipmentRate(item, watchMemberType)
+                              ? getRoomRate(item, watchBorrowerCategory)
+                              : getEquipmentRate(item, watchBorrowerCategory)
                             const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
                             
                             return (
@@ -570,8 +608,8 @@ export function AdminBookingForm() {
                     <div className="max-h-40 overflow-y-auto border rounded-[10px]">
                       {getFilteredItems(currentItem?.item_type || 'room').slice(0, 5).map((item: any) => {
                         const rate = currentItem?.item_type === 'room' 
-                          ? getRoomRate(item, watchMemberType)
-                          : getEquipmentRate(item, watchMemberType)
+                          ? getRoomRate(item, watchBorrowerCategory)
+                          : getEquipmentRate(item, watchBorrowerCategory)
                         const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
                         
                         return (
@@ -620,7 +658,7 @@ export function AdminBookingForm() {
                         {(selectedRoom?.photo_url || selectedEquipment?.photo_url) ? (
                           <img 
                             src={selectedRoom?.photo_url || selectedEquipment?.photo_url || ''} 
-                            alt="Selected" 
+                            alt="Foto item terpilih" 
                             className="w-24 h-24 object-cover rounded-[10px]"
                           />
                         ) : (
@@ -647,16 +685,7 @@ export function AdminBookingForm() {
                             </>
                           )}
                           <p className="text-sm font-medium text-blue-600 mt-1">
-                            Tarif {(() => {
-                              const labels: Record<string, string> = {
-                                'mahasiswa_s1': '(Mahasiswa S1)',
-                                'mahasiswa_s2': '(Mahasiswa S2/S3)',
-                                'dosen_karyawan': '(Dosen/Karyawan)',
-                                'umum': '(Umum)',
-                                'kerjasama': '(Kerjasama/MoU)',
-                              }
-                              return labels[watchMemberType] || ''
-                            })()}:
+                            Tarif ({getBorrowerCategoryLabel(watchBorrowerCategory)}):
                             {' '}Rp {(roomRate?.rate_per_day || equipmentRate?.rate_per_day || roomRate?.rate_per_hour || equipmentRate?.rate_per_hour || 0).toLocaleString('id-ID')}
                             /{(roomRate?.rate_per_day || equipmentRate?.rate_per_day) ? 'hari' : 'jam'}
                           </p>
@@ -699,16 +728,7 @@ export function AdminBookingForm() {
                 <p className="text-sm text-blue-600">
                   Estimasi Total 
                   <span className="ml-1 text-xs">
-                    {(() => {
-                      const labels: Record<string, string> = {
-                        'mahasiswa_s1': '(Mahasiswa S1)',
-                        'mahasiswa_s2': '(Mahasiswa S2/S3)',
-                        'dosen_karyawan': '(Dosen/Karyawan)',
-                        'umum': '(Umum)',
-                        'kerjasama': '(Kerjasama/MoU)',
-                      }
-                      return labels[watchMemberType] || ''
-                    })()}
+                    ({getBorrowerCategoryLabel(watchBorrowerCategory)})
                   </span>
                 </p>
                 <p className="text-3xl font-bold text-blue-900">

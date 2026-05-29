@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { BookingForm } from './BookingForm'
+import { type BorrowerCategory, migrateBorrowerCategory } from '@/lib/categories'
 
 export type RoomItem = {
   id: string
@@ -22,7 +23,6 @@ export type EquipmentItem = {
   current_condition: string
   merk: string | null
   photo_url: string | null
-  // Rates will be fetched separately based on user category
   rates: Array<{
     user_category: string
     rate_per_day: number
@@ -33,20 +33,12 @@ export type EquipmentItem = {
 
 export type BookableItem = RoomItem | EquipmentItem
 
-import { mapUserToRateCategory } from './shared'
-
-// User borrower_category from users table
-export type UserBorrowerCategory = 'mahasiswa' | 'pascasarjana' | 'dosen_karyawan' | 'kerjasama' | 'umum'
-
-// Equipment rates category
-export type RateCategory = 'mahasiswa_s1' | 'mahasiswa_s2' | 'dosen' | 'mou_unesa' | 'umum'
-
 export type UserProfile = {
   id: string
   name: string
   institution: string
   class_division: string
-  borrower_category: UserBorrowerCategory | null
+  borrower_category: BorrowerCategory | null
 }
 
 export default async function NewBookingPage() {
@@ -65,8 +57,7 @@ export default async function NewBookingPage() {
     .eq('id', user.id)
     .single() as { data: UserProfile | null }
 
-  const borrowerCategory: UserBorrowerCategory = profile?.borrower_category ?? 'mahasiswa'
-  const rateCategory = mapUserToRateCategory(borrowerCategory)
+  const borrowerCategory: BorrowerCategory = migrateBorrowerCategory(profile?.borrower_category)
 
   // Fetch rooms with building info
   const { data: rooms } = await sb.from('rooms')
@@ -116,13 +107,12 @@ export default async function NewBookingPage() {
       photo_url: string | null
     }> | null }
 
-  // Fetch equipment rates for the user's category
+  // Fetch ALL equipment rates (let the form filter by category)
   const equipmentIds = equipment?.map(e => e.id) ?? []
   const { data: equipmentRates } = equipmentIds.length > 0
     ? await sb.from('equipment_rates')
         .select('equipment_id, user_category, rate_per_day, rate_per_hour, requires_supervision')
-        .in('equipment_id', equipmentIds)
-        .eq('user_category', rateCategory) as { data: Array<{
+        .in('equipment_id', equipmentIds) as { data: Array<{
           equipment_id: string
           user_category: string
           rate_per_day: number
@@ -145,8 +135,14 @@ export default async function NewBookingPage() {
     building_name: r.buildings?.name ?? null,
   }))
 
-  // Transform equipment with rates
-  const ratesMap = new Map(equipmentRates?.map(r => [r.equipment_id, r]))
+  // Transform equipment with ALL rates
+  type EqRate = { equipment_id: string; user_category: string; rate_per_day: number; rate_per_hour: number | null; requires_supervision: boolean }
+  const ratesByEquipment = new Map<string, EqRate[]>()
+  ;(equipmentRates ?? []).forEach((r: EqRate) => {
+    const existing = ratesByEquipment.get(r.equipment_id) ?? []
+    ratesByEquipment.set(r.equipment_id, [...existing, r])
+  })
+
   const equipmentItems: EquipmentItem[] = (equipment ?? []).map(e => ({
     id: e.id,
     name: e.name,
@@ -155,7 +151,7 @@ export default async function NewBookingPage() {
     current_condition: e.current_condition,
     merk: e.merk,
     photo_url: e.photo_url,
-    rates: ratesMap.get(e.id) ? [ratesMap.get(e.id)!] : [],
+    rates: ratesByEquipment.get(e.id) ?? [],
   }))
 
   const items: BookableItem[] = [...roomItems, ...equipmentItems]
@@ -168,9 +164,9 @@ export default async function NewBookingPage() {
           <p className="text-sm text-muted-foreground">Pilih ruangan atau alat yang ingin dipinjam</p>
         </div>
       </div>
-      <BookingForm 
-        items={items} 
-        profile={profile} 
+      <BookingForm
+        items={items}
+        profile={profile}
         borrowerCategory={borrowerCategory}
       />
     </div>

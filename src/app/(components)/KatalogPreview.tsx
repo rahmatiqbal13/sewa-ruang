@@ -43,7 +43,7 @@ function RoomCard({ room }: { room: PreviewRoom }) {
     <div className="group bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden hover:shadow-lg transition-all duration-300">
       {/* Photo */}
       <div className="h-48 bg-[#F3F4F6] flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2E4DA7]/5 to-[#2A52C9]/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0891B2]/5 to-[#06b6d4]/5" />
         {room.photo_url ? (
           <SafeImage
             src={room.photo_url}
@@ -59,10 +59,10 @@ function RoomCard({ room }: { room: PreviewRoom }) {
 
       {/* Content */}
       <div className="p-5">
-        <span suppressHydrationWarning className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full mb-3">
+        <span suppressHydrationWarning className="inline-block px-3 py-1 text-xs font-medium text-[#0891B2] bg-[#ecfeff] rounded-full mb-3">
           {room.room_code || 'Ruangan'}
         </span>
-        <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#2E4DA7] transition-colors">
+        <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#0891B2] transition-colors">
           {room.name}
         </h3>
         {room.capacity != null && (
@@ -70,7 +70,7 @@ function RoomCard({ room }: { room: PreviewRoom }) {
             Kapasitas: {room.capacity} orang
           </p>
         )}
-        <p suppressHydrationWarning className="text-[#2E4DA7] font-semibold">
+        <p suppressHydrationWarning className="text-[#0891B2] font-semibold">
           {room.rate_per_day != null && room.rate_per_day > 0
             ? `${formatRupiah(room.rate_per_day)}/hari`
             : 'Tarif belum diatur'
@@ -86,7 +86,7 @@ function EquipmentCard({ item }: { item: PreviewEquipment }) {
     <div className="group bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden hover:shadow-lg transition-all duration-300">
       {/* Photo */}
       <div className="h-48 bg-[#F3F4F6] flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2E4DA7]/5 to-[#2A52C9]/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0891B2]/5 to-[#06b6d4]/5" />
         {item.photo_url ? (
           <SafeImage
             src={item.photo_url}
@@ -102,13 +102,13 @@ function EquipmentCard({ item }: { item: PreviewEquipment }) {
 
       {/* Content */}
       <div className="p-5">
-        <span className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full mb-3">
+        <span className="inline-block px-3 py-1 text-xs font-medium text-[#0891B2] bg-[#ecfeff] rounded-full mb-3">
           {CATEGORY_LABELS[item.category ?? ''] || item.category || 'Peralatan'}
         </span>
-        <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#2E4DA7] transition-colors">
+        <h3 className="text-lg font-semibold text-[#111827] mb-2 group-hover:text-[#0891B2] transition-colors">
           {item.name}
         </h3>
-        <p className="text-[#2E4DA7] font-semibold">
+        <p className="text-[#0891B2] font-semibold">
           {item.rate_per_day != null && item.rate_per_day > 0
             ? `${formatRupiah(item.rate_per_day)}/hari`
             : 'Tarif belum diatur'
@@ -135,7 +135,7 @@ export function KatalogPreview({ rooms, equipment }: KatalogPreviewProps) {
             onClick={() => setActiveTab('ruangan')}
             className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all ${
               activeTab === 'ruangan'
-                ? 'bg-white text-[#2E4DA7] shadow-sm'
+                ? 'bg-white text-[#0891B2] shadow-sm'
                 : 'text-[#6B7280] hover:text-[#374151]'
             }`}
           >
@@ -148,7 +148,7 @@ export function KatalogPreview({ rooms, equipment }: KatalogPreviewProps) {
             onClick={() => setActiveTab('peralatan')}
             className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all ${
               activeTab === 'peralatan'
-                ? 'bg-white text-[#2E4DA7] shadow-sm'
+                ? 'bg-white text-[#0891B2] shadow-sm'
                 : 'text-[#6B7280] hover:text-[#374151]'
             }`}
           >
@@ -182,7 +182,7 @@ export function KatalogPreview({ rooms, equipment }: KatalogPreviewProps) {
       <div className="text-center">
         <Link
           href="/catalog"
-          className="inline-flex items-center gap-2 text-[#2E4DA7] font-medium hover:gap-3 transition-all"
+          className="inline-flex items-center gap-2 text-[#0891B2] font-medium hover:gap-3 transition-all"
         >
           Lihat Semua Katalog
           <ArrowRight className="h-4 w-4" />

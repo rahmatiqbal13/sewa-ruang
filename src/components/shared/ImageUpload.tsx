@@ -148,7 +148,7 @@ export function ImageUpload({ value, onChange, bucket = 'equipment-photos', fold
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={preview}
-            alt="Preview"
+            alt="Pratinjau gambar"
             className="object-contain w-full h-full p-2"
             onError={() => setPreview('')}
           />

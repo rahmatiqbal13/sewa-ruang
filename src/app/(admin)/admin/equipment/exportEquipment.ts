@@ -1,5 +1,7 @@
 'use client'
 
+import { getBorrowerCategoryLabel } from '@/lib/categories'
+
 // Reuse the existing types and labels from exportEquipment.ts
 const CATEGORY_LABELS: Record<string, string> = {
   elektronik: 'Elektronik',
@@ -29,14 +31,6 @@ const STATUS_TINDAKAN_LABELS: Record<string, string> = {
   perawatan: 'Perawatan',
   menunggu_part: 'Menunggu Part',
   afkir: 'Afkir',
-}
-
-const USER_CATEGORY_LABELS: Record<string, string> = {
-  mahasiswa_s1: 'Mahasiswa S1',
-  mahasiswa_s2: 'Mahasiswa S2/Pasca',
-  dosen: 'Dosen',
-  mou_unesa: 'MoU Unesa',
-  umum: 'Umum',
 }
 
 interface Equipment {

@@ -51,7 +51,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel — 40% on desktop */}
-      <div className="hidden lg:flex lg:w-[40%] flex-col shrink-0 relative overflow-hidden bg-gradient-to-br from-[#2E4DA7] to-[#2A52C9]">
+      <div className="hidden lg:flex lg:w-[40%] flex-col shrink-0 relative overflow-hidden bg-gradient-to-br from-[#0891B2] to-[#06b6d4]">
         {/* Geometric pattern overlay */}
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/5 rounded-full -translate-x-1/4 translate-y-1/4" />
         <div className="absolute top-1/2 right-0 w-48 h-48 bg-white/5 rounded-full translate-x-1/3" />
@@ -101,8 +101,8 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6 bg-white">
         <div className="w-full max-w-[420px]">
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2.5 font-bold text-[#2E4DA7] mb-10 justify-center">
-            <div className="h-9 w-9 rounded-[10px] flex items-center justify-center bg-[#2E4DA7]">
+          <div className="lg:hidden flex items-center gap-2.5 font-bold text-[#0891B2] mb-10 justify-center">
+            <div className="h-9 w-9 rounded-[10px] flex items-center justify-center bg-[#0891B2]">
               <Building2 className="h-4 w-4 text-white" />
             </div>
             <span className="text-base">Sewa Ruang & Alat USC</span>
@@ -149,7 +149,7 @@ export default function LoginPage() {
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-[#2E4DA7] hover:underline"
+                  className="text-sm text-[#0891B2] hover:underline"
                 >
                   Lupa Password?
                 </Link>
@@ -183,7 +183,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 text-sm font-semibold rounded-lg bg-[#2E4DA7] hover:bg-[#0F2A6B] text-white"
+              className="w-full h-11 text-sm font-semibold rounded-lg bg-[#0891B2] hover:bg-[#0F2A6B] text-white"
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -202,7 +202,7 @@ export default function LoginPage() {
               Belum punya akun?{' '}
               <Link
                 href="/register"
-                className="font-semibold text-[#2E4DA7] hover:underline"
+                className="font-semibold text-[#0891B2] hover:underline"
               >
                 Daftar Sekarang
               </Link>

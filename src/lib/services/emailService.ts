@@ -86,7 +86,7 @@ class EmailService {
       subject: `Konfirmasi Peminjaman - ${booking.reference_no}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #2563eb;">Konfirmasi Peminjaman</h2>
+          <h2 style="color: #0891B2;">Konfirmasi Peminjaman</h2>
           <p>Halo <strong>${booking.users?.name}</strong>,</p>
           <p>Terima kasih telah mengajukan peminjaman di RentSpace.</p>
           
@@ -129,7 +129,7 @@ class EmailService {
             </table>
           </div>
           
-          <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+          <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border-left: 4px solid #0891B2;">
             <strong>Langkah Selanjutnya:</strong>
             <ol style="margin: 10px 0; padding-left: 20px;">
               <li>Lakukan pembayaran sesuai total tagihan</li>

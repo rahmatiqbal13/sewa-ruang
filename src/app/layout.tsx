@@ -4,8 +4,6 @@ import "./globals.css";
 import { QueryProvider } from "@/components/layouts/QueryProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { createClient } from "@supabase/supabase-js";
-import { PWAProvider } from "@/components/providers/PWAProvider";
-import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OnlineStatus } from "@/components/pwa/OnlineStatus";
 
 const dmSans = DM_Sans({
@@ -106,7 +104,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",
       "application-name": institution?.short_name || "Sewa Ruang",
-      "msapplication-TileColor": "#2E4DA7",
+      "msapplication-TileColor": "#0891B2",
       "msapplication-config": "/icons/browserconfig.xml",
     },
   };
@@ -121,29 +119,26 @@ export default function RootLayout({
     <html lang="id" className={`${dmSans.variable} ${dmMono.variable} h-full antialiased`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2E4DA7" />
+        <meta name="theme-color" content="#0891B2" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans">
-        <PWAProvider>
-          <QueryProvider>
-            <OnlineStatus />
-            {children}
-            <InstallPrompt />
-            <div aria-live="polite" aria-atomic="false">
-              <Toaster 
-                richColors 
-                closeButton 
-                position="top-right"
-                toastOptions={{
-                  style: {
-                    fontFamily: "'DM Sans', system-ui, sans-serif",
-                  },
-                }}
-              />
-            </div>
-          </QueryProvider>
-        </PWAProvider>
+        <QueryProvider>
+          <OnlineStatus />
+          {children}
+          <div aria-live="polite" aria-atomic="false">
+            <Toaster
+              richColors
+              closeButton
+              position="top-right"
+              toastOptions={{
+                style: {
+                  fontFamily: "'DM Sans', system-ui, sans-serif",
+                },
+              }}
+            />
+          </div>
+        </QueryProvider>
       </body>
     </html>
   );

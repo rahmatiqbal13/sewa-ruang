@@ -18,7 +18,8 @@ import { cn } from '@/lib/utils'
 import { PhotoUpload } from '@/components/shared/PhotoUpload'
 import Link from 'next/link'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { EquipmentRatesForm, Rate, CATEGORIES } from './EquipmentRatesForm'
+import { EquipmentRatesForm, Rate } from './EquipmentRatesForm'
+import { BORROWER_CATEGORIES } from '@/lib/categories'
 
 // Kategori alat
 const EQUIPMENT_CATEGORIES = [
@@ -631,7 +632,7 @@ export function EquipmentForm({
           <CardContent>
             <EquipmentRatesForm 
               initialRates={equipment ? 
-                CATEGORIES.map(cat => ({
+                BORROWER_CATEGORIES.map(cat => ({
                   user_category: cat.key,
                   rate_per_day: 0,
                   rate_per_hour: null,

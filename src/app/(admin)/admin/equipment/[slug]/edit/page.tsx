@@ -14,6 +14,7 @@ import { EquipmentImageUpload } from '../../EquipmentImageUpload'
 import { EquipmentRatesForm } from '../../EquipmentRatesForm'
 import { RoomSelect } from '../../RoomSelect'
 import { LocationSelect } from '../../LocationSelect'
+import { BORROWER_CATEGORIES } from '@/lib/categories'
 
 const EQUIPMENT_CATEGORIES = [
   { value: 'elektronik', label: 'Elektronik' },
@@ -215,7 +216,7 @@ export default async function EditEquipmentPage({ params }: Props) {
 
     // Update equipment rates — gunakan adminDb (service role langsung) untuk bypass RLS
     const adminDb = createAdminDbClient()
-    const userCategories = ['mahasiswa_s1', 'mahasiswa_s2', 'dosen', 'mou_unesa', 'umum']
+    const userCategories = BORROWER_CATEGORIES.map(c => c.key)
 
     for (const cat of userCategories) {
       const dayValue = formData.get(`${cat}_day`) as string

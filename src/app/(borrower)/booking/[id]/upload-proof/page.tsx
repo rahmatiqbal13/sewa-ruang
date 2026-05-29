@@ -179,7 +179,7 @@ export default function UploadProofPage() {
                   <div className="relative">
                     <img 
                       src={preview || ''} 
-                      alt="Preview" 
+                      alt="Pratinjau bukti pembayaran" 
                       className="w-full h-64 object-contain bg-muted rounded-[10px]"
                     />
                     <button

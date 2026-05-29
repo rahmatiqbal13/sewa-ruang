@@ -30,7 +30,7 @@ export function AddUserDialog() {
   function resetForm() {
     setForm({
       name: '', email: '', password: '', role: 'borrower',
-      phone: '', borrower_category: 'mahasiswa', institution: '', class_division: '',
+    phone: '', borrower_category: 'mahasiswa_s1', institution: '', class_division: '',
       identity_number: '', telegram_username: '',
     })
     setError(null)
@@ -167,10 +167,10 @@ export function AddUserDialog() {
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mahasiswa">Mahasiswa</SelectItem>
-                  <SelectItem value="pascasarjana">Mahasiswa Pascasarjana</SelectItem>
-                  <SelectItem value="dosen_karyawan">Dosen / Karyawan</SelectItem>
-                  <SelectItem value="kerjasama">Kerjasama</SelectItem>
+                  <SelectItem value="mahasiswa_s1">Mahasiswa S1</SelectItem>
+                  <SelectItem value="mahasiswa_s2">Mahasiswa S2/S3</SelectItem>
+                  <SelectItem value="dosen">Dosen &amp; Karyawan</SelectItem>
+                  <SelectItem value="kerjasama">Kerjasama / MoU</SelectItem>
                   <SelectItem value="umum">Umum</SelectItem>
                 </SelectContent>
               </Select>

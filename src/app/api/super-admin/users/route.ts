@@ -96,7 +96,7 @@ export async function POST(req: Request) {
         name, 
         role,
         phone: phone || '',
-        borrower_category: borrower_category || 'mahasiswa',
+        borrower_category: borrower_category || 'mahasiswa_s1',
         institution: institution || '',
         class_division: class_division || '',
         identity_number: identity_number || '',
@@ -160,7 +160,7 @@ export async function POST(req: Request) {
           email: email.toLowerCase(),
           role: role || 'borrower',
           phone: phone || '',
-          borrower_category: borrower_category || 'mahasiswa',
+        borrower_category: borrower_category || 'mahasiswa_s1',
           institution: institution || '',
           class_division: class_division || '',
           identity_number: identity_number || '',
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
         .from('users') as any)
         .update({
           phone: phone || existingUser.phone || '',
-          borrower_category: borrower_category || existingUser.borrower_category || 'mahasiswa',
+          borrower_category: borrower_category || existingUser.borrower_category || 'mahasiswa_s1',
           institution: institution || existingUser.institution || '',
           class_division: class_division || existingUser.class_division || '',
           identity_number: identity_number || existingUser.identity_number || '',

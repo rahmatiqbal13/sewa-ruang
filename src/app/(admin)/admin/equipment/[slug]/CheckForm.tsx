@@ -58,7 +58,7 @@ export function CheckForm({ equipmentId, slug }: Props) {
                 name="condition"
                 value={c.value}
                 required
-                className="accent-[#2E4DA7]"
+                className="accent-[#0891B2]"
               />
               <span className="text-sm">{c.label}</span>
             </label>
@@ -74,7 +74,7 @@ export function CheckForm({ equipmentId, slug }: Props) {
           name="notes"
           rows={3}
           placeholder="Contoh: Baterai masih bagus, ada goresan kecil pada body..."
-          className="w-full rounded-[10px] border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20 resize-none"
+          className="w-full rounded-[10px] border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20 resize-none"
         />
       </div>
 
@@ -86,7 +86,7 @@ export function CheckForm({ equipmentId, slug }: Props) {
           type="text"
           name="checked_by_name"
           placeholder="Nama petugas pengecekan"
-          className="w-full h-10 rounded-[10px] border border-border bg-muted/50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
+          className="w-full h-10 rounded-[10px] border border-border bg-muted/50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
         />
       </div>
 
@@ -99,7 +99,7 @@ export function CheckForm({ equipmentId, slug }: Props) {
       <Button
         type="submit"
         disabled={loading}
-        className="w-full h-11 bg-[#2E4DA7] hover:bg-[#1e3a8a] text-white font-medium rounded-lg"
+        className="w-full h-11 bg-[#0891B2] hover:bg-[#0e7490] text-white font-medium rounded-lg"
       >
         <ClipboardCheck className="h-4 w-4 mr-2" />
         {loading ? 'Menyimpan...' : 'Catat Pengecekan'}

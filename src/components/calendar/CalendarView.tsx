@@ -48,28 +48,57 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
       const startDate = format(startOfMonth(currentDate), 'yyyy-MM-dd')
       const endDate = format(endOfMonth(currentDate), 'yyyy-MM-dd')
 
-      let query = supabase
-        .from(roomId ? 'room_booking_slots' : 'equipment_booking_slots')
-        .select('*')
-        .gte('booking_date', startDate)
-        .lte('booking_date', endDate)
-
-      if (roomId) {
-        query = query.eq('room_id', roomId)
-      } else if (equipmentId) {
-        query = query.eq('equipment_id', equipmentId)
-      }
-
-      const { data, error } = await query
+      // Query bookings through booking_items (reliable — doesn't depend on slot tables)
+      const targetId = roomId || equipmentId || ''
+      const { data: items, error } = await supabase
+        .from('booking_items')
+        .select(`
+          booking_id,
+          bookings!booking_id(id, start_datetime, end_datetime, status)
+        `)
+        .eq(roomId ? 'room_id' : 'equipment_id', targetId)
+        .eq('item_type', roomId ? 'room' : 'equipment')
+        .in('bookings.status', ['pending', 'approved', 'paid', 'active'])
+        .gte('bookings.start_datetime', `${startDate}T00:00:00`)
+        .lte('bookings.start_datetime', `${endDate}T23:59:59`)
 
       if (error) {
-        console.error('Error fetching slots:', error)
+        console.error('Error fetching bookings:', error)
+        setSlots([])
         return
       }
 
-      setSlots(data || [])
+      // Generate slot data from bookings
+      const generatedSlots: BookingSlot[] = []
+      const slotMap = new Map<string, boolean>()
+
+      items?.forEach((item: any) => {
+        const booking = item.bookings
+        if (!booking) return
+
+        // Extract all dates between start and end
+        const start = new Date(booking.start_datetime)
+        const end = new Date(booking.end_datetime)
+        const days = eachDayOfInterval({ start, end })
+
+        days.forEach(day => {
+          const dateStr = format(day, 'yyyy-MM-dd')
+          if (!slotMap.has(dateStr)) {
+            slotMap.set(dateStr, true)
+            generatedSlots.push({
+              id: `${booking.id}-${dateStr}`,
+              booking_date: dateStr,
+              is_booked: true,
+              booking_id: booking.id,
+            })
+          }
+        })
+      })
+
+      setSlots(generatedSlots)
     } catch (error) {
       console.error('Error:', error)
+      setSlots([])
     } finally {
       setLoading(false)
     }

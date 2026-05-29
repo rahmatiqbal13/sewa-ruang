@@ -1,64 +1,39 @@
-# Sewa Ruang & Alat — Direktorat Olahraga Unesa
+# Sewa Ruang & Alat — Direktorat USC Unesa
 
-Sistem manajemen penyewaan ruangan dan alat/peralatan untuk universitas.
+Platform digital terpusat untuk manajemen peminjaman ruangan dan peralatan universitas.
 
-## Tech Stack
-
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Database**: PostgreSQL via Supabase
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Auth**: Supabase Auth
-
-## Fitur Utama
-
-- Manajemen ruangan & gedung (CRUD, inventaris, foto)
-- Manajemen alat/peralatan (CRUD, tarif per kategori pengguna, kondisi)
-- Sistem pemesanan (booking) untuk ruangan & alat
-- Pembayaran via QR + upload bukti transfer manual
-- Multi-role: super_admin, admin, borrower
-
-## Kategori Pengguna & Tarif
-
-Tarif sewa berbeda per kategori: Mahasiswa S1, Mahasiswa S2, Dosen, MoU Unesa, Umum.
-
-## Cara Menjalankan
+## Quick Start
 
 ```bash
 npm install
+cp .env.example .env.local   # isi environment variables
 npm run dev
 ```
 
-Buka [http://localhost:3000](http://localhost:3000).
+Buka `http://localhost:3000`.
 
-## Environment Variables
+## Tech Stack
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-```
-
-## Struktur Route
-
-| Route | Deskripsi |
-|-------|-----------|
-| `/admin/dashboard` | Dashboard admin |
-| `/admin/rooms` | Manajemen ruangan |
-| `/admin/equipment` | Manajemen alat |
-| `/admin/buildings` | Manajemen gedung |
-| `/admin/users` | Manajemen pengguna (super_admin only) |
-| `/admin/payments/verify` | Verifikasi pembayaran |
-| `/catalog` | Katalog publik |
+Next.js 16 · TypeScript · PostgreSQL (Supabase) · Tailwind CSS · shadcn/ui
 
 ## Dokumentasi
 
-- [CHANGELOG.md](CHANGELOG.md) — Riwayat perubahan
-- [claudefix_bug.md](claudefix_bug.md) — Daftar bug & solusi
-- [docs/QR_PAYMENT_GUIDE.md](docs/QR_PAYMENT_GUIDE.md) — Sistem pembayaran QR
-- [docs/USER_TROUBLESHOOTING.md](docs/USER_TROUBLESHOOTING.md) — Troubleshooting pembuatan user
-- [AGENTS.md](AGENTS.md) — Konteks sistem untuk AI agent
+Semua dokumentasi ada di folder [`docs/`](docs/):
+
+| Dokumen | Isi |
+|---------|-----|
+| [docs/INDEX.md](docs/INDEX.md) | **Mulai di sini** — ringkasan sistem, pola kritis, masalah aktif |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Tech stack, skema DB, struktur direktori, API routes |
+| [docs/PRODUCT.md](docs/PRODUCT.md) | Tujuan produk, pengguna, brand, prinsip desain |
+| [docs/SETUP.md](docs/SETUP.md) | Setup lokal, environment variables, deployment |
+| [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) | SOP penggunaan untuk admin dan staff |
+| [docs/FEATURES.md](docs/FEATURES.md) | QR payment, notifikasi, PWA, import/export |
+| [docs/QA_TESTING.md](docs/QA_TESTING.md) | Laporan QA dan functional testing |
+| [docs/SECURITY.md](docs/SECURITY.md) | Panduan keamanan dan incident history |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Solusi masalah umum |
+| [docs/BUG_HISTORY.md](docs/BUG_HISTORY.md) | Riwayat bug dan solusinya |
+| [CHANGELOG.md](CHANGELOG.md) | Riwayat perubahan versi |
 
 ## Deployment
 
-Deploy ke Vercel. Pastikan environment variables sudah diset di Vercel dashboard.
+Deploy ke Vercel. Lihat [docs/SETUP.md](docs/SETUP.md) untuk panduan lengkap.

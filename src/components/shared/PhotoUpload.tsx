@@ -211,7 +211,7 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
       {value && isValidUrl(value) ? (
         <div className={`relative w-full ${aspectRatioClass[aspectRatio]} rounded-[14px] overflow-hidden border border-border bg-muted flex items-center justify-center`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="Foto" className="object-contain w-full h-full p-3" />
+          <img src={value} alt="Foto yang diunggah" className="object-contain w-full h-full p-3" />
           <button
             type="button"
             onClick={handleRemove}

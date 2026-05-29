@@ -16,6 +16,7 @@ import {
   Clock3, AlertCircle
 } from 'lucide-react'
 import { ContactButtons } from '@/components/shared/ContactButtons'
+import { getBorrowerCategoryLabel, getEventTypeLabel, isFreeBooking, migrateBorrowerCategory } from '@/lib/categories'
 
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -26,7 +27,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     .select(`
       id, reference_no, status, start_datetime, end_datetime,
       total_amount, purpose, created_at, admin_notes, snapshot_rate,
-      users!user_id(id, name, email, phone, telegram_username, institution, class_division, role)
+      users!user_id(id, name, email, phone, telegram_username, institution, class_division, role, borrower_category)
     `)
     .eq('id', id)
     .single()
@@ -89,39 +90,156 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     .order('created_at', { ascending: false })
 
   const borrower = booking.users
-  
-  // Get borrower category from snapshot_rate or users table
+
+  // Get borrower category: users table is source of truth, fallback to snapshot_rate
   const snapshotRate = booking.snapshot_rate || {}
-  const borrowerCategory = (snapshotRate as any).borrower_category || 
-                          (snapshotRate as any).member_type || 
-                          'mahasiswa_s1'
-  
-  // Helper to check if booking is free (Mahasiswa S1 + Perkuliahan)
-  const isFreeBooking = (category: string, purpose: string): boolean => {
-    const isMahasiswaS1 = category === 'mahasiswa_s1'
-    const isForKuliah = purpose.toLowerCase().includes('kuliah') || 
-                        purpose.toLowerCase().includes('perkuliahan') ||
-                        purpose.toLowerCase().includes('mata kuliah') ||
-                        purpose.toLowerCase().includes('kuliah semester')
-    return isMahasiswaS1 && isForKuliah
-  }
-  
-  const isGratis = isFreeBooking(borrowerCategory, booking.purpose || '')
-  
+  const rawCategory = borrower?.borrower_category ||
+                      (snapshotRate as any).borrower_category ||
+                      (snapshotRate as any).member_type ||
+                      'mahasiswa_s1'
+  const borrowerCategory = migrateBorrowerCategory(rawCategory)
+
+  const eventType = booking.event_type || 'lainnya'
+  const isGratis = isFreeBooking(borrowerCategory, eventType, booking.purpose || '')
+
   // Calculate duration
   const startDate = new Date(booking.start_datetime)
   const endDate = new Date(booking.end_datetime)
   const durationMs = endDate.getTime() - startDate.getTime()
   const durationHours = Math.ceil(durationMs / (1000 * 60 * 60))
   const durationDays = Math.ceil(durationHours / 24)
-  
-  // Calculate price per item
+
+  // Reconstruct prices from snapshot_rate when total_amount is 0 but not gratis
+  const snapshotEquipment = ((snapshotRate as any).equipment || []) as Array<{ id: string; rate_per_day: number; quantity: number }>
+  const snapshotRooms = ((snapshotRate as any).rooms || []) as Array<{ id: string; name: string; rate_per_hour: number | null; rate_per_day: number | null }>
+  const snapshotHours = (snapshotRate as any).hours || durationHours
+  const snapshotDays = (snapshotRate as any).days || durationDays
+
+  let displayTotal = booking.total_amount
+  const hasZeroTotal = booking.total_amount === 0 || booking.total_amount == null
+  let currentRates: any[] = []
+  let currentRoomRates: any[] = []
+
+  if (hasZeroTotal && !isGratis) {
+    // Try to reconstruct total from snapshot_rate
+    let reconstructedTotal = 0
+    bookingItems.forEach((item: any) => {
+      if (item.item_type === 'equipment' && item.equipment_id) {
+        const snap = snapshotEquipment.find((e: any) => e.id === item.equipment_id)
+        const ratePerDay = snap?.rate_per_day ?? 0
+        reconstructedTotal += ratePerDay * snapshotDays * item.quantity
+      } else if (item.item_type === 'room' && item.room_id) {
+        const snap = snapshotRooms.find((r: any) => r.id === item.room_id)
+        const ratePerHour = snap?.rate_per_hour ?? 0
+        reconstructedTotal += ratePerHour * snapshotHours
+      }
+    })
+
+    // Fallback: if snapshot is incomplete, fetch current rates from DB
+    if (reconstructedTotal === 0) {
+      const eqIdsForFallback = bookingItems
+        .filter((item: any) => item.item_type === 'equipment' && item.equipment_id)
+        .map((item: any) => item.equipment_id)
+
+      if (eqIdsForFallback.length > 0) {
+        const { data: rates } = await (sb.from('equipment_rates') as any)
+          .select('equipment_id, rate_per_day')
+          .in('equipment_id', eqIdsForFallback)
+          .eq('user_category', borrowerCategory)
+
+        currentRates = rates || []
+        const ratesMap = new Map(currentRates.map((r: any) => [r.equipment_id, Number(r.rate_per_day)]))
+
+        bookingItems.forEach((item: any) => {
+          if (item.item_type === 'equipment' && item.equipment_id) {
+            const ratePerDay = ratesMap.get(item.equipment_id) ?? 0
+            reconstructedTotal += ratePerDay * durationDays * item.quantity
+          }
+        })
+      }
+
+      // Also try rooms fallback
+      const roomIdsForFallback = bookingItems
+        .filter((item: any) => item.item_type === 'room' && item.room_id)
+        .map((item: any) => item.room_id)
+
+      if (roomIdsForFallback.length > 0) {
+        const { data: rooms } = await (sb.from('rooms') as any)
+          .select('id, rate_per_hour, rate_per_day')
+          .in('id', roomIdsForFallback)
+
+        currentRoomRates = rooms || []
+        const roomRatesMap = new Map(currentRoomRates.map((r: any) => [r.id, r]))
+
+        bookingItems.forEach((item: any) => {
+          if (item.item_type === 'room' && item.room_id) {
+            const room = roomRatesMap.get(item.room_id)
+            if (room) {
+              if (durationHours > 12 && room.rate_per_day != null) {
+                reconstructedTotal += room.rate_per_day * durationDays
+              } else {
+                reconstructedTotal += (room.rate_per_hour ?? 0) * durationHours
+              }
+            }
+          }
+        })
+      }
+    }
+
+    displayTotal = reconstructedTotal
+  }
+
+  // Calculate price per item for display
   const bookingItemsWithPrice = bookingItems.map((item: any) => {
-    const itemTotal = booking.total_amount / bookingItems.length
+    let itemTotal = 0
+    let unitPrice = 0
+    let rateLabel = ''
+
+    if (hasZeroTotal && !isGratis) {
+      // Use snapshot_rate for pricing first
+      if (item.item_type === 'equipment' && item.equipment_id) {
+        const snap = snapshotEquipment.find((e: any) => e.id === item.equipment_id)
+        let ratePerDay = snap?.rate_per_day ?? 0
+        // Fallback to current DB rate if snapshot missing
+        if (ratePerDay === 0 && displayTotal > 0) {
+          const fallback = (currentRates || []).find((r: any) => r.equipment_id === item.equipment_id)
+          ratePerDay = fallback ? Number(fallback.rate_per_day) : 0
+        }
+        itemTotal = ratePerDay * snapshotDays * item.quantity
+        unitPrice = ratePerDay * snapshotDays
+        rateLabel = `${formatRupiah(ratePerDay)}/hari × ${snapshotDays} hari`
+      } else if (item.item_type === 'room' && item.room_id) {
+        const snap = snapshotRooms.find((r: any) => r.id === item.room_id)
+        let ratePerHour = snap?.rate_per_hour ?? 0
+        let ratePerDay = snap?.rate_per_day ?? null
+        // Fallback to current DB rate if snapshot missing
+        if (ratePerHour === 0 && displayTotal > 0) {
+          const fallback = (currentRoomRates || []).find((r: any) => r.id === item.room_id)
+          ratePerHour = fallback?.rate_per_hour ?? 0
+          ratePerDay = fallback?.rate_per_day ?? null
+        }
+        if (durationHours > 12 && ratePerDay != null) {
+          itemTotal = ratePerDay * durationDays
+          unitPrice = ratePerDay * durationDays
+          rateLabel = `${formatRupiah(ratePerDay)}/hari × ${durationDays} hari`
+        } else {
+          itemTotal = ratePerHour * snapshotHours
+          unitPrice = ratePerHour * snapshotHours
+          rateLabel = `${formatRupiah(ratePerHour)}/jam × ${snapshotHours} jam`
+        }
+      }
+    } else {
+      // Use total_amount split evenly
+      itemTotal = booking.total_amount / bookingItems.length
+      unitPrice = itemTotal / item.quantity
+      rateLabel = `${formatRupiah(unitPrice)} / unit`
+    }
+
     return {
       ...item,
-      unitPrice: itemTotal / item.quantity,
-      itemTotal: itemTotal
+      unitPrice,
+      itemTotal,
+      rateLabel
     }
   })
 
@@ -149,7 +267,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-xl md:text-2xl font-semibold text-[#111827]">Detail Peminjaman</h1>
-              <span className="font-mono text-sm text-[#2E4DA7] bg-[#2E4DA7]/10 px-2.5 py-1 rounded-full">
+              <span className="font-mono text-sm text-[#0891B2] bg-[#0891B2]/10 px-2.5 py-1 rounded-full">
                 {booking.reference_no}
               </span>
             </div>
@@ -171,7 +289,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
               <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
-                <User className="h-4 w-4 text-[#2E4DA7]" />
+                <User className="h-4 w-4 text-[#0891B2]" />
                 Data Peminjam
               </CardTitle>
             </CardHeader>
@@ -179,7 +297,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               <div className="flex flex-col sm:flex-row sm:items-start gap-5">
                 {/* Avatar */}
                 <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 bg-[#2E4DA7] rounded-full flex items-center justify-center text-white text-xl font-bold shadow-soft">
+                  <div className="h-16 w-16 bg-[#0891B2] rounded-full flex items-center justify-center text-white text-xl font-bold shadow-soft">
                     {borrower?.name?.charAt(0).toUpperCase()}
                   </div>
                   <div className="sm:hidden">
@@ -198,9 +316,12 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                   </div>
                   <div>
                     <p className="text-xs text-[#6B7280] mb-1">Kategori</p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[#2E4DA7] border-[#2E4DA7]/30">
-                        {borrower?.role || 'Mahasiswa'}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[#0891B2] border-[#0891B2]/30">
+                        {getBorrowerCategoryLabel(borrowerCategory)}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {getEventTypeLabel(eventType)}
                       </Badge>
                       {isGratis && (
                         <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
@@ -267,7 +388,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
               <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
-                <Package className="h-4 w-4 text-[#2E4DA7]" />
+                <Package className="h-4 w-4 text-[#0891B2]" />
                 Ruang &amp; Alat yang Dipinjam
               </CardTitle>
             </CardHeader>
@@ -280,7 +401,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <span className="h-8 w-8 bg-[#2E4DA7]/10 rounded-full flex items-center justify-center text-sm font-semibold text-[#2E4DA7] flex-shrink-0">
+                        <span className="h-8 w-8 bg-[#0891B2]/10 rounded-full flex items-center justify-center text-sm font-semibold text-[#0891B2] flex-shrink-0">
                           {index + 1}
                         </span>
                         <div>
@@ -316,10 +437,16 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-[#111827]">
-                          {formatRupiah(item.itemTotal)}
+                          {item.itemTotal === 0 ? (
+                            isGratis ? <span className="text-emerald-600">Gratis</span> : <span className="text-amber-600">Tarif tidak tersedia</span>
+                          ) : formatRupiah(item.itemTotal)}
                         </p>
                         <p className="text-xs text-[#6B7280]">
-                          {formatRupiah(item.unitPrice)} / unit
+                          {item.rateLabel ? item.rateLabel : (
+                            item.unitPrice === 0 ? (
+                              isGratis ? 'Gratis / unit' : 'Tarif tidak tersedia / unit'
+                            ) : `${formatRupiah(item.unitPrice)} / unit`
+                          )}
                         </p>
                       </div>
                     </div>
@@ -352,7 +479,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
               <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
-                <CreditCard className="h-4 w-4 text-[#2E4DA7]" />
+                <CreditCard className="h-4 w-4 text-[#0891B2]" />
                 Pembayaran
               </CardTitle>
             </CardHeader>
@@ -411,8 +538,18 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                   <Separator />
                   <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-[10px]">
                     <span className="text-[#6B7280]">Total Tagihan</span>
-                    <span className="font-semibold text-[#111827]">{formatRupiah(booking.total_amount)}</span>
+                    <span className="font-semibold text-[#111827]">
+                      {displayTotal === 0 ? (
+                        isGratis ? <span className="text-emerald-600">Gratis</span> : <span className="text-amber-600">Tarif tidak tersedia</span>
+                      ) : formatRupiah(displayTotal)}
+                    </span>
                   </div>
+                  {hasZeroTotal && !isGratis && displayTotal > 0 && (
+                    <div className="p-3 bg-amber-50 rounded-[10px] text-xs text-amber-700">
+                      <p><strong>Perhatian:</strong> Total asli di database adalah Rp 0, kemungkinan karena tarif tidak tersedia saat peminjaman dibuat.</p>
+                      <p>Nominal di atas dihitung ulang dari data tarif saat ini: {formatRupiah(displayTotal)}</p>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-[10px]">
                     <span className="text-[#6B7280]">Sudah Dibayar</span>
                     <span className="font-semibold text-green-600">
@@ -424,9 +561,9 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                   <div className="flex items-center justify-between p-3 bg-amber-50 rounded-[10px]">
                     <span className="text-amber-800 font-medium">Sisa Pembayaran</span>
                     <span className="font-bold text-amber-800">
-                      {formatRupiah(booking.total_amount - (payments || [])
+                      {formatRupiah(Math.max(0, displayTotal - (payments || [])
                         .filter((p: any) => p.status === 'paid')
-                        .reduce((sum: number, p: any) => sum + p.amount, 0))}
+                        .reduce((sum: number, p: any) => sum + p.amount, 0)))}
                     </span>
                   </div>
                 </div>
@@ -443,7 +580,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
               <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
-                <Clock className="h-4 w-4 text-[#2E4DA7]" />
+                <Clock className="h-4 w-4 text-[#0891B2]" />
                 Status Timeline
               </CardTitle>
             </CardHeader>
@@ -464,7 +601,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                       {/* Icon */}
                       <div className={cn(
                         'relative z-10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0',
-                        isActive ? 'bg-[#2E4DA7] text-white' : 'bg-[#F3F4F6] text-[#9CA3AF]'
+                        isActive ? 'bg-[#0891B2] text-white' : 'bg-[#F3F4F6] text-[#9CA3AF]'
                       )}>
                         <StepIcon className="h-5 w-5" />
                       </div>
@@ -476,7 +613,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                       )}>
                         <p className={cn(
                           'font-medium',
-                          isCurrent ? 'text-[#2E4DA7]' : 'text-[#111827]'
+                          isCurrent ? 'text-[#0891B2]' : 'text-[#111827]'
                         )}>
                           {step.label}
                         </p>
@@ -613,7 +750,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                     href={`/api/bookings/${id}/formulir`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-1.5 h-10 rounded-[10px] bg-[#2E4DA7]/10 text-[#2E4DA7] hover:bg-[#2E4DA7]/20 transition-colors text-sm font-medium"
+                    className="inline-flex items-center justify-center gap-1.5 h-10 rounded-[10px] bg-[#0891B2]/10 text-[#0891B2] hover:bg-[#0891B2]/20 transition-colors text-sm font-medium"
                   >
                     <Download className="h-4 w-4" />
                     <span className="hidden sm:inline">PDF</span>
@@ -627,7 +764,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#6B7280]">No. Referensi</span>
-                  <span className="font-mono text-[#2E4DA7] font-medium">{booking.reference_no}</span>
+                  <span className="font-mono text-[#0891B2] font-medium">{booking.reference_no}</span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between text-sm">

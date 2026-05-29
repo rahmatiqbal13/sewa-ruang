@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
+import { CreditFooter } from '@/components/shared/CreditFooter'
 import {
   Building2,
   CalendarDays,
@@ -182,7 +183,7 @@ export default async function HomePage() {
 
       <main className="pt-16">
         {/* 2. HERO */}
-        <section className="relative bg-gradient-to-br from-[#2E4DA7] to-[#2A52C9]">
+        <section className="relative bg-gradient-to-br from-[#0891B2] to-[#06b6d4]">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 lg:py-16">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               {/* Left Content */}
@@ -208,7 +209,7 @@ export default async function HomePage() {
                 <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8">
                   <Link
                     href="/catalog"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white text-[#2E4DA7] font-semibold rounded-xl hover:bg-white/90 transition-all shadow-lg shadow-black/10"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white text-[#0891B2] font-semibold rounded-xl hover:bg-white/90 transition-all shadow-lg shadow-black/10"
                   >
                     Jelajahi Katalog
                     <ArrowRight className="h-4 w-4" />
@@ -389,7 +390,7 @@ export default async function HomePage() {
         </section>
 
         {/* 6. KATEGORI PEMINJAM */}
-        <section className="py-20 bg-[#EFF3FF]">
+        <section className="py-20 bg-[#ecfeff]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             {/* Title */}
             <div className="text-center mb-12">
@@ -424,7 +425,7 @@ export default async function HomePage() {
         {/* 7. CTA BANNER */}
         <section className="py-8 px-4 md:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="relative rounded-2xl bg-gradient-to-br from-[#2E4DA7] to-[#2A52C9] overflow-hidden">
+            <div className="relative rounded-2xl bg-gradient-to-br from-[#0891B2] to-[#06b6d4] overflow-hidden">
               {/* Background Pattern */}
               <div className="absolute inset-0 opacity-10">
                 <div
@@ -445,7 +446,7 @@ export default async function HomePage() {
                 </p>
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#2E4DA7] font-semibold rounded-xl hover:bg-white/90 transition-colors shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#0891B2] font-semibold rounded-xl hover:bg-white/90 transition-colors shadow-lg"
                 >
                   Mulai Sekarang
                   <ArrowRight className="h-4 w-4" />
@@ -463,7 +464,7 @@ export default async function HomePage() {
             {/* Tentang USC */}
             <div>
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-[#2E4DA7] rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#0891B2] rounded-lg flex items-center justify-center">
                   <Building2 className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -552,6 +553,7 @@ export default async function HomePage() {
               </a>
             )}
           </div>
+          <CreditFooter />
         </div>
       </footer>
     </div>

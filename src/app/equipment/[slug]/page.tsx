@@ -1,9 +1,11 @@
 import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { CreditFooter } from '@/components/shared/CreditFooter'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { CalendarView } from '@/components/calendar/CalendarView'
 import {
   Package,
   ArrowLeft,
@@ -11,9 +13,11 @@ import {
   CalendarDays,
   ClipboardCheck,
   Clock,
+  List,
 } from 'lucide-react'
-import { formatRupiah, cn } from '@/lib/utils'
+import { formatDateTime, formatRupiah, cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
+import { getBorrowerCategoryLabel } from '@/lib/categories'
 
 export const revalidate = 30
 
@@ -25,14 +29,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   alat_gym: 'Alat Gym',
   perlengkapan: 'Perlengkapan',
   lainnya: 'Lainnya',
-}
-
-const USER_CATEGORY_LABELS: Record<string, string> = {
-  mahasiswa_s1: 'Mahasiswa S1',
-  mahasiswa_s2: 'Mahasiswa S2/S3',
-  dosen: 'Dosen/Karyawan',
-  mou_unesa: 'Kerjasama',
-  umum: 'Umum',
 }
 
 const CONDITION_CONFIG: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
@@ -71,7 +67,7 @@ interface Equipment {
 }
 
 function toNumber(v: number | string | null | undefined): number | null {
-  if (v == null) return null
+  if (v == null || v === '') return null
   const n = typeof v === 'number' ? v : Number(v)
   return isNaN(n) ? null : n
 }
@@ -178,6 +174,22 @@ export default async function EquipmentDetailPage({
   const isAvailable =
     (!equipment.ketersediaan || equipment.ketersediaan === 'tersedia') && !hasActiveBooking
 
+  // Fetch upcoming bookings for this equipment (jadwal)
+  const { data: scheduleItems } = await adminDb
+    .from('booking_items')
+    .select('booking_id, bookings!booking_id(id, reference_no, start_datetime, end_datetime, status, purpose)')
+    .eq('equipment_id', id)
+    .eq('item_type', 'equipment') as { data: Array<{ booking_id: string; bookings: { id: string; reference_no: string; start_datetime: string; end_datetime: string; status: string; purpose: string | null } | null }> | null }
+
+  const upcomingBookings = scheduleItems
+    ?.filter(item => {
+      const b = item.bookings
+      return b && ['pending', 'approved', 'paid', 'active'].includes(b.status) && b.end_datetime >= now
+    })
+    ?.map(item => item.bookings!)
+    ?.sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
+    ?.slice(0, 10) ?? []
+
   const hasRates =
     equipment.equipment_rates && equipment.equipment_rates.length > 0
 
@@ -195,7 +207,7 @@ export default async function EquipmentDetailPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link
             href="/catalog"
-            className="inline-flex items-center gap-2 text-[#374151] hover:text-[#2E4DA7] transition-colors text-sm font-medium"
+            className="inline-flex items-center gap-2 text-[#374151] hover:text-[#0891B2] transition-colors text-sm font-medium"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali ke Katalog
@@ -227,7 +239,7 @@ export default async function EquipmentDetailPage({
           {/* Details */}
           <div>
             <div className="mb-4">
-              <span className="inline-block px-3 py-1 text-xs font-medium text-[#2E4DA7] bg-[#EFF3FF] rounded-full">
+              <span className="inline-block px-3 py-1 text-xs font-medium text-[#0891B2] bg-[#ecfeff] rounded-full">
                 {CATEGORY_LABELS[equipment.category ?? ''] || equipment.category || 'Peralatan'}
               </span>
             </div>
@@ -278,7 +290,7 @@ export default async function EquipmentDetailPage({
                       >
                         <div>
                           <p className="font-medium text-[#111827]">
-                            {USER_CATEGORY_LABELS[rate.user_category] || rate.user_category}
+                            {getBorrowerCategoryLabel(rate.user_category)}
                           </p>
                           {rate.requires_supervision && (
                             <p className="text-xs text-amber-600">
@@ -287,14 +299,25 @@ export default async function EquipmentDetailPage({
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-[#2E4DA7]">
-                            {formatRupiah(toNumber(rate.rate_per_day) ?? 0)}/hari
-                          </p>
-                          {toNumber(rate.rate_per_hour) != null && (
-                            <p className="text-xs text-[#6B7280]">
-                              {formatRupiah(toNumber(rate.rate_per_hour) ?? 0)}/jam
-                            </p>
-                          )}
+                          {(() => {
+                            const dayRate = toNumber(rate.rate_per_day)
+                            if (dayRate == null) return <p className="text-sm text-[#9CA3AF]">Tarif belum diatur</p>
+                            if (dayRate === 0) return <p className="font-semibold text-emerald-600">Gratis</p>
+                            return (
+                              <p className="font-semibold text-[#0891B2]">
+                                {formatRupiah(dayRate)}/hari
+                              </p>
+                            )
+                          })()}
+                          {(() => {
+                            const hourRate = toNumber(rate.rate_per_hour)
+                            if (hourRate == null || hourRate === 0) return null
+                            return (
+                              <p className="text-xs text-[#6B7280]">
+                                {formatRupiah(hourRate)}/jam
+                              </p>
+                            )
+                          })()}
                         </div>
                       </div>
                     ))}
@@ -384,7 +407,7 @@ export default async function EquipmentDetailPage({
             {/* CTA */}
             <div className="flex gap-3">
               <Link href="/login" className="flex-1">
-                <Button className="w-full h-11 bg-[#2E4DA7] hover:bg-[#1e3a8a] text-white font-semibold rounded-lg">
+                <Button className="w-full h-11 bg-[#0891B2] hover:bg-[#0e7490] text-white font-semibold rounded-lg">
                   <CalendarDays className="h-4 w-4 mr-2" />
                   Ajukan Peminjaman
                 </Button>
@@ -392,7 +415,57 @@ export default async function EquipmentDetailPage({
             </div>
           </div>
         </div>
+
+        {/* ─── Jadwal Peminjaman ───────────────────────────── */}
+        <section id="jadwal" className="mt-12 scroll-mt-20">
+          <Card className="border border-[#E5E7EB] rounded-[14px] shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <List className="h-5 w-5 text-[#0891B2]" />
+                <h3 className="font-bold text-[#111827] text-lg">Jadwal Peminjaman</h3>
+              </div>
+
+              {upcomingBookings.length > 0 ? (
+                <div className="space-y-2">
+                  {upcomingBookings.map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-[10px] border border-[#E5E7EB]"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-[#111827]">
+                          {formatDateTime(booking.start_datetime)} — {formatDateTime(booking.end_datetime)}
+                        </p>
+                        <p className="text-xs text-[#6B7280] mt-0.5">
+                          Terbooking
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CalendarDays className="h-10 w-10 text-[#D1D5DB] mx-auto mb-3" />
+                  <p className="text-sm text-[#6B7280]">Belum ada jadwal peminjaman mendatang</p>
+                  <p className="text-xs text-[#9CA3AF] mt-1">Alat ini tersedia untuk dipinjam</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── Kalender Ketersediaan ───────────────────────── */}
+        <section id="kalender" className="mt-8 scroll-mt-20">
+          <CalendarView
+            equipmentId={id}
+            compact
+            title="Kalender Ketersediaan"
+            className="border border-[#E5E7EB] rounded-[14px] shadow-sm bg-white"
+          />
+        </section>
       </main>
+      <CreditFooter />
     </div>
   )
 }

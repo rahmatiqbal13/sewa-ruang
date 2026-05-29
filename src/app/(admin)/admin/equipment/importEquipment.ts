@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { BORROWER_CATEGORIES } from '@/lib/categories'
 
 export interface ImportResult {
   success: boolean
@@ -423,7 +424,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
               supervision: colIndices.tarif_dosen_supervision
             },
             { 
-              category: 'mou_unesa', 
+              category: 'kerjasama', 
               day: colIndices.tarif_mou_day, 
               hour: colIndices.tarif_mou_hour,
               supervision: colIndices.tarif_mou_supervision

@@ -19,6 +19,7 @@ import {
   ChevronUp
 } from 'lucide-react'
 import { cn, formatRupiah } from '@/lib/utils'
+import { BORROWER_CATEGORIES, getBorrowerCategoryLabel } from '@/lib/categories'
 
 export interface Rate {
   user_category: string
@@ -32,43 +33,21 @@ interface EquipmentRatesFormProps {
   onRatesChange?: (rates: Rate[]) => void
 }
 
-export const CATEGORIES = [
-  { 
-    key: 'mahasiswa_s1', 
-    label: 'Mahasiswa S1',
-    shortLabel: 'Mhs S1',
-    color: 'blue',
-    icon: GraduationCap
-  },
-  { 
-    key: 'mahasiswa_s2', 
-    label: 'Mahasiswa S2',
-    shortLabel: 'Mhs S2',
-    color: 'purple',
-    icon: GraduationCap
-  },
-  { 
-    key: 'dosen', 
-    label: 'Dosen',
-    shortLabel: 'Dosen',
-    color: 'emerald',
-    icon: UserCog
-  },
-  { 
-    key: 'mou_unesa', 
-    label: 'MoU Unesa',
-    shortLabel: 'MoU',
-    color: 'orange',
-    icon: Building2
-  },
-  { 
-    key: 'umum', 
-    label: 'Umum',
-    shortLabel: 'Umum',
-    color: 'slate',
-    icon: Users
-  },
-]
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  mahasiswa_s1: GraduationCap,
+  mahasiswa_s2: GraduationCap,
+  dosen: UserCog,
+  kerjasama: Building2,
+  umum: Users,
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  mahasiswa_s1: 'blue',
+  mahasiswa_s2: 'purple',
+  dosen: 'emerald',
+  kerjasama: 'orange',
+  umum: 'slate',
+}
 
 const COLOR_STYLES: Record<string, { bg: string; border: string; text: string; accent: string; lightBg: string }> = {
   blue: { 
@@ -111,7 +90,7 @@ const COLOR_STYLES: Record<string, { bg: string; border: string; text: string; a
 export function EquipmentRatesForm({ initialRates = [], onRatesChange }: EquipmentRatesFormProps) {
   const [rates, setRates] = useState<Record<string, Rate>>(() => {
     const initial: Record<string, Rate> = {}
-    CATEGORIES.forEach(cat => {
+    BORROWER_CATEGORIES.forEach(cat => {
       const existing = initialRates.find(rate => rate.user_category === cat.key)
       initial[cat.key] = existing ? {
         ...existing,
@@ -130,7 +109,7 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
 
   const [enabledCategories, setEnabledCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
-    CATEGORIES.forEach(cat => {
+    BORROWER_CATEGORIES.forEach(cat => {
       const existing = initialRates.find(rate => rate.user_category === cat.key)
       initial[cat.key] = existing ? existing.rate_per_day > 0 : false
     })
@@ -139,7 +118,7 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
-    CATEGORIES.forEach(cat => {
+    BORROWER_CATEGORIES.forEach(cat => {
       const existing = initialRates.find(rate => rate.user_category === cat.key)
       initial[cat.key] = existing ? existing.rate_per_day > 0 : false
     })
@@ -194,7 +173,7 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
       <div className="flex items-center gap-4 text-sm">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Aktif:</span>
-          <span className="font-semibold text-foreground">{enabledCount}/{CATEGORIES.length}</span>
+          <span className="font-semibold text-foreground">{enabledCount}/{BORROWER_CATEGORIES.length}</span>
         </div>
         {lowestRate && (
           <div className="flex items-center gap-2">
@@ -212,12 +191,12 @@ export function EquipmentRatesForm({ initialRates = [], onRatesChange }: Equipme
 
       {/* Category Grid */}
       <div className="grid grid-cols-1 gap-3">
-        {CATEGORIES.map(category => {
+        {BORROWER_CATEGORIES.map(category => {
           const rate = rates[category.key]
           const isEnabled = enabledCategories[category.key]
           const isExpanded = expanded[category.key]
-          const colors = COLOR_STYLES[category.color]
-          const Icon = category.icon
+          const colors = COLOR_STYLES[CATEGORY_COLORS[category.key]]
+          const Icon = CATEGORY_ICONS[category.key]
           
           return (
             <div 

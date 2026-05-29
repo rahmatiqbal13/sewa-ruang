@@ -364,9 +364,9 @@ export function DashboardAnalytics() {
                   <Line 
                     type="monotone" 
                     dataKey="bookings" 
-                    stroke="#2563eb" 
+                    stroke="#0891B2" 
                     strokeWidth={2}
-                    dot={{ fill: '#2563eb', r: 4 }}
+                    dot={{ fill: '#0891B2', r: 4 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -425,7 +425,7 @@ export function DashboardAnalytics() {
                     width={120}
                   />
                   <Tooltip />
-                  <Bar dataKey="bookings" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="bookings" fill="#0891B2" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

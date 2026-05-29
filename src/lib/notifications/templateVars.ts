@@ -1,4 +1,5 @@
 // Maps booking data to template variables like {{nama}}, {{no_booking}}, etc.
+import { getBorrowerCategoryLabel, getEventTypeLabel, migrateBorrowerCategory } from '@/lib/categories'
 
 const STATUS_LABELS: Record<string, string> = {
   pending:   'Menunggu Persetujuan',
@@ -7,18 +8,6 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Selesai',
   rejected:  'Ditolak',
   cancelled: 'Dibatalkan',
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  mahasiswa_s1:    'Mahasiswa S1',
-  mahasiswa_s2:    'Mahasiswa S2/S3',
-  pascasarjana:    'Mahasiswa S2/S3',
-  dosen_karyawan:  'Dosen/Karyawan',
-  dosen:           'Dosen/Karyawan',
-  kerjasama:       'Kerjasama/MoU',
-  mou_unesa:       'Kerjasama/MoU',
-  umum:            'Umum',
-  borrower:        'Umum',
 }
 
 function fmtDate(dt: string): string {
@@ -80,7 +69,7 @@ export function buildVars(booking: any): Record<string, string> {
     '{{tanggal_selesai}}':  booking.end_datetime   ? fmtDate(booking.end_datetime)   : '-',
     '{{status}}':           STATUS_LABELS[booking.status] ?? booking.status ?? '-',
     '{{catatan_admin}}':    notesLine,
-    '{{kategori_pengguna}}': CATEGORY_LABELS[category] ?? 'Umum',
+    '{{kategori_pengguna}}': getBorrowerCategoryLabel(category) ?? 'Umum',
     '{{total_biaya}}':      fmtRupiah(booking.total_amount ?? 0),
     '{{tipe_peminjaman}}':  tipe,
   }
@@ -95,16 +84,7 @@ export function applyVars(template: string, vars: Record<string, string>): strin
 
 // Map borrower_category → template user_category key used in notification_templates
 export function categoryKey(borrowerCategory: string | null | undefined): string {
-  const map: Record<string, string> = {
-    mahasiswa_s1:   'mahasiswa_s1',
-    mahasiswa_s2:   'mahasiswa_s2',
-    pascasarjana:   'mahasiswa_s2',
-    dosen_karyawan: 'dosen_karyawan',
-    dosen:          'dosen_karyawan',
-    kerjasama:      'kerjasama',
-    mou_unesa:      'kerjasama',
-    umum:           'umum',
-    borrower:       'umum',
-  }
-  return map[borrowerCategory ?? ''] ?? 'default'
+  const normalized = migrateBorrowerCategory(borrowerCategory)
+  // Templates use the same keys as borrower categories
+  return normalized ?? 'default'
 }

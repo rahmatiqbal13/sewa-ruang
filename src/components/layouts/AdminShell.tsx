@@ -7,6 +7,7 @@ import { NotificationBell } from './NotificationBell'
 import { Building2, Menu, ChevronDown, Shield, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
+import { CreditFooter } from '@/components/shared/CreditFooter'
 
 interface InstitutionProfile {
   id?: string
@@ -211,6 +212,7 @@ export function AdminShell({
         {/* Main Content */}
         <main className="flex-1 overflow-auto">
           {children}
+          <CreditFooter />
         </main>
       </div>
     </div>

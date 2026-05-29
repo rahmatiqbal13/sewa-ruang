@@ -4,6 +4,7 @@ import { Building2, Clock, Package2, ImageOff } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { SafeImage } from '@/components/shared/SafeImage'
+import { CreditFooter } from '@/components/shared/CreditFooter'
 
 export const revalidate = 60
 
@@ -134,6 +135,7 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
           </div>
         </div>
       </main>
+      <CreditFooter />
     </div>
   )
 }

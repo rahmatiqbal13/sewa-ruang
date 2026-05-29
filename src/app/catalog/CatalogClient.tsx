@@ -36,9 +36,11 @@ import {
   Info
 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
+import { SafeImage } from '@/components/shared/SafeImage'
 import { CalendarView } from '@/components/calendar/CalendarView'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SkeletonCatalogGrid } from '@/components/ui/skeletons'
+import { getBorrowerCategoryLabel } from '@/lib/categories'
 
 const PAGE_SIZE = 12
 
@@ -111,14 +113,6 @@ interface Props {
   institution: InstitutionProfile | null
 }
 
-const EQUIP_CATEGORY_LABELS: Record<string, string> = {
-  'mahasiswa_s1': 'Mahasiswa S1',
-  'mahasiswa_s2': 'Mahasiswa S2/S3',
-  'dosen': 'Dosen/Karyawan',
-  'mou_unesa': 'Kerjasama',
-  'umum': 'Umum'
-}
-
 const EQUIPMENT_CATEGORIES = [
   { value: 'elektronik', label: 'Elektronik' },
   { value: 'mebel', label: 'Mebel' },
@@ -150,14 +144,14 @@ function getRateByCategory(rates: EquipmentRate[] | null | undefined, category: 
 
 function getPriceRange(rates: EquipmentRate[] | null | undefined): { min: number | null; max: number | null } {
   if (!rates || rates.length === 0) return { min: null, max: null }
-  const prices = rates.map(r => toNumber(r.rate_per_day)).filter((p): p is number => p != null && p > 0)
+  const prices = rates.map(r => toNumber(r.rate_per_day)).filter((p): p is number => p != null)
   if (prices.length === 0) return { min: null, max: null }
   return { min: Math.min(...prices), max: Math.max(...prices) }
 }
 
 function getLowestRoomRate(rates: RoomRate[] | null | undefined): number | null {
   if (!rates || rates.length === 0) return null
-  const dayRates = rates.map(r => r.rate_per_day).filter((r): r is number => r != null && r > 0)
+  const dayRates = rates.map(r => r.rate_per_day).filter((r): r is number => r != null)
   return dayRates.length > 0 ? Math.min(...dayRates) : null
 }
 
@@ -205,7 +199,7 @@ function Paginator({ page, total, onChange }: { page: number; total: number; onC
               className={cn(
                 'h-10 w-10 text-sm font-medium rounded-full',
                 page === p 
-                  ? 'bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 text-white border-0' 
+                  ? 'bg-[#0891B2] hover:bg-[#0891B2]/90 text-white border-0' 
                   : 'border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]'
               )}
             >
@@ -244,89 +238,100 @@ function RoomCard({ room }: { room: Room & { buildingName: string; buildingCode?
 
   return (
     <Card className="group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col">
-      {/* Card Body - Horizontal Layout */}
-      <div className="flex flex-col sm:flex-row">
-        {/* Left: Info */}
-        <div className="flex-1 p-4 min-w-0">
-          {/* Location Header */}
-          <div className="flex items-center gap-1.5 mb-3">
-            <MapPin className="h-4 w-4 text-[#2E4DA7] shrink-0" />
-            <span className="text-sm font-bold text-[#2E4DA7]">
-              {room.buildingName}
-            </span>
-          </div>
-
-          {/* Info Rows */}
-          <div className="space-y-0.5">
-            {room.buildingCode && (
-              <InfoRow icon={Landmark} label="Unit" value={room.buildingCode} />
-            )}
-            <InfoRow icon={Building2} label="Gedung" value={room.buildingName} />
-            <InfoRow icon={DoorOpen} label="Ruangan" value={room.displayName} />
-            {room.floor_number != null && (
-              <InfoRow icon={Layers} label="Lantai" value={room.floor_number} />
-            )}
-            {room.room_code && (
-              <InfoRow icon={Hash} label="Nomor" value={room.room_code} />
-            )}
-            {room.capacity != null && (
-              <InfoRow icon={Users} label="Kapasitas" value={`${room.capacity} Orang`} />
-            )}
-          </div>
-
-          {/* Price (if available) */}
-          {lowestRate ? (
-            <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-[#2E4DA7] font-semibold text-sm">{formatRupiah(lowestRate)}</span>
-              <span className="text-xs text-[#6B7280]">/hari</span>
-            </div>
-          ) : (
-            <div className="mt-3 text-xs text-[#9CA3AF] italic">Tarif belum diatur</div>
-          )}
-        </div>
-
-        {/* Right: Photo */}
-        <div className="sm:w-48 md:w-56 shrink-0 p-4 pt-0 sm:pt-4">
-          <div className="relative aspect-[4/3] bg-[#F3F4F6] rounded-[10px] overflow-hidden">
-            {room.photo_url ? (
-              <img 
-                src={room.photo_url} 
-                alt={room.displayName}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Building2 className="h-10 w-10 text-[#D1D5DB]" />
-              </div>
-            )}
-            {/* Status Badge */}
-            <div className="absolute top-2 right-2">
-              <Badge className={cn(
-                "text-[10px] font-medium border-0 px-2 py-0.5",
-                room.current_condition === 'good' 
-                  ? "bg-emerald-500 text-white" 
-                  : "bg-red-500 text-white"
-              )}>
-                {room.current_condition === 'good' ? 'Tersedia' : 'Sedang Digunakan'}
-              </Badge>
-            </div>
-          </div>
+      {/* Card Header - Room Name & Location */}
+      <div className="px-4 pt-4 pb-0">
+        <h3 className="font-bold text-[#111827] text-base leading-tight mb-1 line-clamp-2" title={room.displayName}>
+          {room.displayName}
+        </h3>
+        <div className="flex items-center gap-1.5 mb-2">
+          <MapPin className="h-3.5 w-3.5 text-[#0891B2] shrink-0" />
+          <span className="text-xs font-medium text-[#0891B2] line-clamp-1">
+            {room.buildingName}
+          </span>
         </div>
       </div>
 
+      {/* Card Body - Photo on top, info below (bulletproof layout) */}
+      <div className="px-4 pb-4 space-y-4">
+        {/* Photo - Full Width */}
+        <div className="relative aspect-[16/10] bg-[#F3F4F6] rounded-[10px] overflow-hidden">
+          {room.photo_url ? (
+            <SafeImage
+              src={room.photo_url}
+              alt={room.displayName}
+              className="w-full h-full object-cover"
+              fallbackClassName="w-full h-full flex items-center justify-center"
+              fallback={<Building2 className="h-10 w-10 text-[#D1D5DB]" />}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Building2 className="h-10 w-10 text-[#D1D5DB]" />
+            </div>
+          )}
+          {/* Status Badge */}
+          <div className="absolute top-2 right-2">
+            <Badge className={cn(
+              "text-[10px] font-medium border-0 px-2 py-0.5",
+              room.current_condition === 'good'
+                ? "bg-emerald-500 text-white"
+                : "bg-red-500 text-white"
+            )}>
+              {room.current_condition === 'good' ? 'Tersedia' : 'Sedang Digunakan'}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Info Rows */}
+        <div className="space-y-0.5">
+          {room.buildingCode && (
+            <InfoRow icon={Landmark} label="Unit" value={room.buildingCode} />
+          )}
+          <InfoRow icon={Building2} label="Gedung" value={room.buildingName} />
+          <InfoRow icon={DoorOpen} label="Ruangan" value={room.displayName} />
+          {room.floor_number != null && (
+            <InfoRow icon={Layers} label="Lantai" value={room.floor_number} />
+          )}
+          {room.room_code && (
+            <InfoRow icon={Hash} label="Nomor" value={room.room_code} />
+          )}
+          {room.capacity != null && (
+            <InfoRow icon={Users} label="Kapasitas" value={`${room.capacity} Orang`} />
+          )}
+        </div>
+
+        {/* Price (if available) */}
+        {lowestRate !== null ? (
+          <div className="flex items-baseline gap-1">
+            {lowestRate === 0 ? (
+              <span className="text-emerald-600 font-semibold text-sm">Gratis</span>
+            ) : (
+              <>
+                <span className="text-[#0891B2] font-semibold text-sm">{formatRupiah(lowestRate)}</span>
+                <span className="text-xs text-[#6B7280]">/hari</span>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="text-xs text-[#9CA3AF] italic">Tarif belum diatur</div>
+        )}
+      </div>
+
       {/* Bottom Action Buttons */}
-      <div className="px-4 pb-4 pt-0 mt-auto">
-        <div className="flex items-center gap-2">
-          <Link href={`/rooms/${slug}`} className="flex-1">
-            <Button 
+      <div className="px-4 pb-4 pt-0 mt-auto border-t border-[#E5E7EB]">
+        <div className="pt-3 space-y-2">
+          {/* Primary CTA - Full Width */}
+          <Link href={`/rooms/${slug}`} className="block">
+            <Button
               className="w-full h-9 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg"
             >
               <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
               Booking
             </Button>
           </Link>
-          <Link href={`/rooms/${slug}`} className="flex-1">
-            <Button 
+          {/* Secondary CTAs - Side by Side */}
+          <div className="grid grid-cols-2 gap-2">
+          <Link href={`/rooms/${slug}#jadwal`} className="block">
+            <Button
               variant="outline"
               className="w-full h-9 border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-xs font-medium rounded-lg"
             >
@@ -334,15 +339,16 @@ function RoomCard({ room }: { room: Room & { buildingName: string; buildingCode?
               Jadwal
             </Button>
           </Link>
-          <Link href={`/rooms/${slug}`} className="flex-1">
-            <Button 
+          <Link href={`/rooms/${slug}#kalender`} className="block">
+            <Button
               variant="outline"
-              className="w-full h-9 border-[#2E4DA7] text-[#2E4DA7] hover:bg-[#EFF3FF] text-xs font-medium rounded-lg"
+              className="w-full h-9 border-[#0891B2] text-[#0891B2] hover:bg-[#ecfeff] text-xs font-medium rounded-lg"
             >
               <Calendar className="h-3.5 w-3.5 mr-1.5" />
               Kalender
             </Button>
           </Link>
+          </div>
         </div>
       </div>
     </Card>
@@ -405,14 +411,20 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
         <div className="mb-4">
           {hasRates && priceRange.min !== null ? (
             <div className="flex items-baseline gap-1">
-              <span className="text-[#2E4DA7] font-semibold text-lg">
-                {formatRupiah(priceRange.min)}
-              </span>
-              <span className="text-sm text-[#6B7280]">/hari</span>
-              {priceRange.max !== priceRange.min && (
-                <span className="text-xs text-[#9CA3AF] ml-1">
-                  - {formatRupiah(priceRange.max as number)}
-                </span>
+              {priceRange.min === 0 && priceRange.max === 0 ? (
+                <span className="text-emerald-600 font-semibold text-lg">Gratis</span>
+              ) : (
+                <>
+                  <span className="text-[#0891B2] font-semibold text-lg">
+                    {formatRupiah(priceRange.min)}
+                  </span>
+                  <span className="text-sm text-[#6B7280]">/hari</span>
+                  {priceRange.max !== priceRange.min && (
+                    <span className="text-xs text-[#9CA3AF] ml-1">
+                      - {formatRupiah(priceRange.max as number)}
+                    </span>
+                  )}
+                </>
               )}
             </div>
           ) : (
@@ -431,15 +443,37 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
           </span>
         </div>
         
-        {/* Action */}
-        <Link href={`/equipment/${createSlug(item.name)}`}>
-          <Button 
-            variant="ghost" 
-            className="w-full h-10 text-[#2E4DA7] hover:bg-[#EFF3FF] font-medium"
-          >
-            Lihat Detail
-          </Button>
-        </Link>
+        {/* Action Buttons */}
+        <div className="space-y-2">
+          <Link href={`/equipment/${createSlug(item.name)}`} className="block">
+            <Button
+              className="w-full h-9 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg"
+            >
+              <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+              Booking
+            </Button>
+          </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link href={`/equipment/${createSlug(item.name)}#jadwal`} className="block">
+              <Button
+                variant="outline"
+                className="w-full h-9 border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-xs font-medium rounded-lg"
+              >
+                <List className="h-3.5 w-3.5 mr-1.5" />
+                Jadwal
+              </Button>
+            </Link>
+            <Link href={`/equipment/${createSlug(item.name)}#kalender`} className="block">
+              <Button
+                variant="outline"
+                className="w-full h-9 border-[#0891B2] text-[#0891B2] hover:bg-[#ecfeff] text-xs font-medium rounded-lg"
+              >
+                <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                Kalender
+              </Button>
+            </Link>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
@@ -583,7 +617,7 @@ function FilterSidebar({
               placeholder="Min"
               value={priceRange.min}
               onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
+              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
             />
           </div>
           <span className="text-[#9CA3AF]">-</span>
@@ -594,7 +628,7 @@ function FilterSidebar({
               placeholder="Max"
               value={priceRange.max}
               onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
+              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
             />
           </div>
         </div>
@@ -642,7 +676,7 @@ function FilterSidebar({
       <div className="flex gap-3 pt-2">
         <Button 
           onClick={onApply}
-          className="flex-1 bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 text-white h-10 rounded-lg"
+          className="flex-1 bg-[#0891B2] hover:bg-[#0891B2]/90 text-white h-10 rounded-lg"
         >
           Terapkan Filter
         </Button>
@@ -669,7 +703,7 @@ function FilterSidebar({
               <Filter className="h-4 w-4 mr-2" />
               Filter
               {(selectedBuildings.length + selectedCategories.length + selectedCapacity.length > 0 || showAvailableOnly) && (
-                <Badge className="ml-2 bg-[#2E4DA7] text-white text-xs">
+                <Badge className="ml-2 bg-[#0891B2] text-white text-xs">
                   {selectedBuildings.length + selectedCategories.length + selectedCapacity.length + (showAvailableOnly ? 1 : 0)}
                 </Badge>
               )}
@@ -841,7 +875,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
   return (
     <div className="min-h-screen bg-white">
       {/* Page Header */}
-      <div className="bg-[#EFF3FF] py-14">
+      <div className="bg-[#ecfeff] py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-[#111827] mb-3">
@@ -860,7 +894,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
               placeholder="Cari ruangan atau alat..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-[52px] pl-14 pr-12 bg-white rounded-full border-0 shadow-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
+              className="w-full h-[52px] pl-14 pr-12 bg-white rounded-full border-0 shadow-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
             />
             {searchQuery && (
               <button
@@ -909,7 +943,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     activeTab === 'all'
-                      ? "bg-[#2E4DA7] text-white"
+                      ? "bg-[#0891B2] text-white"
                       : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                   )}
                 >
@@ -920,7 +954,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     activeTab === 'rooms'
-                      ? "bg-[#2E4DA7] text-white"
+                      ? "bg-[#0891B2] text-white"
                       : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                   )}
                 >
@@ -931,7 +965,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     activeTab === 'equipment'
-                      ? "bg-[#2E4DA7] text-white"
+                      ? "bg-[#0891B2] text-white"
                       : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                   )}
                 >
@@ -946,7 +980,7 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as 'name' | 'price-low' | 'price-high')}
-                    className="appearance-none h-10 pl-4 pr-10 bg-white border border-[#E5E7EB] rounded-lg text-sm text-[#374151] focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20 cursor-pointer"
+                    className="appearance-none h-10 pl-4 pr-10 bg-white border border-[#E5E7EB] rounded-lg text-sm text-[#374151] focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20 cursor-pointer"
                   >
                     <option value="name">Urutkan: Nama</option>
                     <option value="price-low">Urutkan: Harga Terendah</option>
@@ -1030,16 +1064,16 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
       </main>
 
       {/* CTA Section */}
-      <section className="bg-[#2E4DA7] py-16">
+      <section className="bg-[#0891B2] py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Siap Meminjam?
           </h2>
-          <p className="text-[#EFF3FF] mb-8 max-w-2xl mx-auto">
+          <p className="text-[#ecfeff] mb-8 max-w-2xl mx-auto">
             Login untuk melakukan pemesanan dan kelola peminjaman Anda dengan mudah
           </p>
           <Link href="/login">
-            <Button size="lg" className="bg-white text-[#2E4DA7] hover:bg-[#EFF3FF] px-8 h-12 text-base font-medium rounded-lg">
+            <Button size="lg" className="bg-white text-[#0891B2] hover:bg-[#ecfeff] px-8 h-12 text-base font-medium rounded-lg">
               Login Sekarang
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>

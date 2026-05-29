@@ -30,7 +30,7 @@ const typeLabel = (t: string) =>
   t === 'room' ? 'Ruangan' : t === 'equipment' ? 'Alat' : 'Inventaris'
 
 const typeColor = (t: string) =>
-  t === 'room' ? '#7c3aed' : t === 'equipment' ? '#2563eb' : '#d97706'
+  t === 'room' ? '#7c3aed' : t === 'equipment' ? '#0891B2' : '#d97706'
 
 /** Buat tag <img> QR — pakai SVG inline jika tersedia, fallback ke API */
 const qrImg = (item: PrintItem, cssSize: string, apiPx: number): string => {

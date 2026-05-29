@@ -80,7 +80,7 @@ export default function ScanPageClient() {
       <div className="p-6 max-w-2xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Scan className="h-6 w-6 text-[#2E4DA7]" />
+            <Scan className="h-6 w-6 text-[#0891B2]" />
             Scan QR Code
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -98,7 +98,7 @@ export default function ScanPageClient() {
         )}
 
         {scanResult && !scanError && !scannedData && (
-          <div className="mt-4 p-4 rounded-[10px] bg-[#EFF3FF] border border-[#2E4DA7]/20 text-[#2E4DA7] text-sm">
+          <div className="mt-4 p-4 rounded-[10px] bg-[#ecfeff] border border-[#0891B2]/20 text-[#0891B2] text-sm">
             Memproses: {scanResult}
           </div>
         )}
@@ -121,7 +121,7 @@ export default function ScanPageClient() {
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Icon className="h-6 w-6 text-[#2E4DA7]" />
+          <Icon className="h-6 w-6 text-[#0891B2]" />
           Update {typeLabel}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -153,7 +153,7 @@ export default function ScanPageClient() {
                       name="condition"
                       value={c.value}
                       required
-                      className="accent-[#2E4DA7]"
+                      className="accent-[#0891B2]"
                     />
                     <span className="text-sm">{c.label}</span>
                   </label>
@@ -171,7 +171,7 @@ export default function ScanPageClient() {
                   type="text"
                   name="location"
                   placeholder="Contoh: Laboratorium A, Rak 2..."
-                  className="w-full h-10 rounded-[10px] border border-border bg-muted/50 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
+                  className="w-full h-10 rounded-[10px] border border-border bg-muted/50 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
                 />
               </div>
             </div>
@@ -184,7 +184,7 @@ export default function ScanPageClient() {
                 name="notes"
                 rows={3}
                 placeholder="Contoh: Baterai masih bagus, ada goresan kecil..."
-                className="w-full rounded-[10px] border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20 resize-none"
+                className="w-full rounded-[10px] border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20 resize-none"
               />
             </div>
 
@@ -196,7 +196,7 @@ export default function ScanPageClient() {
                 type="text"
                 name="checked_by_name"
                 placeholder="Nama petugas pemeriksa"
-                className="w-full h-10 rounded-[10px] border border-border bg-muted/50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E4DA7]/20"
+                className="w-full h-10 rounded-[10px] border border-border bg-muted/50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
               />
             </div>
 
@@ -219,7 +219,7 @@ export default function ScanPageClient() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 h-11 bg-[#2E4DA7] hover:bg-[#1e3a8a] text-white font-medium rounded-lg"
+                className="flex-1 h-11 bg-[#0891B2] hover:bg-[#0e7490] text-white font-medium rounded-lg"
               >
                 {submitting ? 'Menyimpan...' : 'Simpan Perubahan'}
               </Button>

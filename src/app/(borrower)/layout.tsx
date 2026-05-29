@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BorrowerNav } from '@/components/layouts/BorrowerNav'
+import { CreditFooter } from '@/components/shared/CreditFooter'
 
 export default async function BorrowerLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -17,11 +18,12 @@ export default async function BorrowerLayout({ children }: { children: React.Rea
   if (profile.role === 'admin' || profile.role === 'staff') redirect('/admin/dashboard')
 
   return (
-      <div className="min-h-screen bg-muted">
+      <div className="min-h-screen bg-muted flex flex-col">
       <BorrowerNav userName={profile.name} photoUrl={profile.photo_url ?? undefined} />
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
         {children}
       </main>
+      <CreditFooter />
     </div>
   )
 }

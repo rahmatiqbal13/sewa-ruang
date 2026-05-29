@@ -219,7 +219,7 @@ async function sendCustomResetEmail({
               </p>
               
               <p style="margin: 0 0 24px; word-break: break-all;">
-                <a href="${resetLink}" style="color: #2563eb; font-size: 14px; text-decoration: underline;">${resetLink}</a>
+                <a href="${resetLink}" style="color: #0891B2; font-size: 14px; text-decoration: underline;">${resetLink}</a>
               </p>
               
               <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">

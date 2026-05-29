@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Building2, Phone, Mail, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { SafeImage } from '@/components/shared/SafeImage'
+import { CreditFooter } from '@/components/shared/CreditFooter'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -200,6 +201,7 @@ export async function PublicFooter({ showContact = true }: PublicFooterProps) {
               {institution.website}
             </a>
           )}
+          <CreditFooter />
         </div>
       </div>
     </footer>

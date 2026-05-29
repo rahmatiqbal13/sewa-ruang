@@ -244,7 +244,7 @@ export function InstitutionProfileForm({ initialData }: InstitutionProfileFormPr
               {formData.logo_url && (
                 <img 
                   src={formData.logo_url} 
-                  alt="Logo" 
+                  alt="Logo institusi" 
                   className="w-16 h-16 object-contain mx-auto"
                 />
               )}

@@ -1,6 +1,12 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import {
+  type BorrowerCategory,
+  isFreeBooking,
+  isValidBorrowerCategory,
+  migrateBorrowerCategory,
+} from '@/lib/categories'
 import { z } from 'zod'
 
 const MAX_BOOKING_DAYS = 3
@@ -12,6 +18,7 @@ const bookingSchema = z.object({
   end_date: z.string().min(1, 'Tanggal selesai wajib diisi'),
   end_time: z.string().optional(),
   purpose: z.string().min(10, 'Tujuan minimal 10 karakter').max(500),
+  event_type: z.enum(['perkuliahan', 'event_mahasiswa', 'event_umum', 'penelitian', 'lainnya']).optional().default('lainnya'),
   room_ids: z.array(z.string().uuid()),
   equipment_items: z.array(z.object({
     id: z.string().uuid(),
@@ -25,14 +32,6 @@ export type CreateBookingResult =
   | { success: true; bookingId: string; referenceNo: string }
   | { success: false; error: string }
 
-const CATEGORY_MAP: Record<string, string> = {
-  mahasiswa: 'mahasiswa_s1',
-  pascasarjana: 'mahasiswa_s2',
-  dosen_karyawan: 'dosen',
-  kerjasama: 'mou_unesa',
-  umum: 'umum',
-}
-
 export async function createBookingAction(input: CreateBookingInput): Promise<CreateBookingResult> {
   // Validate input
   const parsed = bookingSchema.safeParse(input)
@@ -40,7 +39,7 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Data tidak valid' }
   }
 
-  const { start_date, start_time, end_date, end_time, purpose, room_ids, equipment_items } = parsed.data
+  const { start_date, start_time, end_date, end_time, purpose, event_type, room_ids, equipment_items } = parsed.data
 
   const hasRooms = room_ids.length > 0
   const hasEquipment = equipment_items.length > 0
@@ -80,7 +79,7 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sesi habis, silakan login kembali' }
 
-  // Get user profile for rate category
+  // Get user profile
   const { data: profile } = await supabase
     .from('users')
     .select('id, borrower_category')
@@ -89,7 +88,8 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
 
   if (!profile) return { success: false, error: 'Profil pengguna tidak ditemukan' }
 
-  const rateCategory = CATEGORY_MAP[profile.borrower_category ?? 'mahasiswa'] ?? 'mahasiswa_s1'
+  // Normalize borrower category (migrate legacy values)
+  const borrowerCategory = migrateBorrowerCategory(profile.borrower_category) as BorrowerCategory
 
   // ── Conflict check for rooms ─────────────────────────────────────────────
   if (hasRooms) {
@@ -176,15 +176,11 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
       .from('equipment_rates')
       .select('equipment_id, rate_per_day')
       .in('equipment_id', equipIds)
-      .eq('user_category', rateCategory)
+      .eq('user_category', borrowerCategory)
 
     if (ratesError) {
       console.error('Error fetching equipment rates:', ratesError)
     }
-
-    console.log('Rate category:', rateCategory)
-    console.log('Equipment IDs:', equipIds)
-    console.log('Rates fetched:', rates)
 
     ratesMap = new Map((rates as RateRow[] ?? []).map(r => [r.equipment_id, toNumber(r.rate_per_day)]))
 
@@ -201,12 +197,22 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
         if (fallbackRates && fallbackRates.length > 0) {
           const fallbackRate = fallbackRates[0] as RateRow
           ratesMap.set(item.id, toNumber(fallbackRate.rate_per_day))
-          console.log(`Fallback rate for ${item.id}:`, fallbackRate.rate_per_day)
         }
       }
     }
 
-    console.log('Final ratesMap:', Array.from(ratesMap.entries()))
+    // Validate that every equipment has a rate > 0
+    for (const item of equipment_items) {
+      const rate = ratesMap.get(item.id) ?? 0
+      if (rate === 0) {
+        const { data: eqInfo } = await supabase
+          .from('equipment')
+          .select('name')
+          .eq('id', item.id)
+          .single()
+        return { success: false, error: `Tarif belum diatur untuk alat "${eqInfo?.name ?? item.id}". Silakan hubungi admin.` }
+      }
+    }
   }
 
   // ── Calculate total SERVER-SIDE (tidak percaya nilai dari client) ─────────
@@ -215,34 +221,56 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
 
   let totalAmount = 0
 
-  if (hasRooms && start_time && end_time) {
+  // Check if booking qualifies for free (perkuliahan + mahasiswa_s1)
+  const freeBooking = isFreeBooking(borrowerCategory, event_type, purpose)
+
+  if (hasRooms && start_time && end_time && !freeBooking) {
+    // Fetch room rates from room_rates table
+    const { data: roomRates } = await supabase
+      .from('room_rates')
+      .select('room_id, usage_category, rate_per_hour, rate_per_day')
+      .in('room_id', room_ids)
+
     for (const room of roomsData) {
-      const rate = room.rate_per_hour ?? 0
-      totalAmount += hours * rate
+      const ratesForRoom = (roomRates || []).filter((r: any) => r.room_id === room.id)
+      const rate = ratesForRoom.find((r: any) => r.usage_category === borrowerCategory)
+        ?? ratesForRoom.find((r: any) => r.usage_category === 'umum')
+
+      if (rate) {
+        const ratePerDay = rate.rate_per_day != null ? Number(rate.rate_per_day) : 0
+        const ratePerHour = rate.rate_per_hour != null ? Number(rate.rate_per_hour) : 0
+
+        if (hours > 12 && ratePerDay > 0) {
+          totalAmount += ratePerDay * days
+        } else if (ratePerHour > 0) {
+          totalAmount += ratePerHour * hours
+        } else if (ratePerDay > 0) {
+          totalAmount += ratePerDay * days
+        }
+      }
     }
   }
 
-  for (const item of equipment_items) {
-    const ratePerDay = ratesMap.get(item.id) ?? 0
-    totalAmount += days * ratePerDay * item.quantity
+  if (!freeBooking) {
+    for (const item of equipment_items) {
+      const ratePerDay = ratesMap.get(item.id) ?? 0
+      totalAmount += days * ratePerDay * item.quantity
+    }
   }
 
   // ── Snapshot rate (immutable record of prices at booking time) ────────────
   const snapshotRate = {
-    borrower_category: profile.borrower_category,
-    rate_category: rateCategory,
+    borrower_category: borrowerCategory,
+    event_type,
     hours,
     days,
-    rooms: roomsData.map(r => ({ id: r.id, name: r.name, rate_per_hour: r.rate_per_hour })),
+    rooms: roomsData.map(r => ({ id: r.id, name: r.name, rate_per_hour: r.rate_per_hour, rate_per_day: r.rate_per_day })),
     equipment: equipment_items.map(e => ({
       id: e.id,
       rate_per_day: ratesMap.get(e.id) ?? 0,
       quantity: e.quantity,
     })),
   }
-
-  console.log('Booking total_amount:', totalAmount)
-  console.log('Snapshot rate:', snapshotRate)
 
   // ── Insert booking ────────────────────────────────────────────────────────
   const { data: booking, error: bookingError } = await supabase
@@ -251,6 +279,7 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
       user_id: user.id,
       status: 'pending',
       purpose,
+      event_type,
       start_datetime: startDt.toISOString(),
       end_datetime: endDt.toISOString(),
       total_amount: totalAmount,

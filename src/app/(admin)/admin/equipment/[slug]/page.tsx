@@ -15,6 +15,7 @@ import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { EquipmentQRCode } from '../EquipmentQRCode'
 import { SoftDeleteButton, RestoreButton } from '../SoftDeleteButtons'
 import { CheckForm } from './CheckForm'
+import { getBorrowerCategoryLabel } from '@/lib/categories'
 
 const CATEGORY_LABELS: Record<string, string> = {
   elektronik: 'Elektronik',
@@ -24,14 +25,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   alat_gym: 'Alat Gym/Fitness',
   perlengkapan: 'Perlengkapan',
   lainnya: 'Lainnya',
-}
-
-const USER_CATEGORY_LABELS: Record<string, string> = {
-  mahasiswa_s1: 'Mahasiswa S1',
-  mahasiswa_s2: 'Mahasiswa S2/Pasca',
-  dosen: 'Dosen',
-  mou_unesa: 'MoU Unesa',
-  umum: 'Umum',
 }
 
 const KETERSEDIAAN_CONFIG = {
@@ -558,7 +551,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <p className="font-medium text-sm">
-                          {USER_CATEGORY_LABELS[rate.user_category] || rate.user_category}
+                          {getBorrowerCategoryLabel(rate.user_category)}
                         </p>
                         {rate.requires_supervision && (
                           <Badge variant="outline" className="text-xs">Perlu Supervisi</Badge>

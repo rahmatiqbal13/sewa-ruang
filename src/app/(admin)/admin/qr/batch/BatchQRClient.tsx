@@ -194,7 +194,7 @@ export function BatchQRClient({
               display: inline-block;
             }
             .label-type.room { background: #f3e8ff; color: #7c3aed; }
-            .label-type.equipment { background: #dbeafe; color: #2563eb; }
+            .label-type.equipment { background: #dbeafe; color: #0891B2; }
             .label-type.inventory { background: #fef3c7; color: #d97706; }
             .label-qr {
               background: white;
@@ -274,7 +274,7 @@ export function BatchQRClient({
                   ${item.type === 'room' ? 'Ruangan' : item.type === 'equipment' ? 'Alat' : 'Inventaris'}
                 </div>
                 <div class="label-qr">
-                  <img src="${item.qrDataUrl}" alt="QR" />
+                  <img src="${item.qrDataUrl}" alt="Kode QR ${item.name || item.code || ''}" />
                 </div>
                 ${item.code ? `<div class="label-code">${item.code}</div>` : ''}
                 <div class="label-name">${item.name}</div>

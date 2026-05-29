@@ -316,17 +316,10 @@ export default async function PublicSchedulePage() {
                             >
                               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                 <div className="flex-1">
-                                  <div className="flex items-start justify-between gap-2 mb-2">
-                                    <div>
-                                      <h4 className="font-semibold text-sm">{booking.purpose}</h4>
-                                      <p className="text-xs text-muted-foreground">
-                                        oleh {booking.users?.name || 'Unknown'} 
-                                        {booking.users?.institution && ` (${booking.users.institution})`}
-                                      </p>
-                                    </div>
+                                  <div className="flex items-center justify-between gap-2 mb-2">
                                     <StatusBadge status={booking.status} />
                                   </div>
-                                  
+
                                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                                     <div className="flex items-center gap-1.5">
                                       <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -343,7 +336,7 @@ export default async function PublicSchedulePage() {
                                     </div>
                                   </div>
                                 </div>
-                                
+
                                 <div className="text-right md:text-left">
                                   <div className="text-sm font-medium">
                                     {format(new Date(booking.start_datetime), 'dd MMM yyyy', { locale: id })}

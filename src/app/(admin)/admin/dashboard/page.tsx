@@ -123,7 +123,7 @@ export default async function AdminDashboard() {
                 <CardTitle className="text-base font-semibold text-[#111827]">Pengajuan Terbaru</CardTitle>
                 <Link 
                   href="/admin/bookings" 
-                  className="text-xs font-medium text-[#2E4DA7] hover:underline flex items-center gap-1"
+                  className="text-xs font-medium text-[#0891B2] hover:underline flex items-center gap-1"
                 >
                   Lihat Semua
                   <ChevronRight className="h-3 w-3" />

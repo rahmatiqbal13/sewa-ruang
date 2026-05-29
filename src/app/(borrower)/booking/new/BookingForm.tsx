@@ -21,8 +21,14 @@ import {
   Check, X, Plus, Trash2, Wrench, Search, XCircle
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
-import type { BookableItem, RoomItem, EquipmentItem, UserProfile, UserBorrowerCategory, RateCategory } from './page'
-import { mapUserToRateCategory } from './shared'
+import type { BookableItem, RoomItem, EquipmentItem, UserProfile } from './page'
+import {
+  BORROWER_CATEGORIES,
+  EVENT_TYPES,
+  type BorrowerCategory,
+  getBorrowerCategoryLabel,
+  isFreeBooking,
+} from '@/lib/categories'
 
 interface SelectedRoom extends RoomItem {
   selected: boolean
@@ -39,6 +45,7 @@ interface FormData {
   end_date: string
   end_time: string
   purpose: string
+  event_type: string
   estimated_participants?: number
   agreed: boolean
 }
@@ -51,6 +58,7 @@ const schema = z.object({
   end_date: z.string().min(1, 'Tanggal selesai wajib diisi'),
   end_time: z.string().optional(),
   purpose: z.string().min(10, 'Tujuan minimal 10 karakter').max(500),
+  event_type: z.enum(['perkuliahan', 'event_mahasiswa', 'event_umum', 'penelitian', 'lainnya']).default('lainnya'),
   estimated_participants: z.coerce.number().int().min(1).optional(),
   agreed: z.boolean().refine(v => v === true, 'Anda harus menyetujui perjanjian'),
 }).refine((data) => {
@@ -83,41 +91,22 @@ const schema = z.object({
   path: ['end_date'],
 })
 
-const USER_CATEGORIES: { value: UserBorrowerCategory; label: string }[] = [
-  { value: 'mahasiswa', label: 'Mahasiswa S1' },
-  { value: 'pascasarjana', label: 'Mahasiswa S2/S3' },
-  { value: 'dosen_karyawan', label: 'Dosen / Karyawan' },
-  { value: 'kerjasama', label: 'Kerjasama UNESA' },
-  { value: 'umum', label: 'Umum' },
-]
-
-function getRateCategory(userCategory: UserBorrowerCategory | null): RateCategory {
-  const map: Record<UserBorrowerCategory, RateCategory> = {
-    'mahasiswa': 'mahasiswa_s1',
-    'pascasarjana': 'mahasiswa_s2',
-    'dosen_karyawan': 'dosen',
-    'kerjasama': 'mou_unesa',
-    'umum': 'umum',
-  }
-  return map[userCategory ?? 'mahasiswa'] ?? 'mahasiswa_s1'
+function getRateForEquipment(equipment: EquipmentItem, borrowerCategory: BorrowerCategory): number {
+  const rate = equipment.rates.find(r => r.user_category === borrowerCategory)
+    ?? equipment.rates.find(r => r.user_category === 'umum') // fallback
+  return rate?.rate_per_day ?? 0
 }
 
-function getRateForEquipment(equipment: EquipmentItem, borrowerCategory: UserBorrowerCategory): number {
-  const rateCategory = mapUserToRateCategory(borrowerCategory)
-  const rate = equipment.rates.find(r => r.user_category === rateCategory)
-  return rate?.rate_per_day ?? equipment.rates[0]?.rate_per_day ?? 0
-}
-
-function requiresSupervision(equipment: EquipmentItem, borrowerCategory: UserBorrowerCategory): boolean {
-  const rateCategory = mapUserToRateCategory(borrowerCategory)
-  const rate = equipment.rates.find(r => r.user_category === rateCategory)
-  return rate?.requires_supervision ?? equipment.rates[0]?.requires_supervision ?? false
+function requiresSupervision(equipment: EquipmentItem, borrowerCategory: BorrowerCategory): boolean {
+  const rate = equipment.rates.find(r => r.user_category === borrowerCategory)
+    ?? equipment.rates.find(r => r.user_category === 'umum') // fallback
+  return rate?.requires_supervision ?? false
 }
 
 interface BookingFormProps {
   items: BookableItem[]
   profile: UserProfile | null
-  borrowerCategory: UserBorrowerCategory
+  borrowerCategory: BorrowerCategory
   defaultItemId?: string
   defaultItemType?: 'room' | 'equipment'
 }
@@ -125,7 +114,6 @@ interface BookingFormProps {
 export function BookingForm({ items, profile, borrowerCategory, defaultItemId, defaultItemType }: BookingFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const rateCategory = getRateCategory(borrowerCategory)
 
   // Separate items by type
   const roomItems = useMemo(() => items.filter((i): i is RoomItem => i.item_type === 'room'), [items])
@@ -180,6 +168,8 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
   const startTime = watch('start_time')
   const endDate = watch('end_date')
   const endTime = watch('end_time')
+  const eventType = watch('event_type')
+  const purpose = watch('purpose')
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -226,39 +216,78 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     let total = 0
     const breakdown: Array<{name: string, type: string, price: number, details: string}> = []
 
-    // Calculate rooms (hourly rate)
-    if (hasRooms && startTime && endTime) {
-      const hours = Math.ceil((end.getTime() - start.getTime()) / 3600000)
+    const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
+    const hours = Math.ceil((end.getTime() - start.getTime()) / 3600000)
+
+    // Check free booking (perkuliahan + mahasiswa_s1)
+    const isGratis = isFreeBooking(borrowerCategory, eventType, purpose)
+
+    // Calculate rooms
+    if (hasRooms && startTime && endTime && !isGratis) {
       selectedRoomList.forEach(room => {
-        const ratePerHour = room.rate_per_hour ?? room.rate_per_day ?? 0
-        const roomTotal = hours * ratePerHour
+        const ratePerDay = room.rate_per_day ?? 0
+        const ratePerHour = room.rate_per_hour ?? 0
+
+        let roomTotal = 0
+        let details = ''
+
+        if (hours > 12 && ratePerDay > 0) {
+          roomTotal = ratePerDay * days
+          details = `${formatRupiah(ratePerDay)}/hari × ${days} hari`
+        } else if (ratePerHour > 0) {
+          roomTotal = ratePerHour * hours
+          details = `${formatRupiah(ratePerHour)}/jam × ${hours} jam`
+        } else if (ratePerDay > 0) {
+          roomTotal = ratePerDay * days
+          details = `${formatRupiah(ratePerDay)}/hari × ${days} hari`
+        }
+
         total += roomTotal
         breakdown.push({
           name: room.name,
           type: 'room',
           price: roomTotal,
-          details: `${formatRupiah(ratePerHour)}/jam × ${hours} jam`
+          details: details || 'Tarif belum diatur'
+        })
+      })
+    } else if (hasRooms && isGratis) {
+      selectedRoomList.forEach(room => {
+        breakdown.push({
+          name: room.name,
+          type: 'room',
+          price: 0,
+          details: 'Gratis (Perkuliahan Mahasiswa S1)'
         })
       })
     }
 
-    // Calculate equipment (daily rate)
-    const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
-    selectedEquipmentList.forEach(equip => {
-      const ratePerDay = getRateForEquipment(equip, borrowerCategory)
-      const equipTotal = days * ratePerDay * equip.quantity
-      total += equipTotal
-      breakdown.push({
-        name: equip.name,
-        type: 'equipment',
-        price: equipTotal,
-        details: `${formatRupiah(ratePerDay)}/hari × ${days} hari${equip.quantity > 1 ? ` × ${equip.quantity} unit` : ''}`
+    // Calculate equipment (always daily rate, unless gratis)
+    if (!isGratis) {
+      selectedEquipmentList.forEach(equip => {
+        const ratePerDay = getRateForEquipment(equip, borrowerCategory)
+        const equipTotal = days * ratePerDay * equip.quantity
+        total += equipTotal
+        breakdown.push({
+          name: equip.name,
+          type: 'equipment',
+          price: equipTotal,
+          details: `${formatRupiah(ratePerDay)}/hari × ${days} hari${equip.quantity > 1 ? ` × ${equip.quantity} unit` : ''}`
+        })
       })
-    })
+    } else {
+      selectedEquipmentList.forEach(equip => {
+        breakdown.push({
+          name: equip.name,
+          type: 'equipment',
+          price: 0,
+          details: 'Gratis (Perkuliahan Mahasiswa S1)'
+        })
+      })
+    }
 
     setEstimatedTotal(total)
     setPriceBreakdown(breakdown)
-  }, [startDate, startTime, endDate, endTime, selectedRooms, selectedEquipment])
+  }, [startDate, startTime, endDate, endTime, selectedRooms, selectedEquipment, eventType, borrowerCategory])
 
   // Toggle room selection
   function toggleRoom(roomId: string) {
@@ -298,6 +327,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
       end_date: formData.end_date,
       end_time: formData.end_time,
       purpose: formData.purpose,
+      event_type: formData.event_type as 'perkuliahan' | 'event_mahasiswa' | 'event_umum' | 'penelitian' | 'lainnya',
       room_ids: selectedRoomList.map(r => r.id),
       equipment_items: selectedEquipmentList.map(e => ({ id: e.id, quantity: e.quantity })),
     })
@@ -322,7 +352,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     setLoading(false)
   }
 
-  const categoryLabel = USER_CATEGORIES.find(c => c.value === borrowerCategory)?.label ?? borrowerCategory
+  const categoryLabel = getBorrowerCategoryLabel(borrowerCategory)
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -716,21 +746,35 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
         </Card>
       )}
 
-      {/* Purpose */}
+      {/* Purpose & Event Type */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Tujuan Peminjaman</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="event_type">Jenis Kegiatan <span className="text-destructive">*</span></Label>
+            <select
+              id="event_type"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              {...register('event_type')}
+            >
+              {EVENT_TYPES.map(et => (
+                <option key={et.key} value={et.key}>{et.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">{EVENT_TYPES.find(et => et.key === eventType)?.description}</p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="purpose">Tujuan Peminjaman <span className="text-destructive">*</span></Label>
-            <Textarea 
+            <Textarea
               id="purpose"
               placeholder="Jelaskan tujuan penggunaan dengan detail (minimal 10 karakter)..."
               rows={4}
               aria-describedby={errors.purpose ? 'purpose-error' : undefined}
               aria-invalid={!!errors.purpose}
-              {...register('purpose')} 
+              {...register('purpose')}
             />
             {errors.purpose && <p id="purpose-error" role="alert" className="text-sm text-destructive">{errors.purpose.message}</p>}
           </div>

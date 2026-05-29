@@ -1,15 +1,27 @@
 // Shared utilities for booking pages (safe to import in Client Components)
+//
+// ⚠️ DEPRECATED — Prefer importing directly from '@/lib/categories.ts'
+// File ini tetap ada untuk backward compatibility dengan re-export.
 
-export type UserBorrowerCategory = 'mahasiswa' | 'pascasarjana' | 'dosen_karyawan' | 'kerjasama' | 'umum'
-export type RateCategory = 'mahasiswa_s1' | 'mahasiswa_s2' | 'dosen' | 'mou_unesa' | 'umum'
+export {
+  BORROWER_CATEGORIES,
+  EVENT_TYPES,
+  USER_ROLES,
+  type BorrowerCategory,
+  type EventType,
+  type UserRole,
+  getBorrowerCategoryLabel,
+  getBorrowerCategoryShortLabel,
+  getEventTypeLabel,
+  getUserRoleLabel,
+  isValidBorrowerCategory,
+  isValidEventType,
+  isFreeBooking,
+  calculateRoomPrice,
+  calculateEquipmentPrice,
+  migrateBorrowerCategory,
+} from '@/lib/categories'
 
-export function mapUserToRateCategory(userCategory: UserBorrowerCategory | null): RateCategory {
-  const map: Record<UserBorrowerCategory, RateCategory> = {
-    'mahasiswa': 'mahasiswa_s1',
-    'pascasarjana': 'mahasiswa_s2',
-    'dosen_karyawan': 'dosen',
-    'kerjasama': 'mou_unesa',
-    'umum': 'umum',
-  }
-  return map[userCategory ?? 'mahasiswa'] ?? 'mahasiswa_s1'
-}
+// Legacy type aliases (dihapus — gunakan BorrowerCategory dari '@/lib/categories')
+// export type UserBorrowerCategory = ...
+// export type RateCategory = ...

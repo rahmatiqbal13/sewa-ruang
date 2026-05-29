@@ -93,7 +93,7 @@ function ResetPasswordForm() {
         <p className="text-sm text-[#6B7280]">
           Anda akan diarahkan ke halaman masuk dalam beberapa detik...
         </p>
-        <Link href="/login" className="block text-sm text-[#2E4DA7] hover:underline font-medium">
+        <Link href="/login" className="block text-sm text-[#0891B2] hover:underline font-medium">
           Masuk sekarang →
         </Link>
       </div>
@@ -103,7 +103,7 @@ function ResetPasswordForm() {
   if (checking) {
     return (
       <div className="bg-white rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#E5E7EB] p-8 text-center space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-[#2E4DA7] mx-auto" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#0891B2] mx-auto" />
         <p className="text-sm text-[#6B7280]">Memverifikasi link...</p>
       </div>
     )
@@ -119,7 +119,7 @@ function ResetPasswordForm() {
         <p className="text-sm text-[#6B7280]">
           Link reset password tidak valid atau sudah kadaluarsa. Silakan minta link baru.
         </p>
-        <Link href="/forgot-password" className="block text-sm text-[#2E4DA7] hover:underline font-medium">
+        <Link href="/forgot-password" className="block text-sm text-[#0891B2] hover:underline font-medium">
           Minta link baru →
         </Link>
       </div>
@@ -143,7 +143,7 @@ function ResetPasswordForm() {
           <Input id="confirm" type="password" placeholder="Ulangi password baru" className="h-11 rounded-lg border-[#E5E7EB]" {...register('confirm')} />
           {errors.confirm && <p className="text-xs text-red-600 font-medium">{errors.confirm.message}</p>}
         </div>
-        <Button type="submit" className="w-full h-11 bg-[#2E4DA7] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg" disabled={loading}>
+        <Button type="submit" className="w-full h-11 bg-[#0891B2] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg" disabled={loading}>
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Simpan Password Baru
         </Button>
@@ -156,15 +156,15 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#F9FAFB]">
       <div className="w-full max-w-md">
-        <div className="flex items-center gap-2 font-bold text-[#2E4DA7] mb-8 justify-center">
-          <div className="bg-[#2E4DA7] text-white p-1.5 rounded-[10px]">
+        <div className="flex items-center gap-2 font-bold text-[#0891B2] mb-8 justify-center">
+          <div className="bg-[#0891B2] text-white p-1.5 rounded-[10px]">
             <Building2 className="h-4 w-4" />
           </div>
           Sewa Ruang & Alat USC
         </div>
         <Suspense fallback={
           <div className="bg-white rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#E5E7EB] p-8 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#2E4DA7] mx-auto" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#0891B2] mx-auto" />
           </div>
         }>
           <ResetPasswordForm />

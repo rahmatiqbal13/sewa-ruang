@@ -32,13 +32,7 @@ import { ImageUpload } from '@/components/shared/ImageUpload'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 
-const BORROWER_CATEGORIES = [
-  { value: 'mahasiswa',       label: 'Mahasiswa' },
-  { value: 'pascasarjana',    label: 'Mahasiswa Pascasarjana' },
-  { value: 'dosen_karyawan',  label: 'Dosen / Karyawan' },
-  { value: 'kerjasama',       label: 'Kerjasama' },
-  { value: 'umum',            label: 'Umum' },
-]
+import { BORROWER_CATEGORIES, getBorrowerCategoryLabel } from '@/lib/categories'
 
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -341,7 +335,7 @@ export default function ProfilePage() {
                           Kategori Peminjam
                         </Label>
                         <div className="h-11 px-3 flex items-center rounded-md border bg-muted text-sm text-foreground/80">
-                          {BORROWER_CATEGORIES.find(c => c.value === profile.borrower_category)?.label ?? profile.borrower_category}
+                          {getBorrowerCategoryLabel(profile.borrower_category)}
                         </div>
                         <p className="text-xs text-muted-foreground">Kategori tidak dapat diubah setelah pendaftaran</p>
                       </div>

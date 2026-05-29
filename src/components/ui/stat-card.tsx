@@ -40,8 +40,8 @@ interface StatCardProps {
 
 const colorConfig: Record<Color, { iconBg: string; iconColor: string }> = {
   blue: {
-    iconBg: "bg-[#2E4DA7]/10",
-    iconColor: "text-[#2E4DA7]",
+    iconBg: "bg-[#0891B2]/10",
+    iconColor: "text-[#0891B2]",
   },
   green: {
     iconBg: "bg-[#10B981]/10",
