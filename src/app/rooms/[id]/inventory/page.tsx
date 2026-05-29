@@ -31,11 +31,11 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
       .eq('room_asset_id', id)
       .eq('is_active', true)
       .order('name'),
-  ]) as any
+  ]) as [{ data: any }, { data: any[] | null }]
 
   if (!room) notFound()
 
-  const lastUpdated = items?.reduce((latest, item) =>
+  const lastUpdated = items?.reduce((latest: string, item: any) =>
     !latest || item.last_updated_at > latest ? item.last_updated_at : latest, '')
 
   return (
