@@ -117,9 +117,7 @@ export function AdminShell({
       <div className="flex flex-col flex-1 lg:pl-72 min-w-0">
 
         {/* Mobile header */}
-        <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-16 bg-card border-b border-border shrink-0"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        >
+        <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-16 bg-card border-b border-border shrink-0 shadow-sm">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-[10px] hover:bg-muted transition-colors"
@@ -150,9 +148,7 @@ export function AdminShell({
         </header>
 
         {/* Desktop top bar */}
-        <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between px-8 h-14 bg-card border-b border-border shrink-0"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        >
+        <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between px-8 h-14 bg-card border-b border-border shrink-0 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-emerald-500" />
