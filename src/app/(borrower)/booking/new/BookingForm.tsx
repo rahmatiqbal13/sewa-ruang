@@ -348,7 +348,6 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     }).catch(() => { /* Silent fail */ })
 
     router.push('/bookings')
-    router.refresh()
     setLoading(false)
   }
 
