@@ -59,8 +59,8 @@ export default function RegisterPage() {
         plain_password: data.password,
       })
     }
-    toast.success('Akun berhasil dibuat! Silakan masuk.')
-    router.push('/login')
+    toast.success('Akun berhasil dibuat! Selamat datang.')
+    router.push('/dashboard')
     setLoading(false)
   }
 

@@ -1,4 +1,4 @@
-import { createAdminDbClient } from '@/lib/supabase/server'
+import { createAdminDbClient, createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CreditFooter } from '@/components/shared/CreditFooter'
@@ -87,6 +87,8 @@ export default async function EquipmentDetailPage({
   const { slug } = await params
 
   const adminDb = createAdminDbClient()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Find equipment by slug or UUID
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
@@ -406,12 +408,21 @@ export default async function EquipmentDetailPage({
 
             {/* CTA */}
             <div className="flex gap-3">
-              <Link href="/login" className="flex-1">
-                <Button className="w-full h-11 bg-[#0891B2] hover:bg-[#0e7490] text-white font-semibold rounded-lg">
-                  <CalendarDays className="h-4 w-4 mr-2" />
-                  Ajukan Peminjaman
-                </Button>
-              </Link>
+              {!user ? (
+                <Link href="/login" className="flex-1">
+                  <Button className="w-full h-11 bg-[#0891B2] hover:bg-[#0e7490] text-white font-semibold rounded-lg">
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    Login untuk Meminjam
+                  </Button>
+                </Link>
+              ) : (
+                <Link href={`/booking/new?equipment_id=${id}`} className="flex-1">
+                  <Button className="w-full h-11 bg-[#0891B2] hover:bg-[#0e7490] text-white font-semibold rounded-lg">
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    Ajukan Peminjaman
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

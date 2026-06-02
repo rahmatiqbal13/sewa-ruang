@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { cancelBookingAction } from './actions'
 
 export function CancelBookingButton({ id }: { id: string }) {
   const router = useRouter()
@@ -16,16 +16,18 @@ export function CancelBookingButton({ id }: { id: string }) {
 
   async function onConfirm() {
     setLoading(true)
-    const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('bookings') as any).update({ status: 'cancelled' }).eq('id', id)
-    if (error) { toast.error('Gagal membatalkan'); setLoading(false); return }
-    toast.success('Pengajuan dibatalkan')
+    const result = await cancelBookingAction(id)
+    if (!result.success) {
+      toast.error(result.error ?? 'Gagal membatalkan')
+      setLoading(false)
+      return
+    }
+    toast.success('Pengajuan berhasil dibatalkan')
     fetch('/api/notifications/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event_type: 'booking_cancelled', booking_id: id }),
-    })
+    }).catch(() => {})
     router.refresh()
     setLoading(false)
   }
