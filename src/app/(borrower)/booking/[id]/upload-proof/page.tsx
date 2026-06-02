@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -20,7 +20,6 @@ import { toast } from 'sonner'
 
 export default function UploadProofPage() {
   const params = useParams()
-  const router = useRouter()
   const bookingId = params.id as string
   
   const [file, setFile] = useState<File | null>(null)
@@ -177,6 +176,7 @@ export default function UploadProofPage() {
                   </div>
                 ) : (
                   <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={preview || ''} 
                       alt="Pratinjau bukti pembayaran" 

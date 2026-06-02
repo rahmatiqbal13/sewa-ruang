@@ -83,8 +83,7 @@ export async function POST(req: NextRequest) {
     // Telegram notification — baca dari DB config
     try {
       const admin = await createAdminClient()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: tgRow } = await (admin.from('notification_channel_configs') as any)
+      const { data: tgRow } = await admin.from('notification_channel_configs')
         .select('is_enabled, config')
         .eq('channel', 'telegram')
         .single()
@@ -119,8 +118,11 @@ export async function POST(req: NextRequest) {
 
     if (smtpConfigured && userEmail) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const items = (booking.booking_items as any[])?.map((item: any) => ({
+        const items = (booking.booking_items as Array<{
+          item_type: 'room' | 'equipment';
+          rooms?: { room_code?: string; name?: string };
+          equipment?: { equipment_code?: string; name?: string };
+        }>)?.map((item) => ({
           code: item.item_type === 'room'
             ? (item.rooms?.room_code || '-')
             : (item.equipment?.equipment_code || '-'),
@@ -138,8 +140,7 @@ export async function POST(req: NextRequest) {
 
         // Find VA by category, same logic as formulir/route.ts (changelog #6)
         const vaByCategory = (cat: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const va = (vaRows as any[])?.find((v: any) => v.category === cat) ?? null
+          const va = (vaRows as Array<{ category: string; bank_name: string; virtual_account_number: string; account_name: string }>)?.find((v) => v.category === cat) ?? null
           if (!va) return null
           return { bankName: va.bank_name, accountNumber: va.virtual_account_number, accountName: va.account_name }
         }
@@ -172,8 +173,7 @@ export async function POST(req: NextRequest) {
             })
             const page = await browser.newPage()
             await page.setContent(docHtml, { waitUntil: 'domcontentloaded' })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const pdfBuffer = Buffer.from(await (page as any).pdf({
+            const pdfBuffer = Buffer.from(await (page as unknown as { pdf: (opts: Record<string, unknown>) => Promise<Buffer> }).pdf({
               format: 'A4',
               printBackground: true,
               margin: { top: '0', right: '0', bottom: '0', left: '0' },
@@ -201,10 +201,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Notification sent' })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Booking submitted notification error:', error)
     return NextResponse.json(
-      { error: 'Failed to send notification', details: error.message },
+      { error: 'Failed to send notification', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

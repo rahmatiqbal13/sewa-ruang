@@ -43,7 +43,6 @@ export function QRCodeDisplay({ url, name, code, type, location, category }: Pro
   function downloadPNG() {
     const svg = containerRef.current?.querySelector('svg')
     if (!svg) return
-    const svgData = new XMLSerializer().serializeToString(svg)
     const canvas = document.createElement('canvas')
     canvas.width = 600
     canvas.height = 700

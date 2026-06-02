@@ -33,7 +33,7 @@ export async function saveTemplate(data: TemplateData) {
     }
 
     // Insert/Update template using service role bypass RLS
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { error } = await adminDb
       .from('notification_templates')
       .upsert(
@@ -46,6 +46,7 @@ export async function saveTemplate(data: TemplateData) {
           is_active: true,
           updated_at: new Date().toISOString(),
           updated_by: user.id,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         { onConflict: 'event_type,channel,user_category' }
       )

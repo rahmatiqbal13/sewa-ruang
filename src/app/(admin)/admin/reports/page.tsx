@@ -31,6 +31,20 @@ interface Inventory {
   rooms?: { name: string } | null
 }
 
+interface ReportBooking {
+  id: string
+  reference_no: string
+  status: string
+  created_at: string
+  total_amount: number
+  users: { name: string; institution: string } | null
+  booking_items: Array<{
+    item_type: string
+    rooms: { name: string } | null
+    equipment: { name: string } | null
+  }> | null
+}
+
 // Helper functions for labels
 const getConditionLabel = (condition: string) => {
   const labels: Record<string, string> = {
@@ -140,7 +154,7 @@ export default async function ReportsPage({
 
   const { data: inventoryData } = await inventoryQuery
 
-  const bookings = bookingsRaw as Array<Record<string, any>> | null
+  const bookings = bookingsRaw as ReportBooking[] | null
   const payments = paymentsRaw as Array<{amount:number;method:string;status:string}> | null
   const equipment = equipmentData as Equipment[] | null
   const inventory = inventoryData as Inventory[] | null
@@ -269,14 +283,13 @@ export default async function ReportsPage({
                     <tr><td colSpan={7} className="text-center text-muted-foreground/70 py-10 text-sm">Tidak ada data pada periode ini</td></tr>
                   )}
                   {bookings?.map((b) => {
-                    const firstItem = (b.booking_items as Array<{item_type:string; rooms:{name:string}|null; equipment:{name:string}|null}>)?.[0]
+                    const firstItem = b.booking_items?.[0]
                     const assetName = firstItem?.item_type === 'room' ? firstItem?.rooms?.name : firstItem?.equipment?.name
-                    const user = b.users as {name:string;institution:string}|null
                     return (
                       <tr key={b.id}>
                         <td className="font-mono text-xs text-indigo-700">{b.reference_no}</td>
-                        <td className="text-sm">{user?.name}</td>
-                        <td className="text-xs text-muted-foreground">{user?.institution}</td>
+                        <td className="text-sm">{b.users?.name}</td>
+                        <td className="text-xs text-muted-foreground">{b.users?.institution}</td>
                         <td className="text-sm">{assetName}</td>
                         <td className="text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
                         <td className="text-sm font-semibold font-mono">{formatRupiah(b.total_amount)}</td>

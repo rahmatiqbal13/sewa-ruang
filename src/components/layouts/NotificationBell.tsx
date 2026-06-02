@@ -81,18 +81,23 @@ export function NotificationBell() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(SEEN_KEY)
-      if (stored) setSeenIds(new Set(JSON.parse(stored) as string[]))
+      if (stored) {
+        setTimeout(() => setSeenIds(new Set(JSON.parse(stored) as string[])), 0)
+      }
     } catch { /* ignore */ }
   }, [])
 
   // Mark all current items as seen when popover opens
   useEffect(() => {
     if (!open || items.length === 0) return
-    setSeenIds(prev => {
-      const updated = new Set([...prev, ...items.map(i => i.id)])
-      try { localStorage.setItem(SEEN_KEY, JSON.stringify([...updated])) } catch { /* ignore */ }
-      return updated
-    })
+    const timeout = setTimeout(() => {
+      setSeenIds(prev => {
+        const updated = new Set([...prev, ...items.map(i => i.id)])
+        try { localStorage.setItem(SEEN_KEY, JSON.stringify([...updated])) } catch { /* ignore */ }
+        return updated
+      })
+    }, 0)
+    return () => clearTimeout(timeout)
   }, [open, items])
 
   const fetchActivity = useCallback(async () => {
@@ -228,7 +233,10 @@ export function NotificationBell() {
     }
   }, [])
 
-  useEffect(() => { fetchActivity() }, [fetchActivity])
+  useEffect(() => {
+    const timeout = setTimeout(() => fetchActivity(), 0)
+    return () => clearTimeout(timeout)
+  }, [fetchActivity])
 
   const overdueCount  = items.filter(i => i.type === 'overdue').length
   const dueCount      = items.filter(i => i.type === 'due').length

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/error-boundaries */
 import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { RoomInventoryList } from './RoomInventoryList'

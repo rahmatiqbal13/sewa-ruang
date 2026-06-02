@@ -1,4 +1,4 @@
-import { getInstitutionProfile, InstitutionProfile } from './institution'
+import { getInstitutionProfile } from './institution'
 
 interface PDFTemplateOptions {
   title: string
@@ -728,11 +728,6 @@ export async function generateUSCBookingDocument(data: {
   const secHdr = (text: string) =>
     `<div style="font-weight:bold;color:${navy};font-size:9.5pt;margin:10px 0 5px 0;">${text}</div>`
 
-  const sigCell = (title: string, border2 = true) =>
-    `<td style="border:1px solid ${border};${border2 ? '' : 'border-left:none;'}text-align:center;padding:8px;width:50%;height:110px;vertical-align:top;">
-       <div style="font-weight:bold;color:${navy};font-size:9.5pt;">${title}</div>
-       <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
-     </td>`
 
   return `<!DOCTYPE html>
 <html lang="id">

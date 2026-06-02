@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -134,8 +133,8 @@ export function ChannelConfig({ configs }: { configs: ChannelData[] }) {
         } else {
           toast.error('Gagal kirim email: ' + (result.error || 'Unknown error'))
         }
-      } catch (err: any) {
-        toast.error('Error: ' + err.message)
+      } catch (err) {
+        toast.error('Error: ' + (err as Error).message)
       }
       
       setLoading(p => ({ ...p, [`${channel}_test`]: false }))

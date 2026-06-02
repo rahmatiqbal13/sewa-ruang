@@ -1,6 +1,6 @@
 'use client'
 
-import { getBorrowerCategoryLabel } from '@/lib/categories'
+
 
 // Reuse the existing types and labels from exportEquipment.ts
 const CATEGORY_LABELS: Record<string, string> = {

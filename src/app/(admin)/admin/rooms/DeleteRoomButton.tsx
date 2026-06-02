@@ -52,8 +52,8 @@ export function DeleteRoomButton({ id, roomName }: DeleteRoomButtonProps) {
       toast.success('Ruangan berhasil dihapus')
       setOpen(false)
       router.refresh()
-    } catch (error: any) {
-      toast.error('Gagal menghapus ruangan: ' + error.message)
+    } catch (error) {
+      toast.error('Gagal menghapus ruangan: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }

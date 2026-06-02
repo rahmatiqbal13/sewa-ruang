@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server'
 
 import { createAdminDbClient } from '@/lib/supabase/server'
@@ -39,7 +40,6 @@ export async function getEntityCurrentLocation(type: string, slug: string) {
   const adminDb = createAdminDbClient()
 
   if (type === 'equipment') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: allEq } = await (adminDb.from('equipment') as any)
       .select('id, name, building_id, storage_room_id, current_location, current_condition')
       .eq('is_active', true)
@@ -69,7 +69,6 @@ export async function getEntityCurrentLocation(type: string, slug: string) {
   }
 
   if (type === 'room') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: allRooms } = await (adminDb.from('rooms') as any)
       .select('id, name, building_id, room_code, current_condition, buildings(name)')
       .eq('is_active', true)
@@ -93,7 +92,6 @@ export async function getEntityCurrentLocation(type: string, slug: string) {
   }
 
   if (type === 'inventory') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: inv } = await (adminDb.from('room_inventories') as any)
       .select('id, name, condition, room_id, rooms(name, buildings(name))')
       .eq('id', slug)

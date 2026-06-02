@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Loader2, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +16,16 @@ interface BookingSlot {
   booking_date: string
   is_booked: boolean
   booking_id?: string
+}
+
+interface BookingItem {
+  booking_id: string
+  bookings: {
+    id: string
+    start_datetime: string
+    end_datetime: string
+    status: string
+  } | null
 }
 
 interface CalendarViewProps {
@@ -33,11 +42,7 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
   const [currentDate, setCurrentDate] = useState(new Date())
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchAvailability()
-  }, [roomId, equipmentId, currentDate])
-
-  async function fetchAvailability() {
+  const fetchAvailability = useCallback(async () => {
     if (!roomId && !equipmentId) {
       setLoading(false)
       return
@@ -72,7 +77,7 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
       const generatedSlots: BookingSlot[] = []
       const slotMap = new Map<string, boolean>()
 
-      items?.forEach((item: any) => {
+      items?.forEach((item: BookingItem) => {
         const booking = item.bookings
         if (!booking) return
 
@@ -102,7 +107,12 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
     } finally {
       setLoading(false)
     }
-  }
+  }, [roomId, equipmentId, currentDate, supabase])
+
+  useEffect(() => {
+    const id = setTimeout(() => fetchAvailability(), 0)
+    return () => clearTimeout(id)
+  }, [fetchAvailability])
 
   // Generate calendar days
   const calendarDays = useMemo(() => {
@@ -305,11 +315,7 @@ export function MiniCalendar({ roomId, equipmentId }: { roomId?: string; equipme
   const [currentDate, setCurrentDate] = useState(new Date())
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchSlots()
-  }, [roomId, equipmentId, currentDate])
-
-  async function fetchSlots() {
+  const fetchSlots = useCallback(async () => {
     if (!roomId && !equipmentId) return
 
     try {
@@ -330,7 +336,12 @@ export function MiniCalendar({ roomId, equipmentId }: { roomId?: string; equipme
     } catch (error) {
       console.error('Error:', error)
     }
-  }
+  }, [roomId, equipmentId, currentDate, supabase])
+
+  useEffect(() => {
+    const id = setTimeout(() => fetchSlots(), 0)
+    return () => clearTimeout(id)
+  }, [fetchSlots])
 
   const calendarDays = useMemo(() => {
     const start = startOfMonth(currentDate)

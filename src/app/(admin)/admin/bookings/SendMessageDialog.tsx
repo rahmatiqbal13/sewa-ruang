@@ -1,12 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, MessageCircle, Mail, Phone, Loader2, Copy, Check } from 'lucide-react'
 import { formatRupiah, formatDateTime } from '@/lib/utils'
 
@@ -36,58 +35,45 @@ export function SendMessageDialog({ open, onOpenChange, booking }: SendMessageDi
   const [sending, setSending] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // Reset message when dialog opens
+  useEffect(() => {
+    if (open && booking) {
+      const borrower = booking.users
+      const getDefaultMessage = () => {
+        return `Halo ${borrower?.name},\n\nTerima kasih telah mengajukan peminjaman di RentSpace.\n\nDetail Pengajuan:\n• No. Referensi: ${booking.reference_no}\n• Status: ${getStatusLabel(booking.status)}\n• Tanggal: ${formatDateTime(booking.start_datetime)}\n• Total: ${formatRupiah(booking.total_amount)}\n\n${getStatusMessage(booking.status)}\n\nTerima kasih.`
+      }
+      const getStatusLabel = (status: string) => {
+        const labels: Record<string, string> = {
+          pending: 'Pending/Menunggu',
+          approved: 'Disetujui',
+          paid: 'Lunas',
+          completed: 'Selesai',
+          rejected: 'Ditolak',
+          cancelled: 'Dibatalkan'
+        }
+        return labels[status] || status
+      }
+      const getStatusMessage = (status: string) => {
+        const messages: Record<string, string> = {
+          pending: 'Pengajuan Anda sedang kami proses. Kami akan menghubungi Anda untuk konfirmasi.',
+          approved: 'Pengajuan Anda telah disetujui. Silakan lakukan pembayaran untuk konfirmasi.',
+          paid: 'Pembayaran telah diterima. Peminjaman Anda sudah aktif.',
+          completed: 'Terima kasih telah menggunakan layanan RentSpace.',
+          rejected: 'Mohon maaf, pengajuan Anda tidak dapat kami proses saat ini.',
+          cancelled: 'Pengajuan telah dibatalkan.'
+        }
+        return messages[status] || ''
+      }
+      const defaultMessage = getDefaultMessage()
+      const id = setTimeout(() => setMessage(defaultMessage), 0)
+      return () => clearTimeout(id)
+    }
+  }, [open, booking])
+
   if (!booking) return null
 
   const borrower = booking.users
   const phone = borrower?.phone?.replace(/[^0-9]/g, '')
-  
-  // Generate default message
-  const getDefaultMessage = () => {
-    return `Halo ${borrower?.name},
-
-Terima kasih telah mengajukan peminjaman di RentSpace.
-
-Detail Pengajuan:
-• No. Referensi: ${booking.reference_no}
-• Status: ${getStatusLabel(booking.status)}
-• Tanggal: ${formatDateTime(booking.start_datetime)}
-• Total: ${formatRupiah(booking.total_amount)}
-
-${getStatusMessage(booking.status)}
-
-Terima kasih.`
-  }
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      pending: 'Pending/Menunggu',
-      approved: 'Disetujui',
-      paid: 'Lunas',
-      completed: 'Selesai',
-      rejected: 'Ditolak',
-      cancelled: 'Dibatalkan'
-    }
-    return labels[status] || status
-  }
-
-  const getStatusMessage = (status: string) => {
-    const messages: Record<string, string> = {
-      pending: 'Pengajuan Anda sedang kami proses. Kami akan menghubungi Anda untuk konfirmasi.',
-      approved: 'Pengajuan Anda telah disetujui. Silakan lakukan pembayaran untuk konfirmasi.',
-      paid: 'Pembayaran telah diterima. Peminjaman Anda sudah aktif.',
-      completed: 'Terima kasih telah menggunakan layanan RentSpace.',
-      rejected: 'Mohon maaf, pengajuan Anda tidak dapat kami proses saat ini.',
-      cancelled: 'Pengajuan telah dibatalkan.'
-    }
-    return messages[status] || ''
-  }
-
-  // Reset message when dialog opens
-  useState(() => {
-    if (open) {
-      setMessage(getDefaultMessage())
-    }
-  })
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message)
@@ -146,7 +132,7 @@ Terima kasih.`
       } else {
         toast.error('Gagal mengirim email')
       }
-    } catch (error) {
+    } catch {
       toast.error('Terjadi kesalahan saat mengirim email')
     } finally {
       setSending(false)

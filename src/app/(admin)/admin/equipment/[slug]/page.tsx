@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   ArrowLeft, Package, MapPin, Building2, Calendar, 
-  Clock, Tag, AlertTriangle, QrCode, Edit, History,
+  Clock, Tag, AlertTriangle, Edit, History,
   CheckCircle2, XCircle, AlertCircle, ClipboardCheck
 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
@@ -101,6 +101,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
       storage_room:storage_room_id(id, name, room_code, buildings(name, code))
     `)
     .eq('id', equipmentId)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .single() as any
 
   if (!equipment) {
@@ -135,6 +136,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
     .eq('equipment_id', equipmentId)
     .gte('slot', `["${now}"]`)
     .order('slot', { ascending: true })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .limit(10) as any
 
   // Fallback: check booking_items for legacy bookings without equipment_booking_slots
@@ -158,8 +160,10 @@ export default async function EquipmentDetailPage({ params }: Props) {
         .in('booking_id', activeBookingIds)
 
       if (legacyItems && legacyItems.length > 0) {
-        activeBookings = legacyItems.map((item: any) => {
-          const b = (activeBookingList as any[]).find((ab: any) => ab.id === item.booking_id)
+        interface BookingItem { id: string; quantity: number; booking_id: string }
+        interface Booking { id: string; start_datetime: string; end_datetime: string; reference_no: string; purpose: string; status: string; user_id: string }
+        activeBookings = legacyItems.map((item: BookingItem) => {
+          const b = (activeBookingList as Booking[]).find((ab: Booking) => ab.id === item.booking_id)
           if (!b) return null
           return {
             id: item.id,
@@ -198,6 +202,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
     .eq('equipment_id', equipmentId)
     .lt('slot', `["${now}"]`)
     .order('slot', { ascending: false })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .limit(5) as any
 
   // Fallback for past bookings
@@ -221,8 +226,10 @@ export default async function EquipmentDetailPage({ params }: Props) {
         .in('booking_id', pastBookingIds)
 
       if (legacyPastItems && legacyPastItems.length > 0) {
-        pastBookings = legacyPastItems.map((item: any) => {
-          const b = (pastBookingList as any[]).find((pb: any) => pb.id === item.booking_id)
+        interface BookingItem { id: string; quantity: number; booking_id: string }
+        interface Booking { id: string; start_datetime: string; end_datetime: string; reference_no: string; purpose: string; status: string; user_id: string }
+        pastBookings = legacyPastItems.map((item: BookingItem) => {
+          const b = (pastBookingList as Booking[]).find((pb: Booking) => pb.id === item.booking_id)
           if (!b) return null
           return {
             id: item.id,

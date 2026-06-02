@@ -28,7 +28,7 @@ type FormData = {
   paid_at: string
 }
 
-export function RecordPaymentButton({ bookingId, totalAmount, paidAmount = 0 }: { bookingId: string; totalAmount: number; paidAmount?: number }) {
+export function RecordPaymentButton({ bookingId, totalAmount }: { bookingId: string; totalAmount: number; paidAmount?: number }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)

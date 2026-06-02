@@ -186,17 +186,6 @@ export function EquipmentForm({
       finalName = newName
     }
 
-    // Combine building and manual location
-    let current_location = data.location_manual
-    if (data.building_id) {
-      const building = buildings.find(b => b.id === data.building_id)
-      if (building) {
-        current_location = data.location_manual 
-          ? `${building.name} - ${data.location_manual}`
-          : building.name
-      }
-    }
-
     const payload = {
       name: finalName,
       equipment_code: data.equipment_code,
@@ -218,6 +207,7 @@ export function EquipmentForm({
 
     if (equipment) {
       // Update existing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from('equipment') as any)
         .update(payload)
         .eq('id', equipment.id)
@@ -228,6 +218,7 @@ export function EquipmentForm({
       }
     } else {
       // Create new
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: newEquipment, error } = await (supabase.from('equipment') as any)
         .insert({ ...payload, created_by: user.id })
         .select('id')
@@ -243,6 +234,7 @@ export function EquipmentForm({
     // Insert/update rates for all categories (including 0 for free items like mahasiswa_s1)
     for (const rate of rates) {
       // Always save rate, even if 0 (for free items)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('equipment_rates') as any).upsert({
         equipment_id: equipmentId,
         user_category: rate.user_category,
@@ -637,7 +629,7 @@ export function EquipmentForm({
                   rate_per_day: 0,
                   rate_per_hour: null,
                   requires_supervision: false
-                })).filter(rate => {
+                })).filter(() => {
                   // This would need actual equipment rates data
                   return false
                 }) : []

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { CancelBookingButton } from '../CancelBookingButton'
 import { formatDateTime, formatRupiah } from '@/lib/utils'
-import { ArrowLeft, Clock, Package, CreditCard, Receipt, Building2, Calendar, MapPin, User } from 'lucide-react'
+import { ArrowLeft, Clock, Package, CreditCard, Receipt, Building2, Calendar, User } from 'lucide-react'
 
 interface BookingDetail {
   id: string
@@ -17,7 +17,7 @@ interface BookingDetail {
   start_datetime: string
   end_datetime: string
   total_amount: number
-  snapshot_rate: Record<string, unknown>
+  snapshot_rate: Record<string, string | number | boolean | null>
   admin_notes: string | null
   created_at: string
   booking_items: Array<{

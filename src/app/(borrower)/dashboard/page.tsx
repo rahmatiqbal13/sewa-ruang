@@ -82,17 +82,7 @@ export default async function BorrowerDashboard() {
     return 'Item tidak diketahui'
   }
 
-  // Get item type label
-  function getItemTypeLabel(booking: BookingWithItems): string {
-    const items = booking.booking_items
-    if (!items || items.length === 0) return ''
 
-    const firstItem = items[0]
-    if (items.length > 1) {
-      return firstItem.item_type === 'room' ? 'Ruang + lainnya' : 'Alat + lainnya'
-    }
-    return firstItem.item_type === 'room' ? 'Ruang' : 'Alat'
-  }
 
   const statusDotColor: Record<string, string> = {
     pending: 'bg-amber-500',
@@ -159,7 +149,7 @@ export default async function BorrowerDashboard() {
               <span className="font-mono text-sm font-semibold text-[#0891B2]">
                 {activeBooking.reference_no}
               </span>
-              <StatusBadge status={activeBooking.status as any} />
+              <StatusBadge status={activeBooking.status as unknown as "pending" | "approved" | "paid" | "completed" | "rejected" | "cancelled"} />
             </div>
             <h3 className="text-base font-semibold text-[#111827] mb-1">
               {getItemName(activeBooking)}
@@ -244,7 +234,7 @@ export default async function BorrowerDashboard() {
 
                 {/* Right: StatusBadge component + amount */}
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <StatusBadge status={booking.status as any} />
+                  <StatusBadge status={booking.status as unknown as "pending" | "approved" | "paid" | "completed" | "rejected" | "cancelled"} />
                   {booking.total_amount > 0 && (
                     <span className="text-xs font-semibold text-emerald-600 font-mono tabular-nums">
                       {formatRupiah(booking.total_amount)}

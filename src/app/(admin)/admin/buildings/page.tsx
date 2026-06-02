@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Building2, Layers, MapPin, ArrowUpRight, ShieldCheck } from 'lucide-react'
 import { BuildingActions } from './BuildingActions'
 import { DeleteBuildingButton } from './DeleteBuildingButton'
-import { cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 
 interface Building {

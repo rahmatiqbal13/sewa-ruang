@@ -19,7 +19,7 @@ import {
   ChevronUp
 } from 'lucide-react'
 import { cn, formatRupiah } from '@/lib/utils'
-import { BORROWER_CATEGORIES, getBorrowerCategoryLabel } from '@/lib/categories'
+import { BORROWER_CATEGORIES } from '@/lib/categories'
 
 export interface Rate {
   user_category: string

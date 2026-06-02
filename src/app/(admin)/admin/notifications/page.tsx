@@ -18,6 +18,7 @@ export default async function NotificationsPage({
     sb.from('notification_channel_configs').select('*'),
     sb.from('notification_templates').select('*'),
     sb.from('notifications').select('*, users!user_id(name, email)').order('created_at', { ascending: false }).limit(50),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ]) as any
 
   const tabs = [
@@ -82,6 +83,7 @@ export default async function NotificationsPage({
             {notifications?.length === 0 && (
               <p className="text-center text-muted-foreground py-10 text-sm">Belum ada notifikasi</p>
             )}
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {notifications?.map((n: any) => (
               <div key={n.id} className="flex items-start justify-between gap-4 px-6 py-4">
                 <div className="flex-1 min-w-0">

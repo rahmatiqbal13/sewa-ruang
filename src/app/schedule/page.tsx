@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
-import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns'
+import { format, addMonths } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { PublicHeader, PublicFooter } from '@/components/shared/PublicLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CalendarDays, Building2, MapPin, Users } from 'lucide-react'
+import { CalendarDays, Building2, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export const revalidate = 60 // Revalidate setiap 60 detik
@@ -133,7 +133,9 @@ async function getPublicSchedule() {
     // Group by room
     const roomMap = new Map<string, RoomSchedule>()
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bookings?.forEach((booking: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       booking.booking_items?.forEach((item: any) => {
         if (item.item_type === 'room' && item.rooms) {
           const roomKey = item.room_id
@@ -184,7 +186,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default async function PublicSchedulePage() {
-  const [institution, schedules] = await Promise.all([
+  const [, schedules] = await Promise.all([
     getInstitutionProfile(),
     getPublicSchedule()
   ])

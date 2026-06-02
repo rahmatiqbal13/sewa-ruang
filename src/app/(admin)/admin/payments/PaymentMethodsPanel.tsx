@@ -44,7 +44,10 @@ export function PaymentMethodsPanel() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchMethods() }, [])
+  useEffect(() => {
+    const id = setTimeout(() => fetchMethods(), 0)
+    return () => clearTimeout(id)
+  }, [])
 
   const handleImageUpload = async (id: string, file: File) => {
     if (!file.type.startsWith('image/')) return toast.error('File harus berupa gambar')

@@ -32,7 +32,7 @@ import { ImageUpload } from '@/components/shared/ImageUpload'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 
-import { BORROWER_CATEGORIES, getBorrowerCategoryLabel } from '@/lib/categories'
+import { getBorrowerCategoryLabel } from '@/lib/categories'
 
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -86,10 +86,6 @@ export default function ProfilePage() {
 
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
-
   async function fetchProfile() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -140,6 +136,12 @@ export default function ProfilePage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => fetchProfile(), 0)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function onSubmit(data: FormData) {
     if (!profile) return

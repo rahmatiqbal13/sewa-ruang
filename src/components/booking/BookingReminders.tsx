@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -42,7 +42,7 @@ const REMINDER_TYPE_LABELS: Record<string, string> = {
   custom: 'Kustom',
 }
 
-const CHANNEL_ICONS: Record<string, any> = {
+const CHANNEL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   email: Mail,
   whatsapp: MessageCircle,
   telegram: MessageCircle,
@@ -64,11 +64,7 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
-  useEffect(() => {
-    fetchReminders()
-  }, [bookingId])
-
-  async function fetchReminders() {
+  const fetchReminders = useCallback(async () => {
     try {
       const { data, error } = await sb
         .rpc('get_booking_reminders', { p_booking_id: bookingId })
@@ -80,7 +76,12 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [bookingId, sb])
+
+  useEffect(() => {
+    const id = setTimeout(() => fetchReminders(), 0)
+    return () => clearTimeout(id)
+  }, [fetchReminders])
 
   async function createCustomReminder() {
     setCreating(true)
@@ -103,8 +104,8 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
 
       toast.success('Pengingat berhasil dibuat')
       fetchReminders()
-    } catch (error: any) {
-      toast.error('Gagal membuat pengingat: ' + error.message)
+    } catch (error) {
+      toast.error('Gagal membuat pengingat: ' + (error as Error).message)
     } finally {
       setCreating(false)
     }
@@ -121,8 +122,8 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
 
       toast.success('Pengingat dibatalkan')
       fetchReminders()
-    } catch (error: any) {
-      toast.error('Gagal membatalkan: ' + error.message)
+    } catch (error) {
+      toast.error('Gagal membatalkan: ' + (error as Error).message)
     }
   }
 
@@ -139,7 +140,6 @@ export function BookingReminders({ bookingId }: BookingRemindersProps) {
   }
 
   const pendingReminders = reminders.filter(r => r.status === 'pending')
-  const sentReminders = reminders.filter(r => r.status === 'sent')
 
   return (
     <Card>

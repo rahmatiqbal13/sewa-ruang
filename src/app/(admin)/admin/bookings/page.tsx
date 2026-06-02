@@ -34,7 +34,10 @@ export default async function AdminBookingsPage({
     .order('created_at', { ascending: false })
     .range(from, to)
 
-  if (status) query = (query as any).eq('status', status)
+  if (status) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    query = (query as any).eq('status', status)
+  }
 
   const { data: bookings, count } = await query
 

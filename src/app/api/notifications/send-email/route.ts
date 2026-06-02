@@ -43,8 +43,7 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!['admin', 'super_admin'].includes((userData as any)?.role)) {
+    if (!['admin', 'super_admin'].includes((userData as { role?: string })?.role ?? '')) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -66,7 +65,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const cfg = emailConfig.config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cfg = emailConfig.config as any
 
     // Get institution profile
     const institution = await getInstitutionProfile()
@@ -152,10 +152,10 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending email:', error)
     return NextResponse.json(
-      { error: 'Failed to send email', details: error.message },
+      { error: 'Failed to send email', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

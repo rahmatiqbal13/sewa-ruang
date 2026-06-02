@@ -16,12 +16,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, Plus, Trash2, User, Calendar, Package, ArrowLeft, Search } from 'lucide-react'
 import { format, addHours } from 'date-fns'
-import { id } from 'date-fns/locale'
 import Link from 'next/link'
 import {
   BORROWER_CATEGORIES,
   EVENT_TYPES,
-  type BorrowerCategory,
   isFreeBooking,
   getBorrowerCategoryLabel,
 } from '@/lib/categories'
@@ -115,6 +113,7 @@ export function AdminBookingForm() {
       const supabase = createClient()
       
       // Load rooms with rates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: roomsData } = await (supabase.from('rooms') as any)
         .select(`
           id, name, room_code, capacity, photo_url,
@@ -126,7 +125,16 @@ export function AdminBookingForm() {
         .order('name')
       
       if (roomsData) {
-        setRooms(roomsData.map((r: any) => ({
+        const rawRooms = roomsData as Array<{
+          id: string
+          name: string
+          room_code: string | null
+          capacity: number | null
+          photo_url: string | null
+          buildings: { name: string } | null
+          room_rates: RoomRate[]
+        }>
+        setRooms(rawRooms.map((r) => ({
           id: r.id,
           name: r.name,
           room_code: r.room_code,
@@ -138,6 +146,7 @@ export function AdminBookingForm() {
       }
 
       // Load equipment with rates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: equipmentData } = await (supabase.from('equipment') as any)
         .select(`
           id, name, equipment_code, merk, photo_url, ketersediaan,
@@ -148,7 +157,16 @@ export function AdminBookingForm() {
         .order('name')
       
       if (equipmentData) {
-        setEquipment(equipmentData.map((e: any) => ({
+        const rawEquipment = equipmentData as Array<{
+          id: string
+          name: string
+          equipment_code: string | null
+          merk: string | null
+          photo_url: string | null
+          ketersediaan: string
+          equipment_rates: EquipmentRate[]
+        }>
+        setEquipment(rawEquipment.map((e) => ({
           id: e.id,
           name: e.name,
           equipment_code: e.equipment_code,
@@ -191,7 +209,7 @@ export function AdminBookingForm() {
     let total = 0
 
     if (!isGratis) {
-      watchItems?.forEach((item: any) => {
+      watchItems?.forEach((item) => {
         if (item.item_type === 'room' && item.room_id) {
           const room = rooms.find(r => r.id === item.room_id)
           if (room) {
@@ -259,7 +277,7 @@ export function AdminBookingForm() {
 
       // Prevent booking with zero total if there are items that should have rates
       if (totalAmount === 0 && data.items.length > 0) {
-        const itemsWithoutRate = data.items.filter((item: any) => {
+        const itemsWithoutRate = data.items.filter((item) => {
           if (item.item_type === 'room' && item.room_id) {
             const room = rooms.find(r => r.id === item.room_id)
             if (!room) return true
@@ -285,7 +303,7 @@ export function AdminBookingForm() {
       const referenceNo = `BK${dateStr}-${randomStr}`
 
       // Get rate snapshot for first item (for metadata)
-      let snapshotRate: Record<string, unknown> = {}
+      let snapshotRate: Record<string, string | number | boolean | null | undefined> = {}
       if (data.items.length > 0) {
         const firstItem = data.items[0]
         if (firstItem.item_type === 'room' && firstItem.room_id) {
@@ -363,8 +381,8 @@ export function AdminBookingForm() {
       toast.success('Peminjaman berhasil dibuat')
       router.push('/admin/bookings')
       router.refresh()
-    } catch (error: any) {
-      toast.error('Gagal membuat peminjaman: ' + error.message)
+    } catch (error) {
+      toast.error('Gagal membuat peminjaman: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -571,23 +589,36 @@ export function AdminBookingForm() {
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {(currentItem?.item_type === 'room' ? rooms : equipment).map((item: any) => {
-                            const rate = currentItem?.item_type === 'room' 
-                              ? getRoomRate(item, watchBorrowerCategory)
-                              : getEquipmentRate(item, watchBorrowerCategory)
-                            const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
-                            
-                            return (
-                              <SelectItem key={item.id} value={item.id}>
-                                <div className="flex items-center justify-between w-full">
-                                  <span>{item.name} {item.room_code || item.equipment_code ? `(${item.room_code || item.equipment_code})` : ''}</span>
-                                  <span className="text-xs text-muted-foreground ml-2">
-                                    Rp {displayRate.toLocaleString('id-ID')}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            )
-                          })}
+                          {currentItem?.item_type === 'room' 
+                            ? rooms.map((item) => {
+                              const rate = getRoomRate(item, watchBorrowerCategory)
+                              const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
+                              return (
+                                <SelectItem key={item.id} value={item.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{item.name} {item.room_code ? `(${item.room_code})` : ''}</span>
+                                    <span className="text-xs text-muted-foreground ml-2">
+                                      Rp {displayRate.toLocaleString('id-ID')}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              )
+                            })
+                            : equipment.map((item) => {
+                              const rate = getEquipmentRate(item, watchBorrowerCategory)
+                              const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
+                              return (
+                                <SelectItem key={item.id} value={item.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{item.name} {item.equipment_code ? `(${item.equipment_code})` : ''}</span>
+                                    <span className="text-xs text-muted-foreground ml-2">
+                                      Rp {displayRate.toLocaleString('id-ID')}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              )
+                            })
+                          }
                         </SelectContent>
                       </Select>
                     </div>
@@ -606,10 +637,13 @@ export function AdminBookingForm() {
                       className="mb-2"
                     />
                     <div className="max-h-40 overflow-y-auto border rounded-[10px]">
-                      {getFilteredItems(currentItem?.item_type || 'room').slice(0, 5).map((item: any) => {
+                      {(currentItem?.item_type === 'room' 
+                        ? getFilteredItems('room').slice(0, 5) 
+                        : getFilteredItems('equipment').slice(0, 5)
+                      ).map((item) => {
                         const rate = currentItem?.item_type === 'room' 
-                          ? getRoomRate(item, watchBorrowerCategory)
-                          : getEquipmentRate(item, watchBorrowerCategory)
+                          ? getRoomRate(item as Room, watchBorrowerCategory)
+                          : getEquipmentRate(item as Equipment, watchBorrowerCategory)
                         const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
                         
                         return (
@@ -636,9 +670,9 @@ export function AdminBookingForm() {
                             <div className="flex-1">
                               <p className="font-medium text-sm">{item.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                {item.room_code || item.equipment_code ? `Kode: ${item.room_code || item.equipment_code}` : ''}
-                                {item.building_name ? ` • ${item.building_name}` : ''}
-                                {item.merk ? ` • ${item.merk}` : ''}
+                                {(item as Room).room_code || (item as Equipment).equipment_code ? `Kode: ${(item as Room).room_code || (item as Equipment).equipment_code}` : ''}
+                                {(item as Room).building_name ? ` • ${(item as Room).building_name}` : ''}
+                                {(item as Equipment).merk ? ` • ${(item as Equipment).merk}` : ''}
                               </p>
                             </div>
                             <Badge variant="secondary" className="text-xs">

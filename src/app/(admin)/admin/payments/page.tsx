@@ -58,13 +58,16 @@ async function TransaksiTab() {
   const sb = createAdminDbClient()
 
   const [{ data: bookingsWithPayment }, { data: vaPaymentProofs }, { data: traditionalPayments }] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (sb.from('bookings') as any)
       .select('id, reference_no, total_amount, status, payment_code, payment_verified_at, created_at, users!user_id(name, email)')
       .gt('total_amount', 0)
       .order('created_at', { ascending: false }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (sb.from('payment_proofs') as any)
       .select('*, bookings(id, reference_no, total_amount, users:user_id(name, email))')
       .order('created_at', { ascending: false }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (sb.from('payments') as any)
       .select('*, bookings(reference_no, users!user_id(name))')
       .order('created_at', { ascending: false }),

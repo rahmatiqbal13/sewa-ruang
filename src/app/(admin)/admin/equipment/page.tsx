@@ -5,13 +5,7 @@ export const revalidate = 30
 
 const ITEMS_PER_PAGE = 10
 
-// Helper function to create slug from name
-function createSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
+
 
 export default async function EquipmentPage({
   searchParams,
@@ -112,7 +106,7 @@ export default async function EquipmentPage({
   if (todayOnly === 'true') availabilityQuery = availabilityQuery.gte('created_at', todayIso)
 
   // Jalankan semua 6 query secara paralel
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const [r0, r1, r2, r3, r4, r5] = await Promise.all([
     countQuery,
     query,
@@ -120,6 +114,7 @@ export default async function EquipmentPage({
     sb.from('equipment').select('category').not('category', 'is', null),
     availabilityQuery,
     sb.from('equipment').select('*', { count: 'exact', head: true }).eq('is_active', false),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ]) as any[]
   const totalCount: number | null = r0.count
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -159,9 +154,6 @@ export default async function EquipmentPage({
 
   const duplicateBaseNames = getDuplicateNames()
   const hasDuplicates = duplicateBaseNames.size > 0
-
-  const totalItems = totalCount || 0
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
 
   return (
     <EquipmentList

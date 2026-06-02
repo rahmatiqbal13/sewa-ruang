@@ -6,6 +6,26 @@ import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { CreditFooter } from '@/components/shared/CreditFooter'
 
+interface RoomInventory {
+  id: string
+  name: string
+  room_code: string
+  description: string | null
+  photo_url: string | null
+  buildings: { name: string; code: string } | null
+}
+
+interface InventoryItem {
+  id: string
+  name: string
+  quantity: number
+  condition: string
+  notes: string | null
+  photo_url: string | null
+  inventory_code: string
+  last_updated_at: string
+}
+
 export const revalidate = 60
 
 function createSlug(name: string): string {
@@ -32,11 +52,14 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
       .eq('room_asset_id', id)
       .eq('is_active', true)
       .order('name'),
-  ]) as [{ data: any }, { data: any[] | null }]
+  ])
 
-  if (!room) notFound()
+  const roomData = room as RoomInventory | null
+  const itemsData = items as InventoryItem[] | null
 
-  const lastUpdated = items?.reduce((latest: string, item: any) =>
+  if (!roomData) notFound()
+
+  const lastUpdated = itemsData?.reduce((latest: string, item) =>
     !latest || item.last_updated_at > latest ? item.last_updated_at : latest, '')
 
   return (
@@ -51,11 +74,11 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Room info card */}
         <div className="bg-card rounded-[14px] border border-border shadow-soft overflow-hidden">
-          {room.photo_url ? (
+          {roomData.photo_url ? (
             <div className="relative h-48 w-full bg-muted flex items-center justify-center p-4">
               <SafeImage 
-                src={room.photo_url} 
-                alt={room.name} 
+                src={roomData.photo_url} 
+                alt={roomData.name} 
                 className="object-contain w-full h-full"
                 fallbackClassName="w-full h-full rounded-[10px]"
               />
@@ -67,15 +90,15 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
           )}
           <div className="p-5">
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold">{room.name}</h1>
-              {room.room_code && (
-                <span className="text-xs font-mono bg-muted border border-border rounded-[10px] px-2 py-0.5">{room.room_code}</span>
+              <h1 className="text-xl font-bold">{roomData.name}</h1>
+              {roomData.room_code && (
+                <span className="text-xs font-mono bg-muted border border-border rounded-[10px] px-2 py-0.5">{roomData.room_code}</span>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {(room.buildings as {name:string}|null)?.name ?? 'Tanpa gedung'}
+              {roomData.buildings?.name ?? 'Tanpa gedung'}
             </p>
-            {room.description && <p className="text-sm text-muted-foreground mt-2">{room.description}</p>}
+            {roomData.description && <p className="text-sm text-muted-foreground mt-2">{roomData.description}</p>}
             {lastUpdated && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-3">
                 <Clock className="h-3 w-3" />
@@ -88,10 +111,10 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
         {/* Inventory section */}
         <div>
           <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
-            Inventaris Ruangan — {items?.length ?? 0} item
+            Inventaris Ruangan — {itemsData?.length ?? 0} item
           </h2>
 
-          {items?.length === 0 && (
+          {itemsData?.length === 0 && (
             <div className="bg-card rounded-[14px] border border-border shadow-soft p-10 text-center">
               <Package2 className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">Belum ada data inventaris ruangan ini</p>
@@ -99,7 +122,7 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {items?.map((item) => (
+            {itemsData?.map((item) => (
               <div key={item.id} className="bg-card rounded-[14px] border border-border shadow-soft overflow-hidden flex">
                 {/* Photo column */}
                 <div className="w-24 shrink-0 bg-muted flex items-center justify-center p-1">
@@ -127,7 +150,7 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs text-muted-foreground">Jml: {item.quantity}</span>
-                    <ConditionBadge condition={item.condition as 'good' | 'needs_repair' | 'damaged' | 'lost'} />
+                    <ConditionBadge condition={item.condition} />
                   </div>
                 </div>
               </div>

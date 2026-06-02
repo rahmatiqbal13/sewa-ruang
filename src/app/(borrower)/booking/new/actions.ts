@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import {
   type BorrowerCategory,
   isFreeBooking,
-  isValidBorrowerCategory,
   migrateBorrowerCategory,
 } from '@/lib/categories'
 import { z } from 'zod'
@@ -232,9 +231,9 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
       .in('room_id', room_ids)
 
     for (const room of roomsData) {
-      const ratesForRoom = (roomRates || []).filter((r: any) => r.room_id === room.id)
-      const rate = ratesForRoom.find((r: any) => r.usage_category === borrowerCategory)
-        ?? ratesForRoom.find((r: any) => r.usage_category === 'umum')
+      const ratesForRoom = (roomRates || []).filter((r: { room_id: string }) => r.room_id === room.id)
+      const rate = ratesForRoom.find((r: { usage_category: string }) => r.usage_category === borrowerCategory)
+        ?? ratesForRoom.find((r: { usage_category: string }) => r.usage_category === 'umum')
 
       if (rate) {
         const ratePerDay = rate.rate_per_day != null ? Number(rate.rate_per_day) : 0

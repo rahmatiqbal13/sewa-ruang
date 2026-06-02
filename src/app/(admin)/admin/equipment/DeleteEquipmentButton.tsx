@@ -8,7 +8,6 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Trash2, Loader2 } from 'lucide-react'
 
 interface DeleteEquipmentButtonProps {
@@ -59,8 +58,8 @@ export function DeleteEquipmentButton({ id, equipmentName }: DeleteEquipmentButt
       toast.success('Alat berhasil dihapus')
       setOpen(false)
       router.refresh()
-    } catch (error: any) {
-      toast.error('Gagal menghapus alat: ' + error.message)
+    } catch (error) {
+      toast.error('Gagal menghapus alat: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }

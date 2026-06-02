@@ -27,6 +27,7 @@ export default async function NewEquipmentPage() {
     .from('buildings')
     .select('id, name, code')
     .eq('is_active', true)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .order('name') as any
 
   // Get rooms for storage dropdown

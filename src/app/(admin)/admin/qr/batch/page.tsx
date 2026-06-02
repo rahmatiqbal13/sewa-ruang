@@ -47,7 +47,8 @@ export default function BatchQRClientPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setBaseUrl(window.location.origin)
+      const id = setTimeout(() => setBaseUrl(window.location.origin), 0)
+      return () => clearTimeout(id)
     }
   }, [])
 
@@ -80,7 +81,13 @@ export default function BatchQRClientPage() {
       
       console.log('Client QR - Rooms data:', { count: roomsData?.length, data: roomsData })
 
-      const transformedRooms = (roomsData || []).map((r: any) => ({
+      const transformedRooms = ((roomsData || []) as Array<{
+        id: string
+        name: string
+        room_code: string | null
+        is_for_rent: boolean | undefined
+        buildings: { name: string } | undefined
+      }>).map((r) => ({
         id: r.id,
         name: r.name,
         room_code: r.room_code,
@@ -98,7 +105,12 @@ export default function BatchQRClientPage() {
         .eq('is_active', true)
         .order('name')
 
-      const transformedEquipment = (equipmentData || []).map((e: any) => ({
+      const transformedEquipment = ((equipmentData || []) as Array<{
+        id: string
+        name: string
+        equipment_code: string | null
+        category: string
+      }>).map((e) => ({
         id: e.id,
         name: e.name,
         equipment_code: e.equipment_code,
@@ -115,7 +127,13 @@ export default function BatchQRClientPage() {
         .eq('is_active', true)
         .order('name')
 
-      const transformedInventory = (inventoryData || []).map((i: any) => ({
+      const transformedInventory = ((inventoryData || []) as Array<{
+        id: string
+        name: string
+        inventory_code: string | null
+        category: string
+        rooms: { name: string } | undefined
+      }>).map((i) => ({
         id: i.id,
         name: i.name,
         inventory_code: i.inventory_code,

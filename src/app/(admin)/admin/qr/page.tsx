@@ -8,22 +8,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DoorOpen, Package, Boxes, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
+interface QRRoom {
+  id: string
+  name: string
+  room_code: string
+  is_for_rent: boolean
+  buildings?: { name: string }
+}
+
+interface QREquipment {
+  id: string
+  name: string
+  equipment_code: string
+  category: string
+  merk: string
+  buildings?: { name: string }
+  rooms?: { name: string; room_code: string }
+}
+
+interface QRInventory {
+  id: string
+  name: string
+  inventory_code: string
+  category: string
+  rooms?: { name: string }
+}
+
 export default function QRPage() {
-  const [rooms, setRooms] = useState<any[]>([])
-  const [equipment, setEquipment] = useState<any[]>([])
-  const [inventory, setInventory] = useState<any[]>([])
+  const [rooms, setRooms] = useState<QRRoom[]>([])
+  const [equipment, setEquipment] = useState<QREquipment[]>([])
+  const [inventory, setInventory] = useState<QRInventory[]>([])
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [selectedRoom, setSelectedRoom] = useState<any>(null)
-  const [selectedEquipment, setSelectedEquipment] = useState<any>(null)
-  const [selectedInventory, setSelectedInventory] = useState<any>(null)
+  const [selectedRoom, setSelectedRoom] = useState<QRRoom | null>(null)
+  const [selectedEquipment, setSelectedEquipment] = useState<QREquipment | null>(null)
+  const [selectedInventory, setSelectedInventory] = useState<QRInventory | null>(null)
   const [activeTab, setActiveTab] = useState('rooms')
 
   const [baseUrl, setBaseUrl] = useState(process.env.NEXT_PUBLIC_APP_URL || '')
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setBaseUrl(window.location.origin)
+      const id = setTimeout(() => setBaseUrl(window.location.origin), 0)
+      return () => clearTimeout(id)
     }
   }, [])
 
@@ -38,6 +65,7 @@ export default function QRPage() {
       // Check if super admin
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: userProfile } = await (supabase.from('users') as any)
           .select('role')
           .eq('id', user.id)
@@ -46,6 +74,7 @@ export default function QRPage() {
       }
 
       // Fetch rooms - all active rooms (no is_for_rent filter)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: roomsData, error: roomsError } = await (supabase as any)
         .from('rooms')
         .select('id, name, room_code, is_for_rent, is_active, buildings(name)')
@@ -61,6 +90,7 @@ export default function QRPage() {
       setRooms(roomsData || [])
 
       // Fetch equipment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: equipmentData } = await (supabase as any)
         .from('equipment')
         .select('id, name, equipment_code, category')
@@ -71,12 +101,14 @@ export default function QRPage() {
 
       // Fetch inventory
       if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: userProfile } = await (supabase.from('users') as any)
           .select('role')
           .eq('id', user.id)
           .single()
         
         if (userProfile?.role === 'super_admin') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: inv } = await (supabase as any)
             .from('room_inventories')
             .select('id, name, inventory_code, category, rooms(name, room_code)')
@@ -145,7 +177,7 @@ export default function QRPage() {
             <div className="lg:col-span-1 space-y-2">
               <p className="text-sm font-medium text-foreground">Pilih Ruangan ({rooms.length})</p>
               <div className="border border-border rounded-[10px] overflow-hidden max-h-[500px] overflow-y-auto">
-                {rooms.map((room: any) => (
+                {rooms.map((room) => (
                   <div
                     key={room.id}
                     onClick={() => setSelectedRoom(room)}
@@ -193,7 +225,7 @@ export default function QRPage() {
             <div className="lg:col-span-1 space-y-2">
               <p className="text-sm font-medium text-foreground">Pilih Alat ({equipment.length})</p>
               <div className="border border-border rounded-[10px] overflow-hidden max-h-[500px] overflow-y-auto">
-                {equipment.map((item: any) => (
+                {equipment.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => setSelectedEquipment(item)}
@@ -235,7 +267,7 @@ export default function QRPage() {
               <div className="lg:col-span-1 space-y-2">
                 <p className="text-sm font-medium text-foreground">Pilih Inventaris ({inventory.length})</p>
                 <div className="border border-border rounded-[10px] overflow-hidden max-h-[500px] overflow-y-auto">
-                  {inventory.map((item: any) => (
+                  {inventory.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => setSelectedInventory(item)}

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CreditFooter } from '@/components/shared/CreditFooter'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+
 import { Card, CardContent } from '@/components/ui/card'
 import { CalendarView } from '@/components/calendar/CalendarView'
 import {

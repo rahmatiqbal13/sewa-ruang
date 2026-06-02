@@ -18,12 +18,11 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Loader2, Info, Users, Building2, Package, Clock, Calendar, 
-  Check, X, Plus, Trash2, Wrench, Search, XCircle
+  Wrench, Search, XCircle
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 import type { BookableItem, RoomItem, EquipmentItem, UserProfile } from './page'
 import {
-  BORROWER_CATEGORIES,
   EVENT_TYPES,
   type BorrowerCategory,
   getBorrowerCategoryLabel,
@@ -164,6 +163,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     },
   })
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const startDate = watch('start_date')
   const startTime = watch('start_time')
   const endDate = watch('end_date')
@@ -287,7 +287,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
 
     setEstimatedTotal(total)
     setPriceBreakdown(breakdown)
-  }, [startDate, startTime, endDate, endTime, selectedRooms, selectedEquipment, eventType, borrowerCategory])
+  }, [startDate, startTime, endDate, endTime, selectedRooms, selectedEquipment, eventType, borrowerCategory, hasRooms, purpose, selectedRoomList, selectedEquipmentList])
 
   // Toggle room selection
   function toggleRoom(roomId: string) {

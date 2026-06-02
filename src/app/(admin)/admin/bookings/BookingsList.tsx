@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  Calendar, ChevronRight, User, Package, Plus, Download, Eye,
+  Calendar, Package, Plus, Download, Eye,
   ChevronLeft, ChevronRightIcon, Search, Send, Loader2, Trash2,
   CheckCircle, XCircle, FileText, RotateCcw, MoreHorizontal
 } from 'lucide-react'
@@ -81,12 +81,10 @@ interface BookingsListProps {
   totalPages: number
 }
 
-const ITEMS_PER_PAGE = 10
-
 export function BookingsList({ bookings, statusCounts, currentStatus, totalCount, currentPage, totalPages }: BookingsListProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [selectedBooking] = useState<Booking | null>(null)
   const [messageDialogOpen, setMessageDialogOpen] = useState(false)
   const [resending, setResending] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null)

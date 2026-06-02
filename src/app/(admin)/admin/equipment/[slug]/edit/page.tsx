@@ -7,12 +7,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Package, AlertTriangle, Info, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Package, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { EquipmentImageUpload } from '../../EquipmentImageUpload'
 import { EquipmentRatesForm } from '../../EquipmentRatesForm'
-import { RoomSelect } from '../../RoomSelect'
 import { LocationSelect } from '../../LocationSelect'
 import { BORROWER_CATEGORIES } from '@/lib/categories'
 
@@ -81,6 +80,7 @@ export default async function EditEquipmentPage({ params }: Props) {
     .from('equipment')
     .select('*')
     .eq('id', equipmentId)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .single() as any
 
   if (!equipment) {
@@ -105,6 +105,7 @@ export default async function EditEquipmentPage({ params }: Props) {
     .from('rooms')
     .select('id, name, room_code, building_id, floor_number')
     .eq('is_active', true)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .order('name') as any
 
   // Get count of existing equipment names only (not the list)
@@ -207,6 +208,7 @@ export default async function EditEquipmentPage({ params }: Props) {
         is_active,
         photo_url,
         updated_at: new Date().toISOString(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
       .eq('id', equipmentId)
 

@@ -1,9 +1,39 @@
 import { createAdminDbClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
 import { formatDateTime, cn } from '@/lib/utils'
 import { Package, DoorOpen, Clock, CheckCircle, CreditCard } from 'lucide-react'
 import { DeleteReturnButton } from './DeleteReturnButton'
+
+interface CompletedReturn {
+  id: string
+  condition: string
+  returned_at: string
+  is_early_return: boolean
+  notes: string | null
+  booking: {
+    reference_no: string
+    users: { name: string } | null
+  } | null
+}
+
+interface ReturnListBooking {
+  id: string
+  reference_no: string
+  status: string
+  start_datetime: string
+  end_datetime: string
+  total_amount: number
+  actual_end_datetime: string | null
+  users: { name: string; email: string; phone: string | null } | null
+  booking_items: Array<{
+    id: string
+    item_type: string
+    quantity: number
+    room: { id: string; name: string; room_code: string } | null
+    equipment: { id: string; name: string; equipment_code: string } | null
+  }> | null
+  payments: Array<{ amount: number; status: string }> | null
+}
 
 export default async function ReturnsPage({
   searchParams,
@@ -46,32 +76,19 @@ export default async function ReturnsPage({
     .order('returned_at', { ascending: false })
     .limit(30)
 
-  // Fetch early returns
-  const { data: earlyReturns } = await sb
-    .from('booking_early_returns')
-    .select(`
-      *,
-      booking:bookings(
-        id, reference_no,
-        users!user_id(name)
-      )
-    `)
-    .order('created_at', { ascending: false })
-    .limit(20)
-
   // Filter by asset type
-  const filterByType = (bookings: any[]) => {
+  const filterByType = (bookings: ReturnListBooking[]) => {
     return (bookings ?? []).filter((b) => {
       const items = b.booking_items || []
       if (activeType === 'equipment') {
-        return items.some((item: any) => item.item_type === 'equipment')
+        return items.some((item) => item.item_type === 'equipment')
       } else {
-        return items.some((item: any) => item.item_type === 'room')
+        return items.some((item) => item.item_type === 'room')
       }
     })
   }
 
-  const filteredPending = filterByType(pendingReturns || [])
+  const filteredPending = filterByType((pendingReturns || []) as ReturnListBooking[])
 
   const conditionLabel: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
     good: { label: 'Baik', variant: 'default' },
@@ -126,7 +143,7 @@ export default async function ReturnsPage({
         <div className="mini-stat border-t-blue-400">
           <p className="mini-stat-label">Dikembalikan Bulan Ini</p>
           <p className="mini-stat-value">
-            {(completedReturns || []).filter((r: any) => {
+            {((completedReturns || []) as CompletedReturn[]).filter((r) => {
               const now = new Date()
               const d = new Date(r.returned_at)
               return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
@@ -140,7 +157,7 @@ export default async function ReturnsPage({
         <div className="mini-stat border-t-green-400">
           <p className="mini-stat-label">Selesai Hari Ini</p>
           <p className="mini-stat-value">
-            {(completedReturns || []).filter((r: any) => {
+            {((completedReturns || []) as CompletedReturn[]).filter((r) => {
               const today = new Date().toDateString()
               const returnDate = new Date(r.returned_at).toDateString()
               return today === returnDate
@@ -177,22 +194,22 @@ export default async function ReturnsPage({
                   </td>
                 </tr>
               )}
-              {filteredPending.map((booking: any) => {
+              {filteredPending.map((booking) => {
                 const items = booking.booking_items || []
                 const totalPaid = (booking.payments || [])
-                  .filter((p: any) => p.status === 'paid')
-                  .reduce((sum: number, p: any) => sum + p.amount, 0)
+                  .filter((p) => p.status === 'paid')
+                  .reduce((sum: number, p) => sum + p.amount, 0)
                 const isOverdue = new Date() > new Date(booking.end_datetime)
                 return (
                   <tr key={booking.id} className={isOverdue ? 'bg-red-50/60' : ''}>
                     <td className="font-mono text-xs text-indigo-700">{booking.reference_no}</td>
                     <td>
-                      <p className="text-sm font-medium">{(booking.users as { name: string } | null)?.name}</p>
-                      <p className="text-xs text-muted-foreground/70">{(booking.users as { phone: string } | null)?.phone}</p>
+                      <p className="text-sm font-medium">{booking.users?.name}</p>
+                      <p className="text-xs text-muted-foreground/70">{booking.users?.phone}</p>
                     </td>
                     <td>
                       <div className="space-y-0.5">
-                        {items.slice(0, 2).map((item: any, idx: number) => (
+                        {items.slice(0, 2).map((item, idx: number) => (
                           <p key={idx} className="text-xs text-muted-foreground">
                             {item.item_type === 'room' ? item.room?.name : item.equipment?.name}
                           </p>
@@ -265,8 +282,8 @@ export default async function ReturnsPage({
                 </tr>
               </thead>
               <tbody>
-                {(completedReturns || []).map((r: any) => {
-                  const cond = conditionLabel[r.condition as string]
+                {((completedReturns || []) as CompletedReturn[]).map((r) => {
+                  const cond = conditionLabel[r.condition]
                   const condColors: Record<string, string> = {
                     good: 'bg-emerald-100 text-emerald-800',
                     minor_damage: 'bg-amber-100 text-amber-800',

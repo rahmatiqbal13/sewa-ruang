@@ -76,8 +76,6 @@ interface EquipmentListProps {
   isSuperAdmin?: boolean
 }
 
-const ITEMS_PER_PAGE = 10
-
 export function EquipmentList({
   equipment,
   allEquipment,

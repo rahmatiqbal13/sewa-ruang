@@ -21,9 +21,9 @@ export async function POST(req: Request) {
     }
 
     // Get booking details
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking, error: bookingError } = await (supabase
-      .from('bookings') as any)
+    const { data: booking, error: bookingError } = await (supabase.from('bookings') as any)
       .select(`
         id,
         reference_no,
@@ -53,9 +53,9 @@ export async function POST(req: Request) {
     }
 
     // Get primary bank account
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: bankAccount } = await (supabase
-      .from('bank_accounts') as any)
+    const { data: bankAccount } = await (supabase.from('bank_accounts') as any)
       .select('*')
       .eq('is_active', true)
       .eq('is_primary', true)
@@ -69,8 +69,9 @@ export async function POST(req: Request) {
     let paymentCode = booking.payment_code
     if (!paymentCode) {
       // Update booking to generate payment code
-      const { data: updatedBooking, error: updateError } = await (supabase
-        .from('bookings') as any)
+       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: updatedBooking, error: updateError } = await (supabase.from('bookings') as any)
         .update({ status: 'pending_payment' })
         .eq('id', bookingId)
         .select('payment_code')
@@ -110,6 +111,7 @@ export async function POST(req: Request) {
     })
 
     // Update booking with QR URL
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('bookings') as any)
       .update({ 
         payment_qr_url: qrDataUrl,
@@ -203,9 +205,9 @@ export async function GET(req: Request) {
     const supabase = await createClient()
     
     // Get booking
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking, error } = await (supabase
-      .from('bookings') as any)
+    const { data: booking, error } = await (supabase.from('bookings') as any)
       .select('payment_qr_url, payment_code, total_amount, reference_no, status')
       .eq('id', bookingId)
       .single()

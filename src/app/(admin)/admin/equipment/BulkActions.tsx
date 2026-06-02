@@ -14,16 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Trash2, RotateCcw, Loader2, CheckSquare, Square, X } from 'lucide-react'
+import { Trash2, RotateCcw, Loader2, CheckSquare, X } from 'lucide-react'
 
 interface Equipment {
   id: string
   name: string
   is_active: boolean
-}
-
-interface BulkActionsProps {
-  equipment: Equipment[]
 }
 
 export function useBulkActions(equipment: Equipment[]) {

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { AdminSidebar } from './AdminSidebar'
 import { NotificationBell } from './NotificationBell'
-import { Building2, Menu, ChevronDown, Shield, User } from 'lucide-react'
+import { Building2, Menu, ChevronDown, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { CreditFooter } from '@/components/shared/CreditFooter'
@@ -40,7 +40,10 @@ export function AdminShell({
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
   const pathname = usePathname()
 
-  useEffect(() => { setSidebarOpen(false) }, [pathname])
+  useEffect(() => {
+    const id = setTimeout(() => setSidebarOpen(false), 0)
+    return () => clearTimeout(id)
+  }, [pathname])
 
   // Swipe gesture for sidebar
   const minSwipeDistance = 50

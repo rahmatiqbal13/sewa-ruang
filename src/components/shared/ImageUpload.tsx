@@ -22,7 +22,7 @@ function isValidUrl(string: string): boolean {
   try {
     new URL(string)
     return true
-  } catch (_) {
+  } catch {
     return false
   }
 }
@@ -112,7 +112,7 @@ export function ImageUpload({ value, onChange, bucket = 'equipment-photos', fold
     } finally {
       setUploading(false)
     }
-  }, [bucket, folder, onChange, value])
+  }, [bucket, folder, onChange, value, supabase.auth, supabase.storage])
 
   // Handle file input change
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {

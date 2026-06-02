@@ -2,10 +2,10 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,10 +22,7 @@ import {
   ChevronRight, 
   CalendarDays,
   ArrowRight,
-  Clock,
-  Tag,
   X,
-  SlidersHorizontal,
   ChevronDown,
   Landmark,
   Hash,
@@ -37,10 +34,7 @@ import {
 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
-import { CalendarView } from '@/components/calendar/CalendarView'
 import { EmptyState } from '@/components/ui/empty-state'
-import { SkeletonCatalogGrid } from '@/components/ui/skeletons'
-import { getBorrowerCategoryLabel } from '@/lib/categories'
 
 const PAGE_SIZE = 12
 
@@ -135,12 +129,6 @@ function toNumber(v: number | string | null | undefined): number | null {
   if (v == null) return null
   const n = typeof v === 'number' ? v : Number(v)
   return isNaN(n) ? null : n
-}
-
-function getRateByCategory(rates: EquipmentRate[] | null | undefined, category: string): number | null {
-  if (!rates || rates.length === 0) return null
-  const rate = rates.find(r => r.user_category === category)
-  return rate ? toNumber(rate.rate_per_day) : null
 }
 
 function getPriceRange(rates: EquipmentRate[] | null | undefined): { min: number | null; max: number | null } {
@@ -364,6 +352,7 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
   return (
     <Card className="group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300">
       {/* Image Placeholder */}
+      {/* eslint-disable @next/next/no-img-element */}
       <div className="relative aspect-square bg-[#F3F4F6] overflow-hidden">
         {item.photo_url ? (
           <img 
@@ -388,6 +377,7 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
             {isAvailable ? 'Tersedia' : 'Sedang Digunakan'}
           </Badge>
         </div>
+      {/* eslint-enable @next/next/no-img-element */}
       </div>
       
       <CardContent className="p-4">
@@ -733,7 +723,7 @@ function FilterSidebar({
   )
 }
 
-export function CatalogClient({ buildings, equipment, institution }: Props) {
+export function CatalogClient({ buildings, equipment }: Props) {
   // Tab state: 'all' | 'rooms' | 'equipment'
   const [activeTab, setActiveTab] = useState<'all' | 'rooms' | 'equipment'>('all')
   
@@ -754,7 +744,10 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
   const [currentPage, setCurrentPage] = useState(1)
 
   // Reset pagination when filters change
-  useEffect(() => { setCurrentPage(1) }, [searchQuery, selectedBuildings, selectedCategories, selectedCapacity, showAvailableOnly, sortBy, activeTab])
+  useEffect(() => {
+    const id = setTimeout(() => setCurrentPage(1), 0)
+    return () => clearTimeout(id)
+  }, [searchQuery, selectedBuildings, selectedCategories, selectedCapacity, showAvailableOnly, sortBy, activeTab])
 
   // Transform rooms data
   const allRooms = useMemo(() =>
@@ -870,8 +863,6 @@ export function CatalogClient({ buildings, equipment, institution }: Props) {
     setShowAvailableOnly(false)
     setSearchQuery('')
   }
-
-  const activeFilterCount = selectedBuildings.length + selectedCategories.length + selectedCapacity.length + (showAvailableOnly ? 1 : 0)
 
   return (
     <div className="min-h-screen bg-white">

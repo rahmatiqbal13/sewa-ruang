@@ -71,7 +71,7 @@ export function AddUserDialog() {
         setOpen(false)
         router.refresh()
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Network error:', err)
       setError('Terjadi kesalahan koneksi. Silakan coba lagi.')
       toast.error('Terjadi kesalahan koneksi')

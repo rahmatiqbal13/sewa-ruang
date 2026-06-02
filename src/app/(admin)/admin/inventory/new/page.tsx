@@ -42,21 +42,27 @@ export default async function NewInventoryPage({
     .order('name')
 
   // Transform buildings data
-  const buildings = buildingsData?.map((b: any) => ({
-    id: b.id,
-    name: b.name,
-    code: b.code,
+  const buildings = buildingsData?.map((b) => ({
+    id: b.id as string,
+    name: b.name as string,
+    code: b.code as string,
   })) ?? []
 
   // Transform rooms data
-  const rooms = roomsData?.map((room: any) => ({
+  const rooms = ((roomsData as Array<{
+    id: string
+    name: string
+    room_code: string | null
+    building_id: string | null
+    buildings: { name: string; code: string } | null
+  }>) ?? []).map((room) => ({
     id: room.id,
     name: room.name,
     room_code: room.room_code,
     building_id: room.building_id,
     building_name: room.buildings?.name || 'Unknown',
     building_code: room.buildings?.code || '',
-  })) ?? []
+  }))
 
   // Generate next inventory code
   // Get the highest existing code number

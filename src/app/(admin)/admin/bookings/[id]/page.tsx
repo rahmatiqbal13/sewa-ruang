@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAdminDbClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -11,11 +12,10 @@ import { formatDateTime, formatRupiah, cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { 
   ArrowLeft, User, Mail, Phone, Building2, 
-  Calendar, Package, CreditCard, FileText, Receipt, Clock,
+  Package, CreditCard, FileText, Receipt, Clock,
   MessageSquare, Download, MapPin, GraduationCap, CheckCircle2,
   Clock3, AlertCircle
 } from 'lucide-react'
-import { ContactButtons } from '@/components/shared/ContactButtons'
 import { getBorrowerCategoryLabel, getEventTypeLabel, isFreeBooking, migrateBorrowerCategory } from '@/lib/categories'
 
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {

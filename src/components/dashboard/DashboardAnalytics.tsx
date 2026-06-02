@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -28,9 +28,80 @@ import {
   DollarSign,
   Loader2
 } from 'lucide-react'
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
+import { format, subDays, eachDayOfInterval } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+
+function StatCard({ 
+  title, 
+  value, 
+  change, 
+  icon: Icon,
+  prefix = ''
+}: { 
+  title: string
+  value: number
+  change: number
+  icon: React.ComponentType<{ className?: string }>
+  prefix?: string
+}) {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold mt-1">
+              {prefix}{value.toLocaleString('id-ID')}
+            </p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-[10px]">
+            <Icon className="h-6 w-6 text-blue-600" />
+          </div>
+        </div>
+        <div className="flex items-center gap-1 mt-4">
+          {change > 0 ? (
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          ) : change < 0 ? (
+            <TrendingDown className="h-4 w-4 text-red-500" />
+          ) : null}
+          <span className={cn(
+            "text-sm font-medium",
+            change > 0 ? "text-green-600" : change < 0 ? "text-red-600" : "text-muted-foreground"
+          )}>
+            {change > 0 ? '+' : ''}{change.toFixed(1)}%
+          </span>
+          <span className="text-sm text-muted-foreground">vs periode lalu</span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+interface BookingRow {
+  id: string
+  total_amount: number | null
+  status: string
+  created_at: string
+}
+
+interface BookingItemWithRoom {
+  room_id: string | null
+  rooms: { name: string } | null
+}
+
+interface BookingItemWithEquipment {
+  equipment_id: string | null
+  equipment: { name: string } | null
+}
+
+interface RecentBooking {
+  id: string
+  purpose: string | null
+  status: string
+  total_amount: number | null
+  users: { name: string } | null
+}
 
 interface DashboardStats {
   totalBookings: number
@@ -41,7 +112,7 @@ interface DashboardStats {
   totalRevenueChange: number
   totalUsers: number
   totalUsersChange: number
-  recentBookings: any[]
+  recentBookings: RecentBooking[]
   bookingsByStatus: { name: string; value: number; color: string }[]
   dailyBookings: { date: string; bookings: number; revenue: number }[]
   topRooms: { name: string; bookings: number }[]
@@ -63,11 +134,7 @@ export function DashboardAnalytics() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchDashboardStats()
-  }, [timeRange])
-
-  async function fetchDashboardStats() {
+  const fetchDashboardStats = useCallback(async () => {
     setLoading(true)
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,17 +182,20 @@ export function DashboardAnalytics() {
         ? ((totalBookings - prevTotalBookings) / prevTotalBookings) * 100 
         : 0
 
-      const totalRevenue = (bookings as any[])?.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0) || 0
-      const prevRevenue = (prevBookings as any[])?.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0) || 0
+      const typedBookings: BookingRow[] = bookings || []
+      const typedPrevBookings: BookingRow[] = prevBookings || []
+
+      const totalRevenue = typedBookings.reduce((sum, b) => sum + (b.total_amount || 0), 0)
+      const prevRevenue = typedPrevBookings.reduce((sum, b) => sum + (b.total_amount || 0), 0)
       const totalRevenueChange = prevRevenue > 0
         ? ((totalRevenue - prevRevenue) / prevRevenue) * 100
         : 0
 
       // Bookings by status
-      const statusCount = (bookings as any[])?.reduce((acc: Record<string, number>, b: any) => {
+      const statusCount = typedBookings.reduce((acc: Record<string, number>, b) => {
         acc[b.status] = (acc[b.status] || 0) + 1
         return acc
-      }, {}) || {}
+      }, {})
 
       const bookingsByStatus = Object.entries(statusCount).map(([status, count]) => ({
         name: status.charAt(0).toUpperCase() + status.slice(1),
@@ -137,14 +207,14 @@ export function DashboardAnalytics() {
       const days = eachDayOfInterval({ start: startDate, end: endDate })
       const dailyBookings = days.map(day => {
         const dateStr = format(day, 'yyyy-MM-dd')
-        const dayBookings = (bookings as any[])?.filter((b: any) =>
+        const dayBookings = typedBookings.filter(b =>
           format(new Date(b.created_at), 'yyyy-MM-dd') === dateStr
-        ) || []
+        )
 
         return {
           date: format(day, 'dd MMM', { locale: id }),
           bookings: dayBookings.length,
-          revenue: dayBookings.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0),
+          revenue: dayBookings.reduce((sum, b) => sum + (b.total_amount || 0), 0),
         }
       })
 
@@ -168,7 +238,7 @@ export function DashboardAnalytics() {
         .eq('item_type', 'room')
         .not('room_id', 'is', null)
 
-      const roomCount = roomStats?.reduce((acc: Record<string, { name: string; count: number }>, item: any) => {
+      const roomCount = (roomStats as BookingItemWithRoom[] | null)?.reduce((acc: Record<string, { name: string; count: number }>, item) => {
         const roomName = item.rooms?.name || 'Unknown'
         if (!acc[roomName]) {
           acc[roomName] = { name: roomName, count: 0 }
@@ -178,9 +248,9 @@ export function DashboardAnalytics() {
       }, {}) || {}
 
       const topRooms = Object.values(roomCount)
-        .sort((a: any, b: any) => b.count - a.count)
+        .sort((a, b) => b.count - a.count)
         .slice(0, 5)
-        .map((r: any) => ({ name: r.name, bookings: r.count }))
+        .map(r => ({ name: r.name, bookings: r.count }))
 
       // Top equipment
       const { data: equipmentStats } = await sb
@@ -192,7 +262,7 @@ export function DashboardAnalytics() {
         .eq('item_type', 'equipment')
         .not('equipment_id', 'is', null)
 
-      const equipmentCount = equipmentStats?.reduce((acc: Record<string, { name: string; count: number }>, item: any) => {
+      const equipmentCount = (equipmentStats as BookingItemWithEquipment[] | null)?.reduce((acc: Record<string, { name: string; count: number }>, item) => {
         const equipName = item.equipment?.name || 'Unknown'
         if (!acc[equipName]) {
           acc[equipName] = { name: equipName, count: 0 }
@@ -202,9 +272,9 @@ export function DashboardAnalytics() {
       }, {}) || {}
 
       const topEquipment = Object.values(equipmentCount)
-        .sort((a: any, b: any) => b.count - a.count)
+        .sort((a, b) => b.count - a.count)
         .slice(0, 5)
-        .map((e: any) => ({ name: e.name, bookings: e.count }))
+        .map(e => ({ name: e.name, bookings: e.count }))
 
       setStats({
         totalBookings,
@@ -215,7 +285,7 @@ export function DashboardAnalytics() {
         totalRevenueChange,
         totalUsers: users?.length || 0,
         totalUsersChange: 0,
-        recentBookings: recentBookingsData || [],
+        recentBookings: (recentBookingsData as RecentBooking[] | null) || [],
         bookingsByStatus,
         dailyBookings,
         topRooms,
@@ -226,7 +296,12 @@ export function DashboardAnalytics() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [timeRange, supabase])
+
+  useEffect(() => {
+    const id = setTimeout(() => fetchDashboardStats(), 0)
+    return () => clearTimeout(id)
+  }, [fetchDashboardStats])
 
   if (loading) {
     return (
@@ -237,50 +312,6 @@ export function DashboardAnalytics() {
   }
 
   if (!stats) return null
-
-  const StatCard = ({ 
-    title, 
-    value, 
-    change, 
-    icon: Icon,
-    prefix = ''
-  }: { 
-    title: string
-    value: number
-    change: number
-    icon: any
-    prefix?: string
-  }) => (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">
-              {prefix}{value.toLocaleString('id-ID')}
-            </p>
-          </div>
-          <div className="p-3 bg-blue-50 rounded-[10px]">
-            <Icon className="h-6 w-6 text-blue-600" />
-          </div>
-        </div>
-        <div className="flex items-center gap-1 mt-4">
-          {change > 0 ? (
-            <TrendingUp className="h-4 w-4 text-green-500" />
-          ) : change < 0 ? (
-            <TrendingDown className="h-4 w-4 text-red-500" />
-          ) : null}
-          <span className={cn(
-            "text-sm font-medium",
-            change > 0 ? "text-green-600" : change < 0 ? "text-red-600" : "text-muted-foreground"
-          )}>
-            {change > 0 ? '+' : ''}{change.toFixed(1)}%
-          </span>
-          <span className="text-sm text-muted-foreground">vs periode lalu</span>
-        </div>
-      </CardContent>
-    </Card>
-  )
 
   return (
     <div className="space-y-6">
@@ -465,7 +496,7 @@ export function DashboardAnalytics() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {stats.recentBookings.map((booking: any) => (
+            {stats.recentBookings.map((booking) => (
               <div 
                 key={booking.id}
                 className="flex items-center justify-between p-4 rounded-[10px] border border-border hover:bg-muted transition-colors"

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePWA } from '@/lib/pwa';
-import { Wifi, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 
 export function OnlineStatus() {
   const { isOnline } = usePWA();

@@ -27,7 +27,7 @@ type FormData = z.infer<typeof schema>
 export function RecordReturnForm({ bookingId }: { bookingId: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { returned_at: new Date().toISOString().slice(0, 16), condition: 'good' },
   })

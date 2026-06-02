@@ -21,14 +21,17 @@ export default function ForgotPasswordPage() {
   // Handle toast notifications based on action result
   useEffect(() => {
     if (state.message && !isPending) {
-      if (state.success) {
-        toast.success(state.message)
-        if (state.email) {
-          setSentEmail(state.email)
+      const id = setTimeout(() => {
+        if (state.success) {
+          toast.success(state.message)
+          if (state.email) {
+            setSentEmail(state.email)
+          }
+        } else {
+          toast.error(state.message)
         }
-      } else {
-        toast.error(state.message)
-      }
+      }, 0)
+      return () => clearTimeout(id)
     }
   }, [state, isPending])
 

@@ -31,9 +31,9 @@ export async function POST(req: Request) {
     }
 
     // Get booking details
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking, error: bookingError } = await (supabase
-      .from('bookings') as any)
+    const { data: booking, error: bookingError } = await (supabase.from('bookings') as any)
       .select('id, user_id, total_amount, status, reference_no')
       .eq('id', bookingId)
       .single()
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     const fileExt = proofImage.name.split('.').pop()
     const fileName = `payment-proofs/${bookingId}/${Date.now()}.${fileExt}`
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('payments')
       .upload(fileName, proofImage, {
         contentType: proofImage.type,
@@ -87,9 +87,9 @@ export async function POST(req: Request) {
       .getPublicUrl(fileName)
 
     // Insert payment proof record
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: proofData, error: proofError } = await (supabase
-      .from('payment_proofs') as any)
+    const { data: proofData, error: proofError } = await (supabase.from('payment_proofs') as any)
       .insert({
         booking_id: bookingId,
         proof_url: publicUrl,
@@ -113,6 +113,7 @@ export async function POST(req: Request) {
     }
 
     // Update booking status (with full rollback on failure)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: statusError } = await (supabase.from('bookings') as any)
       .update({
         status: 'payment_uploaded',
@@ -124,6 +125,7 @@ export async function POST(req: Request) {
     if (statusError) {
       console.error('Status update error:', statusError)
       // Rollback: hapus record proof dan file yang sudah diupload
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('payment_proofs') as any).delete().eq('id', proofData.id)
       await supabase.storage.from('payments').remove([fileName])
       return NextResponse.json({

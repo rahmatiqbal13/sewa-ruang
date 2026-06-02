@@ -17,8 +17,8 @@ import { Badge } from '@/components/ui/badge'
 import {
   Scan, CheckCircle2, AlertCircle,
   Package, Building2, ClipboardList, MapPin,
-  Users, Boxes, Calendar, Clock, User,
-  ShieldCheck, Eye, Tag, Wrench, AlertTriangle,
+  Users, Calendar, Clock, User,
+  ShieldCheck, Eye, AlertTriangle,
   Info, Layers, History, Banknote, Pencil, QrCode, Power,
   CheckCircle, Ban
 } from 'lucide-react'
@@ -68,8 +68,42 @@ const USER_CATEGORY_LABELS: Record<string, string> = {
   umum: 'Umum',
 }
 
-function formatRupiah(n: number): string {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
+interface ScanEntityDetails {
+  name: string
+  roomCode?: string
+  photoUrl?: string
+  condition?: string
+  quantity?: number
+  capacity?: number
+  equipmentCode?: string
+  buildingName?: string
+  buildingCode?: string
+  floorNumber?: number
+  isForRent?: boolean
+  ketersediaan?: string
+  statusTindakan?: string
+  category?: string
+  merk?: string
+  updatedAt?: string
+  description?: string
+  roomFloor?: number | null
+  currentLocation?: string
+  inventoryCode?: string
+  roomName?: string
+  notes?: string
+  inventoryItems?: Array<{ id: string; name: string; quantity: number; condition: string; notes?: string | null; photo_url?: string | null; inventory_code?: string | null }>
+  activeBookings?: Array<{ id: string; purpose?: string; status: string; reference_no: string; start_datetime: string; users?: { name: string; email?: string } | null }>
+  pastBookings?: Array<{ id: string; purpose?: string; status: string; reference_no: string; start_datetime: string }>
+  rates?: Array<{ user_category: string; rate_per_day: number; rate_per_hour?: number | null }>
+}
+
+function ConditionBadge({ condition, className = '' }: { condition?: string; className?: string }) {
+  const cond = CONDITIONS.find(c => c.value === condition)
+  return (
+    <Badge className={`${cond?.color || 'bg-slate-100 text-slate-700'} ${className}`}>
+      {cond?.label || condition}
+    </Badge>
+  )
 }
 
 function formatDate(dateStr: string): string {
@@ -109,16 +143,16 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
   const searchParams = useSearchParams()
   const [scanResult, setScanResult] = useState<string>('')
   const [scanError, setScanError] = useState('')
-  const [scannedData, setScannedData] = useState<{ type: string; id: string } | null>(null)
+  const [scannedData] = useState<{ type: string; id: string } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
   const [buildings, setBuildings] = useState<BuildingOption[]>([])
   const [rooms, setRooms] = useState<RoomOption[]>([])
-  const [currentLocation, setCurrentLocation] = useState<EntityLocation | null>(null)
+  const [, setCurrentLocation] = useState<EntityLocation | null>(null)
   const [selectedBuilding, setSelectedBuilding] = useState('')
   const [selectedRoom, setSelectedRoom] = useState('')
   const [userRole, setUserRole] = useState<string | null>(null)
-  const [entityDetails, setEntityDetails] = useState<any>(null)
+  const [entityDetails, setEntityDetails] = useState<ScanEntityDetails | null>(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
@@ -145,25 +179,40 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
   }, [])
 
   useEffect(() => {
-    if (type && id) {
+    if (!type || !id) return
+    let cancelled = false
+
+    const fetchDetails = async () => {
       setLoadingDetails(true)
-
-      getEntityCurrentLocation(type, id).then((loc) => {
-        if (loc) {
-          setCurrentLocation(loc)
-          if (loc.buildingId) setSelectedBuilding(loc.buildingId)
-          if (loc.roomId) setSelectedRoom(loc.roomId)
+      try {
+        const [locResult, detailsResult] = await Promise.allSettled([
+          getEntityCurrentLocation(type, id),
+          getEntityDetails(type, id),
+        ])
+        if (cancelled) return
+        if (locResult.status === 'fulfilled' && locResult.value) {
+          setCurrentLocation(locResult.value)
+          if (locResult.value.buildingId) setSelectedBuilding(locResult.value.buildingId)
+          if (locResult.value.roomId) setSelectedRoom(locResult.value.roomId)
+        } else {
+          setCurrentLocation(null)
         }
-      }).catch(() => setCurrentLocation(null))
-
-      getEntityDetails(type, id).then((details) => {
-        setEntityDetails(details)
-        setLoadingDetails(false)
-      }).catch(() => {
+        if (detailsResult.status === 'fulfilled') {
+          setEntityDetails(detailsResult.value as ScanEntityDetails)
+        } else {
+          setEntityDetails(null)
+        }
+      } catch {
+        if (cancelled) return
+        setCurrentLocation(null)
         setEntityDetails(null)
-        setLoadingDetails(false)
-      })
+      } finally {
+        if (!cancelled) setLoadingDetails(false)
+      }
     }
+
+    fetchDetails()
+    return () => { cancelled = true }
   }, [type, id])
 
   const filteredRooms = selectedBuilding
@@ -266,16 +315,6 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
           <p className="text-muted-foreground">{typeLabel} tidak ditemukan</p>
         </div>
       </div>
-    )
-  }
-
-  // Shared: condition badge component
-  const ConditionBadge = ({ condition, className = '' }: { condition: string; className?: string }) => {
-    const cond = CONDITIONS.find(c => c.value === condition)
-    return (
-      <Badge className={`${cond?.color || 'bg-slate-100 text-slate-700'} ${className}`}>
-        {cond?.label || condition}
-      </Badge>
     )
   }
 
@@ -403,7 +442,7 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                           </tr>
                         </thead>
                         <tbody>
-                          {entityDetails.inventoryItems.map((item: any) => (
+                          {entityDetails.inventoryItems.map((item) => (
                             <tr key={item.id} className="border-b border-border/60 last:border-0 hover:bg-amber-50/30 transition-colors">
                               <td className="py-3 px-3 font-medium">{item.name}</td>
                               <td className="py-3 px-3 text-center font-semibold text-amber-700">{item.quantity}</td>
@@ -438,7 +477,7 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                 <CardContent className="pt-0">
                   {entityDetails.activeBookings && entityDetails.activeBookings.length > 0 ? (
                     <div className="space-y-2">
-                      {entityDetails.activeBookings.map((booking: any) => (
+                      {entityDetails.activeBookings.map((booking) => (
                         <div key={booking.id} className="p-3 bg-gradient-to-r from-orange-50 to-rose-50/30 border border-orange-100 rounded-xl hover:shadow-sm transition-shadow">
                           <div className="flex items-center justify-between mb-1">
                             <p className="text-sm font-medium text-foreground">{booking.purpose || 'Peminjaman'}</p>
@@ -482,15 +521,15 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0 space-y-2">
-                    {entityDetails.pastBookings.map((booking: any) => (
-                      <div key={booking.id} className="p-3 bg-gradient-to-r from-violet-50/50 to-purple-50/30 border border-violet-100 rounded-xl flex items-center justify-between hover:shadow-sm transition-shadow">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{booking.purpose || 'Peminjaman'}</p>
-                          <p className="text-xs text-violet-600/80">{formatDate(booking.start_datetime)} • {booking.reference_no}</p>
-                        </div>
-                        <Badge variant="secondary" className="text-xs bg-violet-100 text-violet-700 border-violet-200">{booking.status}</Badge>
+{entityDetails.pastBookings.map((booking) => (
+                    <div key={booking.id} className="p-3 bg-gradient-to-r from-violet-50/50 to-purple-50/30 border border-violet-100 rounded-xl flex items-center justify-between hover:shadow-sm transition-shadow">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{booking.purpose || 'Peminjaman'}</p>
+                        <p className="text-xs text-violet-600/80">{formatDate(booking.start_datetime)} • {booking.reference_no}</p>
                       </div>
-                    ))}
+                      <Badge variant="secondary" className="text-xs bg-violet-100 text-violet-700 border-violet-200">{booking.status}</Badge>
+                    </div>
+                  ))}
                   </CardContent>
                 </Card>
               )}
@@ -625,7 +664,7 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                         entityDetails.ketersediaan === 'digunakan' ? 'text-blue-800' :
                         'text-slate-800'
                       }`}>
-                        {KETERSEDIAAN_LABELS[entityDetails.ketersediaan] || entityDetails.ketersediaan}
+                        {KETERSEDIAAN_LABELS[entityDetails.ketersediaan || ''] || entityDetails.ketersediaan}
                       </p>
                       <p className={`text-xs ${
                         entityDetails.ketersediaan === 'tersedia' ? 'text-emerald-600' :
@@ -654,7 +693,7 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                       <p className={`font-medium ${
                         entityDetails.statusTindakan === 'normal' ? 'text-blue-800' : 'text-amber-800'
                       }`}>
-                        {STATUS_TINDAKAN_LABELS[entityDetails.statusTindakan] || entityDetails.statusTindakan}
+                        {STATUS_TINDAKAN_LABELS[entityDetails.statusTindakan || ''] || entityDetails.statusTindakan}
                       </p>
                       <p className={`text-xs ${
                         entityDetails.statusTindakan === 'normal' ? 'text-blue-600' : 'text-amber-600'
@@ -730,7 +769,7 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 rounded-xl bg-gradient-to-br from-[#0891B2]/5 to-[#22D3EE]/5 border border-[#0891B2]/10">
                       <p className="text-sm text-[#0891B2] font-medium">Kategori</p>
-                      <p className="font-medium text-foreground mt-1">{CATEGORY_LABELS[entityDetails.category] || entityDetails.category || '-'}</p>
+                      <p className="font-medium text-foreground mt-1">{CATEGORY_LABELS[entityDetails.category || ''] || entityDetails.category || '-'}</p>
                     </div>
                     <div className="p-3 rounded-xl bg-gradient-to-br from-[#0891B2]/5 to-[#22D3EE]/5 border border-[#0891B2]/10">
                       <p className="text-sm text-[#0891B2] font-medium">Merk/Brand</p>
@@ -767,7 +806,7 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {entityDetails.rates.map((rate: any) => (
+                      {entityDetails.rates.map((rate) => (
                         <div key={rate.user_category} className="p-3 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-50/30 border border-emerald-100 hover:shadow-sm transition-shadow">
                           <p className="text-sm font-medium text-emerald-800">{USER_CATEGORY_LABELS[rate.user_category] || rate.user_category}</p>
                           <p className="text-lg font-bold text-emerald-600 mt-0.5">
@@ -798,7 +837,7 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                 <CardContent className="pt-0">
                   {entityDetails.activeBookings && entityDetails.activeBookings.length > 0 ? (
                     <div className="space-y-2">
-                      {entityDetails.activeBookings.map((booking: any) => (
+                      {entityDetails.activeBookings.map((booking) => (
                         <div key={booking.id} className="p-3 bg-gradient-to-r from-orange-50 to-rose-50/30 border border-orange-100 rounded-xl hover:shadow-sm transition-shadow">
                           <div className="flex items-center justify-between mb-1">
                             <p className="text-sm font-medium text-foreground">{booking.purpose || 'Peminjaman'}</p>
@@ -841,7 +880,7 @@ export default function ScanPageClient({ embedded = false }: ScanPageClientProps
                 <CardContent className="pt-0">
                   {entityDetails.pastBookings && entityDetails.pastBookings.length > 0 ? (
                     <div className="space-y-2">
-                      {entityDetails.pastBookings.map((booking: any) => (
+                      {entityDetails.pastBookings.map((booking) => (
                         <div key={booking.id} className="p-3 bg-gradient-to-r from-violet-50/50 to-purple-50/30 border border-violet-100 rounded-xl flex items-center justify-between hover:shadow-sm transition-shadow">
                           <div>
                             <p className="text-sm font-medium text-foreground">{booking.purpose || 'Peminjaman'}</p>

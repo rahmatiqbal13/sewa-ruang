@@ -15,9 +15,11 @@ export function usePWA() {
 
   useEffect(() => {
     // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
+    const t1 = setTimeout(() => {
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        setIsInstalled(true);
+      }
+    }, 0);
 
     // Listen for install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -43,9 +45,11 @@ export function usePWA() {
     window.addEventListener('offline', handleOffline);
 
     // Initial online status
-    setIsOnline(navigator.onLine);
+    const t2 = setTimeout(() => setIsOnline(navigator.onLine), 0);
 
     return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
       window.removeEventListener('online', handleOnline);

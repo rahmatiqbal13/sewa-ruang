@@ -15,7 +15,6 @@ import { Loader2, Building2, ArrowLeft, Camera } from 'lucide-react'
 import { useState } from 'react'
 import { PhotoUpload } from '@/components/shared/PhotoUpload'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
 
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),

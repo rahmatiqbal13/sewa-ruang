@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
 import { Filter, X, Building2, Layers } from 'lucide-react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -45,7 +45,7 @@ export function RoomFilters({ buildings }: RoomFiltersProps) {
       for_rent: forRentFilter,
       ...params
     }
-    const valid = Object.entries(current).filter(([_, v]) => v)
+    const valid = Object.entries(current).filter((entry) => entry[1])
     return valid.length > 0 ? '/admin/rooms?' + valid.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&') : '/admin/rooms'
   }, [buildingFilter, floorFilter, forRentFilter])
 

@@ -55,7 +55,7 @@ export function SkeletonTableRow({ columns = 5 }: { columns?: number }) {
   return (
     <div className="flex items-center gap-4 px-4 py-3 border-b border-border">
       {Array.from({ length: columns }).map((_, i) => (
-        <Skeleton key={i} className="h-4 flex-1" style={{ maxWidth: `${Math.random() * 40 + 60}%` }} />
+        <Skeleton key={i} className="h-4 flex-1" style={{ maxWidth: `${60 + ((i * 137) % 40)}%` }} />
       ))}
     </div>
   )
@@ -67,7 +67,7 @@ export function SkeletonTable({ rows = 5, columns = 5, className }: { rows?: num
       {/* Header */}
       <div className="flex items-center gap-4 px-4 py-3 border-b border-border bg-muted/50">
         {Array.from({ length: columns }).map((_, i) => (
-          <Skeleton key={i} className="h-3 flex-1" style={{ maxWidth: `${Math.random() * 30 + 50}%` }} />
+          <Skeleton key={i} className="h-3 flex-1" style={{ maxWidth: `${50 + ((i * 131) % 30)}%` }} />
         ))}
       </div>
       {/* Rows */}

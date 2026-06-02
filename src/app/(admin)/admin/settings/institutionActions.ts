@@ -108,8 +108,8 @@ export async function saveInstitutionProfile(data: InstitutionProfile) {
     revalidatePath('/admin/settings')
     return { success: true }
     
-  } catch (error: any) {
+  } catch (error) {
     console.error('Server action error:', error)
-    return { error: error.message || 'Terjadi kesalahan' }
+    return { error: (error as Error).message || 'Terjadi kesalahan' }
   }
 }

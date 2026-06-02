@@ -22,8 +22,9 @@ export function QRScanner({ onScan }: Props) {
     if (!scannerRef.current || !startedRef.current) return
     try {
       await scannerRef.current.stop()
-    } catch (err: any) {
-      if (!err?.message?.includes('not running')) {
+    } catch (err) {
+      const error = err as Error
+      if (!error?.message?.includes('not running')) {
         console.error('QR stop error:', err)
       }
     }
@@ -47,13 +48,6 @@ export function QRScanner({ onScan }: Props) {
       return
     }
 
-    // Clean up any previous instance on this container
-    try {
-      const existing = (Html5Qrcode as any).getCameras?.() ?? []
-    } catch {
-      // ignore
-    }
-
     const scanner = new Html5Qrcode(containerId, {
       verbose: false,
       formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
@@ -73,13 +67,14 @@ export function QRScanner({ onScan }: Props) {
       )
       startedRef.current = true
       setLoading(false)
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as Error
       setLoading(false)
       setActive(false)
       startedRef.current = false
       scannerRef.current = null
 
-      const msg = err?.message?.toLowerCase() || ''
+      const msg = error?.message?.toLowerCase() || ''
       if (msg.includes('permission') || msg.includes('not allowed')) {
         setError('Akses kamera ditolak. Pastikan Anda memberikan izin kamera di browser.')
       } else if (msg.includes('not found') || msg.includes('no camera')) {
@@ -87,7 +82,7 @@ export function QRScanner({ onScan }: Props) {
       } else if (msg.includes('insecure')) {
         setError('Kamera tidak tersedia melalui HTTP. Gunakan HTTPS untuk mengakses fitur ini.')
       } else {
-        setError('Tidak dapat mengakses kamera. ' + (err?.message || 'Pastikan izin kamera sudah diberikan.'))
+        setError('Tidak dapat mengakses kamera. ' + (error?.message || 'Pastikan izin kamera sudah diberikan.'))
       }
       console.error('QR Scanner error:', err)
     }

@@ -4,6 +4,16 @@ import { createAdminDbClient } from '@/lib/supabase/server'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+interface BookingWithUser {
+  id: string
+  reference_no: string
+  status: string
+  start_datetime: string
+  end_datetime: string
+  purpose: string
+  users: { name: string; email: string } | null
+}
+
 export async function getBuildingsAndRooms() {
   const adminDb = createAdminDbClient()
 
@@ -20,12 +30,12 @@ export async function getBuildingsAndRooms() {
     .order('name')
 
   return {
-    buildings: (buildings || []).map((b: any) => ({
+    buildings: (buildings || []).map((b: { id: string; name: string; code: string }) => ({
       id: b.id,
       name: b.name,
       code: b.code,
     })),
-    rooms: (rooms || []).map((r: any) => ({
+    rooms: (rooms || []).map((r: { id: string; name: string; building_id: string; buildings?: { name?: string } }) => ({
       id: r.id,
       name: r.name,
       buildingId: r.building_id,
@@ -44,7 +54,7 @@ export async function getEntityCurrentLocation(type: string, slug: string) {
       .select('id, name, building_id, storage_room_id, current_location, current_condition')
       .eq('is_active', true)
 
-    const matched = (allEq || []).find((eq: any) => {
+    const matched = (allEq || []).find((eq: { name: string }) => {
       const s = eq.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
       return s === slug
     })
@@ -53,8 +63,8 @@ export async function getEntityCurrentLocation(type: string, slug: string) {
 
     // Fetch building and room names
     const [{ data: building }, { data: room }] = await Promise.all([
-      matched.building_id ? (adminDb.from('buildings') as any).select('name').eq('id', matched.building_id).single() : Promise.resolve({ data: null }),
-      matched.storage_room_id ? (adminDb.from('rooms') as any).select('name').eq('id', matched.storage_room_id).single() : Promise.resolve({ data: null }),
+      matched.building_id ? adminDb.from('buildings').select('name').eq('id', matched.building_id).single() : Promise.resolve({ data: null }),
+      matched.storage_room_id ? adminDb.from('rooms').select('name').eq('id', matched.storage_room_id).single() : Promise.resolve({ data: null }),
     ])
 
     return {
@@ -74,7 +84,7 @@ export async function getEntityCurrentLocation(type: string, slug: string) {
       .select('id, name, building_id, room_code, current_condition, buildings(name)')
       .eq('is_active', true)
 
-    const matched = (allRooms || []).find((r: any) => {
+    const matched = (allRooms || []).find((r: { name: string }) => {
       const s = r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
       return s === slug
     })
@@ -93,6 +103,7 @@ export async function getEntityCurrentLocation(type: string, slug: string) {
   }
 
   if (type === 'inventory') {
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: inv } = await (adminDb.from('room_inventories') as any)
       .select('id, name, condition, room_id, rooms(name, buildings(name))')
@@ -135,6 +146,7 @@ export async function getEntityDetails(type: string, slug: string) {
 
   if (type === 'room') {
     // Fetch room by slug
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: allRooms, error: roomsError } = await (adminDb.from('rooms') as any)
       .select('id, name, room_code, building_id, capacity, floor_number, current_condition, is_for_rent, photo_url, description, buildings(name, code)')
       .eq('is_active', true)
@@ -144,18 +156,18 @@ export async function getEntityDetails(type: string, slug: string) {
       return null
     }
 
-    const matched = (allRooms || []).find((r: any) => {
+    const matched = (allRooms || []).find((r: { name: string }) => {
       const s = r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
       return s === slug
     })
 
     if (!matched) {
-      console.error('Room not found for slug:', slug, 'Available rooms:', (allRooms || []).map((r: any) => r.name))
+      console.error('Room not found for slug:', slug, 'Available rooms:', (allRooms || []).map((r: { name: string }) => r.name))
       return null
     }
 
     // Fetch inventory items in this room
-    const { data: inventoryItems } = await (adminDb.from('room_inventory_items') as any)
+    const { data: inventoryItems } = await adminDb.from('room_inventory_items')
       .select('id, name, inventory_code, quantity, condition, notes, photo_url')
       .eq('room_asset_id', matched.id)
       .eq('is_active', true)
@@ -163,16 +175,16 @@ export async function getEntityDetails(type: string, slug: string) {
 
     // Fetch active bookings for this room via booking_items
     const now = new Date().toISOString()
-    const { data: roomBookingItems } = await (adminDb.from('booking_items') as any)
+    const { data: roomBookingItems } = await adminDb.from('booking_items')
       .select('booking_id')
       .eq('room_id', matched.id)
 
-    const bookingIds = roomBookingItems?.map((b: any) => b.booking_id) || []
-    let activeBookings: any[] = []
-    let pastBookings: any[] = []
+    const bookingIds = roomBookingItems?.map((b: { booking_id: string }) => b.booking_id) || []
+    let activeBookings: BookingWithUser[] = []
+    let pastBookings: BookingWithUser[] = []
 
     if (bookingIds.length > 0) {
-      const { data: active } = await (adminDb.from('bookings') as any)
+      const { data: active } = await adminDb.from('bookings')
         .select('id, reference_no, status, start_datetime, end_datetime, purpose, users!user_id(name, email)')
         .in('id', bookingIds)
         .in('status', ['approved', 'paid'])
@@ -180,7 +192,7 @@ export async function getEntityDetails(type: string, slug: string) {
         .order('start_datetime', { ascending: true })
         .limit(5)
 
-      const { data: past } = await (adminDb.from('bookings') as any)
+      const { data: past } = await adminDb.from('bookings')
         .select('id, reference_no, status, start_datetime, end_datetime, purpose, users!user_id(name, email)')
         .in('id', bookingIds)
         .lt('end_datetime', now)
@@ -211,11 +223,12 @@ export async function getEntityDetails(type: string, slug: string) {
 
   if (type === 'equipment') {
     // Fetch equipment by slug
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: allEq } = await (adminDb.from('equipment') as any)
       .select('id, name, equipment_code, category, merk, description, current_condition, ketersediaan, status_tindakan, photo_url, current_location, building_id, storage_room_id, updated_at')
       .eq('is_active', true)
 
-    const matched = (allEq || []).find((eq: any) => {
+    const matched = (allEq || []).find((eq: { name: string }) => {
       const s = eq.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
       return s === slug
     })
@@ -225,16 +238,16 @@ export async function getEntityDetails(type: string, slug: string) {
     const now = new Date().toISOString()
 
     // Fetch active and past bookings for this equipment via booking_items
-    const { data: eqBookingItems } = await (adminDb.from('booking_items') as any)
+    const { data: eqBookingItems } = await adminDb.from('booking_items')
       .select('booking_id')
       .eq('equipment_id', matched.id)
 
-    const bookingIds = eqBookingItems?.map((b: any) => b.booking_id) || []
-    let activeBookings: any[] = []
-    let pastBookings: any[] = []
+    const bookingIds = eqBookingItems?.map((b: { booking_id: string }) => b.booking_id) || []
+    let activeBookings: BookingWithUser[] = []
+    let pastBookings: BookingWithUser[] = []
 
     if (bookingIds.length > 0) {
-      const { data: active } = await (adminDb.from('bookings') as any)
+      const { data: active } = await adminDb.from('bookings')
         .select('id, reference_no, status, start_datetime, end_datetime, purpose, users!user_id(name, email, phone)')
         .in('id', bookingIds)
         .in('status', ['approved', 'paid'])
@@ -242,7 +255,7 @@ export async function getEntityDetails(type: string, slug: string) {
         .order('start_datetime', { ascending: true })
         .limit(5)
 
-      const { data: past } = await (adminDb.from('bookings') as any)
+      const { data: past } = await adminDb.from('bookings')
         .select('id, reference_no, status, start_datetime, end_datetime, purpose, users!user_id(name, email, phone)')
         .in('id', bookingIds)
         .lt('end_datetime', now)
@@ -254,15 +267,15 @@ export async function getEntityDetails(type: string, slug: string) {
     }
 
     // Fetch equipment rates
-    const { data: rates } = await (adminDb.from('equipment_rates') as any)
+    const { data: rates } = await adminDb.from('equipment_rates')
       .select('user_category, rate_per_day, rate_per_hour')
       .eq('equipment_id', matched.id)
       .order('user_category')
 
     // Fetch building and room names (with floor)
     const [{ data: building }, { data: room }] = await Promise.all([
-      matched.building_id ? (adminDb.from('buildings') as any).select('name, code').eq('id', matched.building_id).single() : Promise.resolve({ data: null }),
-      matched.storage_room_id ? (adminDb.from('rooms') as any).select('name, room_code, floor').eq('id', matched.storage_room_id).single() : Promise.resolve({ data: null }),
+      matched.building_id ? adminDb.from('buildings').select('name, code').eq('id', matched.building_id).single() : Promise.resolve({ data: null }),
+      matched.storage_room_id ? adminDb.from('rooms').select('name, room_code, floor').eq('id', matched.storage_room_id).single() : Promise.resolve({ data: null }),
     ])
 
     return {
@@ -290,6 +303,7 @@ export async function getEntityDetails(type: string, slug: string) {
   }
 
   if (type === 'inventory') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: inv } = await (adminDb.from('room_inventories') as any)
       .select('id, name, inventory_code, quantity, condition, notes, photo_url, room_id, rooms(name, room_code, buildings(name))')
       .eq('id', slug)
@@ -373,13 +387,14 @@ export async function updateEntityFromScan(formData: FormData) {
       .select('id, name, equipment_code')
       .eq('is_active', true)
 
-    const matched = allEq?.find((eq: { id: string; name: string }) => {
-      const slug = eq.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-      return slug === id
+    const matched = allEq?.find((eq) => {
+      const itemSlug = eq.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      return itemSlug === id
     })
 
     if (!matched) return { error: 'Alat tidak ditemukan' }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {
       current_condition: condition,
       tgl_terakhir_cek: now,
@@ -403,13 +418,14 @@ export async function updateEntityFromScan(formData: FormData) {
       .select('id, name, room_code')
       .eq('is_active', true)
 
-    const matched = allRooms?.find((r: { id: string; name: string }) => {
-      const slug = r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-      return slug === id
+    const matched = allRooms?.find((r) => {
+      const roomSlug = r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      return roomSlug === id
     })
 
     if (!matched) return { error: 'Ruangan tidak ditemukan' }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {
       current_condition: condition,
       updated_at: now,
@@ -435,8 +451,9 @@ export async function updateEntityFromScan(formData: FormData) {
 
     if (!inv) return { error: 'Inventaris tidak ditemukan' }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {
-      condition: condition as any,
+      condition: condition,
       last_updated_at: now,
     }
 
@@ -488,9 +505,9 @@ export async function updateEntityFromScan(formData: FormData) {
       .select('id, name')
       .eq('is_active', true)
 
-    const matched = allEq?.find((eq) => {
-      const slug = eq.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-      return slug === id
+    const matched = allEq?.find((eq: { name: string }) => {
+      const itemSlug = eq.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      return itemSlug === id
     })
 
     if (matched) {

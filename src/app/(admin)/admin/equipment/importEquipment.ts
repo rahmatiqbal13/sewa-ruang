@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { BORROWER_CATEGORIES } from '@/lib/categories'
+
 
 export interface ImportResult {
   success: boolean

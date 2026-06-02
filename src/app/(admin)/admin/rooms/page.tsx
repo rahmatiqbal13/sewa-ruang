@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/error-boundaries */
 import { createAdminDbClient } from '@/lib/supabase/server'
 import { RoomsPageClient } from './RoomsPageClient'
 
@@ -34,6 +35,7 @@ export default async function RoomsPage({
     let roomsQuery = sb
       .from('rooms')
       .select('id, name, room_code, floor_number, capacity, rate_per_hour, rate_per_day, current_condition, is_active, is_for_rent, photo_url, description, building_id')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .order('name') as any
 
     // Apply building filter
@@ -57,16 +59,17 @@ export default async function RoomsPage({
         current_condition: string; is_active: boolean; is_for_rent?: boolean
         photo_url: string | null; description?: string | null; building_id?: string | null
       }> | null
-      error: any
+      error: unknown
     }
 
     if (roomsError) {
-      console.error('Error fetching rooms:', roomsError?.message ?? JSON.stringify(roomsError))
+      const errMsg = (roomsError as Error)?.message ?? JSON.stringify(roomsError)
+      console.error('Error fetching rooms:', errMsg)
       return (
         <div className="p-6">
           <div className="bg-red-50 border border-red-200 rounded-[10px] p-4">
             <h2 className="text-red-800 font-semibold">Error Loading Rooms</h2>
-            <p className="text-red-600 mt-1">{roomsError.message}</p>
+            <p className="text-red-600 mt-1">{errMsg}</p>
           </div>
         </div>
       )

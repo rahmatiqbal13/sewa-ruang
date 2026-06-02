@@ -7,15 +7,15 @@ export default async function TrashPage() {
   const sb = createAdminDbClient()
 
   // Fetch soft-deleted equipment (is_active = false)
-  const { data: deletedEquipment } = await sb
-    .from('equipment')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: deletedEquipment } = await (sb.from('equipment') as any)
     .select('id, name, equipment_code, updated_at')
     .eq('is_active', false)
     .order('updated_at', { ascending: false })
-    .limit(50) as any
+    .limit(50)
 
-  const { data: deletedRooms } = await sb
-    .from('rooms')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: deletedRooms } = await (sb.from('rooms') as any)
     .select('id, name, room_code, updated_at')
     .eq('is_active', false)
     .order('updated_at', { ascending: false })
@@ -23,11 +23,14 @@ export default async function TrashPage() {
 
   type DeletedItem = { id: string; name: string; code: string | null; type: string; deletedAt: string }
 
+  const eqData = (deletedEquipment ?? []) as Array<{ id: string; name: string; equipment_code: string | null; updated_at: string }>
+  const roomData = (deletedRooms ?? []) as Array<{ id: string; name: string; room_code: string | null; updated_at: string }>
+
   const deletedItems: DeletedItem[] = [
-    ...(deletedEquipment ?? []).map((e: { id: string; name: string; equipment_code: string | null; updated_at: string }) => ({
+    ...eqData.map((e) => ({
       id: e.id, name: e.name, code: e.equipment_code, type: 'Alat', deletedAt: e.updated_at,
     })),
-    ...(deletedRooms ?? []).map((r: { id: string; name: string; room_code: string | null; updated_at: string }) => ({
+    ...roomData.map((r) => ({
       id: r.id, name: r.name, code: r.room_code, type: 'Ruangan', deletedAt: r.updated_at,
     })),
   ].sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime())

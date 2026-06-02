@@ -4,11 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { 
   Boxes, ChevronRight, Building2, DoorOpen, Package, Plus, Download, 
-  FileUp, CheckSquare, Pencil, MoreHorizontal, Trash2, LayoutGrid, 
-  Table2, ChevronLeft, ChevronRightIcon, AlertTriangle 
+  FileUp, Pencil, MoreHorizontal, Trash2, LayoutGrid, 
+  Table2, ChevronLeft, ChevronRightIcon
 } from 'lucide-react'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { cn } from '@/lib/utils'
@@ -78,7 +77,6 @@ function createSlug(name: string): string {
 export function InventoryList({
   items,
   allItems,
-  rooms,
   condCounts,
   totalCount,
   currentCondition
@@ -146,6 +144,7 @@ export function InventoryList({
 
   async function softDelete(item: InventoryItem) {
     const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from('room_inventory_items') as any)
       .update({ is_active: false })
       .eq('id', item.id)

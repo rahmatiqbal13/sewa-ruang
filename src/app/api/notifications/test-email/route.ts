@@ -124,22 +124,23 @@ ${institutionName}`,
       messageId: info.messageId 
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending test email:', error)
-    
+
     // Berikan pesan error yang lebih spesifik
     let errorMessage = 'Gagal mengirim email test'
-    
-    if (error.code === 'EAUTH') {
+    const err = error as { code?: string; message?: string }
+
+    if (err.code === 'EAUTH') {
       errorMessage = 'Autentikasi gagal. Periksa username dan App Password Anda.'
-    } else if (error.code === 'ECONNECTION') {
+    } else if (err.code === 'ECONNECTION') {
       errorMessage = 'Tidak dapat terhubung ke SMTP server. Periksa host dan port.'
-    } else if (error.code === 'ETIMEDOUT') {
+    } else if (err.code === 'ETIMEDOUT') {
       errorMessage = 'Koneksi timeout. Periksa koneksi internet atau firewall.'
-    } else if (error.message?.includes('Invalid login')) {
+    } else if (err.message?.includes('Invalid login')) {
       errorMessage = 'Login gagal. Pastikan menggunakan App Password (bukan password biasa).'
-    } else if (error.message) {
-      errorMessage = error.message
+    } else if (err.message) {
+      errorMessage = err.message
     }
 
     return NextResponse.json(

@@ -11,6 +11,18 @@ import Link from 'next/link'
 import { DashboardAnalyticsLoader } from '@/components/dashboard/DashboardAnalyticsLoader'
 import { EmptyState } from '@/components/ui/empty-state'
 
+interface RecentBooking {
+  id: string
+  reference_no: string
+  status: string
+  created_at: string
+  users: { name: string } | null
+  booking_items: Array<{
+    rooms: { name: string } | null
+    equipment: { name: string } | null
+  }> | null
+}
+
 export const revalidate = 60
 
 export default async function AdminDashboard() {
@@ -21,8 +33,8 @@ export default async function AdminDashboard() {
   const startOfDay = new Date(today.setHours(0,0,0,0)).toISOString()
   const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString()
 
-  const val = <T,>(r: PromiseSettledResult<any>, key: 'count' | 'data', fallback: T): T =>
-    r.status === 'fulfilled' ? (r.value?.[key] ?? fallback) : fallback
+  const val = <T,>(r: PromiseSettledResult<unknown>, key: 'count' | 'data', fallback: T): T =>
+    r.status === 'fulfilled' ? (((r.value as { count?: unknown; data?: unknown })?.[key]) as T ?? fallback) : fallback
 
   const [r0, r1, r2, r3, r4, r5, r6, r7] = await Promise.allSettled([
     sb.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -49,7 +61,7 @@ export default async function AdminDashboard() {
   
   const monthPayments = monthPaymentsRaw as Array<{amount:number}> | null
   const lastMonthPayments = lastMonthPaymentsRaw as Array<{amount:number}> | null
-  const recentBookings = recentBookingsRaw as Array<Record<string, any>> | null
+  const recentBookings = recentBookingsRaw as RecentBooking[] | null
 
   const monthRevenue = monthPayments?.reduce((s, p) => s + p.amount, 0) ?? 0
   const lastMonthRevenue = lastMonthPayments?.reduce((s, p) => s + p.amount, 0) ?? 0
@@ -145,8 +157,8 @@ export default async function AdminDashboard() {
                     </thead>
                     <tbody>
                       {recentBookings.map((booking) => {
-                        const itemName = (booking.booking_items as Array<any>)?.[0]?.rooms?.name ||
-                                         (booking.booking_items as Array<any>)?.[0]?.equipment?.name || '-'
+                        const itemName = booking.booking_items?.[0]?.rooms?.name ||
+                                         booking.booking_items?.[0]?.equipment?.name || '-'
                         
                         return (
                           <tr 
@@ -158,7 +170,7 @@ export default async function AdminDashboard() {
                             </td>
                             <td className="py-3 px-2">
                               <span className="text-sm text-foreground font-medium">
-                                {(booking.users as {name:string}|null)?.name || '-'}
+                                {booking.users?.name || '-'}
                               </span>
                             </td>
                             <td className="py-3 px-2">

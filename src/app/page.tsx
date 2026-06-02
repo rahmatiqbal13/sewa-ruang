@@ -18,7 +18,7 @@ import {
   Briefcase,
   Handshake,
   Globe,
-  ChevronRight,
+
   Search,
 } from 'lucide-react'
 import { Navbar } from './(components)/Navbar'

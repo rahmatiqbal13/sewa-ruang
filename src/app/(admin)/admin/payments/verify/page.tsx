@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -17,8 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { 
   Loader2, 
   CheckCircle, 
-  XCircle, 
-  Image as ImageIcon,
+  XCircle,
   RefreshCw,
   AlertCircle
 } from 'lucide-react'
@@ -60,10 +59,6 @@ export default function PaymentVerificationPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [processing, setProcessing] = useState(false)
 
-  useEffect(() => {
-    fetchProofs()
-  }, [activeTab])
-
   const fetchProofs = async () => {
     try {
       setLoading(true)
@@ -82,6 +77,11 @@ export default function PaymentVerificationPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => fetchProofs(), 0)
+    return () => clearTimeout(id)
+  }, [activeTab])
 
   const handleVerify = async (status: 'verified' | 'rejected') => {
     if (!selectedProof) return

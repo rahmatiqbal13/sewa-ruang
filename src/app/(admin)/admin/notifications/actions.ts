@@ -38,7 +38,7 @@ export async function saveChannelConfig(data: ChannelConfig) {
     }
 
     // Insert/Update using service role bypass RLS
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { error } = await adminDb
       .from('notification_channel_configs')
       .upsert(
@@ -48,6 +48,7 @@ export async function saveChannelConfig(data: ChannelConfig) {
           config: data.config,
           updated_at: new Date().toISOString(),
           updated_by: user.id
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         { onConflict: 'channel' }
       )

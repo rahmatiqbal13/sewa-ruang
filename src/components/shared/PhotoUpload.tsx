@@ -3,7 +3,7 @@
 import { useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Camera, Upload, X, Loader2, ImageIcon, Link2, RefreshCw } from 'lucide-react'
+import { Camera, Upload, X, Loader2, ImageIcon, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -14,7 +14,7 @@ function isValidUrl(string: string | null | undefined): boolean {
   try {
     new URL(string)
     return true
-  } catch (_) {
+  } catch {
     return false
   }
 }
@@ -57,7 +57,7 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  async function deleteOldPhoto(oldUrl: string | null | undefined) {
+  const deleteOldPhoto = useCallback(async (oldUrl: string | null | undefined) => {
     if (!oldUrl) return
     
     const path = extractStoragePath(oldUrl)
@@ -70,9 +70,9 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
     } catch (error) {
       console.error('Failed to delete old photo:', error)
     }
-  }
+  }, [])
 
-  async function handleFile(file: File) {
+  const handleFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast.error('File harus berupa gambar')
       return
@@ -116,7 +116,7 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
     
     toast.success('Foto berhasil diunggah')
     setUploading(false)
-  }
+  }, [folder, value, onChange, deleteOldPhoto])
 
   async function handleRemove() {
     // Delete from storage if it's a supabase storage file
@@ -193,7 +193,7 @@ export function PhotoUpload({ value, onChange, folder = 'general', aspectRatio =
         }, 'image/jpeg', 0.9)
       }
     }
-  }, [stopCamera])
+  }, [stopCamera, handleFile])
 
   const openCamera = () => {
     setShowCamera(true)

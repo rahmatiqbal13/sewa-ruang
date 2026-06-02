@@ -15,8 +15,7 @@ export async function POST(req: Request) {
 
     // Check if user is admin
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: adminUser } = await (supabase
-      .from('users') as any)
+    const { data: adminUser } = await (supabase.from('users') as any)
       .select('role')
       .eq('id', user.id)
       .single()
@@ -51,9 +50,9 @@ export async function POST(req: Request) {
     }
 
     // Get booking details
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking, error: bookingError } = await (supabase
-      .from('bookings') as any)
+    const { data: booking, error: bookingError } = await (supabase.from('bookings') as any)
       .select('id, status, user_id, reference_no, total_amount')
       .eq('id', bookingId)
       .single()
@@ -70,9 +69,9 @@ export async function POST(req: Request) {
     }
 
     // Use database function to verify payment
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: verifyResult, error: verifyError } = await (supabase
-      .rpc as any)('verify_booking_payment', {
+    const { data: verifyResult, error: verifyError } = await (supabase.rpc as any)('verify_booking_payment', {
       p_booking_id: bookingId,
       p_admin_id: user.id,
       p_status: status,
@@ -140,8 +139,7 @@ export async function GET(req: Request) {
 
     // Check if user is admin
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: adminUser } = await (supabase
-      .from('users') as any)
+    const { data: adminUser } = await (supabase.from('users') as any)
       .select('role')
       .eq('id', user.id)
       .single()
@@ -154,9 +152,9 @@ export async function GET(req: Request) {
     const status = searchParams.get('status') || 'pending'
 
     // Get payment proofs with booking details
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: proofs, error } = await (supabase
-      .from('payment_proofs') as any)
+    const { data: proofs, error } = await (supabase.from('payment_proofs') as any)
       .select(`
         *,
         bookings(

@@ -8,11 +8,33 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Clock, CreditCard, User, Package } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 
+interface ReturnBooking {
+  id: string
+  reference_no: string
+  status: string
+  start_datetime: string
+  end_datetime: string
+  actual_end_datetime: string | undefined
+  total_amount: number
+  users: { name: string; email: string; phone: string | null; institution: string } | null
+  booking_items: Array<{
+    id: string
+    item_type: string
+    room_id: string | null
+    equipment_id: string | null
+    quantity: number
+    room: { name: string; buildings?: { name: string } } | null
+    equipment: { name: string; equipment_code: string } | null
+  }> | null
+  payments: Array<{ amount: number; status: string }> | null
+}
+
 export default async function RecordReturnPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const sb = createAdminDbClient()
 
-  const { data: booking } = await (sb.from('bookings') as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: bookingRaw } = await (sb.from('bookings') as any)
     .select(`
       *,
       users!user_id(name, email, phone, institution),
@@ -24,8 +46,9 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
       payments(id, amount, status, method, paid_at)
     `)
     .eq('id', id)
-    .single() as { data: Record<string, any> | null }
+    .single() as { data: ReturnBooking | null }
 
+  const booking = bookingRaw
   if (!booking) notFound()
 
   // Check if already returned
@@ -51,16 +74,10 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
   }
 
   const totalPaid = (booking.payments || [])
-    .filter((p: any) => p.status === 'paid')
-    .reduce((sum: number, p: any) => sum + p.amount, 0)
+    .filter((p) => p.status === 'paid')
+    .reduce((sum: number, p) => sum + p.amount, 0)
 
   const isPaid = booking.status === 'paid'
-  const isApproved = booking.status === 'approved'
-  
-  // Calculate if early return is possible
-  const now = new Date()
-  const endDate = new Date(booking.end_datetime)
-  const canEarlyReturn = isPaid && now < endDate
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -189,7 +206,7 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {(booking.booking_items || []).map((item: any, index: number) => (
+                {(booking.booking_items || []).map((item, index: number) => (
                   <div key={index} className="flex items-center justify-between p-3 border border-border rounded-[10px]">
                     <div className="flex items-center gap-3">
                       <span className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600">

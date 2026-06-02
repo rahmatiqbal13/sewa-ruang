@@ -15,9 +15,9 @@ export async function POST(req: Request) {
     const admin = await createAdminClient()
     
     // Check if current user is super_admin
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profile, error: profileError } = await (admin
-      .from('users') as any)
+    const { data: profile, error: profileError } = await (admin.from('users') as any)
       .select('role')
       .eq('id', user.id)
       .single()
@@ -55,9 +55,9 @@ export async function POST(req: Request) {
     }
 
     // Check if email already exists in public.users table
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingProfile } = await (admin
-      .from('users') as any)
+    const { data: existingProfile } = await (admin.from('users') as any)
       .select('email')
       .eq('email', email.toLowerCase())
       .maybeSingle()
@@ -107,10 +107,9 @@ export async function POST(req: Request) {
     if (authError) {
       console.error('Auth error occurred:', authError)
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const errorDetails = authError as any
+      const errorDetails = authError as { message?: string; code?: string }
       let errorMessage = errorDetails.message || 'Auth service error'
-      let errorCode = errorDetails.code || 'unknown'
+      const errorCode = errorDetails.code || 'unknown'
       
       if (errorCode === 'email_exists') {
         errorMessage = 'Email already registered'
@@ -137,9 +136,9 @@ export async function POST(req: Request) {
     await new Promise(resolve => setTimeout(resolve, 1000))
 
     // Check if user was created by trigger
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingUser, error: checkError } = await (admin
-      .from('users') as any)
+    const { data: existingUser, error: checkError } = await (admin.from('users') as any)
       .select('*')
       .eq('id', authData.user.id)
       .maybeSingle()
@@ -151,9 +150,9 @@ export async function POST(req: Request) {
     if (!existingUser) {
       console.log('User not found in public.users after trigger, inserting manually...')
       
+       
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = await (admin
-        .from('users') as any)
+      const { error: insertError } = await (admin.from('users') as any)
         .insert({
           id: authData.user.id,
           name: name || email.split('@')[0],
@@ -188,9 +187,9 @@ export async function POST(req: Request) {
     } else {
       console.log('User was created by trigger, updating fields...')
       
+       
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: updateError } = await (admin
-        .from('users') as any)
+      const { error: updateError } = await (admin.from('users') as any)
         .update({
           phone: phone || existingUser.phone || '',
           borrower_category: borrower_category || existingUser.borrower_category || 'mahasiswa_s1',
@@ -235,8 +234,7 @@ export async function GET() {
     
     // Check if current user is super_admin
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profile } = await (admin
-      .from('users') as any)
+    const { data: profile } = await (admin.from('users') as any)
       .select('role')
       .eq('id', user.id)
       .single()
@@ -245,9 +243,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: users, error } = await (admin
-      .from('users') as any)
+    const { data: users, error } = await (admin.from('users') as any)
       .select('*')
       .order('created_at', { ascending: false })
 

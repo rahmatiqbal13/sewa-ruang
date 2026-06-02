@@ -20,9 +20,9 @@ export async function POST(req: Request) {
     }
 
     // Get booking details
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking, error: bookingError } = await (supabase
-      .from('bookings') as any)
+    const { data: booking, error: bookingError } = await (supabase.from('bookings') as any)
       .select(`
         id,
         reference_no,
@@ -52,9 +52,9 @@ export async function POST(req: Request) {
     }
 
     // Get all active bank accounts with QR images
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: bankAccounts } = await (supabase
-      .from('bank_accounts') as any)
+    const { data: bankAccounts } = await (supabase.from('bank_accounts') as any)
       .select('*')
       .eq('is_active', true)
       .order('is_primary', { ascending: false })
@@ -68,8 +68,9 @@ export async function POST(req: Request) {
     let paymentCode = booking.payment_code
     if (!paymentCode) {
       // Update booking to generate payment code
-      const { data: updatedBooking, error: updateError } = await (supabase
-        .from('bookings') as any)
+       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: updatedBooking, error: updateError } = await (supabase.from('bookings') as any)
         .update({ status: 'pending_payment' })
         .eq('id', bookingId)
         .select('payment_code')
@@ -82,6 +83,7 @@ export async function POST(req: Request) {
       paymentCode = updatedBooking.payment_code
     } else if (booking.status !== 'pending_payment') {
       // Update status to pending_payment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('bookings') as any)
         .update({ status: 'pending_payment' })
         .eq('id', bookingId)
@@ -143,9 +145,9 @@ export async function GET(req: Request) {
     const supabase = await createClient()
     
     // Get booking
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking, error } = await (supabase
-      .from('bookings') as any)
+    const { data: booking, error } = await (supabase.from('bookings') as any)
       .select('payment_code, total_amount, reference_no, status')
       .eq('id', bookingId)
       .single()
@@ -155,9 +157,9 @@ export async function GET(req: Request) {
     }
 
     // Get bank accounts
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: bankAccounts } = await (supabase
-      .from('bank_accounts') as any)
+    const { data: bankAccounts } = await (supabase.from('bank_accounts') as any)
       .select('*')
       .eq('is_active', true)
       .order('is_primary', { ascending: false })

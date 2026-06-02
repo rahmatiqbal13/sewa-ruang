@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Loader2, 
@@ -14,7 +14,6 @@ import {
   CheckCircle, 
   Upload,
   Building2,
-  Package,
   CreditCard,
   AlertCircle,
   Copy,
@@ -59,10 +58,6 @@ export default function PaymentPage() {
 
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchBookingAndPaymentMethods()
-  }, [bookingId])
-
   const fetchBookingAndPaymentMethods = async () => {
     try {
       setLoading(true)
@@ -83,16 +78,14 @@ export default function PaymentPage() {
       setBooking(bookingData)
 
       // Get booking items to determine type
+       
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: itemsData } = await (supabase
-        .from('booking_items') as any)
+      const { data: itemsData } = await (supabase.from('booking_items') as any)
         .select('item_type')
         .eq('booking_id', bookingId)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hasRoom = itemsData?.some((item: any) => item.item_type === 'room') || false
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hasEquipment = itemsData?.some((item: any) => item.item_type === 'equipment') || false
+      const hasRoom = itemsData?.some((item: { item_type: string }) => item.item_type === 'room') || false
+      const hasEquipment = itemsData?.some((item: { item_type: string }) => item.item_type === 'equipment') || false
       
       // Set active tab based on booking type
       if (hasRoom && !hasEquipment) {
@@ -103,8 +96,7 @@ export default function PaymentPage() {
 
       // Get payment methods
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: methodsData, error: methodsError } = await (supabase
-        .from('bank_accounts') as any)
+      const { data: methodsData, error: methodsError } = await (supabase.from('bank_accounts') as any)
         .select('id, bank_name, bank_code, virtual_account_number, account_name, category, is_primary')
         .eq('is_active', true)
         .order('category')
@@ -112,8 +104,14 @@ export default function PaymentPage() {
 
       if (methodsError) throw methodsError
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const formattedMethods = methodsData?.map((bank: any) => ({
+      const formattedMethods = methodsData?.map((bank: {
+        id: string;
+        bank_name: string;
+        bank_code: string;
+        virtual_account_number: string;
+        account_name: string;
+        category: 'room' | 'equipment' | 'general';
+      }) => ({
         id: bank.id,
         bankName: bank.bank_name,
         bankCode: bank.bank_code,
@@ -133,6 +131,12 @@ export default function PaymentPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => fetchBookingAndPaymentMethods(), 0)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingId])
 
   const getPaymentCode = async () => {
     try {

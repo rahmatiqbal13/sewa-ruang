@@ -26,7 +26,10 @@ export function EquipmentFilters({ categories }: EquipmentFiltersProps) {
   const inactiveOnly = searchParams.get('inactiveOnly') === 'true'
 
   const [searchValue, setSearchValue] = useState(search)
-  useEffect(() => { setSearchValue(search) }, [search])
+  useEffect(() => {
+    const id = setTimeout(() => setSearchValue(search), 0)
+    return () => clearTimeout(id)
+  }, [search])
 
   const buildUrl = useCallback((params: Record<string, string>) => {
     const next = {

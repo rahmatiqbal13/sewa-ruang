@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 
 interface Building {
   id: string
@@ -52,15 +52,19 @@ export function LocationSelect({
   // Reset floor and room when building changes
   useEffect(() => {
     if (selectedBuilding !== defaultBuildingId) {
-      setSelectedFloor('')
-      setSelectedRoom('')
+      const id = setTimeout(() => {
+        setSelectedFloor('')
+        setSelectedRoom('')
+      }, 0)
+      return () => clearTimeout(id)
     }
   }, [selectedBuilding, defaultBuildingId])
 
   // Reset room when floor changes
   useEffect(() => {
     if (selectedFloor !== defaultFloor?.toString()) {
-      setSelectedRoom('')
+      const id = setTimeout(() => setSelectedRoom(''), 0)
+      return () => clearTimeout(id)
     }
   }, [selectedFloor, defaultFloor])
 

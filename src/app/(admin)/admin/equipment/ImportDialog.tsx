@@ -44,8 +44,8 @@ export function ImportDialog({
   const [isUndoing, setIsUndoing] = useState(false)
   const [isDeletingAll, setIsDeletingAll] = useState(false)
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
-  const [deleteAllError, setDeleteAllError] = useState<string | null>(null)
-  const [deleteAllSuccess, setDeleteAllSuccess] = useState<string | null>(null)
+  const [, setDeleteAllError] = useState<string | null>(null)
+  const [, setDeleteAllSuccess] = useState<string | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [isUndone, setIsUndone] = useState(false)
 

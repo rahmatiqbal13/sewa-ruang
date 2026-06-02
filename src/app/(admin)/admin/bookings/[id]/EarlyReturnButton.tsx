@@ -142,8 +142,8 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
       
       setOpen(false)
       router.refresh()
-    } catch (error: any) {
-      toast.error('Gagal mencatat pengembalian: ' + error.message)
+    } catch (error) {
+      toast.error('Gagal mencatat pengembalian: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }

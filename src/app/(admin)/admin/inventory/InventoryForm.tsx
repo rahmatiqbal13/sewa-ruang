@@ -135,6 +135,7 @@ export function InventoryForm({
 
     if (item) {
       // Update existing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from('room_inventory_items') as any)
         .update(payload)
         .eq('id', item.id)
@@ -146,6 +147,7 @@ export function InventoryForm({
       toast.success('Item inventaris berhasil diperbarui')
     } else {
       // Create new
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from('room_inventory_items') as any)
         .insert({ ...payload, is_active: true })
       if (error) {

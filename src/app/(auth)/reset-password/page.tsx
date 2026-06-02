@@ -40,8 +40,8 @@ function ResetPasswordForm() {
     // If callback route already exchanged the code, session exists — check it
     const errorParam = searchParams.get('error')
     if (errorParam === 'invalid_link') {
-      setChecking(false)
-      return
+      const id = setTimeout(() => setChecking(false), 0)
+      return () => clearTimeout(id)
     }
 
     // Check if there's already an active recovery session (set by /auth/callback)

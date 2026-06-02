@@ -20,8 +20,7 @@ import {
   CheckCircle2,
   Layers,
   CalendarDays,
-  List,
-  Hash
+  List
 } from 'lucide-react'
 import { formatDateTime, formatRupiah, cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'

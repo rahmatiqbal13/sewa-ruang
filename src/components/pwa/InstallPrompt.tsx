@@ -21,7 +21,7 @@ export function InstallPrompt() {
       
       // Show again after 7 days
       if (daysSinceDismissed < 7) {
-        setIsDismissed(true);
+        setTimeout(() => setIsDismissed(true), 0);
       }
     }
 

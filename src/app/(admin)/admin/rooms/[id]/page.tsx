@@ -62,6 +62,7 @@ export default async function RoomDetailPage({ params }: Props) {
       buildings(id, name, code, floor_count)
     `)
     .eq('id', id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .single() as any
 
   if (!room) {
@@ -252,7 +253,7 @@ export default async function RoomDetailPage({ params }: Props) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
-                      {inventory.map((item: any) => (
+                      {inventory.map((item) => (
                         <tr key={item.id} className="hover:bg-muted">
                           <td className="px-4 py-3">
                             <p className="font-medium text-foreground">{item.name}</p>
@@ -310,7 +311,7 @@ export default async function RoomDetailPage({ params }: Props) {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {equipment.map((eq: any) => (
+                  {equipment.map((eq) => (
                     <div 
                       key={eq.id} 
                       className="flex items-center justify-between p-3 border border-border rounded-[10px] hover:bg-muted"

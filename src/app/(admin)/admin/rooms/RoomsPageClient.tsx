@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, DoorOpen, Users, Building2, Layers, Tag, EyeOff, ArrowUpRight, Upload, Download, FileSpreadsheet } from 'lucide-react'
+import { Plus, DoorOpen, Users, Building2, Layers, Tag, EyeOff, Upload, Download } from 'lucide-react'
 import { RoomActions } from './RoomActions'
 import { RoomFilters } from './RoomFilters'
 import { formatRupiah, cn } from '@/lib/utils'
@@ -84,7 +84,7 @@ export function RoomsPageClient({
   // Build query string helper for rent tabs
   const buildQueryString = (params: Record<string, string>) => {
     const current = { for_rent, building: buildingFilter, floor: floorFilter, ...params }
-    const valid = Object.entries(current).filter(([_, v]) => v) as [string, string][]
+    const valid = Object.entries(current).filter((entry) => entry[1]) as [string, string][]
     return valid.length > 0 ? '?' + valid.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&') : ''
   }
 

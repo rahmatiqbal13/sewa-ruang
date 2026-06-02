@@ -2,15 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateInvoiceHtml } from '@/lib/pdf-generator'
 
-// Helper function to format currency
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0
-  }).format(value)
-}
-
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -40,7 +31,7 @@ export async function GET(
       .eq('id', user.id)
       .single()
 
-    const isAdmin = ['admin', 'super_admin'].includes((userData as any)?.role)
+    const isAdmin = ['admin', 'super_admin'].includes((userData as { role?: string })?.role ?? '')
 
     // Get booking details
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,14 +71,26 @@ export async function GET(
     }
 
     // Prepare invoice items
-    const items = (booking as any).booking_items?.map((item: any) => {
-      const name = item.item_type === 'room' 
+    interface InvoiceItem {
+      name: string;
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      total: number;
+    }
+    const items: InvoiceItem[] = (booking as { booking_items?: Array<{
+      item_type: string;
+      rooms?: { name?: string; room_code?: string };
+      equipment?: { name?: string; equipment_code?: string };
+      price?: number;
+    }> }).booking_items?.map((item) => {
+      const name = item.item_type === 'room'
         ? item.rooms?.name || 'Ruangan'
         : item.equipment?.name || 'Alat'
-      
+
       return {
         name,
-        description: item.item_type === 'room' 
+        description: item.item_type === 'room'
           ? `Kode: ${item.rooms?.room_code || '-'}`
           : `Kode: ${item.equipment?.equipment_code || '-'}`,
         quantity: 1,
@@ -97,23 +100,31 @@ export async function GET(
     }) || []
 
     // Calculate totals
-    const subtotal = items.reduce((sum: number, item: any) => sum + item.total, 0)
+    const subtotal = items.reduce((sum: number, item: InvoiceItem) => sum + item.total, 0)
     const total = booking.total_amount || subtotal
 
     // Generate invoice HTML
+    const typedBooking = booking as {
+      id: string;
+      created_at: string;
+      users?: { name?: string; email?: string };
+      start_datetime: string;
+      end_datetime: string;
+      status: string;
+    }
     const invoiceHtml = await generateInvoiceHtml({
-      invoiceNumber: `INV-${booking.id.substring(0, 8).toUpperCase()}`,
-      invoiceDate: new Date(booking.created_at).toLocaleDateString('id-ID', {
+      invoiceNumber: `INV-${typedBooking.id.substring(0, 8).toUpperCase()}`,
+      invoiceDate: new Date(typedBooking.created_at).toLocaleDateString('id-ID', {
         day: '2-digit',
         month: 'long',
         year: 'numeric'
       }),
-      customerName: (booking as any).users?.name || 'Unknown',
-      customerEmail: (booking as any).users?.email || '',
+      customerName: typedBooking.users?.name || 'Unknown',
+      customerEmail: typedBooking.users?.email || '',
       items,
       subtotal,
       total,
-      notes: `Tanggal Peminjaman: ${new Date((booking as any).start_datetime).toLocaleDateString('id-ID')} - ${new Date((booking as any).end_datetime).toLocaleDateString('id-ID')}\nStatus: ${booking.status.toUpperCase()}`,
+      notes: `Tanggal Peminjaman: ${new Date(typedBooking.start_datetime).toLocaleDateString('id-ID')} - ${new Date(typedBooking.end_datetime).toLocaleDateString('id-ID')}\nStatus: ${typedBooking.status.toUpperCase()}`,
     })
 
     // Return HTML invoice (can be printed to PDF by browser)
@@ -124,10 +135,10 @@ export async function GET(
       },
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Generate invoice error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate invoice', details: error.message },
+      { error: 'Failed to generate invoice', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

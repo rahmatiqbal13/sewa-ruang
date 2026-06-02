@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { generateUSCBookingDocument } from '@/lib/pdf-generator'
 import { emailService } from '@/lib/services/emailService'
 import puppeteer from 'puppeteer-core'
@@ -45,11 +44,11 @@ async function fetchBookingData(bookingId: string) {
   }
 
   const bookingItems = booking?.booking_items || []
-  const hasRoom = bookingItems.some((i: any) => i.item_type === 'room')
-  const hasEquipment = bookingItems.some((i: any) => i.item_type === 'equipment')
+  const hasRoom = bookingItems.some((i: { item_type: string }) => i.item_type === 'room')
+  const hasEquipment = bookingItems.some((i: { item_type: string }) => i.item_type === 'equipment')
 
-  const roomVA = vaRows?.find((va: any) => va.category === 'room') ?? null
-  const equipmentVA = vaRows?.find((va: any) => va.category === 'equipment') ?? null
+  const roomVA = vaRows?.find((va: { category: string }) => va.category === 'room') ?? null
+  const equipmentVA = vaRows?.find((va: { category: string }) => va.category === 'equipment') ?? null
 
   console.log('[fetchBookingData] booking found:', !!booking, 'ref:', booking?.reference_no, 'items:', bookingItems.length, 'hasRoom:', hasRoom, 'hasEquipment:', hasEquipment)
 
@@ -57,24 +56,46 @@ async function fetchBookingData(bookingId: string) {
 }
 
 async function buildDocHtml(
-  booking: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-  roomVA: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-  equipmentVA: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  booking: {
+    reference_no: string;
+    start_datetime: string;
+    end_datetime: string;
+    total_amount: number;
+    users?: {
+      name?: string;
+      class_division?: string;
+      institution?: string;
+      phone?: string;
+      role?: string;
+    };
+    booking_items?: Array<{
+      item_type: 'room' | 'equipment';
+      rooms?: { room_code?: string; name?: string };
+      equipment?: { equipment_code?: string; name?: string };
+      price?: number;
+    }>;
+  },
+  roomVA: { bank_name: string; virtual_account_number: string; account_name: string } | null,
+  equipmentVA: { bank_name: string; virtual_account_number: string; account_name: string } | null,
   hasRoom: boolean,
   hasEquipment: boolean
 ): Promise<string> {
   const fmt = (d: string) =>
     new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items = (booking.booking_items as any[])?.map((item: any) => ({
+  const items = (booking.booking_items as Array<{
+    item_type: 'room' | 'equipment';
+    rooms?: { room_code?: string; name?: string };
+    equipment?: { equipment_code?: string; name?: string };
+    price?: number;
+  }>)?.map((item) => ({
     code: item.item_type === 'room'
       ? (item.rooms?.room_code || '-')
       : (item.equipment?.equipment_code || '-'),
     name: item.item_type === 'room'
       ? (item.rooms?.name || 'Ruangan')
       : (item.equipment?.name || 'Alat'),
-    type: item.item_type as 'room' | 'equipment',
+    type: item.item_type,
     price: item.price || 0,
   })) || []
 
@@ -84,7 +105,7 @@ async function buildDocHtml(
     nim: booking.users?.class_division || null,
     institution: booking.users?.institution || null,
     phone: booking.users?.phone || null,
-    membershipType: MEMBERSHIP_LABELS[booking.users?.role] || 'Umum',
+    membershipType: MEMBERSHIP_LABELS[booking.users?.role || ''] || 'Umum',
     startDate: fmt(booking.start_datetime),
     endDate: fmt(booking.end_datetime),
     items,
@@ -154,8 +175,8 @@ async function generatePDF(html: string): Promise<Buffer> {
     })
     const page = await browser.newPage()
     await page.setContent(html, { waitUntil: 'domcontentloaded' })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buf = Buffer.from(await (page as any).pdf({
+     
+    const buf = Buffer.from(await (page as unknown as { pdf: (opts: Record<string, unknown>) => Promise<Buffer> }).pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
@@ -163,8 +184,9 @@ async function generatePDF(html: string): Promise<Buffer> {
     await browser.close()
     console.log('[generatePDF] PDF buffer size:', buf.length, 'bytes')
     return buf
-  } catch (err: any) {
-    console.error('[generatePDF] Error generating PDF:', err.message)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[generatePDF] Error generating PDF:', msg)
     throw err
   }
 }
@@ -184,7 +206,7 @@ export async function GET(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { data: me } = await supabase.from('users').select('role').eq('id', user.id).single()
-    if (!['admin', 'super_admin'].includes((me as any)?.role)) {
+    if (!['admin', 'super_admin'].includes((me as { role?: string })?.role ?? '')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -204,8 +226,8 @@ export async function GET(
             : `attachment; filename="formulir-${booking.reference_no}.pdf"`,
         },
       })
-    } catch (pdfErr: any) {
-      console.error('[formulir GET] Fallback to HTML because PDF failed:', pdfErr.message)
+  } catch (pdfErr: unknown) {
+    console.error('[formulir GET] Fallback to HTML because PDF failed:', pdfErr instanceof Error ? pdfErr.message : String(pdfErr))
       return new NextResponse(html, {
         headers: {
           'Content-Type': 'text/html',
@@ -215,9 +237,9 @@ export async function GET(
         },
       })
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Formulir download error:', error)
-    return NextResponse.json({ error: 'Failed to generate document', details: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to generate document', details: error instanceof Error ? error.message : String(error) }, { status: 500 })
   }
 }
 
@@ -234,7 +256,7 @@ export async function POST(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { data: me } = await supabase.from('users').select('role').eq('id', user.id).single()
-    if (!['admin', 'super_admin'].includes((me as any)?.role)) {
+    if (!['admin', 'super_admin'].includes((me as { role?: string })?.role ?? '')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -282,8 +304,8 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true, message: `Email sent to ${userEmail}` })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Formulir resend error:', error)
-    return NextResponse.json({ error: 'Failed to resend', details: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to resend', details: error instanceof Error ? error.message : String(error) }, { status: 500 })
   }
 }

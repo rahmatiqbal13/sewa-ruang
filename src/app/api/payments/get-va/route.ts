@@ -20,9 +20,8 @@ export async function POST(req: Request) {
     }
 
     // Get booking details with items
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: booking, error: bookingError } = await (supabase
-      .from('bookings') as any)
+      .from('bookings') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select(`
         id,
         reference_no,
@@ -88,7 +87,7 @@ export async function POST(req: Request) {
     if (!paymentCode) {
       // Update booking to generate payment code
       const { data: updatedBooking, error: updateError } = await (supabase
-        .from('bookings') as any)
+        .from('bookings') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({ status: 'pending_payment' })
         .eq('id', bookingId)
         .select('payment_code')
@@ -101,7 +100,7 @@ export async function POST(req: Request) {
       paymentCode = updatedBooking.payment_code
     } else if (booking.status !== 'pending_payment') {
       // Update status to pending_payment
-      await (supabase.from('bookings') as any)
+      await (supabase.from('bookings') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .update({ status: 'pending_payment' })
         .eq('id', bookingId)
     }
@@ -228,9 +227,8 @@ export async function GET(req: Request) {
     const supabase = await createClient()
     
     // Get booking
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: booking, error } = await (supabase
-      .from('bookings') as any)
+      .from('bookings') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select('payment_code, total_amount, reference_no, status, booking_items(item_type)')
       .eq('id', bookingId)
       .single()

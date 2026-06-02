@@ -41,13 +41,12 @@ export async function GET(req: NextRequest) {
       .select('channel, is_enabled, config')
       .in('channel', ['telegram'])
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tgRow = (channelConfigs ?? []).find((c: any) => c.channel === 'telegram')
+    const tgRow = (channelConfigs ?? []).find((c: { channel: string }) => c.channel === 'telegram')
     const tgEnabled: boolean = tgRow?.is_enabled === true
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const tgCfg: { bot_token?: string; admin_chat_id?: string } = tgRow?.config ?? {}
 
-    const results: any[] = []
+    const results: Array<Record<string, unknown>> = []
 
     // Process each reminder
     for (const reminder of pendingReminders || []) {
@@ -74,23 +73,32 @@ export async function GET(req: NextRequest) {
 
         // Prepare message based on reminder type
         let message = reminder.message
-        const items = (booking as any).booking_items?.map((item: any) => 
+        const typedBooking = booking as {
+          start_datetime?: string;
+          end_datetime?: string;
+          booking_items?: Array<{
+            item_type: string;
+            rooms?: { name?: string };
+            equipment?: { name?: string };
+          }>;
+        }
+        const items = typedBooking.booking_items?.map((item) =>
           item.item_type === 'room' ? item.rooms?.name : item.equipment?.name
         ).join(', ')
 
         // Customize message based on type
         switch (reminder.reminder_type) {
           case 'before_start':
-            message = `Pengingat: Peminjaman Anda akan dimulai besok (${new Date((booking as any).start_datetime).toLocaleDateString('id-ID')}). Item: ${items}`
+            message = `Pengingat: Peminjaman Anda akan dimulai besok (${new Date(typedBooking.start_datetime || '').toLocaleDateString('id-ID')}). Item: ${items}`
             break
           case 'after_start':
             message = `Peminjaman Anda telah dimulai hari ini. Item: ${items}. Selamat menggunakan fasilitas!`
             break
           case 'before_end':
-            message = `Pengingat: Peminjaman Anda akan berakhir besok (${new Date((booking as any).end_datetime).toLocaleDateString('id-ID')}). Jangan lupa mengembalikan: ${items}`
+            message = `Pengingat: Peminjaman Anda akan berakhir besok (${new Date(typedBooking.end_datetime || '').toLocaleDateString('id-ID')}). Jangan lupa mengembalikan: ${items}`
             break
           case 'after_end':
-            message = `Hari ini (${new Date((booking as any).end_datetime).toLocaleDateString('id-ID')}) adalah tanggal pengembalian. Pastikan untuk mengembalikan dalam kondisi baik: ${items}`
+            message = `Hari ini (${new Date(typedBooking.end_datetime || '').toLocaleDateString('id-ID')}) adalah tanggal pengembalian. Pastikan untuk mengembalikan dalam kondisi baik: ${items}`
             break
         }
 
@@ -171,14 +179,14 @@ export async function GET(req: NextRequest) {
           error: result.error,
         })
 
-      } catch (reminderError: any) {
+      } catch (reminderError: unknown) {
         console.error('Error processing reminder:', reminderError)
         results.push({
           reminder_id: reminder.reminder_id,
           booking_id: reminder.booking_id,
           type: reminder.reminder_type,
           success: false,
-          error: reminderError.message,
+          error: reminderError instanceof Error ? reminderError.message : String(reminderError),
         })
       }
     }
@@ -204,8 +212,7 @@ export async function GET(req: NextRequest) {
       .in('status', ['approved', 'paid'])
       .lt('end_datetime', now.toISOString())
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const overdueResults: any[] = []
+    const overdueResults: Array<Record<string, unknown>> = []
 
     for (const booking of (overdueBookings ?? [])) {
       try {
@@ -223,10 +230,11 @@ export async function GET(req: NextRequest) {
         const daysLate = Math.floor(
           (now.getTime() - new Date(booking.end_datetime).getTime()) / 86_400_000
         )
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const itemNames = (booking.booking_items as any[])
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ?.map((i: any) => (i.item_type === 'room' ? i.rooms?.name : i.equipment?.name))
+        const itemNames = (booking.booking_items as Array<{
+          item_type: string;
+          rooms?: { name?: string };
+          equipment?: { name?: string };
+        }>)?.map((i) => (i.item_type === 'room' ? i.rooms?.name : i.equipment?.name))
           .filter(Boolean)
           .join(', ') || 'aset'
 
@@ -351,10 +359,10 @@ export async function GET(req: NextRequest) {
       timestamp: new Date().toISOString(),
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Process reminders error:', error)
     return NextResponse.json(
-      { error: 'Failed to process reminders', details: error.message },
+      { error: 'Failed to process reminders', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

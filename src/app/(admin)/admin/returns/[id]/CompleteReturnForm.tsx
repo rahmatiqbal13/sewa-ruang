@@ -131,8 +131,8 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
       
       router.refresh()
       onComplete?.()
-    } catch (error: any) {
-      toast.error('Gagal mencatat pengembalian: ' + error.message)
+    } catch (error) {
+      toast.error('Gagal mencatat pengembalian: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }

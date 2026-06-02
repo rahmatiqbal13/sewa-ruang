@@ -159,7 +159,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
 
       let roomId = room?.id
       if (room) {
-        const { error } = await (supabase.from('rooms') as any)
+        const { error } = // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ await (supabase.from('rooms') as any)
           .update(roomPayload)
           .eq('id', room.id)
         if (error) { 
@@ -168,7 +169,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
           return 
         }
       } else {
-        const { data: newRoom, error } = await (supabase.from('rooms') as any)
+        const { data: newRoom, error } = // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ await (supabase.from('rooms') as any)
           .insert({ ...roomPayload, created_by: user.id })
           .select('id')
           .single()
@@ -189,7 +191,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
           const rateHour = hourVal === '' ? null : parseFloat(hourVal)
           const rateDay = dayVal === '' ? null : parseFloat(dayVal)
           
-          const { error: rateError } = await (supabase.from('room_rates') as any).upsert(
+          const { error: rateError } = // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ await (supabase.from('room_rates') as any).upsert(
             { room_id: roomId, usage_category: cat.value, rate_per_hour: rateHour, rate_per_day: rateDay },
             { onConflict: 'room_id,usage_category' }
           )
@@ -206,8 +209,8 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
       router.push('/admin/rooms')
       router.refresh()
       setLoading(false)
-    } catch (err: any) {
-      toast.error('Terjadi kesalahan: ' + (err.message || 'Unknown error'))
+    } catch (err) {
+      toast.error('Terjadi kesalahan: ' + ((err as Error).message || 'Unknown error'))
       setLoading(false)
     }
   }
@@ -421,6 +424,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                           min={0} 
                           placeholder="0"
                           value={rateValue.rate_per_hour}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           onChange={(e) => setValue(`rates.${cat.value}.rate_per_hour` as any, e.target.value)}
                           className="h-10 rounded-[10px] border-border"
                         />
@@ -432,6 +436,7 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
                           min={0} 
                           placeholder="0"
                           value={rateValue.rate_per_day}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           onChange={(e) => setValue(`rates.${cat.value}.rate_per_day` as any, e.target.value)}
                           className="h-10 rounded-[10px] border-border"
                         />

@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/error-boundaries */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAdminDbClient } from '@/lib/supabase/server'
 import { InventoryList } from './InventoryList'
 
@@ -19,7 +21,9 @@ export default async function InventoryIndexPage({
       .eq('is_active', true)
       .order('name')
 
-    if (condition) query = (query as any).eq('condition', condition)
+    if (condition) {
+      query = (query as any).eq('condition', condition)
+    }
 
     const { data: itemsData, error: itemsError } = await query
     if (itemsError) {
@@ -71,7 +75,9 @@ export default async function InventoryIndexPage({
       .eq('is_active', true)
       .order('name')
 
-    if (condition) allItemsQuery = (allItemsQuery as any).eq('condition', condition)
+    if (condition) {
+      allItemsQuery = (allItemsQuery as any).eq('condition', condition)
+    }
 
     const { data: allItemsData } = await allItemsQuery
 
