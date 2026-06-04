@@ -1,8 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/', '/catalog', '/login', '/register']
-const PUBLIC_PREFIXES = ['/rooms/', '/equipment/', '/assets/', '/inventory-items/', '/api/payments/webhook']
+const PUBLIC_ROUTES = ['/', '/catalog', '/login', '/register', '/forgot-password', '/reset-password']
+const PUBLIC_PREFIXES = [
+  '/rooms/',
+  '/equipment/',
+  '/assets/',
+  '/inventory-items/',
+  '/api/payments/webhook',
+  '/manifest.json',
+  '/service-worker.js',
+  '/icons/',
+  '/screenshots/',
+  '/browserconfig.xml',
+]
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -42,5 +53,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|xml|txt|pdf|woff|woff2|ttf|eot)$).*)'],
 }

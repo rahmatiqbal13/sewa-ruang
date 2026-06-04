@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+function generatePaymentCode(referenceNo: string): string {
+  const ts = Date.now().toString(36).slice(-4).toUpperCase()
+  return `PAY-${referenceNo}-${ts}`
+}
+
 // POST /api/payments/get-qr
 // Get QR code image from bank account (not generate)
 export async function POST(req: Request) {
@@ -67,20 +72,16 @@ export async function POST(req: Request) {
     // Ensure payment code exists
     let paymentCode = booking.payment_code
     if (!paymentCode) {
-      // Update booking to generate payment code
-       
+      paymentCode = generatePaymentCode(booking.reference_no)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: updatedBooking, error: updateError } = await (supabase.from('bookings') as any)
-        .update({ status: 'pending_payment' })
+      const { error: updateError } = await (supabase.from('bookings') as any)
+        .update({ status: 'pending_payment', payment_code: paymentCode })
         .eq('id', bookingId)
-        .select('payment_code')
-        .single()
 
       if (updateError) {
         console.error('Error updating booking:', updateError)
         return NextResponse.json({ error: 'Failed to generate payment code' }, { status: 500 })
       }
-      paymentCode = updatedBooking.payment_code
     } else if (booking.status !== 'pending_payment') {
       // Update status to pending_payment
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

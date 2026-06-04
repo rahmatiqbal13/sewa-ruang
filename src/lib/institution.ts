@@ -42,7 +42,7 @@ export async function getInstitutionProfile(): Promise<InstitutionProfile | null
     const { data, error } = await supabase
       .from('institution_profile')
       .select('*')
-      .single()
+      .maybeSingle()
     
     if (error || !data) {
       return null

@@ -164,7 +164,6 @@ export async function POST(req: Request) {
           class_division: class_division || '',
           identity_number: identity_number || '',
           telegram_username: telegram_username || '',
-          plain_password: password,
           created_at: new Date().toISOString(),
         })
 
@@ -197,7 +196,6 @@ export async function POST(req: Request) {
           class_division: class_division || existingUser.class_division || '',
           identity_number: identity_number || existingUser.identity_number || '',
           telegram_username: telegram_username || existingUser.telegram_username || '',
-          plain_password: password,
         })
         .eq('id', authData.user.id)
 

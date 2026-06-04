@@ -56,7 +56,6 @@ export default function RegisterPage() {
         institution: data.institution, class_division: data.class_division,
         identity_number: data.identity_number || null, telegram_username: data.telegram_username || null,
         photo_url: photoUrl || null,
-        plain_password: data.password,
       })
     }
     toast.success('Akun berhasil dibuat! Selamat datang.')

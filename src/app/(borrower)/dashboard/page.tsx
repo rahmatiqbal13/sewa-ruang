@@ -57,7 +57,7 @@ export default async function BorrowerDashboard() {
     sb.from('users')
       .select('name, institution, class_division, borrower_category')
       .eq('id', user.id)
-      .single() as Promise<{ data: { name: string; institution: string; class_division: string; borrower_category: string | null } | null }>,
+      .maybeSingle() as Promise<{ data: { name: string; institution: string; class_division: string; borrower_category: string | null } | null }>,
   ])
 
   const pending = bookings?.filter(b => b.status === 'pending').length ?? 0
@@ -65,7 +65,7 @@ export default async function BorrowerDashboard() {
   const completed = bookings?.filter(b => b.status === 'completed').length ?? 0
 
   // Find active booking (approved or paid)
-  const activeBooking = bookings?.find(b => ['approved', 'paid'].includes(b.status))
+  const activeBooking = bookings?.find(b => ['approved', 'pending_payment', 'payment_uploaded', 'paid'].includes(b.status))
 
   // Get item name from booking
   function getItemName(booking: BookingWithItems): string {

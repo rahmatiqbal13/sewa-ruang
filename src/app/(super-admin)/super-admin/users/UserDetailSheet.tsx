@@ -5,8 +5,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 
 import {
-  Eye, EyeOff, Mail, Phone, Building2, Hash, MessageCircle,
-  Calendar, ShieldCheck, Key, Info, Loader2, ExternalLink, RotateCcw, Check,
+  Mail, Phone, Building2, Hash, MessageCircle,
+  Calendar, ShieldCheck, Eye, EyeOff, Info, Loader2, ExternalLink, RotateCcw, Check,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
@@ -23,7 +23,6 @@ interface UserData {
   class_division: string | null
   identity_number: string | null
   telegram_username: string | null
-  plain_password: string | null
   created_at: string
 }
 
@@ -57,12 +56,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function UserDetailSheet({ user }: { user: UserData }) {
   const [open, setOpen] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [bookings, setBookings] = useState<BookingRow[] | null>(null)
   const [loadingBookings, setLoadingBookings] = useState(false)
 
   // inline reset password
-  const [currentPassword, setCurrentPassword] = useState<string | null>(user.plain_password)
   const [newPassword, setNewPassword] = useState('')
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
@@ -90,7 +87,6 @@ export function UserDetailSheet({ user }: { user: UserData }) {
   function handleClose(val: boolean) {
     setOpen(val)
     if (!val) {
-      setShowPassword(false)
       setShowNewPassword(false)
       setNewPassword('')
     }
@@ -111,9 +107,8 @@ export function UserDetailSheet({ user }: { user: UserData }) {
       const json = await res.json()
       if (res.ok) {
         toast.success(`Password ${user.name} berhasil diperbarui`)
-        setCurrentPassword(newPassword)
         setNewPassword('')
-        setShowPassword(true)
+        setShowNewPassword(false)
       } else {
         toast.error(json.error || 'Gagal mengubah password')
       }
@@ -182,39 +177,11 @@ export function UserDetailSheet({ user }: { user: UserData }) {
                 Password — Super Admin Only
               </SectionTitle>
 
-              {/* Current password display */}
-              <div className="bg-amber-50 border border-amber-100 rounded-[14px] p-3">
-                <p className="text-[10px] text-amber-700 font-medium mb-1.5">Password Tersimpan</p>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Key className="h-4 w-4 text-amber-500 shrink-0" />
-                    <span className={cn(
-                      'text-sm truncate',
-                      currentPassword ? 'font-mono' : 'italic text-muted-foreground text-xs'
-                    )}>
-                      {currentPassword
-                        ? (showPassword ? currentPassword : '••••••••')
-                        : 'Belum tersedia — set password baru di bawah'}
-                    </span>
-                  </div>
-                  {currentPassword && (
-                    <button
-                      onClick={() => setShowPassword(v => !v)}
-                      className="shrink-0 h-7 w-7 flex items-center justify-center rounded-[10px] text-amber-600 hover:bg-amber-100 transition-colors"
-                      title={showPassword ? 'Sembunyikan' : 'Tampilkan password'}
-                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  )}
-                </div>
-              </div>
-
               {/* Reset password form */}
               <div className="border border-dashed border-border rounded-[14px] p-3 space-y-2">
                 <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
                   <RotateCcw className="h-3 w-3" />
-                  {currentPassword ? 'Ganti Password' : 'Set Password Baru'}
+                  Set Password Baru
                 </p>
                 <div className="flex gap-2">
                   <div className="relative flex-1">

@@ -7,27 +7,24 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { KeyRound, Loader2, Eye, EyeOff, ShieldAlert } from 'lucide-react'
+import { KeyRound, Loader2, Eye, EyeOff } from 'lucide-react'
 
 interface Props {
   userId: string
   userName: string
-  plainPassword: string | null
 }
 
-export function ChangePasswordDialog({ userId, userName, plainPassword }: Props) {
+export function ChangePasswordDialog({ userId, userName }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [newPassword, setNewPassword] = useState('')
-  const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
 
   function handleOpenChange(val: boolean) {
     setOpen(val)
     if (!val) {
       setNewPassword('')
-      setShowCurrent(false)
       setShowNew(false)
     }
   }
@@ -74,35 +71,6 @@ export function ChangePasswordDialog({ userId, userName, plainPassword }: Props)
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-1">
-            {/* Current password */}
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Password Tersimpan</Label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono min-h-[36px] flex items-center">
-                  {plainPassword
-                    ? (showCurrent ? plainPassword : '••••••••')
-                    : <span className="text-muted-foreground italic text-xs">Belum diset oleh admin</span>
-                  }
-                </div>
-                {plainPassword && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setShowCurrent(v => !v)}
-                    className="shrink-0"
-                  >
-                    {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                )}
-              </div>
-              {!plainPassword && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <ShieldAlert className="h-3 w-3" />
-                  Password lama tidak bisa ditampilkan (didaftarkan sebelum fitur ini aktif)
-                </p>
-              )}
-            </div>
-
             {/* New password */}
             <div className="space-y-1.5">
               <Label className="text-xs">Set Password Baru</Label>

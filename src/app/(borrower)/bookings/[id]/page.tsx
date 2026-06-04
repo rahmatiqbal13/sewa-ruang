@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { CancelBookingButton } from '../CancelBookingButton'
 import { formatDateTime, formatRupiah } from '@/lib/utils'
-import { ArrowLeft, Clock, Package, CreditCard, Receipt, Building2, Calendar, User } from 'lucide-react'
+import { ArrowLeft, Clock, Package, CreditCard, Receipt, Building2, Calendar, User, Upload } from 'lucide-react'
 
 interface BookingDetail {
   id: string
@@ -325,6 +325,29 @@ export default async function BorrowerBookingDetailPage({ params }: { params: Pr
             ))}
           </CardContent>
         </Card>
+      )}
+
+      {/* Payment Action */}
+      {['approved', 'pending_payment', 'payment_rejected'].includes(booking.status) && (
+        <div className="pt-2">
+          <Link
+            href={`/booking/${id}/payment`}
+            className={buttonVariants({ size: 'lg', className: 'w-full' })}
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            {booking.status === 'payment_rejected' ? 'Upload Ulang Bukti Pembayaran' : 'Bayar Sekarang'}
+          </Link>
+        </div>
+      )}
+
+      {/* Payment Uploaded - Waiting Verification */}
+      {booking.status === 'payment_uploaded' && (
+        <div className="pt-2">
+          <div className="flex items-center justify-center gap-2 p-4 bg-amber-50 border border-amber-200 rounded-[10px] text-amber-800">
+            <Upload className="h-5 w-5" />
+            <span className="font-medium">Bukti pembayaran sedang diverifikasi admin</span>
+          </div>
+        </div>
       )}
 
       {/* Cancel Button */}

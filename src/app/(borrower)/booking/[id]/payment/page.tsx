@@ -20,7 +20,8 @@ import {
   Check,
   Home,
   Box,
-  Landmark
+  Landmark,
+  Receipt
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -42,6 +43,32 @@ interface BookingData {
   status: string
   payment_code: string | null
   created_at: string
+  snapshot_rate: {
+    borrower_category?: string
+    event_type?: string
+    hours?: number
+    days?: number
+    rooms?: Array<{
+      id: string
+      name: string
+      rate_per_hour: number | null
+      rate_per_day: number | null
+    }>
+    equipment?: Array<{
+      id: string
+      rate_per_day: number
+      quantity: number
+    }>
+  } | null
+}
+
+interface BookingItemRow {
+  item_type: 'room' | 'equipment'
+  quantity: number
+  room_id: string | null
+  equipment_id: string | null
+  rooms: { name: string } | null
+  equipment: { name: string } | null
 }
 
 export default function PaymentPage() {
@@ -55,6 +82,9 @@ export default function PaymentPage() {
   const [gettingCode, setGettingCode] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('room')
+  const [bookingItems, setBookingItems] = useState<BookingItemRow[]>([])
+  const [hasRoom, setHasRoom] = useState(false)
+  const [hasEquipment, setHasEquipment] = useState(false)
 
   const supabase = createClient()
 
@@ -62,10 +92,10 @@ export default function PaymentPage() {
     try {
       setLoading(true)
       
-      // Get booking
-      const { data: bookingData, error: bookingError } = await supabase
-        .from('bookings')
-        .select('id, reference_no, total_amount, status, payment_code, created_at')
+      // Get booking with snapshot_rate
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: bookingData, error: bookingError } = await (supabase.from('bookings') as any)
+        .select('id, reference_no, total_amount, status, payment_code, created_at, snapshot_rate')
         .eq('id', bookingId)
         .single()
 
@@ -77,20 +107,24 @@ export default function PaymentPage() {
 
       setBooking(bookingData)
 
-      // Get booking items to determine type
-       
+      // Get booking items with names
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: itemsData } = await (supabase.from('booking_items') as any)
-        .select('item_type')
+        .select('item_type, quantity, room_id, equipment_id, rooms(name), equipment(name)')
         .eq('booking_id', bookingId)
 
-      const hasRoom = itemsData?.some((item: { item_type: string }) => item.item_type === 'room') || false
-      const hasEquipment = itemsData?.some((item: { item_type: string }) => item.item_type === 'equipment') || false
-      
+      const items: BookingItemRow[] = itemsData || []
+      setBookingItems(items)
+
+      const hasRoomItems = items.some((item: BookingItemRow) => item.item_type === 'room')
+      const hasEquipmentItems = items.some((item: BookingItemRow) => item.item_type === 'equipment')
+      setHasRoom(hasRoomItems)
+      setHasEquipment(hasEquipmentItems)
+
       // Set active tab based on booking type
-      if (hasRoom && !hasEquipment) {
+      if (hasRoomItems && !hasEquipmentItems) {
         setActiveTab('room')
-      } else if (hasEquipment && !hasRoom) {
+      } else if (hasEquipmentItems && !hasRoomItems) {
         setActiveTab('equipment')
       }
 
@@ -120,9 +154,18 @@ export default function PaymentPage() {
         category: bank.category
       })) || []
 
-      // Separate by category
-      setRoomMethods(formattedMethods.filter((m: PaymentMethod) => m.category === 'room'))
-      setEquipmentMethods(formattedMethods.filter((m: PaymentMethod) => m.category === 'equipment'))
+      // Separate by category and filter based on booking type
+      const allRoomMethods = formattedMethods.filter((m: PaymentMethod) => m.category === 'room')
+      const allEquipmentMethods = formattedMethods.filter((m: PaymentMethod) => m.category === 'equipment')
+      const generalMethods = formattedMethods.filter((m: PaymentMethod) => m.category === 'general')
+
+      setRoomMethods(hasRoomItems ? allRoomMethods : [])
+      setEquipmentMethods(hasEquipmentItems ? allEquipmentMethods : [])
+      
+      // If general methods exist and booking has neither specific type, show general
+      if (!hasRoomItems && !hasEquipmentItems && generalMethods.length > 0) {
+        setRoomMethods(generalMethods)
+      }
       
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -157,12 +200,24 @@ export default function PaymentPage() {
       setBooking(prev => prev ? { ...prev, payment_code: data.paymentCode, status: 'pending_payment' } : null)
       
       if (data.paymentMethods) {
-        const allMethods = [
-          ...(data.paymentMethods.room || []),
-          ...(data.paymentMethods.equipment || [])
-        ]
-        setRoomMethods(allMethods.filter((m: PaymentMethod) => m.category === 'room'))
-        setEquipmentMethods(allMethods.filter((m: PaymentMethod) => m.category === 'equipment'))
+        const roomM = (data.paymentMethods.room || []).map((bank: Record<string, unknown>) => ({
+          id: bank.id as string,
+          bankName: bank.bankName as string,
+          bankCode: bank.bankCode as string,
+          virtualAccountNumber: bank.virtualAccountNumber as string,
+          accountName: bank.accountName as string,
+          category: bank.category as 'room' | 'equipment' | 'general',
+        }))
+        const equipM = (data.paymentMethods.equipment || []).map((bank: Record<string, unknown>) => ({
+          id: bank.id as string,
+          bankName: bank.bankName as string,
+          bankCode: bank.bankCode as string,
+          virtualAccountNumber: bank.virtualAccountNumber as string,
+          accountName: bank.accountName as string,
+          category: bank.category as 'room' | 'equipment' | 'general',
+        }))
+        setRoomMethods(hasRoom ? roomM : [])
+        setEquipmentMethods(hasEquipment ? equipM : [])
       }
       
       toast.success('Kode pembayaran berhasil dibuat')
@@ -201,6 +256,77 @@ export default function PaymentPage() {
       return `${vaNumber.slice(0, 5)}-${vaNumber.slice(5, 8)}-${vaNumber.slice(8, 11)}-${vaNumber.slice(11, 13)}-${vaNumber.slice(13)}`
     }
     return vaNumber
+  }
+
+  const renderPriceBreakdown = () => {
+    if (!booking?.snapshot_rate) return null
+    const snap = booking.snapshot_rate
+    const days = snap.days ?? 1
+    const hours = snap.hours ?? 1
+
+    const roomRows = (snap.rooms || []).map((room) => {
+      const ratePerDay = room.rate_per_day ?? 0
+      const ratePerHour = room.rate_per_hour ?? 0
+      let subtotal = 0
+      let rateText = ''
+      if (hours > 12 && ratePerDay > 0) {
+        subtotal = ratePerDay * days
+        rateText = `${formatRupiah(ratePerDay)} x ${days} hari`
+      } else if (ratePerHour > 0) {
+        subtotal = ratePerHour * hours
+        rateText = `${formatRupiah(ratePerHour)} x ${hours} jam`
+      } else if (ratePerDay > 0) {
+        subtotal = ratePerDay * days
+        rateText = `${formatRupiah(ratePerDay)} x ${days} hari`
+      }
+      return { name: room.name, subtotal, rateText, type: 'room' as const }
+    }).filter(r => r.subtotal > 0)
+
+    const equipRows = (snap.equipment || []).map((eq) => {
+      const foundItem = bookingItems.find(i => i.item_type === 'equipment' && i.equipment_id === eq.id)
+      const itemName = foundItem?.equipment?.name ?? 'Alat'
+      const subtotal = (eq.rate_per_day ?? 0) * days * (eq.quantity ?? 1)
+      const rateText = `${formatRupiah(eq.rate_per_day)} x ${days} hari x ${eq.quantity} unit`
+      return { name: itemName, subtotal, rateText, type: 'equipment' as const, quantity: eq.quantity }
+    }).filter(r => r.subtotal > 0)
+
+    const allRows = [...roomRows, ...equipRows]
+    if (allRows.length === 0) return null
+
+    return (
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Receipt className="h-4 w-4" />
+            Rincian Harga
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {allRows.map((row, i) => (
+            <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-[10px]">
+              <div className="flex items-start gap-3">
+                <div className={`p-2 rounded-lg ${row.type === 'room' ? 'bg-indigo-100' : 'bg-amber-100'}`}>
+                  {row.type === 'room' ? (
+                    <Home className="h-4 w-4 text-indigo-600" />
+                  ) : (
+                    <Box className="h-4 w-4 text-amber-600" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">{row.name}</p>
+                  <p className="text-xs text-muted-foreground">{row.rateText}</p>
+                </div>
+              </div>
+              <span className="font-semibold text-sm">{formatRupiah(row.subtotal)}</span>
+            </div>
+          ))}
+          <div className="border-t pt-3 flex items-center justify-between">
+            <span className="font-medium">Total</span>
+            <span className="font-bold text-lg text-green-600">{formatRupiah(booking.total_amount)}</span>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   const renderVAMethod = (method: PaymentMethod) => (
@@ -342,6 +468,9 @@ export default function PaymentPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Price Breakdown */}
+        {renderPriceBreakdown()}
 
         {/* Generate Payment Code Button */}
         {!booking.payment_code && (

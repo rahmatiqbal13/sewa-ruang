@@ -4,7 +4,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Package, Calendar, ArrowLeft } from 'lucide-react'
+import { Plus, Package, Calendar, ArrowLeft, CreditCard } from 'lucide-react'
 import { formatDateTime, formatRupiah } from '@/lib/utils'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { CancelBookingButton } from './CancelBookingButton'
@@ -183,6 +183,15 @@ export default async function MyBookingsPage() {
                         >
                           Detail
                         </Link>
+                        {['approved', 'pending_payment', 'payment_rejected'].includes(booking.status) && (
+                          <Link
+                            href={`/booking/${booking.id}/payment`}
+                            className={buttonVariants({ size: 'sm' })}
+                          >
+                            <CreditCard className="mr-1 h-3 w-3" />
+                            Bayar
+                          </Link>
+                        )}
                         {booking.status === 'pending' && (
                           <CancelBookingButton id={booking.id} />
                         )}
@@ -232,6 +241,15 @@ export default async function MyBookingsPage() {
                     >
                       Detail
                     </Link>
+                    {['approved', 'pending_payment', 'payment_rejected'].includes(booking.status) && (
+                      <Link
+                        href={`/booking/${booking.id}/payment`}
+                        className={buttonVariants({ size: 'sm' })}
+                      >
+                        <CreditCard className="mr-1 h-3 w-3" />
+                        Bayar
+                      </Link>
+                    )}
                     {booking.status === 'pending' && (
                       <CancelBookingButton id={booking.id} />
                     )}

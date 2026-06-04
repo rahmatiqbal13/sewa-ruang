@@ -59,9 +59,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Gagal update password: ' + authError.message }, { status: 400 })
     }
 
-    // Store plain_password separately — non-blocking (column may not exist if migration not yet run)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin.from('users') as any).update({ plain_password: password }).eq('id', id)
+    // Password updated in Supabase Auth above. Do NOT store plaintext.
   }
 
   return NextResponse.json({ success: true })

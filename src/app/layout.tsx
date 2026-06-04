@@ -114,7 +114,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${dmSans.variable} ${dmMono.variable} h-full antialiased`}>
+    <html lang="id" className={`${dmSans.variable} ${dmMono.variable} h-full antialiased`} data-scroll-behavior="smooth">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0891B2" />

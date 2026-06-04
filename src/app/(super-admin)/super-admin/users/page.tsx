@@ -23,14 +23,14 @@ export default async function UsersPage() {
 
   const { data: users } = await sb
     .from('users')
-    .select('id, name, email, role, phone, institution, class_division, identity_number, telegram_username, plain_password, created_at')
+    .select('id, name, email, role, phone, institution, class_division, identity_number, telegram_username, created_at')
     .order('role')
     .order('name') as {
       data: Array<{
         id: string; name: string; email: string; role: string
         phone: string | null; institution: string | null; class_division: string | null
         identity_number: string | null; telegram_username: string | null
-        plain_password: string | null; created_at: string
+        created_at: string
       }> | null
     }
 
@@ -125,7 +125,7 @@ export default async function UsersPage() {
                         {!isSelf && (
                           <>
                             <EditUserDialog user={u} />
-                            <ChangePasswordDialog userId={u.id} userName={u.name} plainPassword={u.plain_password} />
+                            <ChangePasswordDialog userId={u.id} userName={u.name} />
                             <DeleteUserButton userId={u.id} userName={u.name} />
                           </>
                         )}
