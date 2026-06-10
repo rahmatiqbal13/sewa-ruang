@@ -29,6 +29,13 @@ export default async function RoomCourseSchedulesPage({
   const roomId = matched.id
   const { data: schedules } = await getCourseSchedules(roomId)
 
+  // Get all rooms for dropdown
+  const { data: rooms } = await sb
+    .from('rooms')
+    .select('id, name, room_code')
+    .eq('is_active', true)
+    .order('name')
+
   // Get current user ID for actions
   const { data: { user } } = await sb.auth.getUser()
   const userId = user?.id || ''
@@ -46,6 +53,7 @@ export default async function RoomCourseSchedulesPage({
         roomId={roomId}
         schedules={schedules || []}
         userId={userId}
+        rooms={rooms || []}
       />
     </div>
   )

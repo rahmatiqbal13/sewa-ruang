@@ -167,9 +167,9 @@ export async function getEntityDetails(type: string, slug: string) {
     }
 
     // Fetch inventory items in this room
-    const { data: inventoryItems } = await adminDb.from('room_inventory_items')
+    const { data: inventoryItems } = await adminDb.from('room_inventories')
       .select('id, name, inventory_code, quantity, condition, notes, photo_url')
-      .eq('room_asset_id', matched.id)
+      .eq('room_id', matched.id)
       .eq('is_active', true)
       .order('name')
 
@@ -275,7 +275,7 @@ export async function getEntityDetails(type: string, slug: string) {
     // Fetch building and room names (with floor)
     const [{ data: building }, { data: room }] = await Promise.all([
       matched.building_id ? adminDb.from('buildings').select('name, code').eq('id', matched.building_id).single() : Promise.resolve({ data: null }),
-      matched.storage_room_id ? adminDb.from('rooms').select('name, room_code, floor').eq('id', matched.storage_room_id).single() : Promise.resolve({ data: null }),
+      matched.storage_room_id ? adminDb.from('rooms').select('name, room_code, floor_number').eq('id', matched.storage_room_id).single() : Promise.resolve({ data: null }),
     ])
 
     return {
@@ -294,7 +294,7 @@ export async function getEntityDetails(type: string, slug: string) {
       buildingName: building?.name || '-',
       roomName: room?.name || '-',
       roomCode: room?.room_code || '-',
-      roomFloor: room?.floor || null,
+      roomFloor: room?.floor_number || null,
       updatedAt: matched.updated_at,
       activeBookings,
       pastBookings,

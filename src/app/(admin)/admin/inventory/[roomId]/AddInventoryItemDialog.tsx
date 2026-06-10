@@ -48,8 +48,8 @@ export function AddInventoryItemDialog({ roomId }: { roomId: string }) {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('room_inventory_items') as any).insert({
-      room_asset_id: roomId,
+    const { error } = await (supabase.from('room_inventories') as any).insert({
+      room_id: roomId,
       name: data.name,
       quantity: data.quantity,
       condition: data.condition,

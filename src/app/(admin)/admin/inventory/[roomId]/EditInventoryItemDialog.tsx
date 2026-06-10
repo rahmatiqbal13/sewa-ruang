@@ -45,7 +45,7 @@ const schema = z.object({
   inventory_code: z.string().optional(),
   notes: z.string().optional(),
   photo_url: z.string().optional(),
-  room_asset_id: z.string().min(1, 'Ruangan wajib dipilih'),
+  room_id: z.string().min(1, 'Ruangan wajib dipilih'),
 })
 
 type FormData = z.infer<typeof schema>
@@ -58,7 +58,7 @@ interface InventoryItem {
   inventory_code: string | null
   notes: string | null
   photo_url: string | null
-  room_asset_id: string
+  room_id: string
 }
 
 interface EditInventoryItemDialogProps {
@@ -85,7 +85,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
       inventory_code: item.inventory_code ?? '',
       notes: item.notes ?? '',
       photo_url: item.photo_url ?? '',
-      room_asset_id: item.room_asset_id,
+      room_id: item.room_id,
     }
   })
 
@@ -146,7 +146,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
           setRooms(formattedRooms)
           
           // Find building of current room
-          const currentRoom = formattedRooms.find(r => r.id === item.room_asset_id)
+          const currentRoom = formattedRooms.find(r => r.id === item.room_id)
           if (currentRoom) {
             setSelectedBuildingId(currentRoom.building_id)
           }
@@ -160,13 +160,13 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
     }
     
     loadData()
-  }, [open, item.room_asset_id])
+  }, [open, item.room_id])
 
-  const filteredRooms = selectedBuildingId
+    const filteredRooms = selectedBuildingId
     ? rooms.filter(r => r.building_id === selectedBuildingId)
     : rooms
 
-  const selectedRoom = rooms.find(r => r.id === watch('room_asset_id'))
+  const selectedRoom = rooms.find(r => r.id === watch('room_id'))
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -186,13 +186,13 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
       inventory_code: data.inventory_code?.trim() || null,
       notes: data.notes?.trim() || null,
       photo_url: data.photo_url || null,
-      room_asset_id: data.room_asset_id,
+      room_id: data.room_id,
       last_updated_by: user.id,
       last_updated_at: new Date().toISOString(),
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('room_inventory_items') as any)
+    const { error } = await (supabase.from('room_inventories') as any)
       .update(payload)
       .eq('id', item.id)
 
@@ -256,8 +256,8 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                     setSelectedBuildingId(value || '')
                     // Reset room selection when building changes
                     const roomsInBuilding = rooms.filter(r => r.building_id === value)
-                    if (roomsInBuilding.length > 0 && !roomsInBuilding.find(r => r.id === watch('room_asset_id'))) {
-                      setValue('room_asset_id', roomsInBuilding[0].id)
+                    if (roomsInBuilding.length > 0 && !roomsInBuilding.find(r => r.id === watch('room_id'))) {
+                      setValue('room_id', roomsInBuilding[0].id)
                     }
                   }}
                 >
@@ -287,14 +287,14 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                   Ruangan <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  value={watch('room_asset_id')}
-                  onValueChange={(value) => setValue('room_asset_id', value || '')}
+                  value={watch('room_id')}
+                  onValueChange={(value) => setValue('room_id', value || '')}
                   disabled={!selectedBuildingId}
                 >
                   <SelectTrigger className="w-full">
-                    {watch('room_asset_id') ? (
+                    {watch('room_id') ? (
                       (() => {
-                        const room = rooms.find(r => r.id === watch('room_asset_id'))
+                        const room = rooms.find(r => r.id === watch('room_id'))
                         return room ? `${room.name}${room.room_code ? ` (${room.room_code})` : ''}` : 'Pilih ruangan...'
                       })()
                     ) : (
@@ -315,8 +315,8 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
                     )}
                   </SelectContent>
                 </Select>
-                {errors.room_asset_id && (
-                  <p className="text-sm text-red-500">{errors.room_asset_id.message}</p>
+                {errors.room_id && (
+                  <p className="text-sm text-red-500">{errors.room_id.message}</p>
                 )}
                 
                 {/* Current Location Info */}

@@ -47,9 +47,9 @@ export default async function PublicInventoryPage({ params }: { params: Promise<
       .select('id, name, room_code, description, photo_url, buildings(name, code)')
       .eq('id', id)
       .single(),
-    sb.from('room_inventory_items')
+    sb.from('room_inventories')
       .select('id, name, quantity, condition, notes, photo_url, inventory_code, last_updated_at')
-      .eq('room_asset_id', id)
+      .eq('room_id', id)
       .eq('is_active', true)
       .order('name'),
   ])

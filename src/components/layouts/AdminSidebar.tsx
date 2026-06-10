@@ -9,7 +9,7 @@ import {
   Building2, LayoutDashboard, Package, CalendarDays,
   CreditCard, RotateCcw, BarChart3, QrCode, Boxes,
   LogOut, Users, Settings, BellRing, DoorOpen, ShieldCheck,
-  ChevronRight, Database, FileText, Trash2, Scan
+  ChevronRight, Database, FileText, Trash2, Scan, GraduationCap
 } from 'lucide-react'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { isSuperAdmin, UserRole } from '@/lib/permissions'
@@ -39,6 +39,7 @@ const mainMenuItems: NavItem[] = [
   { label: 'Dashboard',           href: '/admin/dashboard',        icon: LayoutDashboard },
   { label: 'Gedung',              href: '/admin/buildings',        icon: Building2 },
   { label: 'Ruangan',             href: '/admin/rooms',            icon: DoorOpen },
+  { label: 'Jadwal Kuliah',       href: '/admin/course-schedules', icon: GraduationCap },
   { label: 'Alat',                href: '/admin/equipment',        icon: Package },
   { label: 'Inventaris',          href: '/admin/inventory',        icon: Boxes },
   { label: 'Pengajuan',           href: '/admin/bookings',         icon: CalendarDays },

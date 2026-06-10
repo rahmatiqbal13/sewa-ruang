@@ -28,6 +28,7 @@ export function formatTime(time: string): string {
 }
 
 export interface CourseScheduleFormData {
+  room_id: string
   mata_kuliah: string
   dosen: string
   fakultas: string

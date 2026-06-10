@@ -13,15 +13,16 @@ interface Props {
   roomId: string
   schedules: CourseSchedule[]
   userId: string
+  rooms?: { id: string; name: string; room_code?: string | null }[]
 }
 
-export function CourseScheduleList({ roomId, schedules, userId }: Props) {
+export function CourseScheduleList({ roomId, schedules, userId, rooms = [] }: Props) {
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [editing, setEditing] = useState<CourseSchedule | null>(null)
 
   const handleCreate = async (data: CourseScheduleFormData) => {
-    await createCourseSchedule(roomId, data, userId)
+    await createCourseSchedule(data, userId)
     window.location.reload()
   }
 
@@ -110,6 +111,8 @@ export function CourseScheduleList({ roomId, schedules, userId }: Props) {
         onSubmit={editing ? handleUpdate : handleCreate}
         initialData={editing || undefined}
         title={editing ? 'Edit Jadwal Kuliah' : 'Tambah Jadwal Kuliah'}
+        rooms={rooms}
+        defaultRoomId={roomId}
       />
 
       <CSVImportDialog

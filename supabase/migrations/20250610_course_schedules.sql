@@ -48,10 +48,12 @@ CREATE INDEX IF NOT EXISTS idx_room_schedule_blocks_type ON public.room_schedule
 -- 3. RLS Policies
 ALTER TABLE public.course_schedules ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "course_schedules_select_all"
+DROP POLICY IF EXISTS "course_schedules_select_all" ON public.course_schedules;
+CREATE POLICY "course_schedules_select_all"
   ON public.course_schedules FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "course_schedules_admin_all"
+DROP POLICY IF EXISTS "course_schedules_admin_all" ON public.course_schedules;
+CREATE POLICY "course_schedules_admin_all"
   ON public.course_schedules FOR ALL
   USING (public.is_admin());
 

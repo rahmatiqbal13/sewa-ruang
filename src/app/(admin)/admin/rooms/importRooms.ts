@@ -175,7 +175,6 @@ export async function importRoomsFromExcel(formData: FormData): Promise<ImportRe
           building_id: buildingId,
           floor_number: floor,
           capacity: capacity,
-          room_type: roomType,
           description: row[colIndices.description]?.toString().trim() || null,
           is_active: true,
           created_by: user.id,

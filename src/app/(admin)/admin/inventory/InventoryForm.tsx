@@ -31,7 +31,7 @@ const schema = z.object({
   inventory_code: z.string().optional(),
   notes: z.string().optional(),
   photo_url: z.string().optional(),
-  room_asset_id: z.string().min(1, 'Ruangan wajib dipilih'),
+  room_id: z.string().min(1, 'Ruangan wajib dipilih'),
 })
 
 type FormData = z.infer<typeof schema>
@@ -59,7 +59,7 @@ interface InventoryItem {
   inventory_code: string | null
   notes: string | null
   photo_url: string | null
-  room_asset_id: string
+  room_id: string
 }
 
 export function InventoryForm({
@@ -94,16 +94,16 @@ export function InventoryForm({
       inventory_code: item.inventory_code ?? '',
       notes: item.notes ?? '',
       photo_url: item.photo_url ?? '',
-      room_asset_id: item.room_asset_id,
+      room_id: item.room_id,
     } : {
       quantity: 1,
       condition: 'good',
-      room_asset_id: preselectedRoomId || '',
+      room_id: preselectedRoomId || '',
       inventory_code: nextCode || '',
     }
   })
 
-  const selectedRoomId = watch('room_asset_id')
+  const selectedRoomId = watch('room_id')
   const selectedRoom = rooms.find(r => r.id === selectedRoomId)
   
   // Filter rooms by selected building
@@ -129,14 +129,14 @@ export function InventoryForm({
       inventory_code: data.inventory_code?.trim() || null,
       notes: data.notes?.trim() || null,
       photo_url: data.photo_url || null,
-      room_asset_id: data.room_asset_id,
+      room_id: data.room_id,
       last_updated_by: user.id,
     }
 
     if (item) {
       // Update existing
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from('room_inventory_items') as any)
+      const { error } = await (supabase.from('room_inventories') as any)
         .update(payload)
         .eq('id', item.id)
       if (error) {
@@ -148,7 +148,7 @@ export function InventoryForm({
     } else {
       // Create new
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from('room_inventory_items') as any)
+      const { error } = await (supabase.from('room_inventories') as any)
         .insert({ ...payload, is_active: true })
       if (error) {
         toast.error(error.message)
@@ -224,7 +224,7 @@ export function InventoryForm({
                     setSelectedBuildingId(v ?? '')
                     // Reset room selection when building changes
                     if (!item) {
-                      setValue('room_asset_id', '')
+                      setValue('room_id', '')
                     }
                   }}
                 >
@@ -267,8 +267,8 @@ export function InventoryForm({
                   </span>
                 </Label>
                 <Select 
-                  value={watch('room_asset_id')} 
-                  onValueChange={(v) => setValue('room_asset_id', v ?? '')}
+                  value={watch('room_id')} 
+                  onValueChange={(v) => setValue('room_id', v ?? '')}
                   disabled={!selectedBuildingId}
                 >
                   <SelectTrigger className="h-12 rounded-[14px] border-border focus:border-amber-500 focus:ring-amber-500/20">
@@ -296,8 +296,8 @@ export function InventoryForm({
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.room_asset_id && (
-                  <p className="text-sm text-red-500 font-medium">{errors.room_asset_id.message}</p>
+                {errors.room_id && (
+                  <p className="text-sm text-red-500 font-medium">{errors.room_id.message}</p>
                 )}
               </div>
 

@@ -66,8 +66,8 @@ export default async function NewInventoryPage({
 
   // Generate next inventory code
   // Get the highest existing code number
-  const { data: maxCodeData } = await sb
-    .from('room_inventory_items')
+    const { data: maxCodeData } = await sb
+    .from('room_inventories')
     .select('inventory_code')
     .not('inventory_code', 'is', null)
     .ilike('inventory_code', 'INV-%')

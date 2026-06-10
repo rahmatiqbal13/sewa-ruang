@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   ArrowLeft, Building2, MapPin, Users, Package, 
-  Plus, Edit, QrCode, ClipboardList
+  Plus, Edit, QrCode, ClipboardList, BookOpen
 } from 'lucide-react'
 import { SafeImage } from '@/components/shared/SafeImage'
 
@@ -71,9 +71,9 @@ export default async function RoomDetailPage({ params }: Props) {
 
   // Get inventory items for this room
   const { data: inventory } = await sb
-    .from('room_inventory_items')
+    .from('room_inventories')
     .select('*')
-    .eq('room_asset_id', id)
+    .eq('room_id', id)
     .eq('is_active', true)
     .order('name')
 
@@ -107,6 +107,11 @@ export default async function RoomDetailPage({ params }: Props) {
           <p className="text-muted-foreground font-mono">{room.room_code}</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" asChild className="rounded-[10px]">
+            <Link href={`/admin/rooms/${slug}/course-schedules`}>
+              <BookOpen className="h-4 w-4 mr-2" /> Jadwal Kuliah
+            </Link>
+          </Button>
           <Button variant="outline" asChild className="rounded-[10px]">
             <Link href={`/admin/rooms/${slug}/edit`}>
               <Edit className="h-4 w-4 mr-2" /> Edit Ruangan
@@ -192,9 +197,9 @@ export default async function RoomDetailPage({ params }: Props) {
               <div className="flex items-start gap-3">
                 <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Tipe Ruangan</p>
+                  <p className="text-sm text-muted-foreground">Nomor Urut</p>
                   <p className="font-medium text-foreground">
-                    {ROOM_TYPE_LABELS[room.room_type] || room.room_type}
+                    {room.room_sequence}
                   </p>
                 </div>
               </div>

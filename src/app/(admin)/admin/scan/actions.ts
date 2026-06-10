@@ -153,9 +153,9 @@ export async function getEntityDetails(type: string, slug: string) {
     }
 
     // Fetch inventory items in this room
-    const { data: inventoryItems } = await (adminDb.from('room_inventory_items') as any)
+    const { data: inventoryItems } = await (adminDb.from('room_inventories') as any)
       .select('id, name, inventory_code, quantity, condition, notes, photo_url')
-      .eq('room_asset_id', matched.id)
+      .eq('room_id', matched.id)
       .eq('is_active', true)
       .order('name')
 

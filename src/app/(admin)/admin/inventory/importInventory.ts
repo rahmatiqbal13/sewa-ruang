@@ -60,7 +60,7 @@ export async function importInventoryFromExcel(formData: FormData, roomId: strin
 
     // Verify room exists
     const { data: roomData } = await sb
-      .from('assets')
+      .from('rooms')
       .select('id, name')
       .eq('id', roomId)
       .single()
@@ -131,8 +131,8 @@ export async function importInventoryFromExcel(formData: FormData, roomId: strin
         const condition = conditionMap[conditionInput] || 'good'
 
         // Insert inventory item
-        const { error } = await sb.from('room_inventory_items').insert({
-          room_asset_id: roomId,
+        const { error } = await sb.from('room_inventories').insert({
+          room_id: roomId,
           name: itemName,
           quantity: quantity,
           condition: condition,

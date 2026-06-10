@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         users!user_id(name, email, phone, institution, borrower_category),
         booking_items(
           item_type,
-          rooms:room_id(name, room_type, current_condition),
+          rooms:room_id(name, current_condition),
           equipment:equipment_id(name, category, current_condition, ketersediaan, status_tindakan)
         )
       `)

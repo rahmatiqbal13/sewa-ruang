@@ -14,9 +14,9 @@ export default async function InventoryIndexPage({
   try {
     // Query items
     let query = sb
-      .from('room_inventory_items')
+      .from('room_inventories')
       .select(`
-        id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_asset_id
+        id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_id
       `)
       .eq('is_active', true)
       .order('name')
@@ -32,7 +32,7 @@ export default async function InventoryIndexPage({
     }
 
     // Get all room_ids from items
-    const roomIds = [...new Set((itemsData || []).map((item) => item.room_asset_id).filter(Boolean))]
+    const roomIds = [...new Set((itemsData || []).map((item) => item.room_id).filter(Boolean))]
 
     // Fetch rooms data
     let roomsData: any[] = []
@@ -65,13 +65,13 @@ export default async function InventoryIndexPage({
     // Merge items with rooms data
     const items = (itemsData || []).map((item: any) => ({
       ...item,
-      rooms: roomsMap.get(item.room_asset_id) || null
+      rooms: roomsMap.get(item.room_id) || null
     }))
 
     // Query ALL items for export
     let allItemsQuery = sb
-      .from('room_inventory_items')
-      .select(`id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_asset_id`)
+      .from('room_inventories')
+      .select(`id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_id`)
       .eq('is_active', true)
       .order('name')
 
@@ -84,12 +84,12 @@ export default async function InventoryIndexPage({
     // Merge all items with rooms data (reuse roomsMap)
     const allItems = (allItemsData || []).map((item: any) => ({
       ...item,
-      rooms: roomsMap.get(item.room_asset_id) || null
+      rooms: roomsMap.get(item.room_id) || null
     }))
 
     // Count per condition
     const { data: allConditionItems } = await sb
-      .from('room_inventory_items')
+      .from('room_inventories')
       .select('condition')
       .eq('is_active', true)
 
@@ -100,11 +100,11 @@ export default async function InventoryIndexPage({
     type RoomInfo = { id: string; name: string; room_code: string | null; buildings: { name: string; code: string } | null }
     const rooms = new Map<string, { room: RoomInfo; count: number; id: string }>()
     for (const item of items) {
-      if (item.rooms && !rooms.has(item.room_asset_id)) {
-        rooms.set(item.room_asset_id, { room: item.rooms, count: 0, id: item.room_asset_id })
+      if (item.rooms && !rooms.has(item.room_id)) {
+        rooms.set(item.room_id, { room: item.rooms, count: 0, id: item.room_id })
       }
-      if (rooms.has(item.room_asset_id)) {
-        const current = rooms.get(item.room_asset_id)!
+      if (rooms.has(item.room_id)) {
+        const current = rooms.get(item.room_id)!
         current.count++
       }
     }

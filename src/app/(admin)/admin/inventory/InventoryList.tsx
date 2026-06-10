@@ -39,7 +39,7 @@ interface InventoryItem {
   notes: string | null
   photo_url: string | null
   last_updated_at?: string
-  room_asset_id: string
+  room_id: string
   rooms: {
     id: string
     name: string
@@ -145,7 +145,7 @@ export function InventoryList({
   async function softDelete(item: InventoryItem) {
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('room_inventory_items') as any)
+    const { error } = await (supabase.from('room_inventories') as any)
       .update({ is_active: false })
       .eq('id', item.id)
     
@@ -486,7 +486,7 @@ export function InventoryList({
                       
                       {room && (
                         <Link
-                          href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_asset_id}`}
+                          href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_id}`}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground/70 hover:bg-muted hover:text-muted-foreground"
                         >
                           <ChevronRight className="h-4 w-4" />
@@ -598,7 +598,7 @@ export function InventoryList({
 
                           {room && (
                             <Link
-                              href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_asset_id}`}
+                          href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_id}`}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground/70 hover:bg-muted hover:text-muted-foreground"
                             >
                               <ChevronRight className="h-4 w-4" />

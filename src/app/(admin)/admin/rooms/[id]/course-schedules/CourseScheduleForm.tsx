@@ -13,6 +13,8 @@ interface Props {
   onSubmit: (data: CourseScheduleFormData) => void
   initialData?: CourseScheduleFormData
   title?: string
+  rooms?: { id: string; name: string; room_code?: string | null }[]
+  defaultRoomId?: string
 }
 
 export function CourseScheduleForm({
@@ -21,9 +23,12 @@ export function CourseScheduleForm({
   onSubmit,
   initialData,
   title = 'Tambah Jadwal Kuliah',
+  rooms = [],
+  defaultRoomId = '',
 }: Props) {
   const [formData, setFormData] = useState<CourseScheduleFormData>(
     initialData || {
+      room_id: defaultRoomId,
       mata_kuliah: '',
       dosen: '',
       fakultas: '',
@@ -50,6 +55,25 @@ export function CourseScheduleForm({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {rooms.length > 0 && (
+            <div className="space-y-2">
+              <Label>Ruangan</Label>
+              <select
+                value={formData.room_id}
+                onChange={e => setFormData({ ...formData, room_id: e.target.value })}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                required
+              >
+                <option value="">Pilih ruangan...</option>
+                {rooms.map(room => (
+                  <option key={room.id} value={room.id}>
+                    {room.name} {room.room_code ? `(${room.room_code})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Mata Kuliah</Label>

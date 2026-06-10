@@ -23,7 +23,7 @@ interface Item {
   inventory_code: string | null
   notes: string | null
   photo_url: string | null
-  room_asset_id: string
+  room_id: string
 }
 
 interface InventoryItemActionsProps {
@@ -48,7 +48,7 @@ export function InventoryItemActions({ item }: InventoryItemActionsProps) {
     const { data: { user } } = await supabase.auth.getUser()
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('room_inventory_items') as any).update({
+    const { error } = await (supabase.from('room_inventories') as any).update({
       condition: condition,
       last_updated_by: user!.id,
       last_updated_at: new Date().toISOString(),
@@ -69,7 +69,7 @@ export function InventoryItemActions({ item }: InventoryItemActionsProps) {
   async function softDelete() {
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('room_inventory_items') as any)
+    const { error } = await (supabase.from('room_inventories') as any)
       .update({ is_active: false })
       .eq('id', item.id)
     

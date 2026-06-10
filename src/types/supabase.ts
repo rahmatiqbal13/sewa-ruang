@@ -55,20 +55,26 @@ export interface Database {
           name: string
           room_code: string
           building_id: string
-          floor: number
+          floor_number: number
           capacity: number
-          room_type: string
-          base_price: number
+          rate_per_day: number
           current_condition: string
           is_active: boolean
           is_for_rent: boolean
           photo_url: string | null
           description: string | null
-          facilities: string[] | null
           created_at: string
           updated_at: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rooms_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          }
+        ]
         Insert: Omit<Database['public']['Tables']['rooms']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['rooms']['Insert']>
       }
@@ -122,17 +128,27 @@ export interface Database {
         Row: {
           id: string
           name: string
-          inventory_code: string
-          category: string
           room_id: string
           quantity: number
           condition: string
-          is_active: boolean
+          inventory_code: string | null
+          category: string | null
           notes: string | null
+          photo_url: string | null
+          is_active: boolean
+          last_updated_by: string | null
           last_updated_at: string
           created_at: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "room_inventories_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          }
+        ]
         Insert: Omit<Database['public']['Tables']['room_inventories']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['room_inventories']['Insert']>
       }
@@ -298,25 +314,7 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['returns']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['returns']['Insert']>
       }
-      room_inventory_items: {
-        Row: {
-          id: string
-          room_asset_id: string
-          name: string
-          quantity: number
-          condition: InventoryCondition
-          inventory_code: string | null
-          notes: string | null
-          photo_url: string | null
-          is_active: boolean
-          last_updated_by: string | null
-          last_updated_at: string
-          created_at: string
-        }
-        Relationships: []
-        Insert: Omit<Database['public']['Tables']['room_inventory_items']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['room_inventory_items']['Insert']>
-      }
+
       asset_tracking_logs: {
         Row: {
           id: string
@@ -447,6 +445,83 @@ export interface Database {
         Relationships: []
         Insert: Omit<Database['public']['Tables']['equipment_booking_slots']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['equipment_booking_slots']['Insert']>
+      }
+      course_schedules: {
+        Row: {
+          id: string
+          room_id: string
+          mata_kuliah: string
+          dosen: string
+          fakultas: string
+          kelas: string
+          semester: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          start_date: string
+          end_date: string
+          is_active: boolean
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_schedules_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          }
+        ]
+        Insert: Omit<Database['public']['Tables']['course_schedules']['Row'], 'id' | 'created_at' | 'updated_at' | 'is_active'> & { is_active?: boolean }
+        Update: Partial<Database['public']['Tables']['course_schedules']['Insert']>
+      }
+      course_schedule_imports: {
+        Row: {
+          id: string
+          room_id: string
+          semester: string
+          csv_data: string
+          processed_rows: number
+          error_rows: number
+          status: string
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Relationships: []
+        Insert: Omit<Database['public']['Tables']['course_schedule_imports']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['course_schedule_imports']['Insert']>
+      }
+      room_schedule_blocks: {
+        Row: {
+          id: string
+          room_id: string
+          start_datetime: string
+          end_datetime: string
+          reason: string
+          schedule_type: string
+          course_schedule_id: string | null
+          mata_kuliah: string | null
+          dosen: string | null
+          fakultas: string | null
+          kelas: string | null
+          semester: string | null
+          created_by: string
+          created_at: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_schedule_blocks_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          }
+        ]
+        Insert: Omit<Database['public']['Tables']['room_schedule_blocks']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['room_schedule_blocks']['Insert']>
       }
     }
     Views: Record<string, never>

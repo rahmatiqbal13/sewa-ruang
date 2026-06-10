@@ -24,7 +24,7 @@ interface InventoryItem {
   photo_url: string | null
   last_updated_at: string
   users: { name: string } | null
-  room_asset_id: string
+  room_id: string
 }
 
 export default async function InventoryPage({ 
@@ -56,9 +56,9 @@ export default async function InventoryPage({
 
     // Get inventory items for this room
     const { data: items, error: itemsError } = await sb
-      .from('room_inventory_items')
-      .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name), room_asset_id')
-      .eq('room_asset_id', roomId)
+      .from('room_inventories')
+      .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name), room_id')
+      .eq('room_id', roomId)
       .eq('is_active', true)
       .order('name')
 

@@ -62,9 +62,6 @@ export function buildVars(booking: any): Record<string, string> {
   const notesLine = adminNotes ? `📝 Catatan: ${adminNotes}` : ''
 
   // Room & Equipment category / status info from joined data
-  const roomTypes = rooms
-    .map((i) => i.rooms?.room_type)
-    .filter(Boolean)
   const roomConditions = rooms
     .map((i) => i.rooms?.current_condition)
     .filter(Boolean)
@@ -97,7 +94,7 @@ export function buildVars(booking: any): Record<string, string> {
     '{{total_biaya}}':        fmtRupiah(booking.total_amount ?? 0),
     '{{tipe_peminjaman}}':    tipe,
     // Room details
-    '{{tipe_ruangan}}':       roomTypes.join(', ') || '-',
+    '{{tipe_ruangan}}':       '-',
     '{{kondisi_ruangan}}':    roomConditions.join(', ') || '-',
     // Equipment details
     '{{kategori_alat}}':      equipCategories.join(', ') || '-',

@@ -9,7 +9,6 @@ function createSlug(name: string): string {
 }
 
 export async function createCourseSchedule(
-  roomId: string,
   data: CourseScheduleFormData,
   userId: string
 ) {
@@ -18,7 +17,6 @@ export async function createCourseSchedule(
   const { data: result, error } = await sb
     .from('course_schedules')
     .insert({
-      room_id: roomId,
       ...data,
       created_by: userId,
     })
@@ -29,7 +27,7 @@ export async function createCourseSchedule(
     return { error: error.message }
   }
 
-  revalidatePath(`/admin/rooms/${createSlug(data.mata_kuliah)}/course-schedules`)
+  revalidatePath('/admin/course-schedules')
   return { success: true, data: result }
 }
 
