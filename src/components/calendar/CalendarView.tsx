@@ -75,7 +75,7 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
 
       // Generate slot data from bookings
       const generatedSlots: BookingSlot[] = []
-      const slotMap = new Map<string, boolean>()
+      const slotMap = new Map<string, { is_booked: boolean; is_class: boolean }>()
 
       items?.forEach((item: BookingItem) => {
         const booking = item.bookings
@@ -89,7 +89,7 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
         days.forEach(day => {
           const dateStr = format(day, 'yyyy-MM-dd')
           if (!slotMap.has(dateStr)) {
-            slotMap.set(dateStr, true)
+            slotMap.set(dateStr, { is_booked: true, is_class: false })
             generatedSlots.push({
               id: `${booking.id}-${dateStr}`,
               booking_date: dateStr,
@@ -99,6 +99,39 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
           }
         })
       })
+
+      // Also query room_schedule_blocks for class schedules
+      if (roomId) {
+        const { data: classBlocks, error: classError } = await supabase
+          .from('room_schedule_blocks')
+          .select('start_datetime, end_datetime, schedule_type, mata_kuliah')
+          .eq('room_id', roomId)
+          .eq('schedule_type', 'class')
+          .gte('start_datetime', `${startDate}T00:00:00`)
+          .lte('start_datetime', `${endDate}T23:59:59`)
+
+        if (!classError && classBlocks) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          classBlocks.forEach((block: any) => {
+            const start = new Date(block.start_datetime)
+            const end = new Date(block.end_datetime)
+            const days = eachDayOfInterval({ start, end })
+            
+            days.forEach(day => {
+              const dateStr = format(day, 'yyyy-MM-dd')
+              if (!slotMap.has(dateStr)) {
+                slotMap.set(dateStr, { is_booked: true, is_class: true })
+                generatedSlots.push({
+                  id: `class-${dateStr}`,
+                  booking_date: dateStr,
+                  is_booked: true,
+                  booking_id: 'class',
+                })
+              }
+            })
+          })
+        }
+      }
 
       setSlots(generatedSlots)
     } catch (error) {
@@ -131,6 +164,10 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
   const getDayStatus = (date: Date) => {
     const daySlots = getSlotsForDate(date)
     if (daySlots.length === 0) return 'no-data'
+    const hasClass = daySlots.some(s => s.booking_id === 'class')
+    const hasBooking = daySlots.some(s => s.booking_id !== 'class')
+    if (hasClass && hasBooking) return 'mixed'
+    if (hasClass) return 'class'
     if (daySlots.every(s => s.is_booked)) return 'fully-booked'
     if (daySlots.some(s => !s.is_booked)) return 'available'
     return 'no-data'
@@ -183,7 +220,7 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
         </div>
         
         {!compact && (
-          <div className="flex items-center gap-4 mt-2 text-xs">
+          <div className="flex items-center gap-4 mt-2 text-xs flex-wrap">
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
               <span className="text-muted-foreground">Tersedia</span>
@@ -191,6 +228,14 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
               <span className="text-muted-foreground">Penuh</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+              <span className="text-muted-foreground">Jadwal Kuliah</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+              <span className="text-muted-foreground">Booking + Kuliah</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
@@ -235,6 +280,8 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
                     !isCurrentMonth && "bg-muted/50",
                     status === 'fully-booked' && "bg-red-50 hover:bg-red-100",
                     status === 'available' && "bg-green-50 hover:bg-green-100",
+                    status === 'class' && "bg-blue-50 hover:bg-blue-100",
+                    status === 'mixed' && "bg-purple-50 hover:bg-purple-100",
                     isTodayDate && "bg-blue-50"
                   )}
                 >
@@ -261,6 +308,12 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
                         {status === 'fully-booked' && (
                           <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
                         )}
+                        {status === 'class' && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        )}
+                        {status === 'mixed' && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                        )}
                       </div>
                     )}
                     
@@ -269,7 +322,9 @@ export function CalendarView({ roomId, equipmentId, title, className, compact = 
                       <div className={cn(
                         "w-1 h-1 rounded-full mt-0.5",
                         status === 'available' && "bg-green-500",
-                        status === 'fully-booked' && "bg-red-500"
+                        status === 'fully-booked' && "bg-red-500",
+                        status === 'class' && "bg-blue-500",
+                        status === 'mixed' && "bg-purple-500"
                       )} />
                     )}
                   </div>

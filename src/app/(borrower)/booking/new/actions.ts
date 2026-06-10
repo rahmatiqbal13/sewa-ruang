@@ -119,6 +119,29 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
         return { success: false, error: `Ruangan "${room?.name ?? 'tersebut'}" sudah dipesan pada waktu tersebut` }
       }
     }
+
+    // ── Check class schedule blocks ───────────────────────────────────────
+    const { data: classBlocks } = await supabase
+      .from('room_schedule_blocks')
+      .select('mata_kuliah, dosen, start_datetime, end_datetime, room_id')
+      .in('room_id', room_ids)
+      .eq('schedule_type', 'class')
+      .lt('start_datetime', endDt.toISOString())
+      .gt('end_datetime', startDt.toISOString())
+      .limit(1)
+
+    if (classBlocks && classBlocks.length > 0) {
+      const block = classBlocks[0]
+      const { data: room } = await supabase
+        .from('rooms')
+        .select('name')
+        .eq('id', block.room_id)
+        .single()
+      return {
+        success: false,
+        error: `Ruangan "${room?.name ?? 'tersebut'}" sedang dipakai untuk jadwal kuliah "${block.mata_kuliah}" (Dosen: ${block.dosen})`
+      }
+    }
   }
 
   // ── Fetch and verify rooms ───────────────────────────────────────────────

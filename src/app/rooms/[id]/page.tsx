@@ -20,7 +20,8 @@ import {
   CheckCircle2,
   Layers,
   CalendarDays,
-  List
+  List,
+  GraduationCap
 } from 'lucide-react'
 import { formatDateTime, formatRupiah, cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
@@ -65,13 +66,13 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
   const { data: room } = await sb
     .from('rooms')
-    .select('id, name, room_code, floor, capacity, room_type, base_price, description, facilities, photo_url, is_for_rent, buildings(name, code, address)')
+    .select('id, name, room_code, floor_number, capacity, description, photo_url, door_photo_url, is_for_rent, rate_per_day, buildings(name, code, address)')
     .eq('id', id)
     .eq('is_active', true)
     .single() as { data: {
-      id: string; name: string; room_code: string; floor: number | null
-      capacity: number | null; room_type: string | null; base_price: number
-      description: string | null; facilities: string[] | null; photo_url: string | null
+      id: string; name: string; room_code: string; floor_number: number | null
+      capacity: number | null; rate_per_day: number | null
+      description: string | null; photo_url: string | null
       door_photo_url?: string | null; is_for_rent: boolean; buildings: { name: string; code: string; address: string | null } | null
     } | null }
 
@@ -116,6 +117,16 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
     ?.map(item => item.bookings!)
     ?.sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
     ?.slice(0, 10) ?? []
+
+  // Fetch upcoming class schedules for this room
+  const { data: classBlocks } = await sb
+    .from('room_schedule_blocks')
+    .select('start_datetime, end_datetime, mata_kuliah, dosen, kelas, semester')
+    .eq('room_id', id)
+    .eq('schedule_type', 'class')
+    .gte('end_datetime', now)
+    .order('start_datetime', { ascending: true })
+    .limit(10)
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
@@ -243,18 +254,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                       <p className="font-semibold text-[#111827]">{room.capacity} orang</p>
                     </div>
                   )}
-                  {room.floor !== null && (
+                  {room.floor_number !== null && (
                     <div className="bg-[#F9FAFB] rounded-xl p-4 text-center">
                       <Layers className="h-5 w-5 text-[#0891B2] mx-auto mb-2" />
                       <p className="text-xs text-[#6B7280] mb-1">Lantai</p>
-                      <p className="font-semibold text-[#111827]">Lantai {room.floor}</p>
-                    </div>
-                  )}
-                  {room.room_type && (
-                    <div className="bg-[#F9FAFB] rounded-xl p-4 text-center">
-                      <Building2 className="h-5 w-5 text-[#0891B2] mx-auto mb-2" />
-                      <p className="text-xs text-[#6B7280] mb-1">Tipe</p>
-                      <p className="font-semibold text-[#111827]">{room.room_type}</p>
+                      <p className="font-semibold text-[#111827]">Lantai {room.floor_number}</p>
                     </div>
                   )}
                   <div className="bg-[#F9FAFB] rounded-xl p-4 text-center">
@@ -275,19 +279,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 )}
 
-                {/* Facilities */}
-                {room.facilities && room.facilities.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-[#111827] mb-3">Fasilitas</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {room.facilities.map((f: string, i: number) => (
-                        <Badge key={i} variant="secondary" className="bg-[#ecfeff] text-[#0891B2] hover:bg-[#ecfeff]/80 text-xs px-3 py-1">
-                          {f}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* Facilities — removed: schema does not have facilities column */}
               </CardContent>
             </Card>
 
@@ -376,11 +368,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             </Card>
 
             {/* Base Price Card (if exists) */}
-            {room.base_price > 0 && (
+            {room.rate_per_day && room.rate_per_day > 0 && (
               <Card className="border border-[#E5E7EB] rounded-[14px] shadow-sm bg-[#ecfeff]">
                 <CardContent className="p-4">
                   <p className="text-sm text-[#6B7280] mb-1">Tarif Dasar</p>
-                  <p className="text-2xl font-bold text-[#0891B2]">{formatRupiah(room.base_price)}</p>
+                  <p className="text-2xl font-bold text-[#0891B2]">{formatRupiah(room.rate_per_day)}</p>
                   <p className="text-xs text-[#6B7280]">per hari</p>
                 </CardContent>
               </Card>
@@ -421,6 +413,47 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                   <CalendarDays className="h-10 w-10 text-[#D1D5DB] mx-auto mb-3" />
                   <p className="text-sm text-[#6B7280]">Belum ada jadwal peminjaman mendatang</p>
                   <p className="text-xs text-[#9CA3AF] mt-1">Ruangan ini tersedia untuk dipinjam</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── Jadwal Kuliah ───────────────────────────── */}
+        <section id="jadwal-kuliah" className="mt-8 scroll-mt-20">
+          <Card className="border border-[#E5E7EB] rounded-[14px] shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <GraduationCap className="h-5 w-5 text-blue-500" />
+                <h3 className="font-bold text-[#111827] text-lg">Jadwal Kuliah Mendatang</h3>
+              </div>
+              
+              {classBlocks && classBlocks.length > 0 ? (
+                <div className="space-y-2">
+                  {classBlocks.map((block, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 bg-blue-50 rounded-[10px] border border-blue-200"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-[#111827]">
+                          {block.mata_kuliah} — {block.dosen} ({block.kelas})
+                        </p>
+                        <p className="text-xs text-[#6B7280] mt-0.5">
+                          {formatDateTime(block.start_datetime)} — {formatDateTime(block.end_datetime)}
+                        </p>
+                        <p className="text-xs text-blue-600">
+                          {block.semester}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <GraduationCap className="h-10 w-10 text-[#D1D5DB] mx-auto mb-3" />
+                  <p className="text-sm text-[#6B7280]">Tidak ada jadwal kuliah mendatang</p>
                 </div>
               )}
             </CardContent>
