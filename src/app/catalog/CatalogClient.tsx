@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+
 import { 
   Building2, 
   Package, 
@@ -470,11 +470,133 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
   )
 }
 
+// Active Filter Chips
+function ActiveFilterChips({
+  selectedBuildings,
+  setSelectedBuildings,
+  selectedCategories,
+  setSelectedCategories,
+  selectedCapacity,
+  setSelectedCapacity,
+  showAvailableOnly,
+  setShowAvailableOnly,
+  searchQuery,
+  setSearchQuery,
+  priceRange,
+  setPriceRange,
+  onResetAll,
+}: {
+  selectedBuildings: string[]
+  setSelectedBuildings: (v: string[]) => void
+  selectedCategories: string[]
+  setSelectedCategories: (v: string[]) => void
+  selectedCapacity: string[]
+  setSelectedCapacity: (v: string[]) => void
+  showAvailableOnly: boolean
+  setShowAvailableOnly: (v: boolean) => void
+  searchQuery: string
+  setSearchQuery: (v: string) => void
+  priceRange: { min: string; max: string }
+  setPriceRange: (v: { min: string; max: string }) => void
+  onResetAll: () => void
+}) {
+  const hasAnyFilter =
+    selectedBuildings.length > 0 ||
+    selectedCategories.length > 0 ||
+    selectedCapacity.length > 0 ||
+    showAvailableOnly ||
+    searchQuery ||
+    priceRange.min ||
+    priceRange.max
+
+  if (!hasAnyFilter) return null
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4">
+      {searchQuery && (
+        <button
+          onClick={() => setSearchQuery('')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200 hover:bg-blue-100 transition-colors"
+        >
+          <Search className="h-3 w-3" />
+          &quot;{searchQuery}&quot;
+          <X className="h-3 w-3 ml-0.5" />
+        </button>
+      )}
+      {selectedBuildings.map((id) => {
+        const b = selectedBuildings.find(() => true) // placeholder
+        return (
+          <button
+            key={id}
+            onClick={() => setSelectedBuildings(selectedBuildings.filter((bid) => bid !== id))}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-700 text-xs font-medium rounded-full border border-slate-200 hover:bg-slate-100 transition-colors"
+          >
+            <Building2 className="h-3 w-3" />
+            Gedung
+            <X className="h-3 w-3 ml-0.5" />
+          </button>
+        )
+      })}
+      {selectedCategories.map((cat) => {
+        const label = EQUIPMENT_CATEGORIES.find((c) => c.value === cat)?.label || cat
+        return (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategories(selectedCategories.filter((c) => c !== cat))}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 text-xs font-medium rounded-full border border-purple-200 hover:bg-purple-100 transition-colors"
+          >
+            <Package className="h-3 w-3" />
+            {label}
+            <X className="h-3 w-3 ml-0.5" />
+          </button>
+        )
+      })}
+      {selectedCapacity.map((cap) => {
+        const label = CAPACITY_RANGES.find((c) => c.value === cap)?.label || cap
+        return (
+          <button
+            key={cap}
+            onClick={() => setSelectedCapacity(selectedCapacity.filter((c) => c !== cap))}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 text-xs font-medium rounded-full border border-amber-200 hover:bg-amber-100 transition-colors"
+          >
+            <Users className="h-3 w-3" />
+            {label}
+            <X className="h-3 w-3 ml-0.5" />
+          </button>
+        )
+      })}
+      {(priceRange.min || priceRange.max) && (
+        <button
+          onClick={() => setPriceRange({ min: '', max: '' })}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full border border-emerald-200 hover:bg-emerald-100 transition-colors"
+        >
+          Harga: {priceRange.min ? `Rp${Number(priceRange.min).toLocaleString('id')}` : '0'} - {priceRange.max ? `Rp${Number(priceRange.max).toLocaleString('id')}` : '∞'}
+          <X className="h-3 w-3 ml-0.5" />
+        </button>
+      )}
+      {showAvailableOnly && (
+        <button
+          onClick={() => setShowAvailableOnly(false)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200 hover:bg-green-100 transition-colors"
+        >
+          Tersedia saja
+          <X className="h-3 w-3 ml-0.5" />
+        </button>
+      )}
+      <button
+        onClick={onResetAll}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+      >
+        Hapus semua filter
+      </button>
+    </div>
+  )
+}
+
 // Filter Sidebar Component
-function FilterSidebar({ 
+function FilterSidebar({
   buildings,
-  assetType,
-  setAssetType,
+  activeTab,
   selectedBuildings,
   setSelectedBuildings,
   selectedCategories,
@@ -485,13 +607,11 @@ function FilterSidebar({
   setSelectedCapacity,
   showAvailableOnly,
   setShowAvailableOnly,
-  onApply,
   onReset,
   isMobile = false
 }: {
   buildings: BuildingRow[]
-  assetType: 'all' | 'rooms' | 'equipment'
-  setAssetType: (v: 'all' | 'rooms' | 'equipment') => void
+  activeTab: 'all' | 'rooms' | 'equipment'
   selectedBuildings: string[]
   setSelectedBuildings: (v: string[]) => void
   selectedCategories: string[]
@@ -502,7 +622,6 @@ function FilterSidebar({
   setSelectedCapacity: (v: string[]) => void
   showAvailableOnly: boolean
   setShowAvailableOnly: (v: boolean) => void
-  onApply: () => void
   onReset: () => void
   isMobile?: boolean
 }) {
@@ -532,35 +651,14 @@ function FilterSidebar({
 
   const content = (
     <div className="space-y-6">
-      {/* TIPE ASET */}
-      <div>
-        <h4 className="font-semibold text-[#111827] text-sm mb-3">TIPE ASET</h4>
-        <RadioGroup value={assetType} onValueChange={(v) => setAssetType(v as 'all' | 'rooms' | 'equipment')}>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="all" id="type-all" className="border-[#D1D5DB]" />
-              <Label htmlFor="type-all" className="text-sm text-[#374151] cursor-pointer">Semua</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="rooms" id="type-rooms" className="border-[#D1D5DB]" />
-              <Label htmlFor="type-rooms" className="text-sm text-[#374151] cursor-pointer">Ruangan</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="equipment" id="type-equipment" className="border-[#D1D5DB]" />
-              <Label htmlFor="type-equipment" className="text-sm text-[#374151] cursor-pointer">Peralatan</Label>
-            </div>
-          </div>
-        </RadioGroup>
-      </div>
-
       {/* GEDUNG */}
-      {assetType !== 'equipment' && (
+      {activeTab !== 'equipment' && (
         <div>
           <h4 className="font-semibold text-[#111827] text-sm mb-3">GEDUNG</h4>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {buildings.map(building => (
               <div key={building.id} className="flex items-center space-x-2">
-                <Checkbox 
+                <Checkbox
                   id={`building-${building.id}`}
                   checked={selectedBuildings.includes(building.id)}
                   onCheckedChange={() => handleBuildingToggle(building.id)}
@@ -576,13 +674,13 @@ function FilterSidebar({
       )}
 
       {/* KATEGORI ALAT */}
-      {assetType !== 'rooms' && (
+      {activeTab !== 'rooms' && (
         <div>
           <h4 className="font-semibold text-[#111827] text-sm mb-3">KATEGORI ALAT</h4>
           <div className="space-y-2">
             {EQUIPMENT_CATEGORIES.map(cat => (
               <div key={cat.value} className="flex items-center space-x-2">
-                <Checkbox 
+                <Checkbox
                   id={`cat-${cat.value}`}
                   checked={selectedCategories.includes(cat.value)}
                   onCheckedChange={() => handleCategoryToggle(cat.value)}
@@ -599,40 +697,42 @@ function FilterSidebar({
 
       {/* HARGA */}
       <div>
-        <h4 className="font-semibold text-[#111827] text-sm mb-3">HARGA</h4>
+        <h4 className="font-semibold text-[#111827] text-sm mb-3">HARGA (Rp)</h4>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">Rp</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-xs">MIN</span>
             <input
               type="number"
-              placeholder="Min"
+              placeholder="0"
+              min="0"
               value={priceRange.min}
               onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
+              className="w-full pl-10 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
             />
           </div>
-          <span className="text-[#9CA3AF]">-</span>
+          <span className="text-[#9CA3AF] text-sm">-</span>
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">Rp</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-xs">MAX</span>
             <input
               type="number"
-              placeholder="Max"
+              placeholder="∞"
+              min="0"
               value={priceRange.max}
               onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
+              className="w-full pl-11 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0891B2]/20"
             />
           </div>
         </div>
       </div>
 
       {/* KAPASITAS */}
-      {assetType !== 'equipment' && (
+      {activeTab !== 'equipment' && (
         <div>
           <h4 className="font-semibold text-[#111827] text-sm mb-3">KAPASITAS</h4>
           <div className="space-y-2">
             {CAPACITY_RANGES.map(range => (
               <div key={range.value} className="flex items-center space-x-2">
-                <Checkbox 
+                <Checkbox
                   id={`cap-${range.value}`}
                   checked={selectedCapacity.includes(range.value)}
                   onCheckedChange={() => handleCapacityToggle(range.value)}
@@ -651,7 +751,7 @@ function FilterSidebar({
       <div>
         <h4 className="font-semibold text-[#111827] text-sm mb-3">STATUS</h4>
         <div className="flex items-center space-x-2">
-          <Checkbox 
+          <Checkbox
             id="available-only"
             checked={showAvailableOnly}
             onCheckedChange={(v) => setShowAvailableOnly(v as boolean)}
@@ -663,26 +763,27 @@ function FilterSidebar({
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-2">
-        <Button 
-          onClick={onApply}
-          className="flex-1 bg-[#0891B2] hover:bg-[#0891B2]/90 text-white h-10 rounded-lg"
-        >
-          Terapkan Filter
-        </Button>
-        <Button 
-          variant="ghost" 
+      {/* Reset */}
+      <div className="pt-2">
+        <Button
+          variant="ghost"
           onClick={onReset}
-          className="h-10 px-4 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
+          className="w-full h-10 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg"
         >
-          Reset
+          Reset Filter
         </Button>
       </div>
     </div>
   )
 
   if (isMobile) {
+    const activeFilterCount =
+      selectedBuildings.length +
+      selectedCategories.length +
+      selectedCapacity.length +
+      (showAvailableOnly ? 1 : 0) +
+      (priceRange.min || priceRange.max ? 1 : 0)
+
     return (
       <Sheet>
         <SheetTrigger
@@ -693,9 +794,9 @@ function FilterSidebar({
             >
               <Filter className="h-4 w-4 mr-2" />
               Filter
-              {(selectedBuildings.length + selectedCategories.length + selectedCapacity.length > 0 || showAvailableOnly) && (
+              {activeFilterCount > 0 && (
                 <Badge className="ml-2 bg-[#0891B2] text-white text-xs">
-                  {selectedBuildings.length + selectedCategories.length + selectedCapacity.length + (showAvailableOnly ? 1 : 0)}
+                  {activeFilterCount}
                 </Badge>
               )}
             </button>
@@ -747,7 +848,7 @@ export function CatalogClient({ buildings, equipment }: Props) {
   useEffect(() => {
     const id = setTimeout(() => setCurrentPage(1), 0)
     return () => clearTimeout(id)
-  }, [searchQuery, selectedBuildings, selectedCategories, selectedCapacity, showAvailableOnly, sortBy, activeTab])
+  }, [searchQuery, selectedBuildings, selectedCategories, selectedCapacity, showAvailableOnly, sortBy, activeTab, priceRange.min, priceRange.max])
 
   // Transform rooms data
   const allRooms = useMemo(() =>
@@ -907,8 +1008,7 @@ export function CatalogClient({ buildings, equipment }: Props) {
           <div className="hidden lg:block w-[280px] flex-shrink-0">
             <FilterSidebar
               buildings={buildings}
-              assetType={activeTab}
-              setAssetType={setActiveTab}
+              activeTab={activeTab}
               selectedBuildings={selectedBuildings}
               setSelectedBuildings={setSelectedBuildings}
               selectedCategories={selectedCategories}
@@ -919,13 +1019,29 @@ export function CatalogClient({ buildings, equipment }: Props) {
               setSelectedCapacity={setSelectedCapacity}
               showAvailableOnly={showAvailableOnly}
               setShowAvailableOnly={setShowAvailableOnly}
-              onApply={() => {}}
               onReset={handleResetFilters}
             />
           </div>
 
           {/* Main Grid Area */}
           <div className="flex-1 min-w-0">
+            {/* Active Filter Chips */}
+            <ActiveFilterChips
+              selectedBuildings={selectedBuildings}
+              setSelectedBuildings={setSelectedBuildings}
+              selectedCategories={selectedCategories}
+              setSelectedCategories={setSelectedCategories}
+              selectedCapacity={selectedCapacity}
+              setSelectedCapacity={setSelectedCapacity}
+              showAvailableOnly={showAvailableOnly}
+              setShowAvailableOnly={setShowAvailableOnly}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              onResetAll={handleResetFilters}
+            />
+
             {/* Tabs & Sort Row */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               {/* Tabs */}
@@ -985,8 +1101,7 @@ export function CatalogClient({ buildings, equipment }: Props) {
                 <div className="lg:hidden">
                   <FilterSidebar
                     buildings={buildings}
-                    assetType={activeTab}
-                    setAssetType={setActiveTab}
+                    activeTab={activeTab}
                     selectedBuildings={selectedBuildings}
                     setSelectedBuildings={setSelectedBuildings}
                     selectedCategories={selectedCategories}
@@ -997,7 +1112,6 @@ export function CatalogClient({ buildings, equipment }: Props) {
                     setSelectedCapacity={setSelectedCapacity}
                     showAvailableOnly={showAvailableOnly}
                     setShowAvailableOnly={setShowAvailableOnly}
-                    onApply={() => {}}
                     onReset={handleResetFilters}
                     isMobile
                   />

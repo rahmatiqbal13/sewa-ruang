@@ -98,7 +98,6 @@ const statsConfig = [
   { key: 'rooms' as const, label: 'Ruangan', icon: Building, color: 'text-blue-600', bgColor: 'bg-blue-50' },
   { key: 'equipment' as const, label: 'Peralatan', icon: Wrench, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
   { key: 'bookings' as const, label: 'Peminjaman', icon: FileCheck, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-  { key: 'satisfaction' as const, label: 'Kepuasan', icon: CheckCircle2, color: 'text-orange-600', bgColor: 'bg-orange-50' },
 ]
 
 // Steps data
@@ -291,14 +290,13 @@ export default async function HomePage() {
         {/* 3. STATS ROW */}
         <section className="py-12 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+            <div className="grid grid-cols-3 gap-6 lg:gap-8 max-w-3xl mx-auto">
               {statsConfig.map((stat) => {
-                const rawValue = stat.key === 'rooms' ? roomCount 
-                  : stat.key === 'equipment' ? equipmentCount 
-                  : stat.key === 'bookings' ? bookingCount 
+                const rawValue = stat.key === 'rooms' ? roomCount
+                  : stat.key === 'equipment' ? equipmentCount
+                  : stat.key === 'bookings' ? bookingCount
                   : 0
-                const value = rawValue
-                const displayValue = stat.key === 'satisfaction' ? `${value}%` : `${value}+`
+                const displayValue = `${rawValue}+`
                 return (
                   <div key={stat.label} className="text-center">
                     <div className={`inline-flex items-center justify-center w-14 h-14 ${stat.bgColor} rounded-2xl mb-4`}>

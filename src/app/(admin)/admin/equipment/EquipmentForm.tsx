@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2, Package, ArrowLeft, Camera, Building2, MapPin, Tag, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -93,6 +93,12 @@ interface Equipment {
   floor: number | null
   storage_room_id: string | null
   photo_url: string | null
+  equipment_rates?: Array<{
+    user_category: string
+    rate_per_day: number
+    rate_per_hour: number | null
+    requires_supervision: boolean
+  }>
 }
 
 export function EquipmentForm({ 
@@ -288,15 +294,15 @@ export function EquipmentForm({
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Informasi Dasar */}
-        <Card className="border-border">
-          <CardContent className="p-4 md:p-8">
-            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="bg-card rounded-[14px] border border-border shadow-soft p-4 md:p-8 space-y-10">
+          {/* Informasi Dasar */}
+          <section className="space-y-6">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <Tag className="h-5 w-5 text-teal-500" />
               Informasi Dasar
             </h2>
-            
+
             <div className="space-y-6">
               {/* Photo Upload */}
               <div className="space-y-3">
@@ -317,11 +323,11 @@ export function EquipmentForm({
                   <Label htmlFor="name" className="text-foreground/80 font-medium">
                     Nama Alat <span className="text-red-500">*</span>
                   </Label>
-                  <Input 
+                  <Input
                     id="name"
-                    placeholder="Contoh: Grip Strength Dynamometer" 
+                    placeholder="Contoh: Grip Strength Dynamometer"
                     className="h-10 md:h-12 rounded-[10px] md:rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
-                    {...register('name')} 
+                    {...register('name')}
                   />
                   {errors.name && (
                     <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
@@ -332,7 +338,7 @@ export function EquipmentForm({
                   <Label htmlFor="equipment_code" className="text-foreground/80 font-medium">
                     Kode Alat
                   </Label>
-                  <Input 
+                  <Input
                     id="equipment_code"
                     {...register('equipment_code')}
                     readOnly
@@ -348,11 +354,11 @@ export function EquipmentForm({
                   <Label htmlFor="merk" className="text-foreground/80 font-medium">
                     Merk/Brand
                   </Label>
-                  <Input 
+                  <Input
                     id="merk"
-                    placeholder="Contoh: Takei" 
+                    placeholder="Contoh: Takei"
                     className="h-10 md:h-12 rounded-[10px] md:rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
-                    {...register('merk')} 
+                    {...register('merk')}
                   />
                 </div>
 
@@ -360,8 +366,8 @@ export function EquipmentForm({
                   <Label htmlFor="category" className="text-foreground/80 font-medium">
                     Kategori <span className="text-red-500">*</span>
                   </Label>
-                  <Select 
-                    value={watch('category') || ''} 
+                  <Select
+                    value={watch('category') || ''}
                     onValueChange={(v) => v && setValue('category', v)}
                   >
                     <SelectTrigger className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20">
@@ -390,26 +396,26 @@ export function EquipmentForm({
                 <Label htmlFor="description" className="text-foreground/80 font-medium">
                   Deskripsi
                 </Label>
-                <Textarea 
+                <Textarea
                   id="description"
-                  placeholder="Deskripsi lengkap alat..." 
+                  placeholder="Deskripsi lengkap alat..."
                   rows={4}
                   className="rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20 resize-none"
-                  {...register('description')} 
+                  {...register('description')}
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </section>
 
-        {/* Status & Kondisi */}
-        <Card className="border-border">
-          <CardContent className="p-4 md:p-8">
-            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+          <hr className="border-border" />
+
+          {/* Status & Kondisi */}
+          <section className="space-y-6">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               Status & Kondisi
             </h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label className="text-foreground/80 font-medium">
@@ -484,28 +490,28 @@ export function EquipmentForm({
               </div>
             </div>
 
-            <div className="space-y-2 mt-6">
+            <div className="space-y-2">
               <Label htmlFor="sumber" className="text-foreground/80 font-medium">
                 Sumber Perolehan
               </Label>
-              <Input 
+              <Input
                 id="sumber"
-                placeholder="Contoh: Hibah Dikti 2023 / Pembelian APBN" 
+                placeholder="Contoh: Hibah Dikti 2023 / Pembelian APBN"
                 className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
-                {...register('sumber')} 
+                {...register('sumber')}
               />
             </div>
-          </CardContent>
-        </Card>
+          </section>
 
-        {/* Lokasi */}
-        <Card className="border-border">
-          <CardContent className="p-4 md:p-8">
-            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+          <hr className="border-border" />
+
+          {/* Lokasi */}
+          <section className="space-y-6">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <MapPin className="h-5 w-5 text-red-500" />
               Lokasi
             </h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label className="text-foreground/80 font-medium flex items-center gap-2">
@@ -601,57 +607,47 @@ export function EquipmentForm({
               </div>
             </div>
 
-            <div className="space-y-2 mt-6">
+            <div className="space-y-2">
               <Label htmlFor="location_manual" className="text-foreground/80 font-medium">
                 Keterangan Lokasi Tambahan <span className="text-xs text-muted-foreground/70 font-normal">(opsional)</span>
               </Label>
-              <Input 
+              <Input
                 id="location_manual"
-                placeholder="Contoh: Rak B, Lemari Penyimpanan A, dll" 
+                placeholder="Contoh: Rak B, Lemari Penyimpanan A, dll"
                 className="h-12 rounded-[14px] border-border focus:border-teal-500 focus:ring-teal-500/20"
-                {...register('location_manual')} 
+                {...register('location_manual')}
               />
             </div>
-          </CardContent>
-        </Card>
+          </section>
 
-        {/* Tarif */}
-        <Card className="border-border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Tarif Sewa per Kategori</CardTitle>
-            <CardDescription>Kosongkan kategori yang tidak tersedia</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EquipmentRatesForm 
-              initialRates={equipment ? 
-                BORROWER_CATEGORIES.map(cat => ({
-                  user_category: cat.key,
-                  rate_per_day: 0,
-                  rate_per_hour: null,
-                  requires_supervision: false
-                })).filter(() => {
-                  // This would need actual equipment rates data
-                  return false
-                }) : []
-              } 
+          <hr className="border-border" />
+
+          {/* Tarif */}
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Tarif Sewa per Kategori</h2>
+              <p className="text-sm text-muted-foreground mt-1">Kosongkan kategori yang tidak tersedia</p>
+            </div>
+            <EquipmentRatesForm
+              initialRates={equipment?.equipment_rates ?? []}
               onRatesChange={setRates}
             />
-          </CardContent>
-        </Card>
+          </section>
+        </div>
 
         {/* Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4">
-          <Button 
-            type="submit" 
+        <div className="flex flex-col sm:flex-row gap-3 pt-6">
+          <Button
+            type="submit"
             disabled={loading}
             className="h-12 px-8 bg-teal-600 hover:bg-teal-700"
           >
             {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
             {equipment ? 'Simpan Perubahan' : 'Tambah Alat'}
           </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => router.back()}
             className="h-12 px-8 border-border hover:bg-muted"
           >

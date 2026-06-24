@@ -52,8 +52,10 @@ export default async function EquipmentPage({
     countQuery = countQuery.eq('current_condition', condition)
   }
 
-  if (search) {
-    countQuery = countQuery.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
+  const sanitizedSearch = search ? search.trim().slice(0, 100).replace(/[%_]/g, '\\$&') : undefined
+
+  if (sanitizedSearch) {
+    countQuery = countQuery.or(`name.ilike.%${sanitizedSearch}%,equipment_code.ilike.%${sanitizedSearch}%,merk.ilike.%${sanitizedSearch}%`)
   }
 
   // Get today's date for filtering
@@ -79,7 +81,7 @@ export default async function EquipmentPage({
   if (ketersediaan) query = query.eq('ketersediaan', ketersediaan)
   if (category) query = query.eq('category', category)
   if (condition) query = query.eq('current_condition', condition)
-  if (search) query = query.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
+  if (sanitizedSearch) query = query.or(`name.ilike.%${sanitizedSearch}%,equipment_code.ilike.%${sanitizedSearch}%,merk.ilike.%${sanitizedSearch}%`)
 
   // Build export query (all items, no pagination)
   let allEquipmentQuery = sb
@@ -98,7 +100,7 @@ export default async function EquipmentPage({
   if (ketersediaan) allEquipmentQuery = allEquipmentQuery.eq('ketersediaan', ketersediaan)
   if (category) allEquipmentQuery = allEquipmentQuery.eq('category', category)
   if (condition) allEquipmentQuery = allEquipmentQuery.eq('current_condition', condition)
-  if (search) allEquipmentQuery = allEquipmentQuery.or(`name.ilike.%${search}%,equipment_code.ilike.%${search}%,merk.ilike.%${search}%`)
+  if (sanitizedSearch) allEquipmentQuery = allEquipmentQuery.or(`name.ilike.%${sanitizedSearch}%,equipment_code.ilike.%${sanitizedSearch}%,merk.ilike.%${sanitizedSearch}%`)
 
   // Build availability query
   let availabilityQuery = sb.from('equipment').select('ketersediaan')

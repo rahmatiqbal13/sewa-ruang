@@ -92,7 +92,7 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
           isActive
             ? 'bg-[#0891B2]/10 text-[#0891B2]'
             : 'text-slate-600 hover:bg-[#0891B2]/5 hover:text-[#0891B2]',
-          item.superAdminOnly && !isActive && 'border-l-2 border-[#0891B2] pl-[10px]'
+          item.superAdminOnly && !isActive && 'bg-[#0891B2]/[0.03]'
         )}
       >
         {isActive && (

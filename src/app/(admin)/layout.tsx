@@ -1,40 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { AdminShell } from '@/components/layouts/AdminShell'
-
-// Server-side fetch institution profile
-async function getInstitutionProfile() {
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return null
-    }
-    
-    const supabase = createSupabaseClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-    
-    const { data, error } = await supabase
-      .from('institution_profile')
-      .select('*')
-      .single()
-    
-    if (error || !data) {
-      return null
-    }
-    
-    return data
-  } catch (error) {
-    console.error('Error fetching institution profile:', error)
-    return null
-  }
-}
+import { getInstitutionProfile } from '@/lib/institution'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // createClient (anon) hanya untuk auth.getUser() — token ada di cookie user

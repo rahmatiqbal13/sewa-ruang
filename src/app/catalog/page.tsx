@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { createAdminDbClient } from '@/lib/supabase/server'
+import { getInstitutionProfile } from '@/lib/institution'
 import { CatalogClient } from './CatalogClient'
 import { PublicHeader, PublicFooter } from '@/components/shared/PublicLayout'
 
@@ -30,52 +31,7 @@ interface Room {
   room_rates: RoomRate[];
 }
 
-// Equipment interface (for future use when filtering equipment)
-// interface Equipment {
-//   id: string;
-//   name: string;
-//   description: string;
-//   current_condition: string;
-//   ketersediaan: string;
-//   merk: string;
-//   is_active: boolean;
-//   photo_url: string;
-// }
-
 export const revalidate = 30
-
-// Server-side fetch institution profile
-async function getInstitutionProfile() {
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return null
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-    
-    const { data, error } = await supabase
-      .from('institution_profile')
-      .select('*')
-      .single()
-    
-    if (error || !data) {
-      return null
-    }
-    
-    return data
-  } catch (error) {
-    console.error('Error fetching institution profile:', error)
-    return null
-  }
-}
 
 export default async function CatalogPage() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

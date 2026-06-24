@@ -236,9 +236,15 @@ Table `bookings` has 2 FK to `users`: `user_id` and `payment_verified_by`
 5. **RLS 500 Error on Users Table**: Fixed by using non-recursive policies (see RLS Pattern above)
 6. **Bookings Data Not Loading**: Fixed by adding FK hint `users!user_id(...)` to queries
 7. **Payments Data Not Loading**: Fixed by removing non-existent `payment_status` column from queries
+8. **Equipment Rates Not Loading on Edit**: Fixed by passing `equipment?.equipment_rates` to EquipmentRatesForm
+9. **Landing Page Hardcoded Stats**: Removed fake "Kepuasan 0%" stat, now shows 3 real stats
+10. **Nested Cards in Forms**: Flattened EquipmentForm from 4 nested cards to single wrapper with section dividers
+11. **Catalog Filter Not Working**: Fixed real-time filtering, removed dead "Apply" button, added Active Filter Chips
+12. **Database Category Standardization**: Added CHECK constraint for 7 valid equipment categories
 
 ### Next Steps / TODOs
 - Implement booking flow for equipment
 - Add equipment availability calendar
 - Implement rental transactions
 - Add reporting & analytics
+- Generate Supabase TypeScript types (`npx supabase login` then `npx supabase gen types`)

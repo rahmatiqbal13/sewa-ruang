@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS public.equipment (
   merk TEXT,
   model TEXT,
   serial_number TEXT,
-  category TEXT, -- 'elektronik', 'mebel', 'transportasi', 'lainnya'
+  category TEXT, -- 'elektronik', 'mebel', 'transportasi', 'alat_tes_pengukuran', 'alat_gym', 'perlengkapan', 'lainnya'
   current_condition asset_condition NOT NULL DEFAULT 'good',
   ketersediaan availability_status NOT NULL DEFAULT 'tersedia',
   status_tindakan action_status NOT NULL DEFAULT 'normal',
