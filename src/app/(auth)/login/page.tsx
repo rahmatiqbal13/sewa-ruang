@@ -40,9 +40,15 @@ export default function LoginPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: profile } = await (supabase.from('users') as any)
-        .select('role').eq('id', user.id).single() as { data: { role: string } | null }
-      router.push(['super_admin', 'admin', 'staff'].includes(profile?.role ?? '') ? '/admin/dashboard' : '/dashboard')
+      const { data: profile, error: profileError } = await (supabase.from('users') as any)
+        .select('role').eq('id', user.id).single() as { data: { role: string } | null; error: unknown }
+      if (profileError || !profile) {
+        toast.error('Akun ditemukan tetapi profil tidak tersedia. Hubungi administrator.')
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
+      router.push(['super_admin', 'admin', 'staff'].includes(profile.role) ? '/admin/dashboard' : '/dashboard')
       router.refresh()
     }
     setLoading(false)

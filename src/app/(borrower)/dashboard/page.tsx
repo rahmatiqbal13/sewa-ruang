@@ -64,8 +64,8 @@ export default async function BorrowerDashboard() {
   const approved = bookings?.filter(b => ['approved', 'paid'].includes(b.status)).length ?? 0
   const completed = bookings?.filter(b => b.status === 'completed').length ?? 0
 
-  // Find active booking (approved or paid)
-  const activeBooking = bookings?.find(b => ['approved', 'pending_payment', 'payment_uploaded', 'paid'].includes(b.status))
+  // Find active booking: pending menunggu persetujuan, atau sudah approved/paid
+  const activeBooking = bookings?.find(b => ['pending', 'approved', 'pending_payment', 'payment_uploaded', 'paid'].includes(b.status))
 
   // Get item name from booking
   function getItemName(booking: BookingWithItems): string {

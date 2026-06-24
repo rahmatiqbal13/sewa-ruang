@@ -35,13 +35,18 @@ interface ReturnListBooking {
   payments: Array<{ amount: number; status: string }> | null
 }
 
+const RETURNS_PER_PAGE = 30
+
 export default async function ReturnsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>
+  searchParams: Promise<{ type?: string; page?: string }>
 }) {
-  const { type } = await searchParams
+  const { type, page } = await searchParams
   const activeType = type === 'room' ? 'room' : 'equipment'
+  const currentPage = Math.max(1, parseInt(page ?? '1', 10))
+  const from = (currentPage - 1) * RETURNS_PER_PAGE
+  const to = from + RETURNS_PER_PAGE - 1
 
   const sb = createAdminDbClient()
 
@@ -50,7 +55,7 @@ export default async function ReturnsPage({
   const { data: pendingReturns } = await sb
     .from('bookings')
     .select(`
-      id, reference_no, status, start_datetime, end_datetime, 
+      id, reference_no, status, start_datetime, end_datetime,
       total_amount, actual_end_datetime,
       users!user_id(name, email, phone),
       booking_items(
@@ -63,8 +68,8 @@ export default async function ReturnsPage({
     .in('status', ['approved', 'paid'])
     .order('end_datetime')
 
-  // Fetch completed returns
-  const { data: completedReturns } = await sb
+  // Fetch completed returns with pagination
+  const { data: completedReturns, count: completedCount } = await sb
     .from('returns')
     .select(`
       *,
@@ -72,9 +77,11 @@ export default async function ReturnsPage({
         id, reference_no, start_datetime, end_datetime,
         users!user_id(name)
       )
-    `)
+    `, { count: 'exact' })
     .order('returned_at', { ascending: false })
-    .limit(30)
+    .range(from, to)
+
+  const totalReturnPages = Math.ceil((completedCount ?? 0) / RETURNS_PER_PAGE)
 
   // Filter by asset type
   const filterByType = (bookings: ReturnListBooking[]) => {
@@ -315,6 +322,32 @@ export default async function ReturnsPage({
               </tbody>
             </table>
           </div>
+          {/* Pagination riwayat pengembalian */}
+          {totalReturnPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border/60">
+              <p className="text-xs text-muted-foreground">
+                Halaman {currentPage} dari {totalReturnPages} ({completedCount} total)
+              </p>
+              <div className="flex items-center gap-1.5">
+                {currentPage > 1 && (
+                  <Link
+                    href={`/admin/returns?type=${activeType}&page=${currentPage - 1}`}
+                    className="px-3 py-1.5 text-xs font-medium rounded-[8px] border border-border bg-card hover:bg-muted transition-colors"
+                  >
+                    ← Sebelumnya
+                  </Link>
+                )}
+                {currentPage < totalReturnPages && (
+                  <Link
+                    href={`/admin/returns?type=${activeType}&page=${currentPage + 1}`}
+                    className="px-3 py-1.5 text-xs font-medium rounded-[8px] border border-border bg-card hover:bg-muted transition-colors"
+                  >
+                    Berikutnya →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

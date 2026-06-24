@@ -167,7 +167,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
           if (!b) return null
           return {
             id: item.id,
-            slot: `["${b.start_datetime}", "${b.end_datetime}"]`,
+            slot: { lower: b.start_datetime, upper: b.end_datetime },
             quantity: item.quantity,
             status: b.status,
             booking: {

@@ -52,7 +52,8 @@ export default async function MyBookingsPage() {
       )
     `)
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false }) as { data: BookingWithItems[] | null }
+    .order('created_at', { ascending: false })
+    .limit(100) as { data: BookingWithItems[] | null }
 
   // Get all item names from a booking
   function getItemNames(booking: BookingWithItems): string {
