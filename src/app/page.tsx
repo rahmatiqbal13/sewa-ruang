@@ -49,7 +49,7 @@ async function getLandingData() {
       { data: previewRooms, error: roomsError },
       { data: previewEquipment, error: equipmentError },
     ] = await Promise.all([
-      supabase.from('institution_profile').select('*').single(),
+      supabase.from('institution_profile').select('*').maybeSingle(),
       supabase.from('rooms').select('*', { count: 'exact', head: true }),
       supabase.from('equipment').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('bookings').select('*', { count: 'exact', head: true }),

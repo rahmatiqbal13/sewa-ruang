@@ -1,11 +1,40 @@
 import { createClient, createAdminDbClient } from '@/lib/supabase/server'
+import type { Database } from '@/types/supabase'
 import { EquipmentList } from './EquipmentList'
 
 export const revalidate = 30
 
 const ITEMS_PER_PAGE = 10
 
+interface EquipmentWithRates {
+  id: string
+  name: string
+  equipment_code: string | null
+  description: string | null
+  merk: string | null
+  category: string | null
+  current_condition: string
+  ketersediaan: string
+  status_tindakan: string
+  is_active: boolean
+  photo_url: string | null
+  current_location: string | null
+  storage_room_id: string | null
+  equipment_rates: Array<{
+    user_category: string
+    rate_per_day: number
+    rate_per_hour: number | null
+    requires_supervision: boolean
+  }>
+}
 
+interface CategoryRow {
+  category: string
+}
+
+interface AvailabilityRow {
+  ketersediaan: string
+}
 
 export default async function EquipmentPage({
   searchParams,
@@ -39,11 +68,11 @@ export default async function EquipmentPage({
   } else if (showInactive !== 'true') {
     countQuery = countQuery.eq('is_active', true)
   }
-  
+
   if (ketersediaan) {
     countQuery = countQuery.eq('ketersediaan', ketersediaan)
   }
-  
+
   if (category) {
     countQuery = countQuery.eq('category', category)
   }
@@ -108,7 +137,6 @@ export default async function EquipmentPage({
   if (todayOnly === 'true') availabilityQuery = availabilityQuery.gte('created_at', todayIso)
 
   // Jalankan semua 6 query secara paralel
-   
   const [r0, r1, r2, r3, r4, r5] = await Promise.all([
     countQuery,
     query,
@@ -116,15 +144,19 @@ export default async function EquipmentPage({
     sb.from('equipment').select('category').not('category', 'is', null),
     availabilityQuery,
     sb.from('equipment').select('*', { count: 'exact', head: true }).eq('is_active', false),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ]) as any[]
+  ])
+
   const totalCount: number | null = r0.count
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const equipment: any[] | null = r1.data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allEquipmentForExport: any[] | null = r2.data
-  const categories: { category: string }[] | null = r3.data
-  const availabilityData: { ketersediaan: string }[] | null = r4.data
+  const equipment: EquipmentWithRates[] = ((r1.data as EquipmentWithRates[]) ?? []).map(e => ({
+    ...e,
+    equipment_rates: e.equipment_rates ?? []
+  }))
+  const allEquipmentForExport: EquipmentWithRates[] = ((r2.data as EquipmentWithRates[]) ?? []).map(e => ({
+    ...e,
+    equipment_rates: e.equipment_rates ?? []
+  }))
+  const categories: CategoryRow[] | null = r3.data
+  const availabilityData: AvailabilityRow[] | null = r4.data
   const inactiveCount: number = r5.count ?? 0
 
   const uniqueCategories = [...new Set(categories?.map(c => c.category).filter(Boolean) || [])]
@@ -142,15 +174,14 @@ export default async function EquipmentPage({
     const nameCounts = new Map<string, number>()
     const baseNames = new Set<string>()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    allEquipmentForExport.forEach((item: any) => {
+    allEquipmentForExport.forEach((item) => {
       const baseName = item.name.replace(/\s*\(\d+\)$/, '').toLowerCase().trim()
       nameCounts.set(baseName, (nameCounts.get(baseName) || 0) + 1)
       if (nameCounts.get(baseName)! > 1) {
         baseNames.add(baseName)
       }
     })
-    
+
     return baseNames
   }
 
@@ -159,8 +190,8 @@ export default async function EquipmentPage({
 
   return (
     <EquipmentList
-      equipment={equipment || []}
-      allEquipment={allEquipmentForExport || []}
+      equipment={equipment}
+      allEquipment={allEquipmentForExport}
       totalItems={totalCount || 0}
       currentPage={currentPage}
       totalPages={Math.ceil((totalCount || 0) / ITEMS_PER_PAGE)}
