@@ -41,7 +41,8 @@ export const EVENT_TYPES = [
   { key: 'perkuliahan', label: 'Perkuliahan', description: 'Kegiatan perkuliahan resmi' },
   { key: 'event_mahasiswa', label: 'Event Mahasiswa', description: 'Kegiatan mahasiswa (non-kuliah)' },
   { key: 'event_umum', label: 'Event Umum', description: 'Kegiatan umum/eksternal' },
-  { key: 'penelitian', label: 'Penelitian', description: 'Kegiatan penelitian' },
+  { key: 'penelitian', label: 'Penelitian', description: 'Kegiatan penelitian (berbayar)' },
+  { key: 'penelitian_tugas_akhir', label: 'Penelitian Tugas Akhir', description: 'Penelitian untuk tugas akhir/skripsi (gratis untuk Mahasiswa S1)' },
   { key: 'lainnya', label: 'Lainnya', description: 'Tujuan lainnya' },
 ] as const
 
@@ -107,11 +108,11 @@ export function isFreeBooking(
   // Hanya mahasiswa_s1 yang bisa gratis
   if (borrowerCategory !== 'mahasiswa_s1') return false
 
-  // Event perkuliahan = gratis
-  if (eventType === 'perkuliahan') return true
+  // Event perkuliahan atau penelitian tugas akhir = gratis
+  if (eventType === 'perkuliahan' || eventType === 'penelitian_tugas_akhir') return true
 
-  // Fallback: kalau purpose mengandung kata perkuliahan (untuk data lama tanpa event_type)
-  if (purpose && /perkuliahan|kuliah|mata kuliah/.test(purpose.toLowerCase())) return true
+  // Fallback: kalau purpose mengandung kata perkuliahan/tugas akhir (untuk data lama tanpa event_type)
+  if (purpose && /perkuliahan|kuliah|mata kuliah|tugas akhir|skripsi/.test(purpose.toLowerCase())) return true
 
   return false
 }

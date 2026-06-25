@@ -242,7 +242,7 @@ export default async function MyBookingsPage() {
                     >
                       Detail
                     </Link>
-                    {['approved', 'pending_payment', 'payment_rejected'].includes(booking.status) && (
+                    {booking.total_amount > 0 && ['approved', 'pending_payment', 'payment_rejected'].includes(booking.status) && (
                       <Link
                         href={`/booking/${booking.id}/payment`}
                         className={buttonVariants({ size: 'sm' })}

@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { CalendarView } from '@/components/calendar/CalendarView'
 
 import { 
   Building2, 
@@ -30,11 +32,16 @@ import {
   DoorOpen,
   List,
   Calendar,
-  Info
+  Info,
+  Loader2,
+  Clock,
+  CalendarCheck,
+  GraduationCap
 } from 'lucide-react'
-import { formatRupiah, cn } from '@/lib/utils'
+import { formatRupiah, formatDateTime, cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { EmptyState } from '@/components/ui/empty-state'
+import { createClient } from '@/lib/supabase/client'
 
 const PAGE_SIZE = 12
 
@@ -221,7 +228,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
   )
 }
 
-function RoomCard({ room }: { room: Room & { buildingName: string; buildingCode?: string; displayName: string } }) {
+function RoomCard({ room, onOpenCalendar, onOpenSchedule }: { room: Room & { buildingName: string; buildingCode?: string; displayName: string }; onOpenCalendar: (id: string, name: string) => void; onOpenSchedule: (id: string, name: string) => void }) {
   const lowestRate = useMemo(() => getLowestRoomRate(room.room_rates), [room.room_rates])
   const slug = createSlug(room.name)
 
@@ -309,7 +316,7 @@ function RoomCard({ room }: { room: Room & { buildingName: string; buildingCode?
       <div className="px-4 pb-4 pt-0 mt-auto border-t border-[#E5E7EB]">
         <div className="pt-3 space-y-2">
           {/* Primary CTA - Full Width */}
-          <Link href={`/rooms/${slug}`} className="block">
+          <Link href={`/booking/new?room_id=${room.id}`} className="block">
             <Button
               className="w-full h-9 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg"
             >
@@ -319,24 +326,22 @@ function RoomCard({ room }: { room: Room & { buildingName: string; buildingCode?
           </Link>
           {/* Secondary CTAs - Side by Side */}
           <div className="grid grid-cols-2 gap-2">
-          <Link href={`/rooms/${slug}#jadwal`} className="block">
-            <Button
-              variant="outline"
-              className="w-full h-9 border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-xs font-medium rounded-lg"
-            >
-              <List className="h-3.5 w-3.5 mr-1.5" />
-              Jadwal
-            </Button>
-          </Link>
-          <Link href={`/rooms/${slug}#kalender`} className="block">
-            <Button
-              variant="outline"
-              className="w-full h-9 border-[#0891B2] text-[#0891B2] hover:bg-[#ecfeff] text-xs font-medium rounded-lg"
-            >
-              <Calendar className="h-3.5 w-3.5 mr-1.5" />
-              Kalender
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            className="w-full h-9 border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-xs font-medium rounded-lg"
+            onClick={() => onOpenSchedule(room.id, room.displayName)}
+          >
+            <List className="h-3.5 w-3.5 mr-1.5" />
+            Jadwal
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-9 border-[#0891B2] text-[#0891B2] hover:bg-[#ecfeff] text-xs font-medium rounded-lg"
+            onClick={() => onOpenCalendar(room.id, room.displayName)}
+          >
+            <Calendar className="h-3.5 w-3.5 mr-1.5" />
+            Kalender
+          </Button>
           </div>
         </div>
       </div>
@@ -344,7 +349,7 @@ function RoomCard({ room }: { room: Room & { buildingName: string; buildingCode?
   )
 }
 
-function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } }) {
+function EquipmentCard({ item, onOpenCalendar, onOpenSchedule }: { item: EquipmentRow & { displayName: string }; onOpenCalendar: (id: string, name: string) => void; onOpenSchedule: (id: string, name: string) => void }) {
   const priceRange = getPriceRange(item.equipment_rates)
   const hasRates = item.equipment_rates && item.equipment_rates.length > 0
   const isAvailable = !item.ketersediaan || item.ketersediaan === 'tersedia'
@@ -436,7 +441,7 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
         
         {/* Action Buttons */}
         <div className="space-y-2">
-          <Link href={`/equipment/${createSlug(item.name)}`} className="block">
+          <Link href={`/booking/new?equipment_id=${item.id}`} className="block">
             <Button
               className="w-full h-9 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg"
             >
@@ -445,24 +450,22 @@ function EquipmentCard({ item }: { item: EquipmentRow & { displayName: string } 
             </Button>
           </Link>
           <div className="grid grid-cols-2 gap-2">
-            <Link href={`/equipment/${createSlug(item.name)}#jadwal`} className="block">
-              <Button
-                variant="outline"
-                className="w-full h-9 border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-xs font-medium rounded-lg"
-              >
-                <List className="h-3.5 w-3.5 mr-1.5" />
-                Jadwal
-              </Button>
-            </Link>
-            <Link href={`/equipment/${createSlug(item.name)}#kalender`} className="block">
-              <Button
-                variant="outline"
-                className="w-full h-9 border-[#0891B2] text-[#0891B2] hover:bg-[#ecfeff] text-xs font-medium rounded-lg"
-              >
-                <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                Kalender
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              className="w-full h-9 border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-xs font-medium rounded-lg"
+              onClick={() => onOpenSchedule(item.id, item.displayName)}
+            >
+              <List className="h-3.5 w-3.5 mr-1.5" />
+              Jadwal
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-9 border-[#0891B2] text-[#0891B2] hover:bg-[#ecfeff] text-xs font-medium rounded-lg"
+              onClick={() => onOpenCalendar(item.id, item.displayName)}
+            >
+              <Calendar className="h-3.5 w-3.5 mr-1.5" />
+              Kalender
+            </Button>
           </div>
         </div>
       </CardContent>
@@ -844,6 +847,36 @@ export function CatalogClient({ buildings, equipment }: Props) {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
 
+  // Calendar modal state
+  const [calendarModal, setCalendarModal] = useState<{
+    open: boolean
+    type: 'room' | 'equipment'
+    id: string
+    name: string
+  }>({ open: false, type: 'room', id: '', name: '' })
+
+  const openRoomCalendar = (id: string, name: string) => {
+    setCalendarModal({ open: true, type: 'room', id, name })
+  }
+  const openEquipmentCalendar = (id: string, name: string) => {
+    setCalendarModal({ open: true, type: 'equipment', id, name })
+  }
+
+  // Schedule modal state
+  const [scheduleModal, setScheduleModal] = useState<{
+    open: boolean
+    type: 'room' | 'equipment'
+    id: string
+    name: string
+  }>({ open: false, type: 'room', id: '', name: '' })
+
+  const openRoomSchedule = (id: string, name: string) => {
+    setScheduleModal({ open: true, type: 'room', id, name })
+  }
+  const openEquipmentSchedule = (id: string, name: string) => {
+    setScheduleModal({ open: true, type: 'equipment', id, name })
+  }
+
   // Reset pagination when filters change
   useEffect(() => {
     const id = setTimeout(() => setCurrentPage(1), 0)
@@ -1156,9 +1189,9 @@ export function CatalogClient({ buildings, equipment }: Props) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {paginatedItems.map((item) => (
                     item.type === 'room' ? (
-                      <RoomCard key={item.data.id} room={item.data as Room & { buildingName: string; buildingCode?: string; displayName: string }} />
+                      <RoomCard key={item.data.id} room={item.data as Room & { buildingName: string; buildingCode?: string; displayName: string }} onOpenCalendar={openRoomCalendar} onOpenSchedule={openRoomSchedule} />
                     ) : (
-                      <EquipmentCard key={item.data.id} item={item.data as EquipmentRow & { displayName: string }} />
+                      <EquipmentCard key={item.data.id} item={item.data as EquipmentRow & { displayName: string }} onOpenCalendar={openEquipmentCalendar} onOpenSchedule={openEquipmentSchedule} />
                     )
                   ))}
                 </div>
@@ -1186,6 +1219,257 @@ export function CatalogClient({ buildings, equipment }: Props) {
           </Link>
         </div>
       </section>
+
+      {/* Calendar Modal */}
+      <Dialog open={calendarModal.open} onOpenChange={(open) => setCalendarModal(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto rounded-[14px] p-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-[#0891B2]" />
+              Kalender Ketersediaan — {calendarModal.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-6">
+            <CalendarView
+              roomId={calendarModal.type === 'room' ? calendarModal.id : undefined}
+              equipmentId={calendarModal.type === 'equipment' ? calendarModal.id : undefined}
+              className="border-0 shadow-none"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule Modal */}
+      <Dialog open={scheduleModal.open} onOpenChange={(open) => setScheduleModal(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto rounded-[14px] p-0">
+          <ScheduleView
+            type={scheduleModal.type}
+            id={scheduleModal.id}
+            name={scheduleModal.name}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
+  )
+}
+
+// ─── ScheduleView Component ──────────────────────────────────────────────────
+
+interface ScheduleBooking {
+  id: string
+  reference_no: string
+  start_datetime: string
+  end_datetime: string
+  status: string
+  purpose: string | null
+}
+
+interface ScheduleClass {
+  id: string
+  mata_kuliah: string
+  dosen: string
+  kelas: string
+  semester: string
+  start_datetime: string
+  end_datetime: string
+}
+
+function ScheduleView({ type, id, name }: { type: 'room' | 'equipment'; id: string; name: string }) {
+  const [loading, setLoading] = useState(true)
+  const [bookings, setBookings] = useState<ScheduleBooking[]>([])
+  const [classes, setClasses] = useState<ScheduleClass[]>([])
+  const supabase = createClient()
+
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+
+    async function fetchSchedule() {
+      setLoading(true)
+      const now = new Date().toISOString()
+
+      try {
+        // Fetch booking items
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: bookingItems } = await (supabase as any)
+          .from('booking_items')
+          .select('booking_id')
+          .eq(type === 'room' ? 'room_id' : 'equipment_id', id)
+          .eq('item_type', type)
+
+        const bookingIds = (bookingItems ?? []).map((bi: { booking_id: string }) => bi.booking_id)
+
+        let fetchedBookings: ScheduleBooking[] = []
+        if (bookingIds.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data } = await (supabase as any)
+            .from('bookings')
+            .select('id, reference_no, start_datetime, end_datetime, status, purpose')
+            .in('id', bookingIds)
+            .in('status', ['pending', 'approved', 'paid', 'active'])
+            .gte('end_datetime', now)
+            .order('start_datetime', { ascending: true })
+            .limit(20)
+
+          fetchedBookings = data ?? []
+        }
+
+        let fetchedClasses: ScheduleClass[] = []
+        if (type === 'room') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: classData } = await (supabase as any)
+            .from('room_schedule_blocks')
+            .select('id, mata_kuliah, dosen, kelas, semester, start_datetime, end_datetime')
+            .eq('room_id', id)
+            .eq('schedule_type', 'class')
+            .gte('end_datetime', now)
+            .order('start_datetime', { ascending: true })
+            .limit(10)
+
+          fetchedClasses = classData ?? []
+        }
+
+        if (!cancelled) {
+          setBookings(fetchedBookings)
+          setClasses(fetchedClasses)
+        }
+      } catch (err) {
+        console.error('Schedule fetch error:', err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    fetchSchedule()
+    return () => { cancelled = true }
+  }, [type, id, supabase])
+
+  const STATUS_LABEL: Record<string, string> = {
+    pending: 'Menunggu Konfirmasi',
+    approved: 'Disetujui',
+    paid: 'Lunas',
+    active: 'Sedang Digunakan',
+  }
+
+  const STATUS_COLOR: Record<string, string> = {
+    pending: 'text-amber-700 bg-amber-100',
+    approved: 'text-emerald-700 bg-emerald-100',
+    paid: 'text-blue-700 bg-blue-100',
+    active: 'text-red-700 bg-red-100',
+  }
+
+  const STATUS_DOT: Record<string, string> = {
+    pending: 'bg-amber-500',
+    approved: 'bg-emerald-500',
+    paid: 'bg-blue-500',
+    active: 'bg-red-500',
+  }
+
+  return (
+    <>
+      <DialogHeader className="px-6 pt-6 pb-2">
+        <DialogTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
+          <List className="h-5 w-5 text-emerald-600" />
+          Jadwal Peminjaman — {name}
+        </DialogTitle>
+      </DialogHeader>
+
+      <div className="px-6 pb-6 space-y-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+            <span className="ml-2 text-sm text-muted-foreground">Memuat jadwal…</span>
+          </div>
+        ) : (
+          <>
+            {/* Upcoming Bookings */}
+            <section>
+              <h4 className="text-sm font-semibold text-[#111827] mb-3 flex items-center gap-2">
+                <CalendarCheck className="h-4 w-4 text-[#0891B2]" />
+                Peminjaman Mendatang
+              </h4>
+              {bookings.length > 0 ? (
+                <div className="space-y-2">
+                  {bookings.map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="flex items-start gap-3 p-3 bg-[#F9FAFB] rounded-[10px] border border-[#E5E7EB]"
+                    >
+                      <div className={cn('mt-1 w-2 h-2 rounded-full shrink-0', STATUS_DOT[booking.status] ?? 'bg-gray-400')} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-mono text-xs font-semibold text-indigo-700">
+                            {booking.reference_no}
+                          </span>
+                          <span className={cn(
+                            'text-[10px] font-semibold px-1.5 py-0.5 rounded-full',
+                            STATUS_COLOR[booking.status] ?? 'bg-muted text-muted-foreground'
+                          )}>
+                            {STATUS_LABEL[booking.status] ?? booking.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#6B7280] mb-1">
+                          {booking.purpose || 'Tanpa keterangan'}
+                        </p>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          <span>
+                            {formatDateTime(booking.start_datetime)} — {formatDateTime(booking.end_datetime)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-[#F9FAFB] rounded-[10px] border border-[#E5E7EB]">
+                  <CalendarDays className="h-8 w-8 text-[#D1D5DB] mx-auto mb-2" />
+                  <p className="text-sm text-[#6B7280]">Belum ada jadwal peminjaman mendatang</p>
+                  <p className="text-xs text-[#9CA3AF] mt-1">{type === 'room' ? 'Ruangan' : 'Alat'} ini tersedia untuk dipinjam</p>
+                </div>
+              )}
+            </section>
+
+            {/* Class Schedules (rooms only) */}
+            {type === 'room' && (
+              <section>
+                <h4 className="text-sm font-semibold text-[#111827] mb-3 flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-blue-500" />
+                  Jadwal Kuliah Mendatang
+                </h4>
+                {classes.length > 0 ? (
+                  <div className="space-y-2">
+                    {classes.map((cls) => (
+                      <div
+                        key={cls.id}
+                        className="flex items-start gap-3 p-3 bg-blue-50 rounded-[10px] border border-blue-200"
+                      >
+                        <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-blue-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-[#111827]">
+                            {cls.mata_kuliah} — {cls.dosen} ({cls.kelas})
+                          </p>
+                          <p className="text-xs text-[#6B7280] mt-0.5">
+                            {formatDateTime(cls.start_datetime)} — {formatDateTime(cls.end_datetime)}
+                          </p>
+                          <p className="text-xs text-blue-600 mt-0.5">
+                            {cls.semester}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 bg-blue-50 rounded-[10px] border border-blue-200">
+                    <GraduationCap className="h-8 w-8 text-[#D1D5DB] mx-auto mb-2" />
+                    <p className="text-sm text-[#6B7280]">Tidak ada jadwal kuliah mendatang</p>
+                  </div>
+                )}
+              </section>
+            )}
+          </>
+        )}
+      </div>
+    </>
   )
 }

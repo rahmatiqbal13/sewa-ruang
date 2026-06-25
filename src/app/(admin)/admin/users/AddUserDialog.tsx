@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Plus, Loader2, AlertCircle, Mail, User } from 'lucide-react'
+import { BORROWER_CATEGORIES, getBorrowerCategoryLabel } from '@/lib/categories'
 
 export function AddUserDialog() {
   const router = useRouter()
@@ -165,13 +166,15 @@ export function AddUserDialog() {
                 onValueChange={v => v && set('borrower_category', v)}
                 disabled={loading}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue>
+                    {getBorrowerCategoryLabel(form.borrower_category) || "Pilih kategori"}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mahasiswa_s1">Mahasiswa S1</SelectItem>
-                  <SelectItem value="mahasiswa_s2">Mahasiswa S2/S3</SelectItem>
-                  <SelectItem value="dosen">Dosen &amp; Karyawan</SelectItem>
-                  <SelectItem value="kerjasama">Kerjasama / MoU</SelectItem>
-                  <SelectItem value="umum">Umum</SelectItem>
+                  {BORROWER_CATEGORIES.map(cat => (
+                    <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

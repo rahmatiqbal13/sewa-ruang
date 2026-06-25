@@ -11,6 +11,7 @@ import {
 import { formatDateTime } from '@/lib/utils'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useNotifications } from './NotificationContext'
 
 type NotifType = 'overdue' | 'due' | 'booking' | 'registration'
 
@@ -68,40 +69,14 @@ const PRIORITY: Record<NotifType, number> = {
 
 const ACTIVE_STATUSES = ['approved', 'paid']
 
-const SEEN_KEY = 'notif_seen_ids'
-
 export function NotificationBell() {
   const [items, setItems] = useState<NotifItem[]>([])
-  const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
-  const [seenIds, setSeenIds] = useState<Set<string>>(new Set())
   const router = useRouter()
 
-  // Load seen IDs from localStorage after mount (avoids SSR mismatch)
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(SEEN_KEY)
-      if (stored) {
-        setTimeout(() => setSeenIds(new Set(JSON.parse(stored) as string[])), 0)
-      }
-    } catch { /* ignore */ }
-  }, [])
-
-  // Mark all current items as seen when popover opens
-  useEffect(() => {
-    if (!open || items.length === 0) return
-    const timeout = setTimeout(() => {
-      setSeenIds(prev => {
-        const updated = new Set([...prev, ...items.map(i => i.id)])
-        try { localStorage.setItem(SEEN_KEY, JSON.stringify([...updated])) } catch { /* ignore */ }
-        return updated
-      })
-    }, 0)
-    return () => clearTimeout(timeout)
-  }, [open, items])
+  const { seenIds, markAllSeen, setItemIds } = useNotifications()
 
   const fetchActivity = useCallback(async () => {
-    setLoading(true)
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = createClient() as any
@@ -227,25 +202,42 @@ export function NotificationBell() {
         return new Date(b.time).getTime() - new Date(a.time).getTime()
       })
 
-      setItems(notifs.slice(0, 12))
-    } finally {
-      setLoading(false)
+      const sliced = notifs.slice(0, 12)
+      setItems(sliced)
+      setItemIds(sliced.map(i => i.id))
+    } catch {
+      // silently ignore
     }
-  }, [])
+  }, [setItemIds])
 
   useEffect(() => {
     const timeout = setTimeout(() => fetchActivity(), 0)
     return () => clearTimeout(timeout)
   }, [fetchActivity])
 
+  // Mark all as seen when popover opens
+  useEffect(() => {
+    if (!open || items.length === 0) return
+    const timeout = setTimeout(() => {
+      markAllSeen(items.map(i => i.id))
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [open, items, markAllSeen])
+
+  // Re-fetch every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchActivity, 60000)
+    return () => clearInterval(interval)
+  }, [fetchActivity])
+
+  const unreadItems = items.filter(i => !seenIds.has(i.id))
+  const unreadCount = unreadItems.length
+
   const overdueCount  = items.filter(i => i.type === 'overdue').length
   const dueCount      = items.filter(i => i.type === 'due').length
   const bookingCount  = items.filter(i => i.type === 'booking').length
   const totalCount    = items.length
 
-  // Unread = items not yet seen by the user
-  const unreadItems   = items.filter(i => !seenIds.has(i.id))
-  const unreadCount   = unreadItems.length
   const unreadOverdue = unreadItems.filter(i => i.type === 'overdue').length
   const unreadDue     = unreadItems.filter(i => i.type === 'due').length
 
@@ -301,14 +293,13 @@ export function NotificationBell() {
           <div className="flex items-center gap-2">
             <button
               onClick={fetchActivity}
-              disabled={loading}
               className="p-1.5 rounded-[10px] hover:bg-muted text-muted-foreground/70 hover:text-muted-foreground transition-colors"
               title="Refresh"
             >
-              <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+              <RefreshCw className="h-3.5 w-3.5" />
             </button>
             <Link
-              href="/admin/bookings"
+              href="/admin/notifications/inbox"
               onClick={() => setOpen(false)}
               className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
             >
@@ -319,7 +310,7 @@ export function NotificationBell() {
 
         {/* List */}
         <div className="max-h-[420px] overflow-y-auto divide-y divide-muted">
-          {items.length === 0 && !loading && (
+          {items.length === 0 && (
             <div className="py-12 text-center">
               <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
                 <Bell className="h-8 w-8 text-muted-foreground/40" />
@@ -332,6 +323,7 @@ export function NotificationBell() {
           {items.map((item) => {
             const cfg = TYPE_CFG[item.type]
             const Icon = cfg.Icon
+            const isUnread = !seenIds.has(item.id)
             return (
               <Link
                 key={item.id}
@@ -341,7 +333,7 @@ export function NotificationBell() {
               >
                 {/* Left dot indicator */}
                 <div className="mt-1.5 shrink-0">
-                  <div className={cn('w-2 h-2 rounded-full', cfg.dot)} />
+                  <div className={cn('w-2 h-2 rounded-full', isUnread ? cfg.dot : 'bg-transparent')} />
                 </div>
 
                 {/* Icon */}
@@ -364,6 +356,9 @@ export function NotificationBell() {
                     )}>
                       {cfg.label}
                     </span>
+                    {isUnread && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    )}
                   </div>
                   <p className="text-sm font-semibold text-foreground truncate">{item.title}</p>
                   <p className="text-xs text-muted-foreground/70 truncate mt-0.5">{item.subtitle}</p>

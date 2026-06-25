@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -9,10 +10,12 @@ import {
   Building2, LayoutDashboard, Package, CalendarDays,
   CreditCard, RotateCcw, BarChart3, QrCode, Boxes,
   LogOut, Users, Settings, BellRing, DoorOpen, ShieldCheck,
-  ChevronRight, Database, FileText, Trash2, Scan, GraduationCap
+  ChevronRight, Database, FileText, Trash2, Scan, GraduationCap,
+  Zap, Bell
 } from 'lucide-react'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { isSuperAdmin, UserRole } from '@/lib/permissions'
+import { useNotifications } from './NotificationContext'
 
 type NavItem = {
   label: string;
@@ -48,7 +51,8 @@ const mainMenuItems: NavItem[] = [
   { label: 'QR Code',             href: '/admin/qr',               icon: QrCode },
   { label: 'Scan QR',             href: '/admin/scan',             icon: Scan },
   { label: 'Laporan',             href: '/admin/reports',          icon: BarChart3 },
-  { label: 'Notifikasi',          href: '/admin/notifications',    icon: BellRing },
+  { label: 'Pesan Otomatis',      href: '/admin/notifications',    icon: Zap },
+  { label: 'Notifikasi',          href: '/admin/notifications/inbox', icon: BellRing },
   { label: 'Pengaturan',          href: '/admin/settings',         icon: Settings },
 ]
 
@@ -69,6 +73,9 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
   const pathname = usePathname()
   const router = useRouter()
   const userIsSuperAdmin = isSuperAdmin(userRole)
+  const { itemIds, seenIds } = useNotifications()
+
+  const unreadCount = itemIds.filter(id => !seenIds.has(id)).length
 
   async function handleLogout() {
     const supabase = createClient()
@@ -107,6 +114,11 @@ export function AdminSidebar({ onClose, userRole, institution }: AdminSidebarPro
 
         <span className="flex-1">{item.label}</span>
 
+        {item.label === 'Notifikasi' && unreadCount > 0 && (
+          <span className="shrink-0 h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
         {isActive && <ChevronRight className="h-3.5 w-3.5 text-[#22D3EE]" />}
         {item.superAdminOnly && <ShieldCheck className="h-3 w-3 text-[#22D3EE]" />}
       </Link>

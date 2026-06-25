@@ -573,6 +573,7 @@ export async function generateUSCBookingDocument(data: {
     name: string
     type: 'room' | 'equipment'
     price: number
+    condition?: string
   }>
   total: number
   roomVA?: {
@@ -587,6 +588,7 @@ export async function generateUSCBookingDocument(data: {
   } | null
   hasRoom: boolean
   hasEquipment: boolean
+  signatureUrl?: string | null
 }): Promise<string> {
   const inst = await getInstitutionProfile()
 
@@ -639,14 +641,14 @@ export async function generateUSCBookingDocument(data: {
 
   // Formulir rows — padded to at least 5
   const formulirItems = [...data.items]
-  while (formulirItems.length < 5) formulirItems.push({ code: '', name: '', type: 'equipment' as const, price: 0 })
+  while (formulirItems.length < 5) formulirItems.push({ code: '', name: '', type: 'equipment' as const, price: 0, condition: '' })
 
   const formulirRows = formulirItems.map((item, i) => `
     <tr>
       <td ${tdStyle(i, 'center')}>${item.name ? i + 1 : ''}</td>
       <td ${tdStyle(i)}>${item.name}</td>
       <td ${tdStyle(i, 'center')}>${item.name ? '1' : ''}</td>
-      <td ${tdStyle(i)}></td>
+      <td ${tdStyle(i, 'center')}>${item.condition || ''}</td>
       <td ${tdStyle(i)}></td>
       <td ${tdStyle(i)}></td>
     </tr>`).join('')
@@ -665,8 +667,8 @@ export async function generateUSCBookingDocument(data: {
 
   const riskRow = (num: number, text: string, even: boolean) => `
     <tr>
-      <td style="background:${navy};color:white;font-weight:bold;width:28px;text-align:center;padding:8px;border:1px solid ${border};vertical-align:middle;">${num}</td>
-      <td style="border:1px solid ${border};padding:8px 10px;font-size:9pt;background:${even ? evenRow : '#fff'};">${text}</td>
+      <td style="background:${navy};color:white;font-weight:bold;width:24px;text-align:center;padding:5px;border:1px solid ${border};vertical-align:middle;">${num}</td>
+      <td style="border:1px solid ${border};padding:5px 8px;font-size:8.5pt;background:${even ? evenRow : '#fff'};">${text}</td>
     </tr>`
 
   function vaNote(va: { bankName: string; accountNumber: string; accountName: string }, label: string) {
@@ -723,10 +725,13 @@ export async function generateUSCBookingDocument(data: {
   })()
 
   const banner = (text: string) =>
-    `<div style="background:${navy};color:white;text-align:center;padding:9px 12px;font-size:10.5pt;font-weight:bold;letter-spacing:0.3px;margin:12px 0 10px 0;">${text}</div>`
+    `<div style="background:${navy};color:white;text-align:center;padding:7px 10px;font-size:10pt;font-weight:bold;letter-spacing:0.3px;margin:8px 0 6px 0;">${text}</div>`
 
   const secHdr = (text: string) =>
-    `<div style="font-weight:bold;color:${navy};font-size:9.5pt;margin:10px 0 5px 0;">${text}</div>`
+    `<div style="font-weight:bold;color:${navy};font-size:9pt;margin:6px 0 4px 0;">${text}</div>`
+
+  const signatureImg = (url: string | null | undefined, height = 45) =>
+    url ? `<img src="${url}" style="max-height:${height}px;max-width:90%;display:block;margin:0 auto;" />` : ''
 
 
   return `<!DOCTYPE html>
@@ -737,19 +742,19 @@ export async function generateUSCBookingDocument(data: {
   @page { size: A4; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #1a1a1a; }
-  .p { width: 210mm; min-height: 297mm; padding: 12mm 18mm; page-break-after: always; }
+  .p { width: 210mm; min-height: 297mm; padding: 10mm 15mm; page-break-after: always; }
   .p:last-child { page-break-after: auto; }
 </style>
 </head>
 <body>
 
-<!-- PAGE 1: FORMULIR PEMINJAMAN -->
+<!-- PAGE 1: FORMULIR PEMINJAMAN + RISIKO -->
 <div class="p">
   ${pageHeader}
   ${banner('FORMULIR PEMINJAMAN DAN PERSETUJUAN')}
 
   ${secHdr('A. INFORMASI PEMINJAM')}
-  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
     <tr>${lbl('Nama Peminjam')}${val(data.customerName)}</tr>
     <tr>${lbl('NIP / NIM')}${val(data.nim || '')}</tr>
     <tr>${lbl('Departemen / Fakultas')}${val(data.institution || '')}</tr>
@@ -759,7 +764,7 @@ export async function generateUSCBookingDocument(data: {
   </table>
 
   ${secHdr('B. ALAT YANG DIPINJAM')}
-  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
     <thead><tr>
       ${th('No', '30px')}
       ${th('Nama Barang')}
@@ -770,12 +775,9 @@ export async function generateUSCBookingDocument(data: {
     </tr></thead>
     <tbody>${formulirRows}</tbody>
   </table>
-</div>
 
-<!-- PAGE 2: RISIKO DAN PERSETUJUAN -->
-<div class="p">
   ${secHdr('C. RISIKO DAN PERSETUJUAN')}
-  <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:8.5pt;">
     ${riskRow(1, 'Saya akan bertanggung jawab atas kondisi alat yang dipinjam selama dalam penggunaan saya.', false)}
     ${riskRow(2, 'Saya akan mengembalikan alat dalam kondisi yang sama seperti saat dipinjam, dan akan bertanggung jawab atas kerusakan atau kehilangan.', true)}
     ${riskRow(3, 'Saya memahami bahwa penggunaan alat olahraga dapat berpotensi menyebabkan cedera fisik.', false)}
@@ -783,28 +785,28 @@ export async function generateUSCBookingDocument(data: {
     ${riskRow(5, 'Saya melepaskan pusat olahraga dari segala tanggung jawab atas cedera atau kerusakan yang mungkin timbul selama atau akibat penggunaan alat ini.', false)}
   </table>
 
-  <table style="width:100%;border-collapse:collapse;margin-top:20px;">
+  <table style="width:100%;border-collapse:collapse;margin-top:8px;">
     <tr>
-      <td style="border:1px solid ${border};text-align:center;padding:8px;width:50%;height:110px;vertical-align:top;">
-        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">Laboran</div>
-        <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
+      <td style="border:1px solid ${border};text-align:center;padding:5px;width:50%;height:80px;vertical-align:top;">
+        <div style="font-weight:bold;color:${navy};font-size:9pt;">Laboran</div>
+        <div style="margin-top:45px;font-size:8.5pt;">(.................................)</div>
       </td>
-      <td style="border:1px solid ${border};border-left:none;text-align:center;padding:8px;width:50%;height:110px;vertical-align:top;">
-        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">Pemohon</div>
-        <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
-        <div style="margin-top:4px;font-size:9pt;font-weight:bold;">${data.customerName}</div>
+      <td style="border:1px solid ${border};border-left:none;text-align:center;padding:5px;width:50%;height:80px;vertical-align:top;">
+        <div style="font-weight:bold;color:${navy};font-size:9pt;">Pemohon</div>
+        <div style="margin-top:4px;">${signatureImg(data.signatureUrl, 40)}</div>
+        <div style="margin-top:2px;font-size:8.5pt;font-weight:bold;">${data.customerName}</div>
       </td>
     </tr>
   </table>
 </div>
 
-<!-- PAGE 3: INVOICE + CATATAN PEMBAYARAN -->
+<!-- PAGE 2: INVOICE + PERSETUJUAN -->
 <div class="p">
   ${pageHeader}
   ${banner('INVOICE PEMINJAMAN SARANA DAN PRASARANA SPORT CENTER')}
 
   ${secHdr('A. IDENTITAS PEMINJAM')}
-  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
     <tr>${lbl('Nama Peminjam')}${val(data.customerName)}</tr>
     <tr>${lbl('NIP / NIM')}${val(data.nim || '')}</tr>
     <tr>${lbl('Instansi')}${val(data.institution || '')}</tr>
@@ -815,7 +817,7 @@ export async function generateUSCBookingDocument(data: {
   </table>
 
   ${secHdr('B. RINCIAN PEMINJAMAN')}
-  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
     <thead><tr>
       ${th('No', '30px')}
       ${th('Kode Barang', '120px')}
@@ -825,45 +827,41 @@ export async function generateUSCBookingDocument(data: {
     <tbody>
       ${invoiceRows}
       <tr>
-        <td colspan="3" style="text-align:right;font-weight:bold;background:${navy};color:white;padding:7px 10px;border:1px solid ${navy};">TOTAL</td>
-        <td style="text-align:right;font-weight:bold;background:${navy};color:white;padding:7px 10px;border:1px solid ${navy};">${formatCurrency(data.total)}</td>
+        <td colspan="3" style="text-align:right;font-weight:bold;background:${navy};color:white;padding:6px 10px;border:1px solid ${navy};">TOTAL</td>
+        <td style="text-align:right;font-weight:bold;background:${navy};color:white;padding:6px 10px;border:1px solid ${navy};">${formatCurrency(data.total)}</td>
       </tr>
     </tbody>
   </table>
 
   ${secHdr('C. CATATAN PEMBAYARAN')}
-  <div style="border:2px solid #d4aa00;padding:12px 14px;background:#fffef5;font-size:9pt;margin-bottom:12px;line-height:2;">
+  <div style="border:1.5px solid #d4aa00;padding:8px 10px;background:#fffef5;font-size:8.5pt;margin-bottom:8px;line-height:1.8;">
     ${paymentNotes}
   </div>
-</div>
 
-<!-- PAGE 4: TANDA TANGAN & PERSETUJUAN -->
-<div class="p">
-  ${pageHeader}
   ${banner('PERSETUJUAN DAN TANDA TANGAN')}
 
-  <div style="font-size:9.5pt;line-height:1.7;margin-bottom:15px;color:#333;">
+  <div style="font-size:8.5pt;line-height:1.6;margin-bottom:8px;color:#333;">
     Dengan menandatangani formulir ini, pemohon menyatakan telah membaca, memahami, dan menyetujui 
     semua syarat dan ketentuan yang berlaku terkait peminjaman sarana dan prasarana${inst?.name ? ` di ${inst.name}` : ''}, 
-    termasuk kewajiban pembayaran sesuai rincian yang tercantum pada invoice di halaman sebelumnya.
+    termasuk kewajiban pembayaran sesuai rincian yang tercantum pada invoice di atas.
   </div>
 
-  <table style="width:100%;border-collapse:collapse;margin-top:10px;">
+  <table style="width:100%;border-collapse:collapse;margin-top:6px;">
     <tr>
-      <td style="border:1px solid ${border};text-align:center;padding:8px;height:110px;vertical-align:top;width:50%;">
-        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">${inst?.short_name || inst?.name || 'Admin'}</div>
-        <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
+      <td style="border:1px solid ${border};text-align:center;padding:5px;height:75px;vertical-align:top;width:50%;">
+        <div style="font-weight:bold;color:${navy};font-size:9pt;">${inst?.short_name || inst?.name || 'Admin'}</div>
+        <div style="margin-top:40px;font-size:8.5pt;">(.................................)</div>
       </td>
-      <td style="border:1px solid ${border};text-align:center;padding:8px;height:110px;vertical-align:top;width:50%;border-left:none;">
-        <div style="font-weight:bold;color:${navy};font-size:9.5pt;">Pemohon</div>
-        <div style="margin-top:65px;font-size:9pt;">(.................................)</div>
-        <div style="margin-top:4px;font-size:9pt;font-weight:bold;">${data.customerName}</div>
+      <td style="border:1px solid ${border};text-align:center;padding:5px;height:75px;vertical-align:top;width:50%;border-left:none;">
+        <div style="font-weight:bold;color:${navy};font-size:9pt;">Pemohon</div>
+        <div style="margin-top:4px;">${signatureImg(data.signatureUrl, 35)}</div>
+        <div style="margin-top:2px;font-size:8.5pt;font-weight:bold;">${data.customerName}</div>
       </td>
     </tr>
   </table>
 
-  <div style="font-size:8.5pt;color:#64748b;text-align:center;margin-top:12px;">
-    Dokumen ini digenerate secara otomatis oleh sistem. Halaman 4 dari 4.
+  <div style="font-size:8pt;color:#64748b;text-align:center;margin-top:8px;">
+    Dokumen ini digenerate secara otomatis oleh sistem.
   </div>
 </div>
 

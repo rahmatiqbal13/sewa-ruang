@@ -8,82 +8,61 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, X, Loader2, GraduationCap } from 'lucide-react'
-
-async function sendNotif(event_type: string, booking_id: string) {
-  await fetch('/api/notifications/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      bookingId: booking_id,
-      event_type,
-      channels: ['email', 'whatsapp', 'telegram'],
-    }),
-  }).catch(() => {
-    // Notifikasi gagal tidak memblokir alur approval
-  })
-}
-
-// Helper function to check if booking qualifies for free (auto-paid)
-function isFreeBooking(borrowerCategory: string, purpose: string): boolean {
-  const isMahasiswaS1 = borrowerCategory === 'mahasiswa_s1'
-  const isForKuliah = purpose.toLowerCase().includes('kuliah') || 
-                      purpose.toLowerCase().includes('perkuliahan') ||
-                      purpose.toLowerCase().includes('mata kuliah') ||
-                      purpose.toLowerCase().includes('kuliah semester') ||
-                      purpose.toLowerCase().includes('kuliah online')
-  return isMahasiswaS1 && isForKuliah
-}
+import { isFreeBooking as checkFreeBooking } from '@/lib/categories'
+import {
+  sendBookingApprovedEmailAction,
+  sendBookingRejectedEmailAction,
+} from '@/lib/services/emailServer'
 
 interface ApprovalButtonsProps {
   bookingId: string
   borrowerCategory: string
   purpose: string
+  eventType: string
 }
 
-export function ApprovalButtons({ bookingId, borrowerCategory, purpose }: ApprovalButtonsProps) {
+export function ApprovalButtons({ bookingId, borrowerCategory, purpose, eventType }: ApprovalButtonsProps) {
   const router = useRouter()
   const [rejectionNotes, setRejectionNotes] = useState('')
   const [loading, setLoading] = useState<'approve' | 'reject' | null>(null)
 
-  const isFree = isFreeBooking(borrowerCategory, purpose)
+  const isFree = checkFreeBooking(borrowerCategory, eventType, purpose)
 
   async function approve() {
     setLoading('approve')
     const supabase = createClient()
-    
-    // Determine target status: if free booking, go directly to 'paid', otherwise 'approved'
+
     const targetStatus = isFree ? 'paid' : 'approved'
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('bookings') as any)
-      .update({ 
+    const { error: updateError } = await (supabase.from('bookings') as any)
+      .update({
         status: targetStatus,
-        admin_notes: isFree ? 'Peminjaman gratis untuk Mahasiswa S1 (Perkuliahan)' : null 
+        admin_notes: isFree ? 'Peminjaman gratis untuk Mahasiswa S1' : null
       })
       .eq('id', bookingId)
-    
-    if (error) {
-      console.error('Approval error detail:', error)
-      toast.error('Gagal menyetujui: ' + error.message);
-      setLoading(null);
+
+    if (updateError) {
+      console.error('Approval error detail:', updateError)
+      toast.error('Gagal menyetujui: ' + updateError.message)
+      setLoading(null)
       return
     }
-    
+
+    // Send email notification (async, don't block)
+    sendBookingApprovedEmailAction(bookingId, isFree).catch((err: unknown) => {
+      console.error('Approval email failed:', err)
+    })
+
     if (isFree) {
-      toast.success('Pengajuan langsung lunas! (Mahasiswa S1 - Perkuliahan)', {
+      toast.success('Pengajuan langsung lunas! (Mahasiswa S1)', {
         icon: <GraduationCap className="h-4 w-4" />,
         duration: 5000,
       })
-      sendNotif('booking_approved', bookingId)
-      // Also send payment notification since it's auto-paid
-      setTimeout(() => {
-        sendNotif('payment_received', bookingId)
-      }, 1000)
     } else {
       toast.success('Pengajuan disetujui')
-      sendNotif('booking_approved', bookingId)
     }
-    
+
     router.refresh()
     setLoading(null)
   }
@@ -99,9 +78,18 @@ export function ApprovalButtons({ bookingId, borrowerCategory, purpose }: Approv
     const { error } = await (supabase.from('bookings') as any)
       .update({ status: 'rejected', admin_notes: rejectionNotes })
       .eq('id', bookingId)
-    if (error) { console.error('Rejection error detail:', error); toast.error('Gagal menolak: ' + error.message); setLoading(null); return }
+    if (error) {
+      console.error('Rejection error detail:', error)
+      toast.error('Gagal menolak: ' + error.message)
+      setLoading(null)
+      return
+    }
+
+    sendBookingRejectedEmailAction(bookingId, rejectionNotes).catch((err: unknown) => {
+      console.error('Rejection email failed:', err)
+    })
+
     toast.success('Pengajuan ditolak')
-    sendNotif('booking_rejected', bookingId)
     router.refresh()
     setLoading(null)
   }
@@ -126,12 +114,12 @@ export function ApprovalButtons({ bookingId, borrowerCategory, purpose }: Approv
               <strong>Peminjaman Gratis</strong>
             </p>
             <p className="text-xs text-green-700 mt-1">
-              Pengajuan ini dari Mahasiswa S1 untuk keperluan perkuliahan. 
+              Pengajuan ini dari Mahasiswa S1 untuk keperluan perkuliahan/penelitian tugas akhir.
               Status akan langsung menjadi <strong>LUNAS</strong> tanpa perlu pembayaran.
             </p>
           </div>
         )}
-        
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Alasan Penolakan (wajib jika menolak)</label>
           <Textarea
@@ -141,11 +129,11 @@ export function ApprovalButtons({ bookingId, borrowerCategory, purpose }: Approv
             rows={3}
           />
         </div>
-        
+
         <div className="flex gap-3">
-          <Button 
-            onClick={approve} 
-            disabled={loading !== null} 
+          <Button
+            onClick={approve}
+            disabled={loading !== null}
             className={isFree ? "bg-green-600 hover:bg-green-700" : "bg-green-600 hover:bg-green-700"}
           >
             {loading === 'approve' ? (
@@ -157,7 +145,7 @@ export function ApprovalButtons({ bookingId, borrowerCategory, purpose }: Approv
             )}
             {isFree ? 'Setujui & Lunas' : 'Setujui'}
           </Button>
-          
+
           <Button onClick={reject} variant="destructive" disabled={loading !== null}>
             {loading === 'reject' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
             Tolak

@@ -177,11 +177,13 @@ export default function UploadProofPage() {
                 ) : (
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={preview || ''} 
-                      alt="Pratinjau bukti pembayaran" 
-                      className="w-full h-64 object-contain bg-muted rounded-[10px]"
-                    />
+                    {preview && (
+                      <img 
+                        src={preview} 
+                        alt="Pratinjau bukti pembayaran" 
+                        className="w-full h-64 object-contain bg-muted rounded-[10px]"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={clearFile}

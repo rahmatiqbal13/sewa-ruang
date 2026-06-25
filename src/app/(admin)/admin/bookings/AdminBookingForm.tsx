@@ -31,7 +31,7 @@ const schema = z.object({
   borrower_institution: z.string().min(2, 'Instansi wajib diisi'),
   borrower_class: z.string().optional(),
   borrower_category: z.enum(['mahasiswa_s1', 'mahasiswa_s2', 'dosen', 'umum', 'kerjasama']),
-  event_type: z.enum(['perkuliahan', 'event_mahasiswa', 'event_umum', 'penelitian', 'lainnya']),
+  event_type: z.enum(['perkuliahan', 'event_mahasiswa', 'event_umum', 'penelitian', 'penelitian_tugas_akhir', 'lainnya']),
   purpose: z.string().min(5, 'Tujuan peminjaman wajib diisi'),
   start_datetime: z.string().min(1, 'Tanggal mulai wajib diisi'),
   end_datetime: z.string().min(1, 'Tanggal selesai wajib diisi'),
@@ -449,7 +449,9 @@ export function AdminBookingForm() {
                   onValueChange={(v) => setValue('borrower_category', v as FormData['borrower_category'])}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Pilih kategori peminjam" />
+                    <SelectValue placeholder="Pilih kategori peminjam">
+                      {getBorrowerCategoryLabel(watch('borrower_category')) || "Pilih kategori peminjam"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {BORROWER_CATEGORIES.map(cat => (

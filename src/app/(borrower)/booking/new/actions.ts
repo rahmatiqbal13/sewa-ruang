@@ -6,6 +6,8 @@ import {
   isFreeBooking,
   migrateBorrowerCategory,
 } from '@/lib/categories'
+import { sendEmailWithConfig } from '@/lib/services/emailServer'
+import { buildBookingSubmittedEmail } from '@/lib/services/emailService'
 import { z } from 'zod'
 
 const MAX_BOOKING_DAYS = 3
@@ -17,7 +19,7 @@ const bookingSchema = z.object({
   end_date: z.string().min(1, 'Tanggal selesai wajib diisi'),
   end_time: z.string().optional(),
   purpose: z.string().min(10, 'Tujuan minimal 10 karakter').max(500),
-  event_type: z.enum(['perkuliahan', 'event_mahasiswa', 'event_umum', 'penelitian', 'lainnya']).optional().default('lainnya'),
+  event_type: z.enum(['perkuliahan', 'event_mahasiswa', 'event_umum', 'penelitian', 'penelitian_tugas_akhir', 'lainnya']).optional().default('lainnya'),
   room_ids: z.array(z.string().uuid()),
   equipment_items: z.array(z.object({
     id: z.string().uuid(),
@@ -165,19 +167,22 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
   // ── Verify equipment availability ────────────────────────────────────────
   type EquipmentRow = { id: string; name: string; ketersediaan: string }
   const equipIds = equipment_items.map(e => e.id)
+  let equipList: EquipmentRow[] = []
 
   if (hasEquipment) {
-    const { data: equipList, error: equipErr } = await supabase
+    const { data: equipData, error: equipErr } = await supabase
       .from('equipment')
       .select('id, name, ketersediaan')
       .in('id', equipIds)
       .eq('is_active', true)
 
-    if (equipErr || !equipList || equipList.length !== equipIds.length) {
+    if (equipErr || !equipData || equipData.length !== equipIds.length) {
       return { success: false, error: 'Beberapa alat tidak ditemukan atau tidak aktif' }
     }
 
-    const unavailable = (equipList as EquipmentRow[]).find(e => e.ketersediaan !== 'tersedia')
+    equipList = equipData as EquipmentRow[]
+
+    const unavailable = equipList.find(e => e.ketersediaan !== 'tersedia')
     if (unavailable) {
       return { success: false, error: `Alat "${unavailable.name}" sedang tidak tersedia` }
     }
@@ -361,6 +366,44 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
       console.error('Error inserting equipment booking slots:', slotsError)
       // Don't fail the booking, just log
     }
+  }
+
+  // ── Send confirmation email ───────────────────────────────────────────────
+  try {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('name, email, institution')
+      .eq('id', user.id)
+      .single()
+
+    if (userData?.email) {
+      const itemsForEmail = [
+        ...roomsData.map(r => ({ name: r.name, type: 'room' as const })),
+        ...equipment_items.map(e => {
+          const eq = (equipList ?? []).find((x: any) => x.id === e.id)
+          return { name: eq?.name || 'Alat', type: 'equipment' as const }
+        }),
+      ]
+
+      const { subject, html } = buildBookingSubmittedEmail({
+        name: userData.name || 'Peminjam',
+        referenceNo: booking.reference_no,
+        purpose,
+        startDate: startDt.toISOString(),
+        endDate: endDt.toISOString(),
+        totalAmount,
+        items: itemsForEmail,
+      })
+
+      await sendEmailWithConfig(
+        userData.email,
+        subject,
+        html
+      )
+    }
+  } catch (emailErr) {
+    console.error('Booking confirmation email failed:', emailErr)
+    // Don't fail the booking if email fails
   }
 
   return { success: true, bookingId: booking.id, referenceNo: booking.reference_no }

@@ -690,6 +690,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                     bookingId={id} 
                     borrowerCategory={borrowerCategory}
                     purpose={booking.purpose || ''}
+                    eventType={eventType}
                   />
                 )}
 

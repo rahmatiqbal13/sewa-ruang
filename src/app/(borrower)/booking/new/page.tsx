@@ -41,7 +41,15 @@ export type UserProfile = {
   borrower_category: BorrowerCategory | null
 }
 
-export default async function NewBookingPage() {
+export default async function NewBookingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ room_id?: string; equipment_id?: string }>
+}) {
+  const params = await searchParams
+  const defaultRoomId = params.room_id
+  const defaultEquipmentId = params.equipment_id
+
   const supabase = await createClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
@@ -168,6 +176,8 @@ export default async function NewBookingPage() {
         items={items}
         profile={profile}
         borrowerCategory={borrowerCategory}
+        defaultItemId={defaultRoomId || defaultEquipmentId}
+        defaultItemType={defaultRoomId ? 'room' : defaultEquipmentId ? 'equipment' : undefined}
       />
     </div>
   )

@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PhotoUpload } from '@/components/shared/PhotoUpload'
 import { Loader2 } from 'lucide-react'
+import { sendBookingCompletedEmailAction } from '@/lib/services/emailServer'
 
 const schema = z.object({
   returned_at: z.string().min(1),
@@ -54,6 +55,11 @@ export function RecordReturnForm({ bookingId }: { bookingId: string }) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('bookings') as any).update({ status: 'completed' }).eq('id', bookingId)
+
+    // Send completion email notification
+    sendBookingCompletedEmailAction(bookingId).catch((err: unknown) => {
+      console.error('Completion email failed:', err)
+    })
 
     toast.success('Pengembalian berhasil dicatat')
     router.push('/admin/returns')

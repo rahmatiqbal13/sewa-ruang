@@ -6,8 +6,8 @@ import { getInstitutionProfile } from './institutionActions'
 const otherSections = [
   {
     icon: BellRing,
-    title: 'Notifikasi',
-    description: 'Konfigurasi channel notifikasi (Email, WhatsApp, Telegram) dan template pesan otomatis.',
+    title: 'Pesan Otomatis',
+    description: 'Kelola template pesan otomatis dan konfigurasi channel pengiriman (Email, WhatsApp, Telegram).',
     status: 'Aktif',
     href: '/admin/notifications',
   },

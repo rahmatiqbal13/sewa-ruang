@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { CancelBookingButton } from '../CancelBookingButton'
 import { formatDateTime, formatRupiah } from '@/lib/utils'
-import { ArrowLeft, Clock, Package, CreditCard, Receipt, Building2, Calendar, User, Upload } from 'lucide-react'
+import { ArrowLeft, Clock, Package, CreditCard, Receipt, Building2, Calendar, User, Upload, CheckCircle } from 'lucide-react'
 
 interface BookingDetail {
   id: string
@@ -327,8 +327,8 @@ export default async function BorrowerBookingDetailPage({ params }: { params: Pr
         </Card>
       )}
 
-      {/* Payment Action */}
-      {['approved', 'pending_payment', 'payment_rejected'].includes(booking.status) && (
+      {/* Payment Action — hanya tampil kalau ada tagihan */}
+      {booking.total_amount > 0 && ['approved', 'pending_payment', 'payment_rejected'].includes(booking.status) && (
         <div className="pt-2">
           <Link
             href={`/booking/${id}/payment`}
@@ -337,6 +337,16 @@ export default async function BorrowerBookingDetailPage({ params }: { params: Pr
             <CreditCard className="mr-2 h-4 w-4" />
             {booking.status === 'payment_rejected' ? 'Upload Ulang Bukti Pembayaran' : 'Bayar Sekarang'}
           </Link>
+        </div>
+      )}
+
+      {/* Info gratis untuk booking tanpa biaya */}
+      {booking.total_amount === 0 && booking.status === 'pending' && (
+        <div className="pt-2">
+          <div className="flex items-center justify-center gap-2 p-4 bg-emerald-50 border border-emerald-200 rounded-[10px] text-emerald-800">
+            <CheckCircle className="h-5 w-5" />
+            <span className="font-medium">Peminjaman Gratis — Menunggu Persetujuan Admin</span>
+          </div>
         </div>
       )}
 

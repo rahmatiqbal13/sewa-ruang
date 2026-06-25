@@ -409,6 +409,25 @@ export default function PaymentPage() {
     )
   }
 
+  // Redirect if booking is free (no payment needed)
+  if (booking && booking.total_amount === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted">
+        <CheckCircle className="h-20 w-20 text-emerald-500 mb-4" />
+        <h1 className="text-2xl font-bold text-foreground">Peminjaman Gratis</h1>
+        <p className="text-muted-foreground mt-2">Peminjaman ini tidak dikenakan biaya</p>
+        <div className="mt-6 flex gap-4">
+          <Link href={`/bookings/${bookingId}`}>
+            <Button variant="outline">Lihat Detail Booking</Button>
+          </Link>
+          <Link href="/bookings">
+            <Button>Kembali</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   // Redirect if already paid
   if (booking.status === 'paid') {
     return (

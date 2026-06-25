@@ -29,6 +29,7 @@ import {
   Package
 } from 'lucide-react'
 import { ImageUpload } from '@/components/shared/ImageUpload'
+import { SignaturePad } from '@/components/shared/SignaturePad'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 
@@ -56,6 +57,7 @@ interface UserProfile {
   identity_number: string | null
   telegram_username: string | null
   photo_url: string | null
+  signature_url: string | null
   created_at: string
   role: string
 }
@@ -78,6 +80,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [photoUrl, setPhotoUrl] = useState('')
+  const [signatureUrl, setSignatureUrl] = useState('')
   const [activeTab, setActiveTab] = useState('profile')
   
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
@@ -108,6 +111,7 @@ export default function ProfilePage() {
       if (profileData) {
         setProfile(profileData)
         setPhotoUrl(profileData.photo_url || '')
+        setSignatureUrl(profileData.signature_url || '')
         
         // Set form values
         setValue('name', profileData.name)
@@ -159,6 +163,7 @@ export default function ProfilePage() {
           identity_number: data.identity_number || null,
           telegram_username: data.telegram_username || null,
           photo_url: photoUrl || null,
+          signature_url: signatureUrl || null,
         })
         .eq('id', profile.id)
 
@@ -375,6 +380,17 @@ export default function ProfilePage() {
                         </Label>
                         <Input {...register('telegram_username')} className="h-11" placeholder="@username (Opsional)" />
                       </div>
+                    </div>
+
+                    {/* Digital Signature */}
+                    <div className="pt-2">
+                      <SignaturePad
+                        value={signatureUrl}
+                        onChange={setSignatureUrl}
+                        label="Tanda Tangan Digital"
+                        helperText="Gambar ulang tanda tangan Anda jika ingin mengubahnya"
+                        height={140}
+                      />
                     </div>
 
                     <div className="flex justify-end pt-4 border-t border-border">

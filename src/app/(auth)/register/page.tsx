@@ -14,8 +14,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Building2, Loader2, User } from 'lucide-react'
 import { ImageUpload } from '@/components/shared/ImageUpload'
+import { SignaturePad } from '@/components/shared/SignaturePad'
 
-import { BORROWER_CATEGORIES } from '@/lib/categories'
+import { BORROWER_CATEGORIES, getBorrowerCategoryLabel } from '@/lib/categories'
 
 const schema = z.object({
   name: z.string().min(1, 'Nama wajib diisi').min(3, 'Nama minimal 3 karakter'),
@@ -27,6 +28,7 @@ const schema = z.object({
   class_division: z.string().min(1, 'Kelas/Divisi wajib diisi').max(50),
   identity_number: z.string().max(20).optional(),
   telegram_username: z.string().optional(),
+  signature_url: z.string().min(1, 'Tanda tangan digital wajib dibuat'),
 })
 type FormData = z.infer<typeof schema>
 
@@ -34,7 +36,8 @@ export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [photoUrl, setPhotoUrl] = useState('')
-  const { register, handleSubmit, setValue, formState: { errors, isValid } } = useForm<FormData>({
+  const [signatureUrl, setSignatureUrl] = useState('')
+  const { register, handleSubmit, setValue, watch, formState: { errors, isValid } } = useForm<FormData>({
     resolver: zodResolver(schema),
     mode: 'onChange',
   })
@@ -56,6 +59,7 @@ export default function RegisterPage() {
         institution: data.institution, class_division: data.class_division,
         identity_number: data.identity_number || null, telegram_username: data.telegram_username || null,
         photo_url: photoUrl || null,
+        signature_url: data.signature_url || null,
       })
     }
     toast.success('Akun berhasil dibuat! Selamat datang.')
@@ -140,7 +144,11 @@ export default function RegisterPage() {
                 Kategori Peminjam <span className="text-red-600">*</span>
               </Label>
               <Select onValueChange={(v: string | null) => { if (v) setValue('borrower_category', v as FormData['borrower_category']) }}>
-                <SelectTrigger id="borrower_category" className="h-11 rounded-lg border-[#E5E7EB]" aria-describedby={errors.borrower_category ? 'borrower_category-error' : undefined} aria-invalid={!!errors.borrower_category}><SelectValue placeholder="Pilih kategori Anda..." /></SelectTrigger>
+                <SelectTrigger id="borrower_category" className="h-11 rounded-lg border-[#E5E7EB]" aria-describedby={errors.borrower_category ? 'borrower_category-error' : undefined} aria-invalid={!!errors.borrower_category}>
+                  <SelectValue placeholder="Pilih kategori Anda...">
+                    {getBorrowerCategoryLabel(watch('borrower_category')) || "Pilih kategori Anda..."}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   {BORROWER_CATEGORIES.map(c => (
                     <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
@@ -170,6 +178,21 @@ export default function RegisterPage() {
                 NIM / NIP / KTP <span className="text-[#9CA3AF] font-normal">(opsional)</span>
               </Label>
               <Input id="identity_number" placeholder="Nomor identitas" className="h-11 rounded-lg border-[#E5E7EB]" {...register('identity_number')} />
+            </div>
+
+            {/* Digital Signature */}
+            <div className="pt-2">
+              <SignaturePad
+                value={signatureUrl}
+                onChange={(val) => {
+                  setSignatureUrl(val)
+                  setValue('signature_url', val, { shouldValidate: true })
+                }}
+                label="Tanda Tangan Digital"
+                helperText="Gambar tanda tangan Anda di area bawah menggunakan mouse atau jari"
+                required
+              />
+              {errors.signature_url && <p role="alert" className="text-xs text-red-600 font-medium mt-1">{errors.signature_url.message}</p>}
             </div>
 
             <Button type="submit" className="w-full h-11 bg-[#0891B2] hover:bg-[#0F2A6B] text-white font-semibold rounded-lg mt-2" disabled={loading || !isValid}>

@@ -13,6 +13,7 @@ const DEFAULT_SUBJECTS: Record<string, string> = {
   booking_cancelled: 'Peminjaman Dibatalkan - {{no_booking}}',
   payment_received:  'Pembayaran Dikonfirmasi - {{no_booking}}',
   booking_reminder:  'Pengingat Peminjaman - {{no_booking}}',
+  booking_completed: 'Peminjaman Selesai - {{no_booking}}',
 }
 
 // Default fallback bodies — used only if no template in DB for this event+channel+category
@@ -46,6 +47,11 @@ const DEFAULT_BODIES: Record<string, Record<string, string>> = {
     email:    'Halo {{nama}},\n\nIni adalah pengingat bahwa peminjaman Anda ({{no_booking}}) akan segera dimulai.\n\nAset: {{ruangan}}\nMulai: {{tanggal_mulai}}\nSelesai: {{tanggal_selesai}}\n\nHarap datang tepat waktu.\n\nTerima kasih,\nTim Admin',
     whatsapp: '⏰ *Pengingat* Halo {{nama}}! Peminjaman *{{no_booking}}* akan dimulai {{tanggal_mulai}}.\n\nAset: {{ruangan}}\n\nHarap datang tepat waktu!',
     telegram: '⏰ <b>Pengingat Peminjaman</b>\n\nHalo {{nama}}!\n\nPeminjaman <code>{{no_booking}}</code> dimulai {{tanggal_mulai}}.\n\nAset: {{ruangan}}\n\nHarap datang tepat waktu!',
+  },
+  booking_completed: {
+    email:    'Halo {{nama}},\n\nPeminjaman Anda ({{no_booking}}) telah selesai. Terima kasih telah menggunakan layanan kami.\n\nAset: {{ruangan}}\nTanggal: {{tanggal_mulai}} s/d {{tanggal_selesai}}\n\nTerima kasih,\nTim Admin',
+    whatsapp: '✅ Halo {{nama}}! Peminjaman *{{no_booking}}* telah selesai. Terima kasih telah menggunakan layanan kami.',
+    telegram: '✅ Halo {{nama}}!\n\nPeminjaman <code>{{no_booking}}</code> telah selesai.\n\nTerima kasih telah menggunakan layanan kami.',
   },
 }
 

@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { CreditCard, Loader2 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
+import { sendPaymentReceivedEmailAction } from '@/lib/services/emailServer'
 
 const schema = z.object({
   method: z.enum(['manual_cash', 'manual_transfer']),
@@ -59,19 +60,16 @@ export function RecordPaymentButton({ bookingId, totalAmount }: { bookingId: str
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('bookings') as any).update({ status: 'paid' }).eq('id', bookingId)
 
-    toast.success('Pembayaran berhasil dicatat')
-    fetch('/api/notifications/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type: 'payment_received', booking_id: bookingId }),
-    }).then(r => r.json()).then(json => {
-      if (json.whatsapp_url) {
-        toast('Kirim notifikasi WhatsApp?', {
-          action: { label: 'Buka WhatsApp', onClick: () => window.open(json.whatsapp_url, '_blank') },
-          duration: 10000,
-        })
-      }
+    // Send payment confirmation email with PDF invoice
+    sendPaymentReceivedEmailAction(bookingId, {
+      method: data.method,
+      amount: data.amount,
+      paidAt: data.paid_at,
+    }).catch((err: unknown) => {
+      console.error('Payment email failed:', err)
     })
+
+    toast.success('Pembayaran berhasil dicatat')
     setOpen(false)
     router.refresh()
     setLoading(false)

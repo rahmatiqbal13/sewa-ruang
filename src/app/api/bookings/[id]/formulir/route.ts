@@ -25,11 +25,11 @@ async function fetchBookingData(bookingId: string) {
     sb.from('bookings').select(`
       id, reference_no, total_amount, status,
       start_datetime, end_datetime, created_at,
-      users!user_id(name, email, phone, institution, class_division, role),
+      users!user_id(name, email, phone, institution, class_division, role, signature_url),
       booking_items(
         id, item_type,
-        rooms:room_id(name, room_code),
-        equipment:equipment_id(name, equipment_code)
+        rooms:room_id(name, room_code, current_condition),
+        equipment:equipment_id(name, equipment_code, current_condition)
       )
     `).eq('id', bookingId).single(),
 
@@ -67,11 +67,12 @@ async function buildDocHtml(
       institution?: string;
       phone?: string;
       role?: string;
+      signature_url?: string | null;
     };
     booking_items?: Array<{
       item_type: 'room' | 'equipment';
-      rooms?: { room_code?: string; name?: string };
-      equipment?: { equipment_code?: string; name?: string };
+      rooms?: { room_code?: string; name?: string; current_condition?: string };
+      equipment?: { equipment_code?: string; name?: string; current_condition?: string };
       price?: number;
     }>;
   },
@@ -83,10 +84,17 @@ async function buildDocHtml(
   const fmt = (d: string) =>
     new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
 
+  const CONDITION_LABELS: Record<string, string> = {
+    good: 'Baik',
+    needs_repair: 'Perlu Perbaikan',
+    damaged: 'Rusak',
+    lost: 'Hilang',
+  }
+
   const items = (booking.booking_items as Array<{
     item_type: 'room' | 'equipment';
-    rooms?: { room_code?: string; name?: string };
-    equipment?: { equipment_code?: string; name?: string };
+    rooms?: { room_code?: string; name?: string; current_condition?: string };
+    equipment?: { equipment_code?: string; name?: string; current_condition?: string };
     price?: number;
   }>)?.map((item) => ({
     code: item.item_type === 'room'
@@ -97,6 +105,9 @@ async function buildDocHtml(
       : (item.equipment?.name || 'Alat'),
     type: item.item_type,
     price: item.price || 0,
+    condition: item.item_type === 'room'
+      ? CONDITION_LABELS[item.rooms?.current_condition || ''] || (item.rooms?.current_condition || '-')
+      : CONDITION_LABELS[item.equipment?.current_condition || ''] || (item.equipment?.current_condition || '-'),
   })) || []
 
   return generateUSCBookingDocument({
@@ -122,6 +133,7 @@ async function buildDocHtml(
     } : null,
     hasRoom,
     hasEquipment,
+    signatureUrl: booking.users?.signature_url || null,
   })
 }
 

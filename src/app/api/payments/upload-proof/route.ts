@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 // POST /api/payments/upload-proof
@@ -6,6 +6,8 @@ import { NextResponse } from 'next/server'
 export async function POST(req: Request) {
   try {
     const supabase = await createClient()
+    // Admin client for DB operations (bypasses RLS after ownership validation)
+    const adminDb = createAdminDbClient()
     
     // Get current user
     const { data: { user } } = await supabase.auth.getUser()
@@ -30,10 +32,9 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    // Get booking details
-     
+    // Get booking details (use admin client to bypass RLS for this query)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking, error: bookingError } = await (supabase.from('bookings') as any)
+    const { data: booking, error: bookingError } = await (adminDb.from('bookings') as any)
       .select('id, user_id, total_amount, status, reference_no')
       .eq('id', bookingId)
       .single()
@@ -47,8 +48,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Check status
-    if (!['pending_payment', 'payment_rejected'].includes(booking.status)) {
+    // Check status — allow upload for approved (waiting for payment) and payment-related statuses
+    if (!['approved', 'pending_payment', 'payment_rejected'].includes(booking.status)) {
       return NextResponse.json({ 
         error: `Cannot upload proof for status: ${booking.status}` 
       }, { status: 400 })
@@ -86,10 +87,9 @@ export async function POST(req: Request) {
       .from('payments')
       .getPublicUrl(fileName)
 
-    // Insert payment proof record
-     
+    // Insert payment proof record (use adminDb to bypass RLS after ownership validation)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: proofData, error: proofError } = await (supabase.from('payment_proofs') as any)
+    const { data: proofData, error: proofError } = await (adminDb.from('payment_proofs') as any)
       .insert({
         booking_id: bookingId,
         proof_url: publicUrl,
@@ -112,9 +112,9 @@ export async function POST(req: Request) {
       }, { status: 500 })
     }
 
-    // Update booking status (with full rollback on failure)
+    // Update booking status (use adminDb to bypass RLS after ownership validation)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: statusError } = await (supabase.from('bookings') as any)
+    const { error: statusError } = await (adminDb.from('bookings') as any)
       .update({
         status: 'payment_uploaded',
         payment_proof_url: publicUrl,
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
       console.error('Status update error:', statusError)
       // Rollback: hapus record proof dan file yang sudah diupload
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('payment_proofs') as any).delete().eq('id', proofData.id)
+      await (adminDb.from('payment_proofs') as any).delete().eq('id', proofData.id)
       await supabase.storage.from('payments').remove([fileName])
       return NextResponse.json({
         error: 'Gagal memperbarui status booking. Silakan coba lagi.'

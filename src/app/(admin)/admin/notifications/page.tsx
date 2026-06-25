@@ -30,8 +30,8 @@ export default async function NotificationsPage({
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Notifikasi</h1>
-        <p className="text-muted-foreground text-sm">Konfigurasi channel, template pesan otomatis, dan riwayat notifikasi</p>
+        <h1 className="text-2xl font-bold">Pesan Otomatis</h1>
+        <p className="text-muted-foreground text-sm">Kelola template pesan otomatis, konfigurasi channel pengiriman, dan riwayat pesan terkirim</p>
       </div>
 
       {/* Tab navigation */}
