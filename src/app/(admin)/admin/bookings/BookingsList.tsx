@@ -515,7 +515,7 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-[10px]">
                             <DropdownMenuItem
-                              onClick={() => window.location.href = `/admin/bookings/${booking.id}`}
+                              onClick={() => window.location.href = `/admin/bookings/${booking.reference_no}`}
                               className="cursor-pointer"
                             >
                               <FileText className="h-4 w-4 mr-2" />
@@ -586,7 +586,7 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                 <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between">
                   <span className="text-sm font-bold text-[#111827] font-mono">{formatRupiah(booking.total_amount)}</span>
                   <div className="flex gap-1">
-                    <Link href={`/admin/bookings/${booking.id}`} className="icon-btn" aria-label="Lihat detail">
+                    <Link href={`/admin/bookings/${booking.reference_no}`} className="icon-btn" aria-label="Lihat detail">
                       <Eye className="h-3.5 w-3.5" />
                     </Link>
                     <button onClick={() => setDeleteTarget(booking)} className="icon-btn-danger" aria-label="Hapus">

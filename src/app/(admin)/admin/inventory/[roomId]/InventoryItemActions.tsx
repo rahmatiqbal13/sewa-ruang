@@ -50,11 +50,10 @@ export function InventoryItemActions({ item }: InventoryItemActionsProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from('room_inventories') as any).update({
       condition: condition,
-      last_updated_by: user!.id,
-      last_updated_at: new Date().toISOString(),
     }).eq('id', item.id)
     
     if (error) { 
+      console.error('Supabase update error:', error)
       toast.error('Gagal memperbarui kondisi: ' + error.message)
       setUpdating(false)
       return 

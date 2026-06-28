@@ -171,13 +171,6 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
   async function onSubmit(data: FormData) {
     setLoading(true)
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      toast.error('Unauthorized')
-      setLoading(false)
-      return
-    }
 
     const payload = {
       name: data.name.trim(),
@@ -187,8 +180,6 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
       notes: data.notes?.trim() || null,
       photo_url: data.photo_url || null,
       room_id: data.room_id,
-      last_updated_by: user.id,
-      last_updated_at: new Date().toISOString(),
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -197,6 +188,7 @@ export function EditInventoryItemDialog({ item, open, onOpenChange }: EditInvent
       .eq('id', item.id)
 
     if (error) {
+      console.error('Supabase update error:', error)
       toast.error('Gagal memperbarui: ' + error.message)
       setLoading(false)
       return

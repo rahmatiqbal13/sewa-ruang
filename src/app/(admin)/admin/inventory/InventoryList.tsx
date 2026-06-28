@@ -354,7 +354,7 @@ export function InventoryList({
 
       {/* CARD VIEW */}
       {viewMode === 'card' && paginatedItems.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {paginatedItems.map((item) => {
             const room = item.rooms
             const selected = isSelected(item.id)
@@ -363,48 +363,49 @@ export function InventoryList({
               <div 
                 key={item.id} 
                 className={cn(
-                  "rounded-[14px] border overflow-hidden hover:shadow-soft transition-shadow group",
-                  item.condition === 'good' && "bg-card border-green-200",
-                  item.condition === 'needs_repair' && "bg-yellow-50/50 border-yellow-300",
-                  item.condition === 'damaged' && "bg-red-50/50 border-red-300",
+                  "group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300",
+                  selected && "ring-2 ring-[#0891B2] border-[#0891B2]"
                 )}
               >
-                {/* Photo Section */}
-                <div className="relative h-36 sm:h-40 md:h-44 bg-muted flex items-center justify-center p-2">
+                {/* Photo — Catalog Style */}
+                <div className="relative aspect-[4/3] bg-[#F3F4F6] overflow-hidden">
                   {item.photo_url ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <SafeImage
-                        src={item.photo_url}
-                        alt={item.name}
-                        className="object-contain w-full h-full max-h-40"
-                        fallbackClassName="w-full h-full rounded-[10px]"
-                      />
-                    </div>
+                    <SafeImage
+                      src={item.photo_url}
+                      alt={item.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      fallbackClassName="w-full h-full flex items-center justify-center"
+                      fallback={<Package className="h-12 w-12 text-[#D1D5DB]" />}
+                    />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground/70">
-                      <Package className="h-12 w-12 mb-2" />
-                      <span className="text-xs">Belum ada foto</span>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="h-12 w-12 text-[#D1D5DB]" />
                     </div>
                   )}
                   
-                  {/* Inventory Code Badge */}
+                  {/* Inventory Code Badge — top left */}
                   {item.inventory_code && (
-                    <div className="absolute top-2 left-2">
-                      <span className="bg-card/90 backdrop-blur text-[11px] font-bold px-2 py-0.5 rounded-[10px] font-mono text-amber-700 border border-amber-200">
-                        {item.inventory_code}
-                      </span>
-                    </div>
+                    <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-white text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full">
+                      {item.inventory_code}
+                    </span>
                   )}
                   
-                  {/* Condition Badge */}
-                  <div className="absolute top-2 right-2">
-                    <ConditionBadge condition={item.condition} />
+                  {/* Condition Badge — top right, catalog style */}
+                  <div className="absolute top-3 right-3">
+                    <span className={cn(
+                      "text-xs font-medium px-2.5 py-1 rounded-full text-white",
+                      item.condition === 'good' && "bg-emerald-500",
+                      item.condition === 'needs_repair' && "bg-amber-500",
+                      item.condition === 'damaged' && "bg-red-500"
+                    )}>
+                      {item.condition === 'good' ? 'Baik' : item.condition === 'needs_repair' ? 'Perlu Perbaikan' : 'Rusak'}
+                    </span>
                   </div>
                   
-                  {/* Checkbox */}
-                  <div className="absolute bottom-2 right-2">
+                  {/* Checkbox — bottom left */}
+                  <div className="absolute bottom-3 left-3">
                     <div
-                      className="bg-card/90 backdrop-blur rounded-[10px] p-1 shadow-soft"
+                      className="bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <input
@@ -417,82 +418,78 @@ export function InventoryList({
                   </div>
                 </div>
 
-                {/* Content */}
+                {/* Content — Catalog Style */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-foreground text-sm truncate group-hover:text-amber-600 transition-colors">
+                  <h3 className="font-bold text-[#111827] text-base truncate group-hover:text-[#0891B2] transition-colors mb-1">
                     {item.name}
                   </h3>
                   
                   {/* Location */}
-                  <div className="mt-2 space-y-1">
+                  <div className="mb-3 space-y-1">
                     {room ? (
                       <>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <DoorOpen className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                        <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+                          <DoorOpen className="h-3.5 w-3.5 shrink-0" />
                           <span className="truncate">{room.name}</span>
-                          {room.room_code && <span className="font-mono text-muted-foreground/70">({room.room_code})</span>}
+                          {room.room_code && <span className="font-mono text-[#9CA3AF]">({room.room_code})</span>}
                         </div>
                         {room.buildings && (
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Building2 className="h-3.5 w-3.5 text-orange-400 shrink-0" />
+                          <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+                            <Building2 className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate">{room.buildings.name}</span>
                           </div>
                         )}
                       </>
                     ) : (
-                      <p className="text-xs text-muted-foreground/70 italic">Lokasi tidak diketahui</p>
+                      <p className="text-xs text-[#9CA3AF] italic">Lokasi tidak diketahui</p>
                     )}
                   </div>
 
-                  {/* Quantity */}
-                  <div className="mt-3 pt-3 border-t border-border/60">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-muted-foreground/70">Jumlah</p>
-                        <p className="text-lg font-bold text-foreground/80">{item.quantity} <span className="text-sm font-normal">unit</span></p>
-                      </div>
-                      {item.notes && (
-                        <p className="text-xs text-muted-foreground/70 truncate max-w-[120px]" title={item.notes}>
-                          {item.notes}
-                        </p>
-                      )}
-                    </div>
+                  {/* Quantity — Catalog Style */}
+                  <div className="mb-3">
+                    <p className="text-xs text-[#6B7280] mb-0.5">Jumlah</p>
+                    <p className="text-xl font-bold text-[#111827]">{item.quantity} <span className="text-sm font-normal text-[#6B7280]">unit</span></p>
                   </div>
 
+                  {/* Notes */}
+                  {item.notes && (
+                    <p className="text-xs text-[#9CA3AF] truncate mb-3" title={item.notes}>
+                      {item.notes}
+                    </p>
+                  )}
+
                   {/* Actions */}
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
+                  <div className="flex items-center gap-1 pt-3 border-t border-[#E5E7EB]">
                     <button
                       onClick={() => setEditingItem(item)}
-                      className="text-xs px-3 py-1.5 rounded-[10px] bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors font-medium"
+                      className="flex-1 h-9 flex items-center justify-center rounded-lg bg-[#F3F4F6] text-[#374151] hover:bg-[#E5E7EB] transition-colors text-xs font-medium"
                     >
                       Edit
                     </button>
                     
-                    <div className="flex items-center gap-1">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground hover:bg-muted transition-colors">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingItem(item)} className="gap-2 cursor-pointer">
-                            <Pencil className="h-4 w-4" /> Edit Detail
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => softDelete(item)} className="gap-2 cursor-pointer text-red-600">
-                            <Trash2 className="h-4 w-4" /> Hapus
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      
-                      {room && (
-                        <Link
-                          href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_id}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-muted-foreground/70 hover:bg-muted hover:text-muted-foreground"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      )}
-                    </div>
+                    {room && (
+                      <Link
+                        href={`/admin/inventory/${item.rooms?.name ? createSlug(item.rooms.name) : item.room_id}`}
+                        className="flex-1 h-9 flex items-center justify-center rounded-lg border border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6] transition-colors text-xs font-medium"
+                      >
+                        Detail Ruangan
+                      </Link>
+                    )}
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F3F4F6] transition-colors">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditingItem(item)} className="gap-2 cursor-pointer">
+                          <Pencil className="h-4 w-4" /> Edit Detail
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => softDelete(item)} className="gap-2 cursor-pointer text-red-600">
+                          <Trash2 className="h-4 w-4" /> Hapus
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>

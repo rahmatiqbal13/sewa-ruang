@@ -1,44 +1,90 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { CourseSchedule, CourseScheduleFormData, getDayName, formatTime } from '@/lib/course-schedules'
 import { CourseScheduleForm } from './CourseScheduleForm'
 import { CSVImportDialog } from './CSVImportDialog'
 import { createCourseSchedule, updateCourseSchedule, deleteCourseSchedule } from './actions'
-import { Pencil, Trash2, Upload, GraduationCap } from 'lucide-react'
+import { Pencil, Trash2, Upload, GraduationCap, Clock, Calendar, User, Building, BookOpen } from 'lucide-react'
+import { toast } from 'sonner'
+
+interface BuildingOption {
+  id: string
+  name: string
+  code?: string | null
+  floor_count: number
+}
+
+interface RoomOption {
+  id: string
+  name: string
+  room_code?: string | null
+  building_id?: string | null
+  floor_number?: number | null
+}
 
 interface Props {
   roomId: string
   schedules: CourseSchedule[]
   userId: string
-  rooms?: { id: string; name: string; room_code?: string | null }[]
+  rooms?: RoomOption[]
+  buildings?: BuildingOption[]
+  isGlobalPage?: boolean
 }
 
-export function CourseScheduleList({ roomId, schedules, userId, rooms = [] }: Props) {
+export function CourseScheduleList({ roomId, schedules: initialSchedules, userId, rooms = [], buildings = [], isGlobalPage = false }: Props) {
+  const router = useRouter()
+  const [schedules, setSchedules] = useState<CourseSchedule[]>(initialSchedules)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [editing, setEditing] = useState<CourseSchedule | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleCreate = async (data: CourseScheduleFormData) => {
-    await createCourseSchedule(data, userId)
-    window.location.reload()
+    setIsSubmitting(true)
+    const result = await createCourseSchedule(data, userId)
+    setIsSubmitting(false)
+    if (result.error) {
+      toast.error('Gagal menambahkan jadwal: ' + result.error)
+      return false
+    }
+    if (result.data) {
+      setSchedules(prev => [...prev, result.data])
+      toast.success('Jadwal berhasil ditambahkan')
+    }
+    setFormOpen(false)
+    router.refresh()
+    return true
   }
 
   const handleUpdate = async (data: CourseScheduleFormData) => {
-    if (editing) {
-      await updateCourseSchedule(editing.id, data)
-      setEditing(null)
-      window.location.reload()
+    if (!editing) return false
+    setIsSubmitting(true)
+    const result = await updateCourseSchedule(editing.id, data)
+    setIsSubmitting(false)
+    if (result.error) {
+      toast.error('Gagal memperbarui jadwal: ' + result.error)
+      return false
     }
+    setSchedules(prev => prev.map(s => s.id === editing.id ? { ...s, ...data } : s))
+    toast.success('Jadwal berhasil diperbarui')
+    setEditing(null)
+    router.refresh()
+    return true
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Hapus jadwal kuliah ini? Semua instance akan dihapus.')) {
-      await deleteCourseSchedule(id)
-      window.location.reload()
+    if (!confirm('Hapus jadwal kuliah ini? Semua instance akan dihapus.')) return
+    const result = await deleteCourseSchedule(id)
+    if (result.error) {
+      toast.error('Gagal menghapus jadwal: ' + result.error)
+      return
     }
+    setSchedules(prev => prev.filter(s => s.id !== id))
+    toast.success('Jadwal berhasil dihapus')
+    router.refresh()
   }
 
   return (
@@ -54,50 +100,81 @@ export function CourseScheduleList({ roomId, schedules, userId, rooms = [] }: Pr
       </div>
 
       {schedules.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">
-            <GraduationCap className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p>Belum ada jadwal kuliah untuk ruangan ini.</p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-16 text-[#6B7280] border-2 border-dashed border-[#E5E7EB] rounded-[14px] bg-white">
+          <GraduationCap className="h-12 w-12 mx-auto mb-4 text-[#D1D5DB]" />
+          <p className="font-medium">
+            {isGlobalPage ? 'Belum ada jadwal kuliah.' : 'Belum ada jadwal kuliah untuk ruangan ini.'}
+          </p>
+        </div>
       ) : (
         <div className="space-y-3">
           {schedules.map(schedule => (
-            <Card key={schedule.id} className="hover:shadow-sm transition-shadow">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{schedule.mata_kuliah}</h3>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{schedule.semester}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {schedule.dosen} • {schedule.fakultas} • {schedule.kelas}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {getDayName(schedule.day_of_week)}, {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {schedule.start_date} s/d {schedule.end_date}
-                  </p>
+            <div
+              key={schedule.id}
+              className="group bg-white border border-[#E5E7EB] rounded-[14px] p-4 hover:shadow-md transition-all duration-200 flex items-start justify-between gap-4"
+            >
+              <div className="space-y-2 min-w-0 flex-1">
+                {/* Title row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <BookOpen className="h-4 w-4 text-[#0891B2] shrink-0" />
+                  <h3 className="font-bold text-[#111827] truncate">{schedule.mata_kuliah}</h3>
+                  <span className="text-[10px] bg-[#F3F4F6] text-[#374151] px-2 py-0.5 rounded-full font-medium">
+                    {schedule.semester}
+                  </span>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setEditing(schedule)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(schedule.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
+
+                {/* Dosen */}
+                <div className="flex items-center gap-1.5 text-sm text-[#6B7280]">
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{schedule.dosen}</span>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Meta row */}
+                <div className="flex items-center gap-3 text-xs text-[#6B7280] flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <Building className="h-3 w-3 shrink-0" />
+                    {schedule.fakultas}
+                  </span>
+                  <span className="text-[#D1D5DB]">•</span>
+                  <span>{schedule.kelas}</span>
+                </div>
+
+                {/* Time row */}
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="flex items-center gap-1 text-[#0891B2] font-medium">
+                    <Calendar className="h-3 w-3 shrink-0" />
+                    {getDayName(schedule.day_of_week)}
+                  </span>
+                  <span className="flex items-center gap-1 text-[#6B7280]">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                  </span>
+                </div>
+
+                {/* Date range */}
+                <p className="text-[11px] text-[#9CA3AF]">
+                  {schedule.start_date} s/d {schedule.end_date}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => setEditing(schedule)}
+                  className="h-9 w-9 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#374151] transition-colors"
+                  title="Edit"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(schedule.id)}
+                  className="h-9 w-9 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-red-50 hover:text-red-600 transition-colors"
+                  title="Hapus"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -112,7 +189,9 @@ export function CourseScheduleList({ roomId, schedules, userId, rooms = [] }: Pr
         initialData={editing || undefined}
         title={editing ? 'Edit Jadwal Kuliah' : 'Tambah Jadwal Kuliah'}
         rooms={rooms}
+        buildings={buildings}
         defaultRoomId={roomId}
+        isSubmitting={isSubmitting}
       />
 
       <CSVImportDialog

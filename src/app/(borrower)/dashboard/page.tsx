@@ -158,7 +158,7 @@ export default async function BorrowerDashboard() {
               {formatDateTime(activeBooking.start_datetime)}
             </p>
             <Link
-              href={`/bookings/${activeBooking.id}`}
+              href={`/bookings/${activeBooking.reference_no}`}
               className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-[#0891B2] hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
             >
               Lihat Detail
@@ -205,7 +205,7 @@ export default async function BorrowerDashboard() {
             {bookings?.map((booking) => (
               <Link
                 key={booking.id}
-                href={`/bookings/${booking.id}`}
+                href={`/bookings/${booking.reference_no}`}
                 className="flex items-center gap-3 rounded-[14px] bg-white p-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
               >
                 {/* Left: colored status dot */}

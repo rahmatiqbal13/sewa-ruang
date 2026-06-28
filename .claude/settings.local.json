@@ -69,7 +69,16 @@
       "Bash(dir \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\src\\\\app\\\\api\\\\bookings\\\\[id]\" /b)",
       "Bash(npx skills *)",
       "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\sport\\\\Documents\\\\GitHub\\\\sewa-ruang\\\\.next\" -ErrorAction SilentlyContinue)",
-      "Bash(Write-Host \"Cache .next dihapus\")"
+      "Bash(Write-Host \"Cache .next dihapus\")",
+      "Read(//usr/local/bin/**)",
+      "Read(//Users/rahmatiqbal/.nvm/versions/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(cat /Users/rahmatiqbal/sewa-ruang/package.json 2>/dev/null | grep '\"next\"' || echo \"Not found at ~/sewa-ruang\")",
+      "Read(//Users/rahmatiqbal/sewa-ruang/**)",
+      "Bash(find /Users/rahmatiqbal -name \"package.json\" -maxdepth 4 2>/dev/null | xargs grep -l '\"next\".*9\\\\.' 2>/dev/null)",
+      "Read(//Users/rahmatiqbal/**)",
+      "Bash(find /Users/rahmatiqbal -name \"package.json\" -maxdepth 5 2>/dev/null | grep -i \"sewa\")",
+      "Bash(git checkout *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\HYPE FLEX\\Documents\\Codex\\sewa-ruang\\src\\app\\equipment\\[id]",

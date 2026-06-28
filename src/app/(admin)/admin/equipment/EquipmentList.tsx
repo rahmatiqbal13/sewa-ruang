@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle, Download, FileUp, LayoutGrid, Table2, ShieldCheck } from 'lucide-react'
+import { Plus, Package, ChevronLeft, ChevronRight, AlertTriangle, Download, FileUp, LayoutGrid, Table2, ShieldCheck, Eye, Pencil, MapPin } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { SafeImage } from '@/components/shared/SafeImage'
@@ -167,35 +167,55 @@ export function EquipmentList({
       )}
 
       {/* Header */}
-      <div className="page-header">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="page-title flex items-center gap-2">
+          <h1 className="text-xl font-bold flex items-center gap-2">
             Alat &amp; Peralatan
-            {isSuperAdmin && <ShieldCheck className="h-4.5 w-4.5 text-purple-500" />}
+            {isSuperAdmin && <ShieldCheck className="h-4 w-4 text-purple-500" />}
           </h1>
-          <p className="page-subtitle">
+          <p className="text-sm text-muted-foreground hidden sm:block">
             {isSuperAdmin ? 'Super Admin mode — semua operasi tersedia' : 'Alat yang dapat disewakan dengan tarif per kategori'}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {/* View Toggle */}
+          <div className="flex items-center gap-0.5 bg-muted p-1 rounded-lg shrink-0">
+            {(['card', 'table'] as const).map(mode => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={cn(
+                  'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all',
+                  viewMode === mode ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {mode === 'card' ? <LayoutGrid className="h-3.5 w-3.5" /> : <Table2 className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{mode === 'card' ? 'Card' : 'Tabel'}</span>
+              </button>
+            ))}
+          </div>
           {hasSelection && (
             <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting} className="border-indigo-200 text-indigo-700 hover:bg-indigo-50">
-              <Download className="mr-1.5 h-3.5 w-3.5" /> Export ({selectedCount})
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Export</span>
+              <span className="sm:hidden">({selectedCount})</span>
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting} className="hidden sm:flex">
-            <Download className="mr-1.5 h-3.5 w-3.5" /> {isExporting ? 'Mengekspor...' : 'Export'}
-          </Button>
           <Button variant="outline" size="sm" onClick={() => setIsImportDialogOpen(true)} className="hidden sm:flex">
             <FileUp className="mr-1.5 h-3.5 w-3.5" /> Import
           </Button>
-          <Link href="/admin/equipment/new" className="inline-flex items-center gap-1.5 h-9 px-3.5 text-sm font-medium rounded-[10px] bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-            <Plus className="h-3.5 w-3.5" /> Tambah Alat
+          <Link href="/admin/equipment/new" className="inline-flex items-center gap-1.5 h-9 px-3.5 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Tambah Alat</span>
+            <span className="sm:hidden">Tambah</span>
           </Link>
         </div>
       </div>
 
-      {/* Clickable availability tabs */}
+      {/* Search + Filter */}
+      <EquipmentFilters categories={uniqueCategories} />
+
+      {/* Compact Availability Tabs */}
       {(() => {
         const activeK = searchParams.ketersediaan || ''
         const isInactiveTab = searchParams.inactiveOnly === 'true'
@@ -213,53 +233,45 @@ export function EquipmentList({
         }
 
         const tabs = [
-          { key: '',               label: 'Semua',          count: totalItems,                           isActive: !isInactiveTab && activeK === '',   activeClass: 'bg-blue-600 text-white border-blue-600',    inactiveClass: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100', href: buildTabUrl('') },
-          { key: 'tersedia',       label: 'Tersedia',       count: availabilityCounts['tersedia'],        isActive: !isInactiveTab && activeK === 'tersedia',      activeClass: 'bg-green-600 text-white border-green-600',  inactiveClass: 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100', href: buildTabUrl('tersedia') },
-          { key: 'digunakan',      label: 'Digunakan',      count: availabilityCounts['digunakan'],       isActive: !isInactiveTab && activeK === 'digunakan',     activeClass: 'bg-orange-600 text-white border-orange-600',inactiveClass: 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100',href: buildTabUrl('digunakan') },
-          { key: 'hilang',         label: 'Hilang',         count: availabilityCounts['hilang'],          isActive: !isInactiveTab && activeK === 'hilang',        activeClass: 'bg-red-600 text-white border-red-600',      inactiveClass: 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100',       href: buildTabUrl('hilang') },
-          { key: 'tidak_tersedia', label: 'Tidak Tersedia', count: availabilityCounts['tidak_tersedia'],  isActive: !isInactiveTab && activeK === 'tidak_tersedia',activeClass: 'bg-foreground text-primary-foreground border-foreground',    inactiveClass: 'bg-muted border-border text-foreground/80 hover:bg-muted',   href: buildTabUrl('tidak_tersedia') },
-          { key: 'nonaktif',       label: 'Non Aktif',      count: inactiveCount,                        isActive: isInactiveTab,                                 activeClass: 'bg-foreground text-white border-foreground',  inactiveClass: 'bg-muted border-border text-muted-foreground hover:bg-muted', href: buildTabUrl('', true) },
+          { key: '',               label: 'Semua',          count: totalItems,                           isActive: !isInactiveTab && activeK === '',   color: 'blue',   href: buildTabUrl('') },
+          { key: 'tersedia',       label: 'Tersedia',       count: availabilityCounts['tersedia'],        isActive: !isInactiveTab && activeK === 'tersedia',      color: 'green',  href: buildTabUrl('tersedia') },
+          { key: 'digunakan',      label: 'Digunakan',      count: availabilityCounts['digunakan'],       isActive: !isInactiveTab && activeK === 'digunakan',     color: 'orange', href: buildTabUrl('digunakan') },
+          { key: 'hilang',         label: 'Hilang',         count: availabilityCounts['hilang'],          isActive: !isInactiveTab && activeK === 'hilang',        color: 'red',    href: buildTabUrl('hilang') },
+          { key: 'tidak_tersedia', label: 'Tidak Tersedia', count: availabilityCounts['tidak_tersedia'],  isActive: !isInactiveTab && activeK === 'tidak_tersedia',color: 'gray',   href: buildTabUrl('tidak_tersedia') },
+          { key: 'nonaktif',       label: 'Non Aktif',      count: inactiveCount,                        isActive: isInactiveTab,                                 color: 'gray',   href: buildTabUrl('', true) },
         ]
+
+        const colorMap: Record<string, { active: string; inactive: string }> = {
+          blue:   { active: 'bg-blue-600 text-white border-blue-600',    inactive: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' },
+          green:  { active: 'bg-green-600 text-white border-green-600',  inactive: 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100' },
+          orange: { active: 'bg-orange-600 text-white border-orange-600',inactive: 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100' },
+          red:    { active: 'bg-red-600 text-white border-red-600',      inactive: 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100' },
+          gray:   { active: 'bg-foreground text-white border-foreground',inactive: 'bg-muted border-border text-muted-foreground hover:bg-muted/80' },
+        }
 
         return (
           <div className="flex flex-wrap gap-1.5">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.key}
-                href={tab.href}
-                className={cn('filter-pill', tab.isActive ? 'filter-pill-active' : 'filter-pill-inactive')}
-              >
-                {tab.label}
-                <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold', tab.isActive ? 'bg-card/20' : 'bg-muted text-muted-foreground')}>
-                  {tab.count}
-                </span>
-              </Link>
-            ))}
+            {tabs.map((tab) => {
+              const colors = colorMap[tab.color]
+              return (
+                <Link
+                  key={tab.key}
+                  href={tab.href}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors',
+                    tab.isActive ? colors.active : colors.inactive
+                  )}
+                >
+                  {tab.label}
+                  <span className={cn('text-[10px] font-bold', tab.isActive ? 'opacity-80' : 'text-muted-foreground')}>
+                    {tab.count}
+                  </span>
+                </Link>
+              )
+            })}
           </div>
         )
       })()}
-
-      {/* Filters & View Toggle */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex-1">
-          <EquipmentFilters categories={uniqueCategories} />
-        </div>
-        <div className="flex items-center gap-0.5 bg-muted p-1 rounded-[10px] shrink-0">
-          {(['card', 'table'] as const).map(mode => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={cn(
-                'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all',
-                viewMode === mode ? 'bg-card text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {mode === 'card' ? <LayoutGrid className="h-3.5 w-3.5" /> : <Table2 className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline">{mode === 'card' ? 'Card' : 'Tabel'}</span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Selection Header */}
       {equipment.length > 0 && (
@@ -294,181 +306,194 @@ export function EquipmentList({
 
       {/* Equipment Display */}
       {viewMode === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {equipment.map((item) => {
           const lowestRate = getDisplayRate(item.equipment_rates)
           const baseName = item.name.replace(/\s*\(\d+\)$/, '').toLowerCase().trim()
           const isDuplicate = duplicateBaseNames.has(baseName)
+          const isAvailable = item.ketersediaan === 'tersedia'
 
           return (
             <div key={item.id} className={cn(
-              "rounded-[14px] border overflow-hidden hover:shadow-soft transition-shadow group",
-              isDuplicate ? "bg-amber-50 border-amber-300" : "bg-card",
-              !item.is_active && "opacity-60 grayscale"
+              "group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300",
+              isDuplicate && "ring-1 ring-amber-400",
+              !item.is_active && "opacity-60"
             )}>
-              {/* Photo - Clickable to detail */}
-                <Link
+              {/* Photo — Catalog Style: square, object-cover, hover zoom */}
+              <Link
                 href={`/admin/equipment/${createSlug(item.name)}`}
-                className="relative h-36 sm:h-40 md:h-44 bg-muted flex items-center justify-center p-2 block"
+                className="relative aspect-[4/3] bg-[#F3F4F6] block overflow-hidden"
               >
                 {item.photo_url ? (
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    <SafeImage
-                      src={item.photo_url}
-                      alt={item.name}
-                      className="object-contain w-full h-full max-h-40"
-                      fallbackClassName="w-full h-full rounded-[10px]"
-                    />
-                  </div>
+                  <SafeImage
+                    src={item.photo_url}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fallbackClassName="w-full h-full flex items-center justify-center"
+                    fallback={<Package className="h-12 w-12 text-[#D1D5DB]" />}
+                  />
                 ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <Package className="h-12 w-12 text-blue-200" />
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="h-12 w-12 text-[#D1D5DB]" />
                   </div>
                 )}
-                {item.equipment_code && (
-                  <div className="absolute top-2 left-2">
-                    <span className="bg-card/90 backdrop-blur text-[11px] font-bold px-2 py-0.5 rounded-[10px] font-mono text-blue-700 border border-blue-200">
-                      {item.equipment_code}
-                    </span>
-                  </div>
-                )}
-                <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                  {!item.is_active && (
-                    <span className="bg-muted-foreground text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
-                      Nonaktif
-                    </span>
-                  )}
-                  <Badge variant={item.is_active ? 'default' : 'secondary'} className="text-xs">
-                    {item.is_active ? 'Aktif' : 'Nonaktif'}
+
+                {/* Status Badge — Catalog Style */}
+                <div className="absolute top-3 right-3">
+                  <Badge className={cn(
+                    "text-xs font-medium border-0",
+                    isAvailable ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                  )}>
+                    {isAvailable ? 'Tersedia' : 'Tidak Tersedia'}
                   </Badge>
                 </div>
 
-                {/* Category Badge */}
-                {item.category && (
-                  <div className="absolute bottom-2 left-2">
-                    <span className="bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
-                      {CATEGORY_LABELS[item.category] || item.category}
-                    </span>
-                  </div>
+                {/* Code overlay — subtle */}
+                {item.equipment_code && (
+                  <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-white text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full">
+                    {item.equipment_code}
+                  </span>
                 )}
 
-                {/* Checkbox overlay */}
-                <div className="absolute bottom-2 right-2">
-                  <div
-                    className="bg-card/90 backdrop-blur rounded-[10px] p-1 shadow-soft"
-                    onClick={(e) => e.preventDefault()}
-                  >
+                {/* Checkbox — bottom left */}
+                <div
+                  className="absolute bottom-3 left-3"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <div className="bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm">
                     <ItemCheckbox
                       checked={isSelected(item.id)}
                       onCheckedChange={() => toggleSelection(item.id)}
                     />
                   </div>
                 </div>
+
+                {/* Nonaktif overlay */}
+                {!item.is_active && (
+                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                    <span className="bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-full">NONAKTIF</span>
+                  </div>
+                )}
               </Link>
 
-              {/* Info */}
+              {/* Info — Catalog Style */}
               <div className="p-4">
-                <Link href={`/admin/equipment/${createSlug(item.name)}`}>
-                  <h3 className={cn(
-                    "font-semibold text-foreground text-sm truncate group-hover:text-blue-600 transition-colors",
-                    !item.is_active && "line-through"
-                  )} title={item.name}>
-                    {item.name}
-                  </h3>
-                </Link>
-                {item.merk && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.merk}</p>
-                )}
-
-                {/* Availability & Status */}
-                <div className="mt-2 flex flex-wrap gap-1">
-                  <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-medium border', getKetersediaanColor(item.ketersediaan))}>
-                    {getKetersediaanLabel(item.ketersediaan)}
-                  </span>
-                  {item.status_tindakan !== 'normal' && (
-                    <span className="bg-yellow-100 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded text-[10px] font-medium">
-                      {item.status_tindakan === 'perawatan' ? 'Perawatan' :
-                       item.status_tindakan === 'menunggu_part' ? 'Menunggu Part' : 'Afkir'}
+                {/* Category Pill */}
+                <div className="mb-2 flex items-center gap-2">
+                  {item.category && (
+                    <span className="inline-flex items-center bg-[#F3F4F6] text-[#374151] text-xs rounded-full px-2.5 py-1">
+                      {CATEGORY_LABELS[item.category] || item.category}
                     </span>
                   )}
                   {isDuplicate && (
-                    <span className="bg-amber-100 text-amber-700 border border-amber-300 px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-0.5">
+                    <span className="text-[10px] text-amber-600 flex items-center gap-0.5" title="Nama duplikat">
                       <AlertTriangle className="h-3 w-3" /> Duplikat
                     </span>
                   )}
                 </div>
 
-                {/* Location */}
-                {item.current_location && (
-                  <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
-                    <span className="truncate">{item.current_location}</span>
-                  </p>
+                {/* Title */}
+                <Link href={`/admin/equipment/${createSlug(item.name)}`}>
+                  <h3 className={cn(
+                    "font-bold text-[#111827] text-base mb-1 truncate group-hover:text-[#0891B2] transition-colors",
+                    !item.is_active && "line-through"
+                  )} title={item.name}>
+                    {item.name}
+                  </h3>
+                </Link>
+
+                {/* Brand */}
+                {item.merk && (
+                  <p className="text-sm text-[#6B7280] mb-2">{item.merk}</p>
                 )}
 
-                {/* Pricing */}
-                <div className="mt-3 pt-2 border-t">
+                {/* Price */}
+                <div className="mb-3">
                   {lowestRate ? (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-muted-foreground/70">Mulai dari</p>
-                        <p className="text-sm font-semibold text-emerald-600">
-                          {formatRupiah(lowestRate.rate_per_day)}/hari
-                        </p>
-                        {lowestRate.rate_per_hour && (
-                          <p className="text-[10px] text-muted-foreground/70">
-                            {formatRupiah(lowestRate.rate_per_hour)}/jam
-                          </p>
-                        )}
-                      </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-[#0891B2] font-semibold text-lg">
+                        {formatRupiah(lowestRate.rate_per_day)}
+                      </span>
+                      <span className="text-sm text-[#6B7280]">/hari</span>
                       {lowestRate.requires_supervision && (
-                        <span className="text-[10px] bg-yellow-50 text-yellow-600 px-1.5 py-0.5 rounded border border-yellow-200">
-                          Perlu Supervisi
+                        <span className="text-[10px] bg-yellow-50 text-yellow-600 px-1.5 py-0.5 rounded border border-yellow-200 ml-1">
+                          Supervisi
                         </span>
                       )}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground/70 italic">Tarif belum diatur</p>
+                    <span className="text-sm text-[#9CA3AF] italic">Tarif belum diatur</span>
                   )}
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center justify-between mt-3 pt-2 border-t">
-                  <ConditionBadge condition={item.current_condition} />
-                  <div className="flex gap-1">
-                    <Link
-                      href={`/admin/equipment/${createSlug(item.name)}`}
-                      className="text-xs px-2 py-1 rounded-[10px] bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium"
-                    >
-                      Detail
-                    </Link>
-                    <Link
-                      href={`/admin/equipment/${createSlug(item.name)}/edit`}
-                      className="text-xs px-2 py-1 rounded-[10px] bg-muted hover:bg-muted/80 transition-colors"
-                    >
-                      Edit
-                    </Link>
-                    {item.is_active ? (
-                      <SoftDeleteButton
-                        equipmentId={item.id}
-                        equipmentName={item.name}
-                        variant="outline"
-                        size="sm"
-                      />
-                    ) : (
-                      <RestoreButton
-                        equipmentId={item.id}
-                        equipmentName={item.name}
-                        variant="outline"
-                        size="sm"
-                      />
-                    )}
-                    {isSuperAdmin && !item.is_active && (
-                      <DeleteEquipmentButton
-                        id={item.id}
-                        equipmentName={item.name}
-                      />
-                    )}
+                {/* Status Dots */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className={cn("w-2 h-2 rounded-full", 
+                      item.current_condition === 'good' ? "bg-emerald-500" :
+                      item.current_condition === 'needs_repair' ? "bg-amber-500" :
+                      "bg-red-500"
+                    )} />
+                    <span className="text-xs text-[#6B7280]">
+                      {item.current_condition === 'good' ? 'Baik' :
+                       item.current_condition === 'needs_repair' ? 'Perlu Perbaikan' :
+                       item.current_condition === 'damaged' ? 'Rusak' : 'Hilang'}
+                    </span>
                   </div>
+                  {item.status_tindakan !== 'normal' && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                      <span className="text-xs text-[#6B7280]">
+                        {item.status_tindakan === 'perawatan' ? 'Perawatan' :
+                         item.status_tindakan === 'menunggu_part' ? 'Menunggu Part' : 'Afkir'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Location */}
+                {item.current_location && (
+                  <p className="text-xs text-[#6B7280] flex items-center gap-1 mb-3">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{item.current_location}</span>
+                  </p>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 pt-2 border-t border-[#E5E7EB]">
+                  <Link
+                    href={`/admin/equipment/${createSlug(item.name)}`}
+                    className="flex-1 h-9 flex items-center justify-center rounded-lg bg-[#F3F4F6] text-[#374151] hover:bg-[#E5E7EB] transition-colors text-xs font-medium"
+                  >
+                    Detail
+                  </Link>
+                  <Link
+                    href={`/admin/equipment/${createSlug(item.name)}/edit`}
+                    className="flex-1 h-9 flex items-center justify-center rounded-lg border border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6] transition-colors text-xs font-medium"
+                  >
+                    Edit
+                  </Link>
+                  {item.is_active ? (
+                    <SoftDeleteButton
+                      equipmentId={item.id}
+                      equipmentName={item.name}
+                      variant="outline"
+                      size="sm"
+                    />
+                  ) : (
+                    <RestoreButton
+                      equipmentId={item.id}
+                      equipmentName={item.name}
+                      variant="outline"
+                      size="sm"
+                    />
+                  )}
+                  {isSuperAdmin && !item.is_active && (
+                    <DeleteEquipmentButton
+                      id={item.id}
+                      equipmentName={item.name}
+                    />
+                  )}
                 </div>
               </div>
             </div>

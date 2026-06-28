@@ -249,7 +249,7 @@ export function UserDetailSheet({ user }: { user: UserData }) {
                     return (
                       <a
                         key={b.id}
-                        href={`/admin/bookings/${b.id}`}
+                        href={`/admin/bookings/${b.reference_no}`}
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-start justify-between gap-2 rounded-[14px] border p-3 hover:bg-muted transition-colors group"

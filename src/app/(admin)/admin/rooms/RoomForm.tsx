@@ -11,22 +11,22 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Loader2, Camera, Tag, Building2, Layers, Users, DoorOpen } from 'lucide-react'
+import { Loader2, Camera, Tag, Building2, Layers, Users, DoorOpen, Banknote } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { PhotoUpload } from '@/components/shared/PhotoUpload'
 
 const USAGE_CATEGORIES = [
-  { value: 'perkuliahan',     label: 'Perkuliahan',     color: 'blue' },
-  { value: 'event_mahasiswa', label: 'Event Mahasiswa', color: 'purple' },
-  { value: 'event_umum',      label: 'Event Umum',      color: 'orange' },
+  { value: 'perkuliahan',     label: 'Perkuliahan',     accent: 'cyan' },
+  { value: 'event_mahasiswa', label: 'Event Mahasiswa', accent: 'emerald' },
+  { value: 'event_umum',      label: 'Event Umum',      accent: 'amber' },
 ]
 
-const COLOR_STYLES: Record<string, { bg: string; border: string; text: string }> = {
-  blue: { bg: 'bg-blue-50/50', border: 'border-blue-200', text: 'text-blue-800' },
-  purple: { bg: 'bg-purple-50/50', border: 'border-purple-200', text: 'text-purple-800' },
-  orange: { bg: 'bg-orange-50/50', border: 'border-orange-200', text: 'text-orange-800' },
+const ACCENT_STYLES: Record<string, { border: string; text: string; dot: string }> = {
+  cyan:    { border: 'border-[#0891B2]/20', text: 'text-[#0891B2]', dot: 'bg-[#0891B2]' },
+  emerald: { border: 'border-emerald-300',   text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  amber:   { border: 'border-amber-300',      text: 'text-amber-700', dot: 'bg-amber-500' },
 }
 
 const rateSchema = z.object({
@@ -220,251 +220,257 @@ export function RoomForm({ room, buildings }: { room?: Room; buildings: Building
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-8">
       {/* Informasi Dasar */}
-      <Card className="border-border shadow-sm rounded-[14px]">
-        <CardContent className="p-4 md:p-8">
-          <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-            <DoorOpen className="h-5 w-5 text-primary" />
+      <div className="space-y-6">
+        <div className="border-b border-[#E5E7EB] pb-4">
+          <h2 className="text-lg font-bold text-[#111827] flex items-center gap-2">
+            <DoorOpen className="h-5 w-5 text-[#0891B2]" />
             Informasi Ruangan
           </h2>
-          
-          <div className="space-y-6">
-            {/* Photo Upload */}
-            <div className="space-y-3">
-              <Label className="text-foreground font-medium flex items-center gap-2">
-                <Camera className="h-4 w-4 text-muted-foreground" />
-                Foto Ruangan
-              </Label>
-              <PhotoUpload
-                value={watch('photo_url')}
-                onChange={(url) => setValue('photo_url', url ?? '')}
-                folder="rooms"
-              />
-            </div>
+        </div>
 
-            {/* Door Photo Upload */}
-            <div className="space-y-3">
-              <Label className="text-foreground font-medium flex items-center gap-2">
-                <Camera className="h-4 w-4 text-muted-foreground" />
-                Foto Pintu Ruangan
-              </Label>
-              <p className="text-xs text-muted-foreground">Membantu peminjam menemukan lokasi ruangan</p>
-              <PhotoUpload
-                value={watch('door_photo_url')}
-                onChange={(url) => setValue('door_photo_url', url ?? '')}
-                folder="rooms"
-              />
-            </div>
+        <div className="space-y-6">
+          {/* Photo Upload */}
+          <div className="space-y-3">
+            <Label className="text-[#374151] font-medium flex items-center gap-2">
+              <Camera className="h-4 w-4 text-[#9CA3AF]" />
+              Foto Ruangan
+            </Label>
+            <PhotoUpload
+              value={watch('photo_url')}
+              onChange={(url) => setValue('photo_url', url ?? '')}
+              folder="rooms"
+            />
+          </div>
 
-            {/* Name */}
+          {/* Door Photo Upload */}
+          <div className="space-y-3">
+            <Label className="text-[#374151] font-medium flex items-center gap-2">
+              <Camera className="h-4 w-4 text-[#9CA3AF]" />
+              Foto Pintu Ruangan
+            </Label>
+            <p className="text-xs text-[#6B7280]">Membantu peminjam menemukan lokasi ruangan</p>
+            <PhotoUpload
+              value={watch('door_photo_url')}
+              onChange={(url) => setValue('door_photo_url', url ?? '')}
+              folder="rooms"
+            />
+          </div>
+
+          {/* Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-[#374151] font-medium">
+              Nama Ruangan <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="name"
+              placeholder="Contoh: Ruang Seminar A"
+              className="h-11 rounded-[10px] border-[#E5E7EB] focus:border-[#0891B2] focus:ring-[#0891B2]/20"
+              {...register('name')}
+            />
+            {errors.name && (
+              <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
+            )}
+          </div>
+
+          {/* Building */}
+          <div className="space-y-2">
+            <Label className="text-[#374151] font-medium flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-[#9CA3AF]" />
+              Gedung <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={watch('building_id') || ''}
+              onValueChange={(v) => {
+                setValue('building_id', v ?? '')
+                setValue('floor_number', 1)
+              }}
+            >
+              <SelectTrigger className="h-11 rounded-[10px] border-[#E5E7EB] focus:border-[#0891B2] focus:ring-[#0891B2]/20">
+                {selectedBuilding ? (
+                  <span className="text-[#111827]">{selectedBuilding.name} ({selectedBuilding.code})</span>
+                ) : (
+                  <SelectValue placeholder="Pilih gedung..." />
+                )}
+              </SelectTrigger>
+              <SelectContent className="rounded-[10px]">
+                {buildings.map(b => (
+                  <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.building_id && (
+              <p className="text-sm text-red-500 font-medium">{errors.building_id.message}</p>
+            )}
+          </div>
+
+          {/* Floor & Sequence */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-foreground font-medium">
-                Nama Ruangan <span className="text-red-500">*</span>
-              </Label>
-              <Input 
-                id="name"
-                placeholder="Contoh: Ruang Seminar A" 
-                className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
-                {...register('name')} 
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
-              )}
-            </div>
-
-            {/* Building */}
-            <div className="space-y-2">
-              <Label className="text-foreground font-medium flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                Gedung <span className="text-red-500">*</span>
+              <Label className="text-[#374151] font-medium flex items-center gap-2">
+                <Layers className="h-4 w-4 text-[#9CA3AF]" />
+                Lantai <span className="text-red-500">*</span>
               </Label>
               <Select
-                value={watch('building_id') || ''}
-                onValueChange={(v) => {
-                  setValue('building_id', v ?? '')
-                  setValue('floor_number', 1)
-                }}
+                value={watch('floor_number')?.toString() || '1'}
+                onValueChange={(v) => setValue('floor_number', parseInt(v ?? '1'))}
               >
-                <SelectTrigger className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20">
-                  {selectedBuilding ? (
-                    <span className="text-foreground">{selectedBuilding.name} ({selectedBuilding.code})</span>
+                <SelectTrigger className="h-11 rounded-[10px] border-[#E5E7EB] focus:border-[#0891B2] focus:ring-[#0891B2]/20">
+                  {watch('floor_number') ? (
+                    <span className="text-[#111827]">Lantai {watch('floor_number')}</span>
                   ) : (
-                    <SelectValue placeholder="Pilih gedung..." />
+                    <SelectValue placeholder="Pilih lantai..." />
                   )}
                 </SelectTrigger>
                 <SelectContent className="rounded-[10px]">
-                  {buildings.map(b => (
-                    <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>
+                  {Array.from({ length: selectedBuilding?.floor_count ?? 10 }, (_, i) => i + 1).map(n => (
+                    <SelectItem key={n} value={n.toString()}>Lantai {n}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.building_id && (
-                <p className="text-sm text-red-500 font-medium">{errors.building_id.message}</p>
+              {errors.floor_number && (
+                <p className="text-sm text-red-500 font-medium">{errors.floor_number.message}</p>
               )}
             </div>
 
-            {/* Floor & Sequence */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-foreground font-medium flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-muted-foreground" />
-                  Lantai <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={watch('floor_number')?.toString() || '1'}
-                  onValueChange={(v) => setValue('floor_number', parseInt(v ?? '1'))}
-                >
-                  <SelectTrigger className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20">
-                    {watch('floor_number') ? (
-                      <span className="text-foreground">Lantai {watch('floor_number')}</span>
-                    ) : (
-                      <SelectValue placeholder="Pilih lantai..." />
-                    )}
-                  </SelectTrigger>
-                  <SelectContent className="rounded-[10px]">
-                    {Array.from({ length: selectedBuilding?.floor_count ?? 10 }, (_, i) => i + 1).map(n => (
-                      <SelectItem key={n} value={n.toString()}>Lantai {n}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.floor_number && (
-                  <p className="text-sm text-red-500 font-medium">{errors.floor_number.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="room_sequence" className="text-foreground font-medium">
-                  Nomor Urut <span className="text-red-500">*</span>
-                </Label>
-                <Input 
-                  id="room_sequence"
-                  type="number"
-                  min={1}
-                  max={99}
-                  placeholder="1"
-                  className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
-                  {...register('room_sequence')}
-                />
-                {errors.room_sequence && (
-                  <p className="text-sm text-red-500 font-medium">{errors.room_sequence.message}</p>
-                )}
-                <p className="text-xs text-muted-foreground">Kode ruang digenerate otomatis dari gedung + lantai + nomor urut</p>
-              </div>
-            </div>
-
-            {/* Capacity */}
             <div className="space-y-2">
-              <Label htmlFor="capacity" className="text-foreground font-medium flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                Kapasitas (orang)
+              <Label htmlFor="room_sequence" className="text-[#374151] font-medium">
+                Nomor Urut <span className="text-red-500">*</span>
               </Label>
-              <Input 
-                id="capacity"
+              <Input
+                id="room_sequence"
                 type="number"
                 min={1}
-                placeholder="30"
-                className="h-10 md:h-12 rounded-[10px] border-border focus:border-primary focus:ring-primary/20"
-                {...register('capacity')}
+                max={99}
+                placeholder="1"
+                className="h-11 rounded-[10px] border-[#E5E7EB] focus:border-[#0891B2] focus:ring-[#0891B2]/20"
+                {...register('room_sequence')}
               />
-              {errors.capacity && (
-                <p className="text-sm text-red-500 font-medium">{errors.capacity.message}</p>
+              {errors.room_sequence && (
+                <p className="text-sm text-red-500 font-medium">{errors.room_sequence.message}</p>
               )}
-            </div>
-
-            {/* Is For Rent Switch */}
-            <div className="flex items-center gap-3 py-2 px-4 bg-muted rounded-[10px] border border-border">
-              <Switch 
-                id="is_for_rent" 
-                checked={isForRent} 
-                onCheckedChange={(v) => setValue('is_for_rent', v)} 
-              />
-              <Label htmlFor="is_for_rent" className="cursor-pointer font-medium text-foreground flex items-center gap-2">
-                <Tag className="h-4 w-4 text-primary" />
-                Ruangan ini dapat disewakan
-              </Label>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-foreground font-medium">
-                Deskripsi
-              </Label>
-              <Textarea 
-                id="description"
-                placeholder="Fasilitas, keterangan tambahan..." 
-                rows={4}
-                className="rounded-[10px] border-border focus:border-primary focus:ring-primary/20 resize-none"
-                {...register('description')}
-              />
+              <p className="text-xs text-[#6B7280]">Kode ruang digenerate otomatis dari gedung + lantai + nomor urut</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Capacity */}
+          <div className="space-y-2">
+            <Label htmlFor="capacity" className="text-[#374151] font-medium flex items-center gap-2">
+              <Users className="h-4 w-4 text-[#9CA3AF]" />
+              Kapasitas (orang)
+            </Label>
+            <Input
+              id="capacity"
+              type="number"
+              min={1}
+              placeholder="30"
+              className="h-11 rounded-[10px] border-[#E5E7EB] focus:border-[#0891B2] focus:ring-[#0891B2]/20"
+              {...register('capacity')}
+            />
+            {errors.capacity && (
+              <p className="text-sm text-red-500 font-medium">{errors.capacity.message}</p>
+            )}
+          </div>
+
+          {/* Is For Rent Switch */}
+          <div className="flex items-center gap-3 py-3 px-4 bg-[#F3F4F6] rounded-[10px] border border-[#E5E7EB]">
+            <Switch
+              id="is_for_rent"
+              checked={isForRent}
+              onCheckedChange={(v) => setValue('is_for_rent', v)}
+            />
+            <Label htmlFor="is_for_rent" className="cursor-pointer font-medium text-[#374151] flex items-center gap-2">
+              <Tag className="h-4 w-4 text-[#0891B2]" />
+              Ruangan ini dapat disewakan
+            </Label>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-[#374151] font-medium">
+              Deskripsi
+            </Label>
+            <Textarea
+              id="description"
+              placeholder="Fasilitas, keterangan tambahan..."
+              rows={4}
+              className="rounded-[10px] border-[#E5E7EB] focus:border-[#0891B2] focus:ring-[#0891B2]/20 resize-none"
+              {...register('description')}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Tarif Sewa */}
       {isForRent && (
-        <Card className="border-border shadow-sm rounded-[14px]">
-          <CardContent className="p-4 md:p-8">
-          <h2 className="text-lg font-semibold text-foreground mb-2">Tarif Sewa per Kategori</h2>
-          <p className="text-muted-foreground mb-6">Atur harga per kategori penggunaan (kosongkan jika tidak tersedia)</p>
-          
-            <div className="space-y-4">
-              {USAGE_CATEGORIES.map(cat => {
-                const colors = COLOR_STYLES[cat.color]
-                const rateValue = rates?.[cat.value] || { rate_per_hour: '', rate_per_day: '' }
-                return (
-                  <div key={cat.value} className={`border rounded-[14px] p-4 ${colors.bg} ${colors.border}`}>
-                    <h4 className={`font-semibold mb-3 ${colors.text}`}>{cat.label}</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Tarif per Jam (Rp)</Label>
-                        <Input 
-                          type="number" 
-                          min={0} 
-                          placeholder="0"
-                          value={rateValue.rate_per_hour}
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          onChange={(e) => setValue(`rates.${cat.value}.rate_per_hour` as any, e.target.value)}
-                          className="h-10 rounded-[10px] border-border"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Tarif per Hari (Rp)</Label>
-                        <Input 
-                          type="number" 
-                          min={0} 
-                          placeholder="0"
-                          value={rateValue.rate_per_day}
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          onChange={(e) => setValue(`rates.${cat.value}.rate_per_day` as any, e.target.value)}
-                          className="h-10 rounded-[10px] border-border"
-                        />
-                      </div>
+        <div className="space-y-6">
+          <div className="border-b border-[#E5E7EB] pb-4">
+            <h2 className="text-lg font-bold text-[#111827] flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-[#0891B2]" />
+              Tarif Sewa per Kategori
+            </h2>
+            <p className="text-sm text-[#6B7280] mt-1">Atur harga per kategori penggunaan (kosongkan jika tidak tersedia)</p>
+          </div>
+
+          <div className="space-y-4">
+            {USAGE_CATEGORIES.map(cat => {
+              const accent = ACCENT_STYLES[cat.accent]
+              const rateValue = rates?.[cat.value] || { rate_per_hour: '', rate_per_day: '' }
+              return (
+                <div key={cat.value} className={cn("border rounded-[14px] p-4 bg-white", accent.border)}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className={cn("w-2.5 h-2.5 rounded-full", accent.dot)} />
+                    <h4 className={cn("font-semibold", accent.text)}>{cat.label}</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-[#6B7280]">Tarif per Jam (Rp)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        value={rateValue.rate_per_hour}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onChange={(e) => setValue(`rates.${cat.value}.rate_per_hour` as any, e.target.value)}
+                        className="h-11 rounded-[10px] border-[#E5E7EB]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-[#6B7280]">Tarif per Hari (Rp)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        value={rateValue.rate_per_day}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onChange={(e) => setValue(`rates.${cat.value}.rate_per_day` as any, e.target.value)}
+                        className="h-11 rounded-[10px] border-[#E5E7EB]"
+                      />
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {/* Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-4">
-        <Button 
-          type="submit" 
+      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[#E5E7EB]">
+        <Button
+          type="submit"
           disabled={loading}
-          className="h-12 px-8 bg-primary hover:bg-primary/90 rounded-[10px]"
+          className="h-11 px-8 bg-[#0891B2] hover:bg-[#0891B2]/90 rounded-[10px] text-white"
         >
           {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
           {room ? 'Simpan Perubahan' : 'Tambah Ruangan'}
         </Button>
-        <Button 
-          type="button" 
-          variant="outline" 
+        <Button
+          type="button"
+          variant="outline"
           onClick={() => router.back()}
-          className="h-12 px-8 border-border hover:bg-muted rounded-[10px]"
+          className="h-11 px-8 border-[#E5E7EB] hover:bg-[#F3F4F6] rounded-[10px] text-[#374151]"
         >
           Batal
         </Button>

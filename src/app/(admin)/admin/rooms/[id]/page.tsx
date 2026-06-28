@@ -3,39 +3,17 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   ArrowLeft, Building2, MapPin, Users, Package, 
-  Plus, Edit, QrCode, ClipboardList, BookOpen
+  Plus, Edit, ClipboardList, BookOpen, DoorOpen,
+  Layers, Tag, EyeOff
 } from 'lucide-react'
 import { SafeImage } from '@/components/shared/SafeImage'
+import { ConditionBadge } from '@/components/shared/ConditionBadge'
+import { cn } from '@/lib/utils'
 
 interface Props {
   params: Promise<{ id: string }>
-}
-
-const ROOM_TYPE_LABELS: Record<string, string> = {
-  classroom: 'Ruang Kelas',
-  meeting_room: 'Ruang Rapat',
-  laboratory: 'Laboratorium',
-  auditorium: 'Auditorium',
-  library: 'Perpustakaan',
-  office: 'Kantor',
-  other: 'Lainnya',
-}
-
-const CONDITION_LABELS: Record<string, string> = {
-  good: 'Baik',
-  fair: 'Cukup',
-  poor: 'Kurang',
-  damaged: 'Rusak',
-}
-
-const CONDITION_COLORS: Record<string, string> = {
-  good: 'bg-green-100 text-green-700',
-  fair: 'bg-yellow-100 text-yellow-700',
-  poor: 'bg-orange-100 text-orange-700',
-  damaged: 'bg-red-100 text-red-700',
 }
 
 function createSlug(name: string): string {
@@ -46,9 +24,13 @@ export default async function RoomDetailPage({ params }: Props) {
   const { id: slug } = await params
   const sb = createAdminDbClient()
 
-  // Find room by slug
+  // Find room by slug (with UUID fallback for legacy URLs)
   const { data: allRooms } = await sb.from('rooms').select('id, name')
-  const matched = allRooms?.find((r: { id: string; name: string }) => createSlug(r.name) === slug)
+  let matched = allRooms?.find((r: { id: string; name: string }) => createSlug(r.name) === slug)
+  // Fallback: if slug looks like a UUID, try matching by ID directly
+  if (!matched && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)) {
+    matched = allRooms?.find((r: { id: string; name: string }) => r.id === slug)
+  }
   if (!matched) notFound()
   const id = matched.id
 
@@ -58,7 +40,7 @@ export default async function RoomDetailPage({ params }: Props) {
     .select(`
       id, name, building_id, floor_number, room_sequence, room_code, description, capacity,
       rate_per_hour, rate_per_day, is_active, is_for_rent, operating_hours, current_condition,
-      photo_url, created_by, created_at, updated_at,
+      photo_url, door_photo_url, created_by, created_at, updated_at,
       buildings(id, name, code, floor_count)
     `)
     .eq('id', id)
@@ -77,49 +59,65 @@ export default async function RoomDetailPage({ params }: Props) {
     .eq('is_active', true)
     .order('name')
 
-  // Get equipment that can be rented (optional - for future QR feature)
+  // Get equipment that can be rented
   const { data: equipment } = await sb
     .from('equipment')
-    .select('id, name, equipment_code, current_condition, ketersediaan')
+    .select('id, name, equipment_code, current_condition, ketersediaan, photo_url')
     .eq('storage_room_id', id)
     .eq('is_active', true)
     .order('name')
 
   const building = room.buildings
+  const isForRent = room.is_for_rent !== false
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <div className="min-w-0">
           <Link 
             href="/admin/rooms"
-            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2"
+            className="text-sm text-[#6B7280] hover:text-[#111827] flex items-center gap-1 mb-2 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Ruangan
           </Link>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-foreground">{room.name}</h1>
-            <Badge variant={room.is_active ? 'default' : 'secondary'}>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-bold text-[#111827]">{room.name}</h1>
+            <Badge className={cn(
+              "text-xs font-medium border-0",
+              room.is_active ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+            )}>
               {room.is_active ? 'Aktif' : 'Nonaktif'}
             </Badge>
+            {isForRent ? (
+              <span className="bg-[#0891B2] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Tag className="h-3 w-3" /> Disewakan
+              </span>
+            ) : (
+              <span className="bg-[#6B7280] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <EyeOff className="h-3 w-3" /> Tidak Disewakan
+              </span>
+            )}
           </div>
-          <p className="text-muted-foreground font-mono">{room.room_code}</p>
+          <p className="text-[#6B7280] font-mono text-sm mt-1">{room.room_code}</p>
+          {room.description && (
+            <p className="text-sm text-[#6B7280] mt-2 max-w-2xl">{room.description}</p>
+          )}
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild className="rounded-[10px]">
+        <div className="flex gap-2 shrink-0 flex-wrap">
+          <Button variant="outline" asChild className="rounded-[10px] border-[#E5E7EB] h-9">
             <Link href={`/admin/rooms/${slug}/course-schedules`}>
-              <BookOpen className="h-4 w-4 mr-2" /> Jadwal Kuliah
+              <BookOpen className="h-4 w-4 mr-2" /> Jadwal
             </Link>
           </Button>
-          <Button variant="outline" asChild className="rounded-[10px]">
+          <Button variant="outline" asChild className="rounded-[10px] border-[#E5E7EB] h-9">
             <Link href={`/admin/rooms/${slug}/edit`}>
-              <Edit className="h-4 w-4 mr-2" /> Edit Ruangan
+              <Edit className="h-4 w-4 mr-2" /> Edit
             </Link>
           </Button>
-          <Button variant="outline" asChild className="rounded-[10px]">
+          <Button asChild className="rounded-[10px] bg-[#0891B2] hover:bg-[#0891B2]/90 text-white h-9">
             <Link href={`/admin/inventory/new?roomId=${id}`}>
-              <Plus className="h-4 w-4 mr-2" /> Tambah Inventaris
+              <Plus className="h-4 w-4 mr-2" /> Inventaris
             </Link>
           </Button>
         </div>
@@ -127,10 +125,10 @@ export default async function RoomDetailPage({ params }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Room Info */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-5">
           {/* Photos */}
-          <Card className="rounded-[14px] overflow-hidden">
-            <div className="aspect-video bg-muted flex items-center justify-center relative">
+          <div className="bg-white border border-[#E5E7EB] rounded-[14px] overflow-hidden">
+            <div className="aspect-video bg-[#F3F4F6] flex items-center justify-center relative">
               {room.photo_url ? (
                 <SafeImage
                   src={room.photo_url}
@@ -138,14 +136,14 @@ export default async function RoomDetailPage({ params }: Props) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Building2 className="h-16 w-16 text-border" />
+                <DoorOpen className="h-16 w-16 text-[#D1D5DB]" />
               )}
             </div>
             {room.door_photo_url && (
-              <div className="border-t border-border">
-                <div className="p-3 bg-muted/50">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Foto Pintu</p>
-                  <div className="aspect-[16/9] max-h-32 bg-muted rounded-[10px] overflow-hidden">
+              <div className="border-t border-[#E5E7EB]">
+                <div className="p-3">
+                  <p className="text-xs font-medium text-[#6B7280] mb-2">Foto Pintu</p>
+                  <div className="aspect-[16/9] max-h-32 bg-[#F3F4F6] rounded-[10px] overflow-hidden">
                     <SafeImage
                       src={room.door_photo_url}
                       alt={`Pintu ${room.name}`}
@@ -155,132 +153,137 @@ export default async function RoomDetailPage({ params }: Props) {
                 </div>
               </div>
             )}
-          </Card>
+          </div>
 
           {/* Room Details */}
-          <Card className="rounded-[14px]">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Informasi Ruangan</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {building && (
-                <div className="flex items-start gap-3">
-                  <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Gedung</p>
-                    <p className="font-medium text-foreground">{building.name}</p>
-                    <p className="text-sm text-muted-foreground/70">{building.code}</p>
-                  </div>
-                </div>
-              )}
-
-              {room.floor_number && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Lantai</p>
-                    <p className="font-medium text-foreground">Lantai {room.floor_number}</p>
-                  </div>
-                </div>
-              )}
-
-              {room.capacity && (
-                <div className="flex items-start gap-3">
-                  <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Kapasitas</p>
-                    <p className="font-medium text-foreground">{room.capacity} orang</p>
-                  </div>
-                </div>
-              )}
-
+          <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-5 space-y-4">
+            <h3 className="font-bold text-[#111827] text-base">Informasi Ruangan</h3>
+            
+            {building && (
               <div className="flex items-start gap-3">
-                <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <Building2 className="h-5 w-5 text-[#9CA3AF] mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Nomor Urut</p>
-                  <p className="font-medium text-foreground">
-                    {room.room_sequence}
-                  </p>
+                  <p className="text-xs text-[#6B7280]">Gedung</p>
+                  <p className="font-medium text-[#111827]">{building.name}</p>
+                  <p className="text-xs text-[#9CA3AF] font-mono">{building.code}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
 
-          {/* QR Code Card - Future Feature */}
-          <Card className="bg-blue-50 border-blue-200 rounded-[14px]">
-            <CardContent className="p-4">
+            {room.floor_number && (
               <div className="flex items-start gap-3">
-                <QrCode className="h-5 w-5 text-blue-600 mt-0.5" />
+                <Layers className="h-5 w-5 text-[#9CA3AF] mt-0.5 shrink-0" />
                 <div>
-                  <p className="font-medium text-blue-900">Fitur QR Code</p>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Nantinya akan ada kartu inventaris dengan QR code untuk audit.
-                    Auditor scan untuk melihat inventaris lengkap.
-                  </p>
+                  <p className="text-xs text-[#6B7280]">Lantai</p>
+                  <p className="font-medium text-[#111827]">Lantai {room.floor_number}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
+
+            {room.capacity && (
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 text-[#9CA3AF] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs text-[#6B7280]">Kapasitas</p>
+                  <p className="font-medium text-[#111827]">{room.capacity} orang</p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-start gap-3">
+              <Package className="h-5 w-5 text-[#9CA3AF] mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-[#6B7280]">Nomor Urut</p>
+                <p className="font-medium text-[#111827]">{room.room_sequence}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className={cn("w-5 h-5 rounded-full mt-0.5 shrink-0",
+                room.current_condition === 'good' ? "bg-emerald-500" :
+                room.current_condition === 'needs_repair' ? "bg-amber-500" :
+                "bg-red-500"
+              )} />
+              <div>
+                <p className="text-xs text-[#6B7280]">Kondisi</p>
+                <p className="font-medium text-[#111827]">
+                  {room.current_condition === 'good' ? 'Baik' :
+                   room.current_condition === 'needs_repair' ? 'Perlu Perbaikan' :
+                   room.current_condition === 'damaged' ? 'Rusak' : 'Hilang'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Column - Inventory & Equipment */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-5">
           {/* Inventory Section */}
-          <Card className="rounded-[14px]">
-            <CardHeader className="flex flex-row items-center justify-between">
+          <div className="bg-white border border-[#E5E7EB] rounded-[14px]">
+            <div className="p-5 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg flex items-center gap-2 text-foreground">
-                  <ClipboardList className="h-5 w-5" />
+                <h3 className="text-base font-bold text-[#111827] flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-[#0891B2]" />
                   Inventaris Ruangan
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
+                </h3>
+                <p className="text-sm text-[#6B7280] mt-1">
                   {inventory?.length || 0} item inventaris
                 </p>
               </div>
-              <Button size="sm" asChild className="rounded-[10px]">
+              <Button size="sm" asChild className="rounded-[10px] bg-[#0891B2] hover:bg-[#0891B2]/90 text-white h-9">
                 <Link href={`/admin/inventory/new?roomId=${id}`}>
                   <Plus className="h-4 w-4 mr-1" /> Tambah
                 </Link>
               </Button>
-
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-5">
               {inventory && inventory.length > 0 ? (
-                <div className="border border-border rounded-[10px] overflow-hidden">
+                <div className="border border-[#E5E7EB] rounded-[10px] overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted">
+                    <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                       <tr>
-                        <th className="text-left px-4 py-3 font-medium text-foreground">Nama Barang</th>
-                        <th className="text-center px-4 py-3 font-medium text-foreground">Jumlah</th>
-                        <th className="text-left px-4 py-3 font-medium text-foreground">Kondisi</th>
-                        <th className="text-left px-4 py-3 font-medium text-foreground">Keterangan</th>
-                        <th className="text-right px-4 py-3 font-medium text-foreground">Aksi</th>
+                        <th className="text-left px-4 py-3 font-semibold text-[#374151] text-xs">Barang</th>
+                        <th className="text-center px-4 py-3 font-semibold text-[#374151] text-xs">Jumlah</th>
+                        <th className="text-left px-4 py-3 font-semibold text-[#374151] text-xs">Kondisi</th>
+                        <th className="text-left px-4 py-3 font-semibold text-[#374151] text-xs">Keterangan</th>
+                        <th className="text-right px-4 py-3 font-semibold text-[#374151] text-xs">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/60">
+                    <tbody className="divide-y divide-[#E5E7EB]/60">
                       {inventory.map((item) => (
-                        <tr key={item.id} className="hover:bg-muted">
+                        <tr key={item.id} className="hover:bg-[#F9FAFB] transition-colors">
                           <td className="px-4 py-3">
-                            <p className="font-medium text-foreground">{item.name}</p>
-                            {item.inventory_code && (
-                              <p className="text-xs text-muted-foreground/70 font-mono">
-                                {item.inventory_code}
-                              </p>
-                            )}
+                            <div className="flex items-center gap-3">
+                              {item.photo_url ? (
+                                <div className="h-10 w-10 rounded-lg bg-[#F3F4F6] overflow-hidden shrink-0">
+                                  <SafeImage src={item.photo_url} alt={item.name} className="h-full w-full object-cover" />
+                                </div>
+                              ) : (
+                                <div className="h-10 w-10 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                                  <Package className="h-4 w-4 text-[#D1D5DB]" />
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium text-[#111827]">{item.name}</p>
+                                {item.inventory_code && (
+                                  <p className="text-[10px] text-[#9CA3AF] font-mono">
+                                    {item.inventory_code}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <Badge variant="outline">{item.quantity}</Badge>
+                            <span className="text-sm font-semibold text-[#111827]">{item.quantity}</span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded-[10px] text-xs ${CONDITION_COLORS[item.condition] || 'bg-muted'}`}>
-                              {CONDITION_LABELS[item.condition] || item.condition}
-                            </span>
+                            <ConditionBadge condition={item.condition} />
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">
+                          <td className="px-4 py-3 text-[#6B7280]">
                             {item.notes || '-'}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <Button variant="ghost" size="sm" asChild>
+                            <Button variant="ghost" size="sm" asChild className="h-8 text-[#0891B2] hover:bg-[#0891B2]/10">
                               <Link href={`/admin/inventory/${slug}/items/${item.id}/edit`}>
                                 Edit
                               </Link>
@@ -292,52 +295,61 @@ export default async function RoomDetailPage({ params }: Props) {
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-12 border-2 border-dashed border-border rounded-[10px]">
-                  <Package className="h-12 w-12 text-border mx-auto mb-3" />
-                  <p className="text-muted-foreground">Belum ada inventaris</p>
-                  <Button variant="outline" size="sm" className="mt-3 rounded-[10px]" asChild>
+                <div className="text-center py-12 border-2 border-dashed border-[#E5E7EB] rounded-[10px]">
+                  <Package className="h-12 w-12 text-[#D1D5DB] mx-auto mb-3" />
+                  <p className="text-[#6B7280]">Belum ada inventaris</p>
+                  <Button variant="outline" size="sm" className="mt-3 rounded-[10px] border-[#E5E7EB]" asChild>
                     <Link href={`/admin/inventory/new?roomId=${id}`}>
                       <Plus className="h-4 w-4 mr-1" /> Tambah Inventaris
                     </Link>
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Equipment Section (if any) */}
           {equipment && equipment.length > 0 && (
-            <Card className="rounded-[14px]">
-              <CardHeader>
-                <CardTitle className="text-lg text-foreground">Alat Sewa di Ruangan Ini</CardTitle>
-                <p className="text-sm text-muted-foreground">
+            <div className="bg-white border border-[#E5E7EB] rounded-[14px]">
+              <div className="p-5 border-b border-[#E5E7EB]">
+                <h3 className="text-base font-bold text-[#111827]">Alat Sewa di Ruangan Ini</h3>
+                <p className="text-sm text-[#6B7280]">
                   {equipment.length} alat yang tersimpan di ruangan ini
                 </p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              </div>
+              <div className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {equipment.map((eq) => (
                     <div 
                       key={eq.id} 
-                      className="flex items-center justify-between p-3 border border-border rounded-[10px] hover:bg-muted"
+                      className="flex items-center gap-3 p-3 border border-[#E5E7EB] rounded-[10px] hover:shadow-sm transition-all bg-white"
                     >
-                      <div>
-                        <p className="font-medium text-foreground">{eq.name}</p>
-                        <p className="text-xs text-muted-foreground/70 font-mono">
+                      {eq.photo_url ? (
+                        <div className="h-12 w-12 rounded-lg bg-[#F3F4F6] overflow-hidden shrink-0">
+                          <SafeImage src={eq.photo_url} alt={eq.name} className="h-full w-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                          <Package className="h-5 w-5 text-[#D1D5DB]" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-[#111827] truncate">{eq.name}</p>
+                        <p className="text-xs text-[#9CA3AF] font-mono truncate">
                           {eq.equipment_code}
                         </p>
                       </div>
-                      <Badge 
-                        variant={eq.ketersediaan === 'tersedia' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {eq.ketersediaan}
+                      <Badge className={cn(
+                        "text-[10px] font-medium border-0 shrink-0",
+                        eq.ketersediaan === 'tersedia' ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                      )}>
+                        {eq.ketersediaan === 'tersedia' ? 'Tersedia' : 'Tidak Tersedia'}
                       </Badge>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </div>
       </div>

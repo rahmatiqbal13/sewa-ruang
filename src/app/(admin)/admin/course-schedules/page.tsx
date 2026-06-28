@@ -8,10 +8,16 @@ export default async function GlobalCourseSchedulesPage() {
   const sb = await createAdminClient()
   const { data: schedules } = await getCourseSchedules()
 
-  // Get all rooms for dropdown
+  // Get buildings for cascading dropdown
+  const { data: buildings } = await sb
+    .from('buildings')
+    .select('id, name, code, floor_count')
+    .order('name')
+
+  // Get all rooms with building & floor info for cascading dropdown
   const { data: rooms } = await sb
     .from('rooms')
-    .select('id, name, room_code')
+    .select('id, name, room_code, building_id, floor_number')
     .eq('is_active', true)
     .order('name')
 
@@ -31,6 +37,8 @@ export default async function GlobalCourseSchedulesPage() {
         schedules={schedules || []}
         userId={userId}
         rooms={rooms || []}
+        buildings={buildings || []}
+        isGlobalPage
       />
     </div>
   )

@@ -5,10 +5,14 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, DoorOpen, Users, Building2, Layers, Tag, EyeOff, Upload, Download } from 'lucide-react'
+import { Plus, DoorOpen, Users, Building2, Layers, Tag, EyeOff, Upload, Download, Eye, Pencil } from 'lucide-react'
 import { RoomActions } from './RoomActions'
 import { RoomFilters } from './RoomFilters'
 import { formatRupiah, cn } from '@/lib/utils'
+
+function createSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { ImportDialog } from '@/app/(admin)/admin/equipment/ImportDialog'
@@ -210,17 +214,17 @@ export function RoomsPageClient({
 
       {/* Selection bar */}
       {rooms && rooms.length > 0 && (
-        <div className="flex items-center gap-3 py-2 px-3 bg-muted rounded-[10px] border border-border">
+        <div className="flex items-center gap-3 py-2 px-3 bg-white rounded-[10px] border border-[#E5E7EB]">
           <Checkbox
             checked={isAllSelected}
             ref={(el) => { if (el) (el as HTMLInputElement).indeterminate = isIndeterminate }}
             onCheckedChange={handleSelectAll}
           />
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-[#6B7280]">
             {selectedIds.length > 0 ? `${selectedIds.length} dipilih` : 'Pilih semua'}
           </span>
           {selectedIds.length > 0 && (
-            <button onClick={() => setSelectedIds([])} className="text-xs text-muted-foreground/70 hover:text-muted-foreground ml-auto">
+            <button onClick={() => setSelectedIds([])} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] ml-auto transition-colors">
               Batal
             </button>
           )}
@@ -244,7 +248,7 @@ export function RoomsPageClient({
       )}
 
       {/* Rooms Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {rooms?.map((room) => {
           const building = room.buildings
           const isForRent = room.is_for_rent !== false
@@ -253,65 +257,135 @@ export function RoomsPageClient({
             <div
               key={room.id}
               className={cn(
-                'group bg-card rounded-[14px] border border-border shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-px transition-all duration-200',
+                'group overflow-hidden border border-[#E5E7EB] rounded-[14px] bg-white shadow-sm hover:shadow-md transition-all duration-300',
                 !isForRent && 'opacity-70',
-                isSelected && 'ring-2 ring-primary border-primary'
+                isSelected && 'ring-2 ring-[#0891B2] border-[#0891B2]'
               )}
             >
-              {/* Photo */}
-              <div className="relative h-36 sm:h-40 bg-muted overflow-hidden flex items-center justify-center p-2">
+              {/* Photo — Catalog Style */}
+              <div className="relative aspect-[4/3] bg-[#F3F4F6] overflow-hidden">
+                {room.photo_url ? (
+                  <SafeImage
+                    src={room.photo_url}
+                    alt={room.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fallbackClassName="w-full h-full flex items-center justify-center"
+                    fallback={<DoorOpen className="h-12 w-12 text-[#D1D5DB]" />}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <DoorOpen className="h-12 w-12 text-[#D1D5DB]" />
+                  </div>
+                )}
+
+                {/* Checkbox — bottom left */}
                 <div
-                  className={cn('absolute top-2.5 left-2.5 z-10 bg-card rounded-[10px] p-1 shadow-sm transition-all', isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}
+                  className={cn('absolute bottom-3 left-3 z-10 bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm transition-all', isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Checkbox checked={isSelected} onCheckedChange={() => handleSelectRoom(room.id)} />
                 </div>
 
-                {room.photo_url ? (
-                  <SafeImage src={room.photo_url} alt={room.name} className="object-contain w-full h-full" fallbackClassName="w-full h-full rounded-[10px]" />
-                ) : (
-                  <DoorOpen className="h-12 w-12 text-border" />
-                )}
-
+                {/* Room Code — top left */}
                 {room.room_code && (
-                  <span className="absolute bottom-2 left-2 bg-card/90 backdrop-blur text-[11px] font-bold font-mono px-2 py-0.5 rounded-[10px] text-indigo-700 border border-indigo-100">
+                  <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-white text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full">
                     {room.room_code}
                   </span>
                 )}
 
-                <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1">
-                  <Badge variant={room.is_active ? 'success' : 'secondary'} className="text-xs">
+                {/* Status Badges — top right */}
+                <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                  <Badge className={cn(
+                    "text-xs font-medium border-0",
+                    room.is_active ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                  )}>
                     {room.is_active ? 'Aktif' : 'Nonaktif'}
                   </Badge>
                   {hasIsForRent && (
                     isForRent
-                      ? <span className="bg-emerald-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5"><Tag className="h-3 w-3" /> Sewa</span>
-                      : <span className="bg-muted-foreground text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5"><EyeOff className="h-3 w-3" /> Non-sewa</span>
+                      ? <span className="bg-[#0891B2] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Disewakan</span>
+                      : <span className="bg-[#6B7280] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Tidak Disewakan</span>
                   )}
                 </div>
+
+                {/* Nonaktif overlay */}
+                {!room.is_active && (
+                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                    <span className="bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-full">NONAKTIF</span>
+                  </div>
+                )}
               </div>
 
-              {/* Info */}
-              <div className="p-3.5">
-                <h3 className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
-                  {room.name}
-                </h3>
-                <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  {building && <p className="flex items-center gap-1.5"><Building2 className="h-3 w-3 text-muted-foreground/70" /> {building.name}</p>}
-                  <div className="flex items-center gap-3">
-                    {room.floor_number && <p className="flex items-center gap-1"><Layers className="h-3 w-3 text-muted-foreground/70" /> Lt. {room.floor_number}</p>}
-                    {room.capacity && <p className="flex items-center gap-1"><Users className="h-3 w-3 text-muted-foreground/70" /> {room.capacity} org</p>}
-                  </div>
+              {/* Info — Catalog Style */}
+              <div className="p-4">
+                <Link href={`/admin/rooms/${createSlug(room.name)}`}>
+                  <h3 className={cn(
+                    "font-bold text-[#111827] text-base mb-1 truncate group-hover:text-[#0891B2] transition-colors",
+                    !room.is_active && "line-through"
+                  )} title={room.name}>
+                    {room.name}
+                  </h3>
+                </Link>
+
+                {/* Building */}
+                {building && (
+                  <p className="text-sm text-[#6B7280] flex items-center gap-1 mb-2">
+                    <Building2 className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{building.name}</span>
+                  </p>
+                )}
+
+                {/* Meta row with dot indicators */}
+                <div className="flex items-center gap-3 mb-3">
+                  {room.floor_number !== null && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                      <span className="text-xs text-[#6B7280]">Lt. {room.floor_number}</span>
+                    </div>
+                  )}
+                  {room.capacity && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-purple-500" />
+                      <span className="text-xs text-[#6B7280]">{room.capacity} org</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/60">
+
+                {/* Condition + Price */}
+                <div className="flex items-center gap-3 mb-3">
                   <div className="flex items-center gap-1.5">
-                    <ConditionBadge condition={room.current_condition} />
-                    {room.rate_per_hour && (
-                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                        {formatRupiah(room.rate_per_hour)}/jam
-                      </span>
-                    )}
+                    <div className={cn("w-2 h-2 rounded-full",
+                      room.current_condition === 'good' ? "bg-emerald-500" :
+                      room.current_condition === 'needs_repair' ? "bg-amber-500" :
+                      "bg-red-500"
+                    )} />
+                    <span className="text-xs text-[#6B7280]">
+                      {room.current_condition === 'good' ? 'Baik' :
+                       room.current_condition === 'needs_repair' ? 'Perlu Perbaikan' :
+                       room.current_condition === 'damaged' ? 'Rusak' : 'Hilang'}
+                    </span>
                   </div>
+                  {room.rate_per_hour && (
+                    <span className="text-xs font-semibold text-[#0891B2]">
+                      {formatRupiah(room.rate_per_hour)}/jam
+                    </span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 pt-3 border-t border-[#E5E7EB]">
+                  <Link
+                    href={`/admin/rooms/${createSlug(room.name)}`}
+                    className="flex-1 h-9 flex items-center justify-center rounded-lg bg-[#F3F4F6] text-[#374151] hover:bg-[#E5E7EB] transition-colors text-xs font-medium"
+                  >
+                    Detail
+                  </Link>
+                  <Link
+                    href={`/admin/rooms/${createSlug(room.name)}/edit`}
+                    className="flex-1 h-9 flex items-center justify-center rounded-lg border border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6] transition-colors text-xs font-medium"
+                  >
+                    Edit
+                  </Link>
                   <RoomActions id={room.id} name={room.name} isActive={room.is_active} isForRent={isForRent} />
                 </div>
               </div>

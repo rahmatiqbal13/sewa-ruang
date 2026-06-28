@@ -11,16 +11,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { 
-  Loader2, Info, Users, Building2, Package, Clock, Calendar, 
-  Wrench, Search, XCircle, X, MapPin
+import {
+  Loader2, Info, Users, Building2, Package, Clock, Calendar,
+  Search, XCircle, X, MapPin, Wrench, BadgeCheck, ChevronRight
 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
+import { SafeImage } from '@/components/shared/SafeImage'
 import type { BookableItem, RoomItem, EquipmentItem, UserProfile } from './page'
 import {
   EVENT_TYPES,
@@ -28,6 +28,8 @@ import {
   getBorrowerCategoryLabel,
   isFreeBooking,
 } from '@/lib/categories'
+import { BookingStepper } from './BookingStepper'
+import { BookingSummary } from './BookingSummary'
 
 interface SelectedRoom extends RoomItem {
   selected: boolean
@@ -61,7 +63,6 @@ const schema = z.object({
   estimated_participants: z.coerce.number().int().min(1).optional(),
   agreed: z.boolean().refine(v => v === true, 'Anda harus menyetujui perjanjian'),
 }).refine((data) => {
-  // Validate end date > start date
   if (data.start_date && data.end_date) {
     const start = new Date(data.start_date)
     const end = new Date(data.end_date)
@@ -74,7 +75,6 @@ const schema = z.object({
   message: 'Tanggal selesai harus setelah tanggal mulai',
   path: ['end_date'],
 }).refine((data) => {
-  // Validate max 3 days
   if (data.start_date && data.end_date) {
     const start = new Date(data.start_date)
     const end = new Date(data.end_date)
@@ -92,13 +92,13 @@ const schema = z.object({
 
 function getRateForEquipment(equipment: EquipmentItem, borrowerCategory: BorrowerCategory): number {
   const rate = equipment.rates.find(r => r.user_category === borrowerCategory)
-    ?? equipment.rates.find(r => r.user_category === 'umum') // fallback
+    ?? equipment.rates.find(r => r.user_category === 'umum')
   return rate?.rate_per_day ?? 0
 }
 
 function requiresSupervision(equipment: EquipmentItem, borrowerCategory: BorrowerCategory): boolean {
   const rate = equipment.rates.find(r => r.user_category === borrowerCategory)
-    ?? equipment.rates.find(r => r.user_category === 'umum') // fallback
+    ?? equipment.rates.find(r => r.user_category === 'umum')
   return rate?.requires_supervision ?? false
 }
 
@@ -114,19 +114,16 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  // Separate items by type
   const roomItems = useMemo(() => items.filter((i): i is RoomItem => i.item_type === 'room'), [items])
   const equipmentItems = useMemo(() => items.filter((i): i is EquipmentItem => i.item_type === 'equipment'), [items])
 
-  // Search states
   const [roomSearch, setRoomSearch] = useState('')
   const [equipmentSearch, setEquipmentSearch] = useState('')
 
-  // Filter items based on search
   const filteredRoomItems = useMemo(() => {
     if (!roomSearch.trim()) return roomItems
     const searchLower = roomSearch.toLowerCase()
-    return roomItems.filter(room => 
+    return roomItems.filter(room =>
       room.name.toLowerCase().includes(searchLower) ||
       room.room_code?.toLowerCase().includes(searchLower) ||
       room.building_name?.toLowerCase().includes(searchLower)
@@ -136,14 +133,13 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
   const filteredEquipmentItems = useMemo(() => {
     if (!equipmentSearch.trim()) return equipmentItems
     const searchLower = equipmentSearch.toLowerCase()
-    return equipmentItems.filter(equip => 
+    return equipmentItems.filter(equip =>
       equip.name.toLowerCase().includes(searchLower) ||
       equip.equipment_code?.toLowerCase().includes(searchLower) ||
       equip.merk?.toLowerCase().includes(searchLower)
     )
   }, [equipmentItems, equipmentSearch])
 
-  // Selected items state
   const [selectedRooms, setSelectedRooms] = useState<SelectedRoom[]>(
     roomItems.map(r => ({ ...r, selected: defaultItemId && defaultItemType === 'room' ? r.id === defaultItemId : false }))
   )
@@ -151,7 +147,6 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     equipmentItems.map(e => ({ ...e, selected: defaultItemId && defaultItemType === 'equipment' ? e.id === defaultItemId : false, quantity: 1 }))
   )
 
-  // Form setup
   const { register, handleSubmit, watch, formState: { errors, isValid } } = useForm<FormData>({
     resolver: zodResolver(schema) as never,
     mode: 'onChange',
@@ -163,7 +158,6 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     },
   })
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const startDate = watch('start_date')
   const startTime = watch('start_time')
   const endDate = watch('end_date')
@@ -173,45 +167,39 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
 
   const today = new Date().toISOString().split('T')[0]
 
-  // Get selected items
   const selectedRoomList = selectedRooms.filter(r => r.selected)
   const selectedEquipmentList = selectedEquipment.filter(e => e.selected)
   const hasRooms = selectedRoomList.length > 0
   const hasEquipment = selectedEquipmentList.length > 0
   const hasItems = hasRooms || hasEquipment
 
-  // Calculate totals
   const [estimatedTotal, setEstimatedTotal] = useState<number>(0)
   const [priceBreakdown, setPriceBreakdown] = useState<Array<{name: string, type: string, price: number, details: string}>>([])
 
   useEffect(() => {
-    // Derive lists inside effect to avoid infinite loop from new array refs
     const roomList = selectedRooms.filter(r => r.selected)
     const equipList = selectedEquipment.filter(e => e.selected)
     const roomsSelected = roomList.length > 0
 
-    // Check required fields based on selection
     if (!startDate || !endDate) {
       setEstimatedTotal(0)
       setPriceBreakdown([])
       return
     }
 
-    // If rooms selected, time is required
     if (roomsSelected && (!startTime || !endTime)) {
       setEstimatedTotal(0)
       setPriceBreakdown([])
       return
     }
 
-    // Parse dates
-    const start = roomsSelected && startTime 
+    const start = roomsSelected && startTime
       ? new Date(`${startDate}T${startTime}`)
       : new Date(`${startDate}T00:00`)
     const end = roomsSelected && endTime
       ? new Date(`${endDate}T${endTime}`)
       : new Date(`${endDate}T23:59`)
-    
+
     if (end <= start) {
       setEstimatedTotal(0)
       setPriceBreakdown([])
@@ -224,10 +212,8 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
     const hours = Math.ceil((end.getTime() - start.getTime()) / 3600000)
 
-    // Check free booking (perkuliahan + mahasiswa_s1)
     const isGratis = isFreeBooking(borrowerCategory, eventType, purpose)
 
-    // Calculate rooms
     if (roomsSelected && startTime && endTime && !isGratis) {
       roomList.forEach(room => {
         const ratePerDay = room.rate_per_day ?? 0
@@ -266,7 +252,6 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
       })
     }
 
-    // Calculate equipment (always daily rate, unless gratis)
     if (!isGratis) {
       equipList.forEach(equip => {
         const ratePerDay = getRateForEquipment(equip, borrowerCategory)
@@ -294,24 +279,21 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     setPriceBreakdown(breakdown)
   }, [startDate, startTime, endDate, endTime, selectedRooms, selectedEquipment, eventType, borrowerCategory, purpose])
 
-  // Toggle room selection
   function toggleRoom(roomId: string) {
-    setSelectedRooms(prev => prev.map(r => 
+    setSelectedRooms(prev => prev.map(r =>
       r.id === roomId ? { ...r, selected: !r.selected } : r
     ))
   }
 
-  // Toggle equipment selection
   function toggleEquipment(equipmentId: string) {
-    setSelectedEquipment(prev => prev.map(e => 
+    setSelectedEquipment(prev => prev.map(e =>
       e.id === equipmentId ? { ...e, selected: !e.selected } : e
     ))
   }
 
-  // Update equipment quantity
   function updateEquipmentQuantity(equipmentId: string, quantity: number) {
     if (quantity < 1) return
-    setSelectedEquipment(prev => prev.map(e => 
+    setSelectedEquipment(prev => prev.map(e =>
       e.id === equipmentId ? { ...e, quantity } : e
     ))
   }
@@ -345,30 +327,35 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
 
     toast.success('Pengajuan berhasil dikirim!')
 
-    // Notifikasi ke admin (async, tidak block user)
     fetch('/api/notifications/booking-submitted', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ booking_id: result.bookingId }),
     }).catch(() => { /* Silent fail */ })
 
-    router.push(`/bookings/${result.bookingId}`)
+    router.push(`/bookings/${result.referenceNo}`)
     setLoading(false)
   }
 
   const categoryLabel = getBorrowerCategoryLabel(borrowerCategory)
 
+  // Determine current step for stepper
+  const currentStep = !hasItems ? 0 : (!startDate || !endDate || !purpose || purpose.length < 10) ? 1 : 2
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* Profile Info Card */}
-      {profile && (
-        <Card className="bg-muted border-border">
-          <CardContent className="pt-4 pb-3 space-y-2">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Left Column - Form */}
+      <div className="lg:col-span-2 space-y-6">
+        <BookingStepper currentStep={currentStep} />
+
+        {/* Profile Info Banner */}
+        {profile && (
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <div className="bg-blue-100 p-2 rounded-full">
+              <div className="bg-blue-100 p-2 rounded-full shrink-0">
                 <Info className="h-4 w-4 text-blue-700" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground">
                   <span className="font-semibold">{profile.name}</span>
                   <span className="text-muted-foreground"> — {profile.institution}</span>
@@ -377,30 +364,42 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                   )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Tarif dihitung untuk kategori: <Badge variant="secondary" className="text-xs ml-1">{categoryLabel}</Badge>
+                  Tarif dihitung untuk kategori:{' '}
+                  <Badge variant="secondary" className="text-xs ml-1">{categoryLabel}</Badge>
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {/* Room Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Pilih Ruangan
+        {/* Free booking banner for mahasiswa_s1 */}
+        {borrowerCategory === 'mahasiswa_s1' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+            <BadgeCheck className="h-5 w-5 text-green-600 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-green-800">
+                Peminjaman Gratis untuk Mahasiswa S1
+              </p>
+              <p className="text-xs text-green-700 mt-0.5">
+                Peminjaman untuk kegiatan perkuliahan dan tugas akhir tidak dikenakan biaya.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Room Selection */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-blue-600" />
+            <h2 className="text-lg font-semibold">Pilih Ruangan</h2>
             {hasRooms && (
-              <Badge variant="secondary" className="ml-2">{selectedRoomList.length} dipilih</Badge>
+              <Badge variant="secondary">{selectedRoomList.length} dipilih</Badge>
             )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </div>
           <p className="text-sm text-muted-foreground">
             Anda dapat memilih lebih dari satu ruangan dengan waktu peminjaman yang sama
           </p>
-          
+
           {/* Room Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -421,14 +420,14 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               </button>
             )}
           </div>
-          
+
           {roomSearch && (
             <p className="text-xs text-muted-foreground">
               Menampilkan {filteredRoomItems.length} dari {roomItems.length} ruangan
             </p>
           )}
-          
-          <ScrollArea className="h-[250px] border border-border rounded-[10px] p-3">
+
+          <ScrollArea className="h-[320px] border rounded-lg p-3">
             <div className="space-y-2">
               {filteredRoomItems.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
@@ -438,16 +437,34 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               {filteredRoomItems.map((room) => {
                 const isSelected = selectedRooms.find(r => r.id === room.id)?.selected ?? false
                 return (
-                  <div 
+                  <div
                     key={room.id}
-                    className={`flex items-start gap-3 p-3 rounded-[10px] border cursor-pointer transition-colors ${
-                      isSelected ? 'bg-muted border-border' : 'hover:bg-muted'
-                    }`}
-                    onClick={() => toggleRoom(room.id)}
+                    className={cn(
+                      'flex items-start gap-3 p-3 rounded-lg border transition-colors',
+                      isSelected
+                        ? 'bg-blue-50/60 border-blue-200'
+                        : 'hover:bg-muted/50 border-border'
+                    )}
                   >
-                    <Checkbox checked={isSelected} className="mt-0.5" />
+                    <Checkbox
+                      checked={isSelected}
+                      className="mt-2 shrink-0"
+                      onCheckedChange={() => toggleRoom(room.id)}
+                      aria-label={`Pilih ${room.name}`}
+                    />
+                    <SafeImage
+                      src={room.photo_url}
+                      alt={room.name}
+                      className="w-14 h-14 rounded-lg object-contain bg-muted shrink-0"
+                      fallbackClassName="w-14 h-14 rounded-lg shrink-0"
+                      fallback={
+                        <div className="w-14 h-14 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                          <Building2 className="h-6 w-6 text-blue-400" />
+                        </div>
+                      }
+                    />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm">{room.name}</span>
                         {room.room_code && (
                           <Badge variant="outline" className="text-xs font-mono">{room.room_code}</Badge>
@@ -455,7 +472,12 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                         {room.building_name && <span>{room.building_name}</span>}
-                        {room.capacity && <span className="flex items-center gap-1"><Users className="h-3 w-3" />{room.capacity} orang</span>}
+                        {room.capacity && (
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {room.capacity} orang
+                          </span>
+                        )}
                         {room.rate_per_hour ? (
                           <span className="text-green-600 font-medium">{formatRupiah(room.rate_per_hour)}/jam</span>
                         ) : room.rate_per_day ? (
@@ -470,27 +492,25 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               })}
             </div>
           </ScrollArea>
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Equipment Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            Pilih Alat/Peralatan
+        <Separator />
+
+        {/* Equipment Selection */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Wrench className="h-5 w-5 text-amber-600" />
+            <h2 className="text-lg font-semibold">Pilih Alat/Peralatan</h2>
             {hasEquipment && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary">
                 {selectedEquipmentList.reduce((sum, e) => sum + e.quantity, 0)} unit
               </Badge>
             )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </div>
           <p className="text-sm text-muted-foreground">
             Anda dapat memilih beberapa alat untuk dipinjam pada hari yang sama
           </p>
-          
+
           {/* Equipment Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -511,14 +531,14 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               </button>
             )}
           </div>
-          
+
           {equipmentSearch && (
             <p className="text-xs text-muted-foreground">
               Menampilkan {filteredEquipmentItems.length} dari {equipmentItems.length} alat
             </p>
           )}
-          
-          <ScrollArea className="h-[250px] border border-border rounded-[10px] p-3">
+
+          <ScrollArea className="h-[320px] border rounded-lg p-3">
             <div className="space-y-2">
               {filteredEquipmentItems.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
@@ -530,21 +550,36 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 const isSelected = selected?.selected ?? false
                 const quantity = selected?.quantity ?? 1
                 const rate = getRateForEquipment(equip, borrowerCategory)
-                
+
                 return (
-                  <div 
+                  <div
                     key={equip.id}
-                    className={`flex items-start gap-3 p-3 rounded-[10px] border transition-colors ${
-                      isSelected ? 'bg-muted border-border' : 'hover:bg-muted'
-                    }`}
+                    className={cn(
+                      'flex items-start gap-3 p-3 rounded-lg border transition-colors',
+                      isSelected
+                        ? 'bg-amber-50/60 border-amber-200'
+                        : 'hover:bg-muted/50 border-border'
+                    )}
                   >
-                    <Checkbox 
-                      checked={isSelected} 
-                      className="mt-0.5"
+                    <Checkbox
+                      checked={isSelected}
+                      className="mt-2 shrink-0"
                       onCheckedChange={() => toggleEquipment(equip.id)}
+                      aria-label={`Pilih ${equip.name}`}
+                    />
+                    <SafeImage
+                      src={equip.photo_url}
+                      alt={equip.name}
+                      className="w-14 h-14 rounded-lg object-contain bg-muted shrink-0"
+                      fallbackClassName="w-14 h-14 rounded-lg shrink-0"
+                      fallback={
+                        <div className="w-14 h-14 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                          <Wrench className="h-6 w-6 text-amber-400" />
+                        </div>
+                      }
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm">{equip.name}</span>
                         {equip.equipment_code && (
                           <Badge variant="outline" className="text-xs font-mono">{equip.equipment_code}</Badge>
@@ -563,24 +598,24 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                       </div>
                     </div>
                     {isSelected && (
-                      <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                        <Button 
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
                           type="button"
-                          variant="outline" 
-                          size="icon" 
-                          className="h-7 w-7"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 min-h-[44px] min-w-[44px]"
                           aria-label="Kurangi jumlah"
                           onClick={() => updateEquipmentQuantity(equip.id, quantity - 1)}
                           disabled={quantity <= 1}
                         >
                           -
                         </Button>
-                        <span className="text-sm font-medium w-6 text-center">{quantity}</span>
-                        <Button 
+                        <span className="text-sm font-medium w-7 text-center">{quantity}</span>
+                        <Button
                           type="button"
-                          variant="outline" 
-                          size="icon" 
-                          className="h-7 w-7"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 min-h-[44px] min-w-[44px]"
                           aria-label="Tambah jumlah"
                           onClick={() => updateEquipmentQuantity(equip.id, quantity + 1)}
                         >
@@ -593,133 +628,19 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               })}
             </div>
           </ScrollArea>
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Selected Items Summary */}
-      {hasItems && (
-        <Card className="border-emerald-200 bg-emerald-50/50 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-emerald-800">
-              <Package className="h-4 w-4" />
-              Item yang Dipilih
-              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 ml-1">
-                {selectedRoomList.length + selectedEquipmentList.length} item
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-0">
-            {/* Selected Rooms */}
-            {selectedRoomList.map((room) => (
-              <div
-                key={room.id}
-                className="flex items-center gap-3 p-3 bg-white border border-emerald-100 rounded-[10px] shadow-sm"
-              >
-                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                  <Building2 className="h-4 w-4 text-blue-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm text-[#111827]">{room.name}</span>
-                    {room.room_code && (
-                      <Badge variant="outline" className="text-[10px] font-mono">{room.room_code}</Badge>
-                    )}
-                    <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]">Ruangan</Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
-                    {room.building_name && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {room.building_name}
-                      </span>
-                    )}
-                    {room.capacity && (
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {room.capacity} orang
-                      </span>
-                    )}
-                    <span className="text-green-600 font-medium">
-                      {room.rate_per_day === 0 || !room.rate_per_day ? 'Gratis' : formatRupiah(room.rate_per_day) + '/hari'}
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 shrink-0"
-                  onClick={() => toggleRoom(room.id)}
-                  aria-label={`Hapus ${room.name}`}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+        <Separator />
 
-            {/* Selected Equipment */}
-            {selectedEquipmentList.map((equip) => {
-              const rate = getRateForEquipment(equip, borrowerCategory)
-              return (
-                <div
-                  key={equip.id}
-                  className="flex items-center gap-3 p-3 bg-white border border-emerald-100 rounded-[10px] shadow-sm"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
-                    <Wrench className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm text-[#111827]">{equip.name}</span>
-                      {equip.equipment_code && (
-                        <Badge variant="outline" className="text-[10px] font-mono">{equip.equipment_code}</Badge>
-                      )}
-                      <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Alat</Badge>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
-                      {equip.merk && <span>{equip.merk}</span>}
-                      <span className="flex items-center gap-1">
-                        <Package className="h-3 w-3" />
-                        {equip.quantity} unit
-                      </span>
-                      <span className="text-green-600 font-medium">
-                        {rate === 0 ? 'Gratis' : formatRupiah(rate) + '/hari'}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 shrink-0"
-                    onClick={() => toggleEquipment(equip.id)}
-                    aria-label={`Hapus ${equip.name}`}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )
-            })}
-
-            <p className="text-xs text-emerald-700 mt-1">
-              Anda masih bisa menambah atau menghapus item dari daftar di atas.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Date & Time Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Jadwal Peminjaman
+        {/* Date & Time Selection */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-600" />
+            <h2 className="text-lg font-semibold">Jadwal Peminjaman</h2>
             <Badge variant="outline" className="text-xs font-normal">Maks. {MAX_BOOKING_DAYS} hari</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Info text based on selection */}
-          <div className="bg-muted border border-border rounded-[10px] p-3">
+          </div>
+
+          <div className="bg-muted border border-border rounded-lg p-3">
             {hasRooms ? (
               <p className="text-sm text-muted-foreground">
                 Anda meminjam ruangan. Silakan tentukan tanggal dan waktu peminjaman.
@@ -735,57 +656,57 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
             )}
           </div>
 
-          <div className={`grid gap-4 ${hasRooms ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'}`}>
+          <div className={cn('grid gap-4', hasRooms ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2')}>
             <div className="space-y-2">
               <Label htmlFor="start_date">Tanggal Mulai</Label>
-              <Input 
+              <Input
                 id="start_date"
-                type="date" 
+                type="date"
                 min={today}
                 aria-describedby={errors.start_date ? 'start_date-error' : undefined}
                 aria-invalid={!!errors.start_date}
-                {...register('start_date')} 
+                {...register('start_date')}
               />
               {errors.start_date && <p id="start_date-error" role="alert" className="text-sm text-destructive">{errors.start_date.message}</p>}
             </div>
-            
+
             {hasRooms && (
               <div className="space-y-2">
                 <Label htmlFor="start_time">Jam Mulai <span className="text-destructive">*</span></Label>
-                <Input 
+                <Input
                   id="start_time"
-                  type="time" 
+                  type="time"
                   aria-describedby={errors.start_time ? 'start_time-error' : undefined}
                   aria-invalid={!!errors.start_time}
-                  {...register('start_time')} 
+                  {...register('start_time')}
                 />
                 {errors.start_time && <p id="start_time-error" role="alert" className="text-sm text-destructive">{errors.start_time.message}</p>}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="end_date">Tanggal Selesai</Label>
-              <Input 
+              <Input
                 id="end_date"
-                type="date" 
+                type="date"
                 min={startDate || today}
                 max={startDate ? new Date(new Date(startDate).getTime() + (MAX_BOOKING_DAYS - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
                 aria-describedby={errors.end_date ? 'end_date-error' : undefined}
                 aria-invalid={!!errors.end_date}
-                {...register('end_date')} 
+                {...register('end_date')}
               />
               {errors.end_date && <p id="end_date-error" role="alert" className="text-sm text-destructive">{errors.end_date.message}</p>}
             </div>
-            
+
             {hasRooms && (
               <div className="space-y-2">
                 <Label htmlFor="end_time">Jam Selesai <span className="text-destructive">*</span></Label>
-                <Input 
+                <Input
                   id="end_time"
-                  type="time" 
+                  type="time"
                   aria-describedby={errors.end_time ? 'end_time-error' : undefined}
                   aria-invalid={!!errors.end_time}
-                  {...register('end_time')} 
+                  {...register('end_time')}
                 />
                 {errors.end_time && <p id="end_time-error" role="alert" className="text-sm text-destructive">{errors.end_time.message}</p>}
               </div>
@@ -806,68 +727,23 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
           {hasRooms && (
             <div className="space-y-2">
               <Label htmlFor="participants">Estimasi Jumlah Peserta</Label>
-              <Input 
+              <Input
                 id="participants"
-                type="number" 
-                min={1} 
+                type="number"
+                min={1}
                 placeholder="Contoh: 30"
-                {...register('estimated_participants')} 
+                {...register('estimated_participants')}
               />
             </div>
           )}
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Price Summary */}
-      {hasItems && startDate && endDate && (!hasRooms || (startTime && endTime)) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Rincian Harga
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {priceBreakdown.length > 0 && (
-              <div className="space-y-2">
-                {priceBreakdown.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0">
-                    <div className="flex items-center gap-2">
-                      {item.type === 'room' ? (
-                        <Building2 className="h-4 w-4 text-blue-500" />
-                      ) : (
-                        <Wrench className="h-4 w-4 text-amber-500" />
-                      )}
-                      <div>
-                        <p className="text-sm font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.details}</p>
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium">{formatRupiah(item.price)}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <Separator />
-            
-            <div className="flex items-center justify-between">
-              <p className="font-medium">Total Estimasi</p>
-              <p className="text-2xl font-bold text-green-600">{formatRupiah(estimatedTotal)}</p>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              *Harga dapat berubah sesuai kebijakan admin
-            </p>
-          </CardContent>
-        </Card>
-      )}
+        <Separator />
 
-      {/* Purpose & Event Type */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Tujuan Peminjaman</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        {/* Purpose & Event Type */}
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">Tujuan Peminjaman</h2>
+
           <div className="space-y-2">
             <Label htmlFor="event_type">Jenis Kegiatan <span className="text-destructive">*</span></Label>
             <select
@@ -894,45 +770,85 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
             />
             {errors.purpose && <p id="purpose-error" role="alert" className="text-sm text-destructive">{errors.purpose.message}</p>}
           </div>
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Agreement */}
-      <Card>
-        <CardContent className="pt-4">
+        <Separator />
+
+        {/* Agreement */}
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Persyaratan</h2>
           <label htmlFor="agreed" className="flex items-start gap-3 cursor-pointer">
-            <input 
+            <input
               id="agreed"
-              type="checkbox" 
-              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary" 
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
               aria-describedby={errors.agreed ? 'agreed-error' : undefined}
               aria-invalid={!!errors.agreed}
-              {...register('agreed')} 
+              {...register('agreed')}
             />
             <span className="text-sm text-muted-foreground leading-relaxed">
               Saya menyetujui <strong>perjanjian tanggung jawab peminjaman</strong> dan bertanggung jawab
-              penuh atas kondisi aset yang dipinjam selama masa peminjaman. Saya bersedia mengganti 
+              penuh atas kondisi aset yang dipinjam selama masa peminjaman. Saya bersedia mengganti
               kerugian jika terjadi kerusakan atau kehilangan.
             </span>
           </label>
-          {errors.agreed && <p id="agreed-error" role="alert" className="text-sm text-destructive mt-2">{errors.agreed.message}</p>}
-        </CardContent>
-      </Card>
+          {errors.agreed && <p id="agreed-error" role="alert" className="text-sm text-destructive">{errors.agreed.message}</p>}
+        </section>
+      </div>
 
-      {/* Submit Button */}
-      {!hasItems && (
-        <p role="alert" className="text-sm text-destructive">
-          Pilih minimal satu ruangan atau alat
-        </p>
+      {/* Right Column - Sticky Summary (desktop only) */}
+      <div className="hidden lg:block">
+        <div className="sticky top-6 space-y-4">
+          <BookingSummary
+            selectedRooms={selectedRoomList}
+            selectedEquipment={selectedEquipmentList}
+            priceBreakdown={priceBreakdown}
+            estimatedTotal={estimatedTotal}
+            onSubmit={handleSubmit(onSubmit)}
+            loading={loading}
+            isValid={isValid}
+            hasItems={hasItems}
+            borrowerCategory={borrowerCategory}
+            startDate={startDate}
+            endDate={endDate}
+            startTime={startTime}
+            endTime={endTime}
+          />
+        </div>
+      </div>
+
+      {/* Mobile Sticky Bottom Bar */}
+      {hasItems && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-50 safe-area-pb">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-xs text-muted-foreground">Total Estimasi</p>
+              <p className="text-lg font-bold text-green-600">{formatRupiah(estimatedTotal)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">{selectedRoomList.length + selectedEquipmentList.length} item dipilih</p>
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('booking-form-container')
+                  el?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className="text-xs text-blue-600 flex items-center gap-0.5 ml-auto"
+              >
+                Lihat detail <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+          <Button
+            onClick={handleSubmit(onSubmit)}
+            className="w-full h-12 text-base"
+            disabled={loading || !isValid}
+          >
+            {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+            {loading ? 'Mengirim...' : 'Kirim Pengajuan'}
+          </Button>
+        </div>
       )}
-      <Button 
-        type="submit" 
-        className="w-full h-12 text-base" 
-        disabled={loading || !isValid || !hasItems}
-      >
-        {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-        {loading ? 'Mengirim Pengajuan...' : hasItems ? 'Kirim Pengajuan' : 'Pilih Item Terlebih Dahulu'}
-      </Button>
-    </form>
+    </div>
   )
 }

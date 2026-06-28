@@ -62,11 +62,11 @@ DROP POLICY IF EXISTS "admin_manage_channel_configs" ON public.notification_chan
 DROP POLICY IF EXISTS "admin_manage_templates" ON public.notification_templates;
 DROP POLICY IF EXISTS "admin_manage_templates" ON public.agreement_templates;
 
--- Drop old helper functions
-DROP FUNCTION IF EXISTS public.get_user_role();
-DROP FUNCTION IF EXISTS public.is_super_admin();
-DROP FUNCTION IF EXISTS public.is_admin();
-DROP FUNCTION IF EXISTS public.is_admin_or_staff();
+-- Drop old helper functions (use CASCADE for functions with dependent policies)
+DROP FUNCTION IF EXISTS public.get_user_role() CASCADE;
+DROP FUNCTION IF EXISTS public.is_super_admin() CASCADE;
+DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
+DROP FUNCTION IF EXISTS public.is_admin_or_staff() CASCADE;
 
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -824,9 +824,19 @@ CREATE TRIGGER update_equipment_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 DROP TRIGGER IF EXISTS update_room_inventories_updated_at ON public.room_inventories;
-CREATE TRIGGER update_room_inventories_updated_at
+
+-- room_inventories uses last_updated_at, not updated_at
+CREATE OR REPLACE FUNCTION public.update_room_inventories_last_updated()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.last_updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_room_inventories_last_updated
   BEFORE UPDATE ON public.room_inventories
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION public.update_room_inventories_last_updated();
 
 -- ============================================================
 -- DEFAULT DATA

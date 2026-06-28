@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAdminDbClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -18,28 +18,54 @@ import {
 } from 'lucide-react'
 import { getBorrowerCategoryLabel, getEventTypeLabel, isFreeBooking, migrateBorrowerCategory } from '@/lib/categories'
 
-export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export default async function BookingDetailPage({ params }: { params: Promise<{ ref: string }> }) {
+  const { ref } = await params
   const sb = createAdminDbClient()
 
-  // Fetch booking with user data
-  const { data: booking } = await (sb.from('bookings') as any)
+  // Try fetch by reference_no (case-insensitive) first, then fallback to id
+  const { data: byRef } = await (sb.from('bookings') as any)
     .select(`
       id, reference_no, status, start_datetime, end_datetime,
       total_amount, purpose, created_at, admin_notes, snapshot_rate,
       users!user_id(id, name, email, phone, telegram_username, institution, class_division, role, borrower_category)
     `)
-    .eq('id', id)
-    .single()
+    .ilike('reference_no', ref)
+    .maybeSingle() as { data: any | null }
 
-  if (!booking) notFound()
+  let booking: any = null
+  let bookingId = ''
+
+  if (byRef) {
+    booking = byRef
+    bookingId = byRef.id
+    if (UUID_REGEX.test(ref) && byRef.reference_no !== ref) {
+      redirect(`/admin/bookings/${byRef.reference_no}`)
+    }
+  } else if (UUID_REGEX.test(ref)) {
+    // Fallback: legacy UUID direct lookup
+    const { data: byId } = await (sb.from('bookings') as any)
+      .select(`
+        id, reference_no, status, start_datetime, end_datetime,
+        total_amount, purpose, created_at, admin_notes, snapshot_rate,
+        users!user_id(id, name, email, phone, telegram_username, institution, class_division, role, borrower_category)
+      `)
+      .eq('id', ref)
+      .single() as { data: any | null }
+
+    if (!byId) notFound()
+    redirect(`/admin/bookings/${byId.reference_no}`)
+  }
+
+  if (!booking || !bookingId) notFound()
 
   // Fetch booking items separately
   const { data: bookingItemsData } = await (sb.from('booking_items') as any)
     .select(`
       id, item_type, quantity, room_id, equipment_id
     `)
-    .eq('booking_id', id)
+    .eq('booking_id', bookingId)
 
   // Fetch rooms data for items
   const roomIds = (bookingItemsData || [])
@@ -86,7 +112,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   // Fetch payments
   const { data: payments } = await (sb.from('payments') as any)
     .select('id, method, amount, status, paid_at, proof_url')
-    .eq('booking_id', id)
+    .eq('booking_id', bookingId)
     .order('created_at', { ascending: false })
 
   const borrower = booking.users
@@ -687,7 +713,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 {/* Pending Actions */}
                 {booking.status === 'pending' && (
                   <ApprovalButtons 
-                    bookingId={id} 
+                    bookingId={bookingId} 
                     borrowerCategory={borrowerCategory}
                     purpose={booking.purpose || ''}
                     eventType={eventType}
@@ -698,7 +724,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 {booking.status === 'approved' && !isGratis && booking.total_amount > 0 && (
                   <>
                     <RecordPaymentButton 
-                      bookingId={id} 
+                      bookingId={bookingId} 
                       totalAmount={booking.total_amount} 
                       paidAmount={(payments || [])
                         .filter((p: any) => p.status === 'paid')
@@ -715,7 +741,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 {/* Paid - Record Return */}
                 {(booking.status === 'approved' || booking.status === 'paid') && (
                   <Link 
-                    href={`/admin/returns/${id}`}
+                    href={`/admin/returns/${bookingId}`}
                     className={buttonVariants({ 
                       className: 'w-full rounded-[10px] bg-blue-600 hover:bg-blue-700' 
                     })}
@@ -748,7 +774,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                     </a>
                   )}
                   <a 
-                    href={`/api/bookings/${id}/formulir`}
+                    href={`/api/bookings/${bookingId}/formulir`}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center justify-center gap-1.5 h-10 rounded-[10px] bg-[#0891B2]/10 text-[#0891B2] hover:bg-[#0891B2]/20 transition-colors text-sm font-medium"

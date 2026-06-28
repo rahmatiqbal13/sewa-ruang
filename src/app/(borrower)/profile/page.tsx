@@ -485,7 +485,7 @@ export default function ProfilePage() {
                           <p className="font-semibold text-foreground">
                             Rp {booking.total_amount?.toLocaleString('id-ID')}
                           </p>
-                          <Link href={`/bookings/${booking.id}`}>
+                          <Link href={`/bookings/${booking.reference_no}`}>
                             <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
                               Detail
                             </Button>

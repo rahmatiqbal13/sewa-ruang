@@ -10,7 +10,16 @@ import {
 } from '@/components/ui/alert-dialog'
 import { cancelBookingAction } from './actions'
 
-export function CancelBookingButton({ id }: { id: string }) {
+import { cn } from '@/lib/utils'
+
+interface CancelBookingButtonProps {
+  id: string
+  variant?: 'destructive' | 'outline' | 'ghost'
+  className?: string
+  size?: 'sm' | 'default' | 'lg'
+}
+
+export function CancelBookingButton({ id, variant = 'destructive', className, size = 'sm' }: CancelBookingButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -34,7 +43,7 @@ export function CancelBookingButton({ id }: { id: string }) {
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger render={<Button variant="destructive" size="sm" disabled={loading} />}>
+      <AlertDialogTrigger render={<Button variant={variant} size={size} disabled={loading} className={cn(className)} />}>
         Batalkan
       </AlertDialogTrigger>
       <AlertDialogContent>
