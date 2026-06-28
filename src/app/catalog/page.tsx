@@ -3,6 +3,7 @@ import { createAdminDbClient } from '@/lib/supabase/server'
 import { getInstitutionProfile } from '@/lib/institution'
 import { CatalogClient } from './CatalogClient'
 import { PublicHeader, PublicFooter } from '@/components/shared/PublicLayout'
+import { parseTstzrange, safeParseDate } from '@/lib/pg-range'
 
 interface Building {
   id: string;
@@ -81,8 +82,61 @@ export default async function CatalogPage() {
     console.error('Error fetching equipment:', equipmentError)
   }
 
-  // Exclude equipment with active bookings
   const now = new Date().toISOString()
+
+  // ── Check currently active bookings for rooms (overlap with now) ──
+  const roomIds = (roomsData ?? []).map(r => r.id)
+  let activeBookingRoomIds: string[] = []
+
+  if (roomIds.length > 0) {
+    const nowDate = new Date(now)
+
+    // Check room_booking_slots — fetch all active then filter overlap with now
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: activeRoomSlots } = await (adminDb as any)
+      .from('room_booking_slots')
+      .select('room_id, slot')
+      .in('room_id', roomIds)
+      .in('status', ['pending', 'approved', 'paid', 'active'])
+
+    const roomSlotIds = new Set(
+      (activeRoomSlots ?? [])
+        .filter((s: { slot: string }) => {
+          const parsed = parseTstzrange(s.slot)
+          if (!parsed) return false
+          const start = safeParseDate(parsed.start)
+          const end = safeParseDate(parsed.end)
+          return start !== null && end !== null && start <= nowDate && end >= nowDate
+        })
+        .map((s: { room_id: string }) => s.room_id)
+    )
+
+    // Fallback: check booking_items for legacy room bookings currently active
+    const { data: activeRoomBookings } = await adminDb
+      .from('bookings')
+      .select('id')
+      .in('status', ['pending', 'approved', 'paid', 'active'])
+      .lte('start_datetime', now)
+      .gte('end_datetime', now)
+
+    const activeRoomBookingIds = (activeRoomBookings ?? []).map(b => b.id)
+
+    let roomLegacyIds = new Set<string>()
+    if (activeRoomBookingIds.length > 0) {
+      const { data: roomLegacyItems } = await adminDb
+        .from('booking_items')
+        .select('room_id')
+        .in('room_id', roomIds)
+        .eq('item_type', 'room')
+        .in('booking_id', activeRoomBookingIds)
+
+      roomLegacyIds = new Set((roomLegacyItems ?? []).map(i => i.room_id).filter((id): id is string => id !== null))
+    }
+
+    activeBookingRoomIds = Array.from(new Set([...roomSlotIds, ...roomLegacyIds])) as string[]
+  }
+
+  // ── Exclude equipment with active bookings ──
   const equipmentIds = (equipmentData ?? []).map(e => e.id)
   let activeBookingEquipIds: string[] = []
 
@@ -142,6 +196,7 @@ export default async function CatalogPage() {
           buildings={transformedBuildings}
           equipment={availableEquipment}
           institution={institution}
+          bookedRoomIds={activeBookingRoomIds}
         />
       </main>
       

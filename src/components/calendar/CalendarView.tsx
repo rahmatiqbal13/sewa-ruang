@@ -7,11 +7,11 @@ import {
   getDay,
 } from 'date-fns'
 import { id } from 'date-fns/locale'
-import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader2, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fetchPublicAvailabilityAction } from '@/app/catalog/actions'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -102,7 +102,6 @@ export function CalendarView({
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [currentDate, setCurrentDate] = useState(new Date())
-  const supabase = createClient()
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
@@ -115,89 +114,17 @@ export function CalendarView({
     setLoading(true)
     setSelectedDay(null)
     try {
-      const targetId = roomId || equipmentId || ''
-      const monthStart = startOfMonth(currentDate)
-      const monthEnd = endOfMonth(currentDate)
-      const startDate = format(monthStart, 'yyyy-MM-dd')
-      const endDate = format(monthEnd, 'yyyy-MM-dd')
+      const type = roomId ? ('room' as const) : ('equipment' as const)
+      const id = roomId || equipmentId || ''
+      const year = currentDate.getFullYear()
+      const month = currentDate.getMonth() + 1
 
-      // Step 1: Get booking_ids linked to this room/equipment
-      const { data: bookingItems } = await supabase
-        .from('booking_items')
-        .select('booking_id')
-        .eq(roomId ? 'room_id' : 'equipment_id', targetId)
-        .eq('item_type', roomId ? 'room' : 'equipment')
+      const days = await fetchPublicAvailabilityAction(type, id, year, month)
 
-      const bookingIds = (bookingItems ?? []).map((bi: { booking_id: string }) => bi.booking_id)
-
-      // Step 2: Get booking details for those IDs that overlap with current month
-      let bookings: BookingEntry[] = []
-      if (bookingIds.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data } = await (supabase as any)
-          .from('bookings')
-          .select('id, reference_no, start_datetime, end_datetime, status')
-          .in('id', bookingIds)
-          .in('status', ['pending', 'approved', 'paid', 'active', 'completed'])
-          // Overlap condition: booking starts before end of month AND ends after start of month
-          .lte('start_datetime', `${endDate}T23:59:59`)
-          .gte('end_datetime', `${startDate}T00:00:00`) as { data: BookingEntry[] | null }
-
-        bookings = data ?? []
-      }
-
-      // Step 3: Get class schedules (rooms only)
-      let classes: ClassEntry[] = []
-      if (roomId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: classData } = await (supabase as any)
-          .from('room_schedule_blocks')
-          .select('id, mata_kuliah, start_datetime, end_datetime')
-          .eq('room_id', roomId)
-          .lte('start_datetime', `${endDate}T23:59:59`)
-          .gte('end_datetime', `${startDate}T00:00:00`) as { data: ClassEntry[] | null }
-
-        classes = classData ?? []
-      }
-
-      // Build per-day map
       const map = new Map<string, DayData>()
-
-      const addToMap = (dateStr: string, type: 'booking' | 'class', entry: BookingEntry | ClassEntry) => {
-        if (!map.has(dateStr)) map.set(dateStr, { bookings: [], classes: [] })
-        if (type === 'booking') map.get(dateStr)!.bookings.push(entry as BookingEntry)
-        else map.get(dateStr)!.classes.push(entry as ClassEntry)
+      for (const day of days) {
+        map.set(day.date, { bookings: day.bookings, classes: day.classes })
       }
-
-      bookings.forEach(booking => {
-        const start = parseISO(booking.start_datetime)
-        const end = parseISO(booking.end_datetime)
-        // Only iterate days within the current month
-        const effectiveStart = start < monthStart ? monthStart : start
-        const effectiveEnd = end > monthEnd ? monthEnd : end
-        if (effectiveStart <= effectiveEnd) {
-          eachDayOfInterval({ start: effectiveStart, end: effectiveEnd }).forEach(day => {
-            if (isSameMonth(day, currentDate)) {
-              addToMap(format(day, 'yyyy-MM-dd'), 'booking', booking)
-            }
-          })
-        }
-      })
-
-      classes.forEach(cls => {
-        const start = parseISO(cls.start_datetime)
-        const end = parseISO(cls.end_datetime)
-        const effectiveStart = start < monthStart ? monthStart : start
-        const effectiveEnd = end > monthEnd ? monthEnd : end
-        if (effectiveStart <= effectiveEnd) {
-          eachDayOfInterval({ start: effectiveStart, end: effectiveEnd }).forEach(day => {
-            if (isSameMonth(day, currentDate)) {
-              addToMap(format(day, 'yyyy-MM-dd'), 'class', cls)
-            }
-          })
-        }
-      })
-
       setDayDataMap(map)
     } catch (err) {
       console.error('CalendarView fetch error:', err)
@@ -205,7 +132,7 @@ export function CalendarView({
     } finally {
       setLoading(false)
     }
-  }, [roomId, equipmentId, currentDate, supabase])
+  }, [roomId, equipmentId, currentDate])
 
   useEffect(() => {
     fetchAvailability()
@@ -516,53 +443,23 @@ export function CalendarView({
 export function MiniCalendar({ roomId, equipmentId }: { roomId?: string; equipmentId?: string }) {
   const [dayDataMap, setDayDataMap] = useState<Map<string, DayData>>(new Map())
   const [currentDate, setCurrentDate] = useState(new Date())
-  const supabase = createClient()
 
   const fetchSlots = useCallback(async () => {
     if (!roomId && !equipmentId) return
-    const targetId = roomId || equipmentId || ''
-    const monthStart = startOfMonth(currentDate)
-    const monthEnd = endOfMonth(currentDate)
-    const startDate = format(monthStart, 'yyyy-MM-dd')
-    const endDate = format(monthEnd, 'yyyy-MM-dd')
-
     try {
-      const { data: bookingItems } = await supabase
-        .from('booking_items')
-        .select('booking_id')
-        .eq(roomId ? 'room_id' : 'equipment_id', targetId)
-        .eq('item_type', roomId ? 'room' : 'equipment')
+      const type = roomId ? ('room' as const) : ('equipment' as const)
+      const id = roomId || equipmentId || ''
+      const year = currentDate.getFullYear()
+      const month = currentDate.getMonth() + 1
 
-      const bookingIds = (bookingItems ?? []).map((bi: { booking_id: string }) => bi.booking_id)
+      const days = await fetchPublicAvailabilityAction(type, id, year, month)
       const map = new Map<string, DayData>()
-
-      if (bookingIds.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data } = await (supabase as any)
-          .from('bookings')
-          .select('id, reference_no, start_datetime, end_datetime, status')
-          .in('id', bookingIds)
-          .in('status', ['pending', 'approved', 'paid', 'active'])
-          .lte('start_datetime', `${endDate}T23:59:59`)
-          .gte('end_datetime', `${startDate}T00:00:00`) as { data: BookingEntry[] | null }
-
-        ;(data ?? []).forEach(booking => {
-          const start = parseISO(booking.start_datetime)
-          const end = parseISO(booking.end_datetime)
-          const effStart = start < monthStart ? monthStart : start
-          const effEnd = end > monthEnd ? monthEnd : end
-          if (effStart <= effEnd) {
-            eachDayOfInterval({ start: effStart, end: effEnd }).forEach(day => {
-              const dateStr = format(day, 'yyyy-MM-dd')
-              if (!map.has(dateStr)) map.set(dateStr, { bookings: [], classes: [] })
-              map.get(dateStr)!.bookings.push(booking)
-            })
-          }
-        })
+      for (const day of days) {
+        map.set(day.date, { bookings: day.bookings, classes: day.classes })
       }
       setDayDataMap(map)
     } catch { /* silent */ }
-  }, [roomId, equipmentId, currentDate, supabase])
+  }, [roomId, equipmentId, currentDate])
 
   useEffect(() => { fetchSlots() }, [fetchSlots])
 
