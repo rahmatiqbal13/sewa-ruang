@@ -11,14 +11,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { 
-  Loader2, Info, Users, Building2, Package, Clock, Calendar, 
-  Wrench, Search, XCircle, X, MapPin
+import {
+  Loader2, Info, Users, Building2, Package, Clock, Calendar,
+  Wrench, Search, X, MapPin
 } from 'lucide-react'
 import { formatRupiah, cn } from '@/lib/utils'
 import type { BookableItem, RoomItem, EquipmentItem, UserProfile } from './page'
@@ -52,29 +50,29 @@ interface FormData {
 const MAX_BOOKING_DAYS = 3
 
 const schema = z.object({
-  start_date: z.string().min(1, 'Tanggal mulai wajib diisi'),
+  start_date: z.string().min(1, 'Tanggal pinjam wajib diisi'),
   start_time: z.string().optional(),
-  end_date: z.string().min(1, 'Tanggal selesai wajib diisi'),
+  end_date: z.string().min(1, 'Tanggal kembali wajib diisi'),
   end_time: z.string().optional(),
   purpose: z.string().min(10, 'Tujuan minimal 10 karakter').max(500),
   event_type: z.enum(['perkuliahan', 'event_mahasiswa', 'event_umum', 'penelitian', 'penelitian_tugas_akhir', 'lainnya']).default('lainnya'),
   estimated_participants: z.coerce.number().int().min(1).optional(),
   agreed: z.boolean().refine(v => v === true, 'Anda harus menyetujui perjanjian'),
 }).refine((data) => {
-  // Validate end date > start date
+  // Allow same-day: tanggal kembali >= tanggal pinjam
   if (data.start_date && data.end_date) {
     const start = new Date(data.start_date)
     const end = new Date(data.end_date)
-    if (end <= start) {
+    if (end < start) {
       return false
     }
   }
   return true
 }, {
-  message: 'Tanggal selesai harus setelah tanggal mulai',
+  message: 'Tanggal kembali tidak boleh sebelum tanggal pinjam',
   path: ['end_date'],
 }).refine((data) => {
-  // Validate max 3 days
+  // Validate max days
   if (data.start_date && data.end_date) {
     const start = new Date(data.start_date)
     const end = new Date(data.end_date)
@@ -221,7 +219,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     let total = 0
     const breakdown: Array<{name: string, type: string, price: number, details: string}> = []
 
-    const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
+    const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86400000))
     const hours = Math.ceil((end.getTime() - start.getTime()) / 3600000)
 
     // Check free booking (perkuliahan + mahasiswa_s1)
@@ -359,110 +357,96 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
   const categoryLabel = getBorrowerCategoryLabel(borrowerCategory)
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* Profile Info Card */}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* Profile Banner */}
       {profile && (
-        <Card className="bg-muted border-border">
-          <CardContent className="pt-4 pb-3 space-y-2">
-            <div className="flex items-start gap-3">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <Info className="h-4 w-4 text-blue-700" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-foreground">
-                  <span className="font-semibold">{profile.name}</span>
-                  <span className="text-muted-foreground"> — {profile.institution}</span>
-                  {profile.class_division && (
-                    <span className="text-muted-foreground">, {profile.class_division}</span>
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Tarif dihitung untuk kategori: <Badge variant="secondary" className="text-xs ml-1">{categoryLabel}</Badge>
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-3 px-4 py-3 bg-card rounded-[12px] border border-border">
+          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <span className="text-sm font-bold text-primary">
+              {profile.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">{profile.name}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {profile.institution}
+              {profile.class_division ? ` · ${profile.class_division}` : ''}
+            </p>
+          </div>
+          <Badge variant="secondary" className="text-xs shrink-0">{categoryLabel}</Badge>
+        </div>
       )}
 
-      {/* Room Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Pilih Ruangan
-            {hasRooms && (
-              <Badge variant="secondary" className="ml-2">{selectedRoomList.length} dipilih</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Anda dapat memilih lebih dari satu ruangan dengan waktu peminjaman yang sama
-          </p>
-          
-          {/* Room Search */}
+      {/* ── Room Selection ── */}
+      <section className="bg-card rounded-[14px] border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-muted/30">
+          <div className="h-7 w-7 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+            <Building2 className="h-3.5 w-3.5 text-blue-600" />
+          </div>
+          <p className="text-sm font-semibold">Pilih Ruangan</p>
+          {hasRooms && (
+            <Badge className="ml-auto bg-blue-100 text-blue-700 border border-blue-200 text-xs">
+              {selectedRoomList.length} dipilih
+            </Badge>
+          )}
+        </div>
+        <div className="p-4 space-y-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Cari nama ruangan, kode, atau gedung..."
               value={roomSearch}
               onChange={(e) => setRoomSearch(e.target.value)}
-              className="pl-9 pr-9"
+              className="pl-9 h-9 text-sm"
             />
             {roomSearch && (
-              <button
-                type="button"
-                onClick={() => setRoomSearch('')}
-                aria-label="Hapus pencarian ruangan"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <XCircle className="h-4 w-4" />
+              <button type="button" onClick={() => setRoomSearch('')} aria-label="Hapus pencarian"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
-          
-          {roomSearch && (
-            <p className="text-xs text-muted-foreground">
-              Menampilkan {filteredRoomItems.length} dari {roomItems.length} ruangan
-            </p>
-          )}
-          
-          <ScrollArea className="h-[250px] border border-border rounded-[10px] p-3">
-            <div className="space-y-2">
+          <ScrollArea className="h-[220px] border border-border rounded-[10px]">
+            <div className="p-2 space-y-1">
               {filteredRoomItems.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {roomSearch ? 'Tidak ada ruangan yang cocok dengan pencarian' : 'Tidak ada ruangan tersedia'}
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  {roomSearch ? 'Tidak ada ruangan yang cocok' : 'Tidak ada ruangan tersedia'}
                 </p>
               )}
               {filteredRoomItems.map((room) => {
                 const isSelected = selectedRooms.find(r => r.id === room.id)?.selected ?? false
                 return (
-                  <div 
+                  <div
                     key={room.id}
-                    className={`flex items-start gap-3 p-3 rounded-[10px] border cursor-pointer transition-colors ${
-                      isSelected ? 'bg-muted border-border' : 'hover:bg-muted'
-                    }`}
                     onClick={() => toggleRoom(room.id)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-[8px] cursor-pointer transition-colors select-none',
+                      isSelected ? 'bg-blue-50 border border-blue-200' : 'hover:bg-muted border border-transparent'
+                    )}
                   >
-                    <Checkbox checked={isSelected} className="mt-0.5" />
+                    <div className={cn(
+                      'h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                      isSelected ? 'bg-blue-600 border-blue-600' : 'border-muted-foreground/30'
+                    )}>
+                      {isSelected && (
+                        <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{room.name}</span>
-                        {room.room_code && (
-                          <Badge variant="outline" className="text-xs font-mono">{room.room_code}</Badge>
-                        )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium">{room.name}</span>
+                        {room.room_code && <span className="text-[10px] font-mono px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{room.room_code}</span>}
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                         {room.building_name && <span>{room.building_name}</span>}
-                        {room.capacity && <span className="flex items-center gap-1"><Users className="h-3 w-3" />{room.capacity} orang</span>}
-                        {room.rate_per_hour ? (
-                          <span className="text-green-600 font-medium">{formatRupiah(room.rate_per_hour)}/jam</span>
-                        ) : room.rate_per_day ? (
-                          <span className="text-green-600 font-medium">{formatRupiah(room.rate_per_day)}/hari</span>
-                        ) : (
-                          <span className="text-green-600 font-medium">Gratis</span>
-                        )}
+                        {room.capacity && <span className="flex items-center gap-0.5"><Users className="h-3 w-3" />{room.capacity}</span>}
+                        <span className="text-emerald-600 font-medium">
+                          {room.rate_per_hour ? `${formatRupiah(room.rate_per_hour)}/jam`
+                            : room.rate_per_day ? `${formatRupiah(room.rate_per_day)}/hari`
+                            : 'Gratis'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -470,468 +454,349 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
               })}
             </div>
           </ScrollArea>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Equipment Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            Pilih Alat/Peralatan
-            {hasEquipment && (
-              <Badge variant="secondary" className="ml-2">
-                {selectedEquipmentList.reduce((sum, e) => sum + e.quantity, 0)} unit
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Anda dapat memilih beberapa alat untuk dipinjam pada hari yang sama
-          </p>
-          
-          {/* Equipment Search */}
+      {/* ── Equipment Selection ── */}
+      <section className="bg-card rounded-[14px] border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-muted/30">
+          <div className="h-7 w-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+            <Wrench className="h-3.5 w-3.5 text-amber-600" />
+          </div>
+          <p className="text-sm font-semibold">Pilih Alat/Peralatan</p>
+          {hasEquipment && (
+            <Badge className="ml-auto bg-amber-100 text-amber-700 border border-amber-200 text-xs">
+              {selectedEquipmentList.length} alat
+            </Badge>
+          )}
+        </div>
+        <div className="p-4 space-y-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Cari nama alat, kode, atau merk..."
               value={equipmentSearch}
               onChange={(e) => setEquipmentSearch(e.target.value)}
-              className="pl-9 pr-9"
+              className="pl-9 h-9 text-sm"
             />
             {equipmentSearch && (
-              <button
-                type="button"
-                onClick={() => setEquipmentSearch('')}
-                aria-label="Hapus pencarian alat"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <XCircle className="h-4 w-4" />
+              <button type="button" onClick={() => setEquipmentSearch('')} aria-label="Hapus pencarian"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
-          
-          {equipmentSearch && (
-            <p className="text-xs text-muted-foreground">
-              Menampilkan {filteredEquipmentItems.length} dari {equipmentItems.length} alat
-            </p>
-          )}
-          
-          <ScrollArea className="h-[250px] border border-border rounded-[10px] p-3">
-            <div className="space-y-2">
+          <ScrollArea className="h-[220px] border border-border rounded-[10px]">
+            <div className="p-2 space-y-1">
               {filteredEquipmentItems.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {equipmentSearch ? 'Tidak ada alat yang cocok dengan pencarian' : 'Tidak ada alat tersedia'}
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  {equipmentSearch ? 'Tidak ada alat yang cocok' : 'Tidak ada alat tersedia'}
                 </p>
               )}
               {filteredEquipmentItems.map((equip) => {
                 const selected = selectedEquipment.find(e => e.id === equip.id)
                 const isSelected = selected?.selected ?? false
-                const quantity = selected?.quantity ?? 1
                 const rate = getRateForEquipment(equip, borrowerCategory)
-                
                 return (
-                  <div 
+                  <div
                     key={equip.id}
-                    className={`flex items-start gap-3 p-3 rounded-[10px] border transition-colors ${
-                      isSelected ? 'bg-muted border-border' : 'hover:bg-muted'
-                    }`}
+                    onClick={() => toggleEquipment(equip.id)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-[8px] cursor-pointer transition-colors select-none',
+                      isSelected ? 'bg-amber-50 border border-amber-200' : 'hover:bg-muted border border-transparent'
+                    )}
                   >
-                    <Checkbox 
-                      checked={isSelected} 
-                      className="mt-0.5"
-                      onCheckedChange={() => toggleEquipment(equip.id)}
-                    />
+                    <div className={cn(
+                      'h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                      isSelected ? 'bg-amber-500 border-amber-500' : 'border-muted-foreground/30'
+                    )}>
+                      {isSelected && (
+                        <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{equip.name}</span>
-                        {equip.equipment_code && (
-                          <Badge variant="outline" className="text-xs font-mono">{equip.equipment_code}</Badge>
-                        )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium">{equip.name}</span>
+                        {equip.equipment_code && <span className="text-[10px] font-mono px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{equip.equipment_code}</span>}
                         {requiresSupervision(equip, borrowerCategory) && (
-                          <Badge variant="destructive" className="text-[10px]">Perlu Pendamping</Badge>
+                          <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-700 rounded font-medium">Perlu Pendamping</span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                         {equip.merk && <span>{equip.merk}</span>}
-                        {rate > 0 ? (
-                          <span className="text-green-600 font-medium">{formatRupiah(rate)}/hari</span>
-                        ) : (
-                          <span className="text-green-600 font-medium">Gratis</span>
-                        )}
+                        <span className="text-emerald-600 font-medium">
+                          {rate > 0 ? `${formatRupiah(rate)}/hari` : 'Gratis'}
+                        </span>
                       </div>
                     </div>
-                    {isSelected && (
-                      <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                        <Button 
-                          type="button"
-                          variant="outline" 
-                          size="icon" 
-                          className="h-7 w-7"
-                          aria-label="Kurangi jumlah"
-                          onClick={() => updateEquipmentQuantity(equip.id, quantity - 1)}
-                          disabled={quantity <= 1}
-                        >
-                          -
-                        </Button>
-                        <span className="text-sm font-medium w-6 text-center">{quantity}</span>
-                        <Button 
-                          type="button"
-                          variant="outline" 
-                          size="icon" 
-                          className="h-7 w-7"
-                          aria-label="Tambah jumlah"
-                          onClick={() => updateEquipmentQuantity(equip.id, quantity + 1)}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 )
               })}
             </div>
           </ScrollArea>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Selected Items Summary */}
+      {/* ── Selected Items ── */}
       {hasItems && (
-        <Card className="border-emerald-200 bg-emerald-50/50 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-emerald-800">
-              <Package className="h-4 w-4" />
-              Item yang Dipilih
-              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 ml-1">
-                {selectedRoomList.length + selectedEquipmentList.length} item
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-0">
-            {/* Selected Rooms */}
+        <section className="bg-emerald-50 rounded-[14px] border border-emerald-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-emerald-200 flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+              <Package className="h-3.5 w-3.5 text-emerald-600" />
+            </div>
+            <p className="text-sm font-semibold text-emerald-900">Item yang Dipilih</p>
+            <Badge className="ml-auto bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs">
+              {selectedRoomList.length + selectedEquipmentList.length} item
+            </Badge>
+          </div>
+          <div className="p-3 space-y-2">
             {selectedRoomList.map((room) => (
-              <div
-                key={room.id}
-                className="flex items-center gap-3 p-3 bg-white border border-emerald-100 rounded-[10px] shadow-sm"
-              >
-                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                  <Building2 className="h-4 w-4 text-blue-600" />
+              <div key={room.id} className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-[10px] border border-emerald-100">
+                <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                  <Building2 className="h-3.5 w-3.5 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm text-[#111827]">{room.name}</span>
-                    {room.room_code && (
-                      <Badge variant="outline" className="text-[10px] font-mono">{room.room_code}</Badge>
-                    )}
-                    <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]">Ruangan</Badge>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-sm font-semibold">{room.name}</span>
+                    {room.room_code && <span className="text-[10px] font-mono px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{room.room_code}</span>}
+                    <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">Ruangan</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
-                    {room.building_name && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {room.building_name}
-                      </span>
-                    )}
-                    {room.capacity && (
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {room.capacity} orang
-                      </span>
-                    )}
-                    <span className="text-green-600 font-medium">
-                      {room.rate_per_day === 0 || !room.rate_per_day ? 'Gratis' : formatRupiah(room.rate_per_day) + '/hari'}
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {room.building_name && <span className="flex items-center gap-1 inline-flex"><MapPin className="h-3 w-3" />{room.building_name}</span>}
+                    {room.capacity && <span className="ml-2">· {room.capacity} orang</span>}
+                    <span className="ml-2 text-emerald-600 font-medium">
+                      · {!room.rate_per_day ? 'Gratis' : formatRupiah(room.rate_per_day) + '/hari'}
                     </span>
-                  </div>
+                  </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 shrink-0"
-                  onClick={() => toggleRoom(room.id)}
-                  aria-label={`Hapus ${room.name}`}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <button type="button" onClick={() => toggleRoom(room.id)} aria-label={`Hapus ${room.name}`}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
             ))}
-
-            {/* Selected Equipment */}
             {selectedEquipmentList.map((equip) => {
               const rate = getRateForEquipment(equip, borrowerCategory)
               return (
-                <div
-                  key={equip.id}
-                  className="flex items-center gap-3 p-3 bg-white border border-emerald-100 rounded-[10px] shadow-sm"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
-                    <Wrench className="h-4 w-4 text-amber-600" />
+                <div key={equip.id} className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-[10px] border border-emerald-100">
+                  <div className="h-8 w-8 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                    <Wrench className="h-3.5 w-3.5 text-amber-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm text-[#111827]">{equip.name}</span>
-                      {equip.equipment_code && (
-                        <Badge variant="outline" className="text-[10px] font-mono">{equip.equipment_code}</Badge>
-                      )}
-                      <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Alat</Badge>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-sm font-semibold">{equip.name}</span>
+                      {equip.equipment_code && <span className="text-[10px] font-mono px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{equip.equipment_code}</span>}
+                      <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">Alat</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {equip.merk && <span>{equip.merk}</span>}
-                      <span className="flex items-center gap-1">
-                        <Package className="h-3 w-3" />
-                        {equip.quantity} unit
+                      <span className="ml-1 text-emerald-600 font-medium">
+                        {equip.merk ? '· ' : ''}{rate === 0 ? 'Gratis' : formatRupiah(rate) + '/hari'}
                       </span>
-                      <span className="text-green-600 font-medium">
-                        {rate === 0 ? 'Gratis' : formatRupiah(rate) + '/hari'}
-                      </span>
-                    </div>
+                    </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 shrink-0"
-                    onClick={() => toggleEquipment(equip.id)}
-                    aria-label={`Hapus ${equip.name}`}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <button type="button" onClick={() => toggleEquipment(equip.id)} aria-label={`Hapus ${equip.name}`}
+                    className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               )
             })}
-
-            <p className="text-xs text-emerald-700 mt-1">
-              Anda masih bisa menambah atau menghapus item dari daftar di atas.
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       )}
 
-      {/* Date & Time Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Jadwal Peminjaman
-            <Badge variant="outline" className="text-xs font-normal">Maks. {MAX_BOOKING_DAYS} hari</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Info text based on selection */}
-          <div className="bg-muted border border-border rounded-[10px] p-3">
-            {hasRooms ? (
-              <p className="text-sm text-muted-foreground">
-                Anda meminjam ruangan. Silakan tentukan tanggal dan waktu peminjaman.
-              </p>
-            ) : hasEquipment ? (
-              <p className="text-sm text-muted-foreground">
-                Anda hanya meminjam alat. Silakan tentukan tanggal peminjaman (jam tidak diperlukan).
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Pilih ruangan atau alat terlebih dahulu untuk mengatur jadwal.
-              </p>
-            )}
+      {/* ── Schedule ── */}
+      <section className="bg-card rounded-[14px] border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-muted/30">
+          <div className="h-7 w-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+            <Calendar className="h-3.5 w-3.5 text-indigo-600" />
           </div>
-
-          <div className={`grid gap-4 ${hasRooms ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'}`}>
-            <div className="space-y-2">
-              <Label htmlFor="start_date">Tanggal Mulai</Label>
-              <Input 
-                id="start_date"
-                type="date" 
-                min={today}
-                aria-describedby={errors.start_date ? 'start_date-error' : undefined}
-                aria-invalid={!!errors.start_date}
-                {...register('start_date')} 
-              />
-              {errors.start_date && <p id="start_date-error" role="alert" className="text-sm text-destructive">{errors.start_date.message}</p>}
-            </div>
-            
-            {hasRooms && (
-              <div className="space-y-2">
-                <Label htmlFor="start_time">Jam Mulai <span className="text-destructive">*</span></Label>
-                <Input 
-                  id="start_time"
-                  type="time" 
-                  aria-describedby={errors.start_time ? 'start_time-error' : undefined}
-                  aria-invalid={!!errors.start_time}
-                  {...register('start_time')} 
-                />
-                {errors.start_time && <p id="start_time-error" role="alert" className="text-sm text-destructive">{errors.start_time.message}</p>}
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="end_date">Tanggal Selesai</Label>
-              <Input 
-                id="end_date"
-                type="date" 
-                min={startDate || today}
-                max={startDate ? new Date(new Date(startDate).getTime() + (MAX_BOOKING_DAYS - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
-                aria-describedby={errors.end_date ? 'end_date-error' : undefined}
-                aria-invalid={!!errors.end_date}
-                {...register('end_date')} 
-              />
-              {errors.end_date && <p id="end_date-error" role="alert" className="text-sm text-destructive">{errors.end_date.message}</p>}
-            </div>
-            
-            {hasRooms && (
-              <div className="space-y-2">
-                <Label htmlFor="end_time">Jam Selesai <span className="text-destructive">*</span></Label>
-                <Input 
-                  id="end_time"
-                  type="time" 
-                  aria-describedby={errors.end_time ? 'end_time-error' : undefined}
-                  aria-invalid={!!errors.end_time}
-                  {...register('end_time')} 
-                />
-                {errors.end_time && <p id="end_time-error" role="alert" className="text-sm text-destructive">{errors.end_time.message}</p>}
-              </div>
-            )}
-          </div>
-
-          {/* Duration info */}
+          <p className="text-sm font-semibold">Jadwal Peminjaman</p>
           {startDate && endDate && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>
-                Durasi: {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))} hari
-                {hasRooms && startTime && endTime && ` (${startTime} - ${endTime})`}
-              </span>
-            </div>
+            <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000))} hari
+              {hasRooms && startTime && endTime && ` · ${startTime}–${endTime}`}
+            </span>
           )}
+        </div>
+        <div className="p-4 space-y-4">
+          {/* Context hint */}
+          <p className="text-xs text-muted-foreground">
+            {hasRooms
+              ? 'Tentukan tanggal dan waktu mulai–selesai peminjaman ruangan.'
+              : hasEquipment
+              ? 'Isi tanggal pinjam dan kembali. Untuk 1 hari, gunakan tanggal yang sama.'
+              : 'Pilih ruangan atau alat terlebih dahulu.'}
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Tanggal Pinjam */}
+            <div className="space-y-1.5">
+              <Label htmlFor="start_date" className="text-xs font-medium">Tanggal Pinjam</Label>
+              <Input id="start_date" type="date" min={today}
+                className="h-9 text-sm"
+                aria-invalid={!!errors.start_date}
+                {...register('start_date')} />
+              {errors.start_date && <p role="alert" className="text-xs text-destructive">{errors.start_date.message}</p>}
+            </div>
+            {/* Jam Mulai (rooms only) */}
+            {hasRooms ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="start_time" className="text-xs font-medium">Jam Mulai <span className="text-destructive">*</span></Label>
+                <Input id="start_time" type="time"
+                  className="h-9 text-sm"
+                  aria-invalid={!!errors.start_time}
+                  {...register('start_time')} />
+              </div>
+            ) : <div />}
+            {/* Tanggal Kembali */}
+            <div className="space-y-1.5">
+              <Label htmlFor="end_date" className="text-xs font-medium">Tanggal Kembali</Label>
+              <Input id="end_date" type="date"
+                min={startDate || today}
+                max={startDate ? new Date(new Date(startDate).getTime() + MAX_BOOKING_DAYS * 86_400_000).toISOString().split('T')[0] : undefined}
+                className="h-9 text-sm"
+                aria-invalid={!!errors.end_date}
+                {...register('end_date')} />
+              {errors.end_date && <p role="alert" className="text-xs text-destructive">{errors.end_date.message}</p>}
+            </div>
+            {/* Jam Selesai (rooms only) */}
+            {hasRooms ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="end_time" className="text-xs font-medium">Jam Selesai <span className="text-destructive">*</span></Label>
+                <Input id="end_time" type="time"
+                  className="h-9 text-sm"
+                  aria-invalid={!!errors.end_time}
+                  {...register('end_time')} />
+              </div>
+            ) : <div />}
+          </div>
 
           {hasRooms && (
-            <div className="space-y-2">
-              <Label htmlFor="participants">Estimasi Jumlah Peserta</Label>
-              <Input 
-                id="participants"
-                type="number" 
-                min={1} 
-                placeholder="Contoh: 30"
-                {...register('estimated_participants')} 
-              />
+            <div className="space-y-1.5">
+              <Label htmlFor="participants" className="text-xs font-medium">Estimasi Jumlah Peserta</Label>
+              <Input id="participants" type="number" min={1} placeholder="Contoh: 30"
+                className="h-9 text-sm"
+                {...register('estimated_participants')} />
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Price Summary */}
+      {/* ── Price Summary ── */}
       {hasItems && startDate && endDate && (!hasRooms || (startTime && endTime)) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Rincian Harga
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {priceBreakdown.length > 0 && (
-              <div className="space-y-2">
-                {priceBreakdown.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0">
-                    <div className="flex items-center gap-2">
-                      {item.type === 'room' ? (
-                        <Building2 className="h-4 w-4 text-blue-500" />
-                      ) : (
-                        <Wrench className="h-4 w-4 text-amber-500" />
-                      )}
-                      <div>
-                        <p className="text-sm font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.details}</p>
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium">{formatRupiah(item.price)}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <Separator />
-            
-            <div className="flex items-center justify-between">
-              <p className="font-medium">Total Estimasi</p>
-              <p className="text-2xl font-bold text-green-600">{formatRupiah(estimatedTotal)}</p>
+        <section className="bg-card rounded-[14px] border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+              <Package className="h-3.5 w-3.5 text-emerald-600" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              *Harga dapat berubah sesuai kebijakan admin
-            </p>
-          </CardContent>
-        </Card>
+            <p className="text-sm font-semibold">Rincian Biaya</p>
+          </div>
+          <div className="p-4 space-y-3">
+            {priceBreakdown.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {item.type === 'room'
+                    ? <Building2 className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                    : <Wrench className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.details}</p>
+                  </div>
+                </div>
+                <p className="text-sm font-semibold shrink-0">{formatRupiah(item.price)}</p>
+              </div>
+            ))}
+            <Separator />
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Estimasi</p>
+                <p className="text-2xl font-bold text-emerald-600">{formatRupiah(estimatedTotal)}</p>
+              </div>
+              <p className="text-[10px] text-muted-foreground pb-1">*dapat berubah sesuai kebijakan</p>
+            </div>
+          </div>
+        </section>
       )}
 
-      {/* Purpose & Event Type */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Tujuan Peminjaman</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="event_type">Jenis Kegiatan <span className="text-destructive">*</span></Label>
+      {/* ── Purpose ── */}
+      <section className="bg-card rounded-[14px] border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+            <Info className="h-3.5 w-3.5 text-violet-600" />
+          </div>
+          <p className="text-sm font-semibold">Tujuan Peminjaman</p>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="event_type" className="text-xs font-medium">
+              Jenis Kegiatan <span className="text-destructive">*</span>
+            </Label>
             <select
               id="event_type"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-9 w-full rounded-[8px] border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               {...register('event_type')}
             >
               {EVENT_TYPES.map(et => (
                 <option key={et.key} value={et.key}>{et.label}</option>
               ))}
             </select>
-            <p className="text-xs text-muted-foreground">{EVENT_TYPES.find(et => et.key === eventType)?.description}</p>
+            {eventType && (
+              <p className="text-xs text-muted-foreground">
+                {EVENT_TYPES.find(et => et.key === eventType)?.description}
+              </p>
+            )}
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="purpose">Tujuan Peminjaman <span className="text-destructive">*</span></Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="purpose" className="text-xs font-medium">
+              Tujuan Peminjaman <span className="text-destructive">*</span>
+            </Label>
             <Textarea
               id="purpose"
               placeholder="Jelaskan tujuan penggunaan dengan detail (minimal 10 karakter)..."
-              rows={4}
-              aria-describedby={errors.purpose ? 'purpose-error' : undefined}
+              rows={3}
+              className="text-sm resize-none"
               aria-invalid={!!errors.purpose}
               {...register('purpose')}
             />
-            {errors.purpose && <p id="purpose-error" role="alert" className="text-sm text-destructive">{errors.purpose.message}</p>}
+            {errors.purpose && <p role="alert" className="text-xs text-destructive">{errors.purpose.message}</p>}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Agreement */}
-      <Card>
-        <CardContent className="pt-4">
-          <label htmlFor="agreed" className="flex items-start gap-3 cursor-pointer">
-            <input 
-              id="agreed"
-              type="checkbox" 
-              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary" 
-              aria-describedby={errors.agreed ? 'agreed-error' : undefined}
-              aria-invalid={!!errors.agreed}
-              {...register('agreed')} 
-            />
-            <span className="text-sm text-muted-foreground leading-relaxed">
-              Saya menyetujui <strong>perjanjian tanggung jawab peminjaman</strong> dan bertanggung jawab
-              penuh atas kondisi aset yang dipinjam selama masa peminjaman. Saya bersedia mengganti 
-              kerugian jika terjadi kerusakan atau kehilangan.
-            </span>
-          </label>
-          {errors.agreed && <p id="agreed-error" role="alert" className="text-sm text-destructive mt-2">{errors.agreed.message}</p>}
-        </CardContent>
-      </Card>
+      {/* ── Agreement ── */}
+      <label htmlFor="agreed" className="flex items-start gap-3 cursor-pointer px-4 py-3 bg-card rounded-[12px] border border-border hover:bg-muted/30 transition-colors">
+        <input
+          id="agreed"
+          type="checkbox"
+          className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary shrink-0"
+          aria-invalid={!!errors.agreed}
+          {...register('agreed')}
+        />
+        <span className="text-xs text-muted-foreground leading-relaxed">
+          Saya menyetujui <strong className="text-foreground">perjanjian tanggung jawab peminjaman</strong> dan
+          bertanggung jawab penuh atas kondisi aset yang dipinjam. Saya bersedia mengganti kerugian jika
+          terjadi kerusakan atau kehilangan.
+        </span>
+      </label>
+      {errors.agreed && <p role="alert" className="text-xs text-destructive -mt-2 px-1">{errors.agreed.message}</p>}
 
-      {/* Submit Button */}
-      {!hasItems && (
-        <p role="alert" className="text-sm text-destructive">
-          Pilih minimal satu ruangan atau alat
-        </p>
-      )}
-      <Button 
-        type="submit" 
-        className="w-full h-12 text-base" 
+      {/* ── Submit ── */}
+      <Button
+        type="submit"
+        className="w-full h-12 text-base font-semibold"
         disabled={loading || !isValid || !hasItems}
       >
-        {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-        {loading ? 'Mengirim Pengajuan...' : hasItems ? 'Kirim Pengajuan' : 'Pilih Item Terlebih Dahulu'}
+        {loading
+          ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Mengirim Pengajuan...</>
+          : hasItems
+          ? <><Calendar className="mr-2 h-5 w-5" />Kirim Pengajuan</>
+          : 'Pilih Item Terlebih Dahulu'
+        }
       </Button>
     </form>
   )

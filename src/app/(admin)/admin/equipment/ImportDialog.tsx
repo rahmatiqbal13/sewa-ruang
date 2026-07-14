@@ -360,13 +360,18 @@ export function ImportDialog({
                 </p>
                 
                 {/* Stats */}
-                <div className="flex gap-4 mt-3 text-sm">
+                <div className="flex flex-wrap gap-4 mt-3 text-sm">
                   <span className="text-muted-foreground">
                     Total: <strong>{result.totalRows}</strong> baris
                   </span>
                   <span className="text-green-600">
                     Berhasil: <strong>{result.successCount}</strong>
                   </span>
+                  {result.skippedCount > 0 && (
+                    <span className="text-yellow-600">
+                      Dilewati: <strong>{result.skippedCount}</strong>
+                    </span>
+                  )}
                   {result.errorCount > 0 && (
                     <span className="text-red-600">
                       Gagal: <strong>{result.errorCount}</strong>
