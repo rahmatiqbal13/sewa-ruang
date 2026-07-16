@@ -86,6 +86,7 @@ export function ImportDialog({
         message: 'Terjadi kesalahan saat mengimport',
         totalRows: 0,
         successCount: 0,
+        skippedCount: 0,
         errorCount: 1,
         importedIds: [],
         errors: [{ row: 0, message: error instanceof Error ? error.message : 'Unknown error' }]
