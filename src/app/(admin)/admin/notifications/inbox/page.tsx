@@ -243,7 +243,7 @@ export default async function NotificationInboxPage({
       description: `${b.reference_no} — ${b.purpose} oleh ${user.name ?? 'Unknown'}`,
       timestamp: b.created_at,
       status: b.status,
-      link: `/admin/bookings/${b.id}`,
+      link: `/admin/bookings/${b.reference_no}`,
       meta: { instansi: user.institution || '-', jumlah: b.total_amount?.toString() ?? '0' },
     })
   }
@@ -258,7 +258,7 @@ export default async function NotificationInboxPage({
       description: `${b.reference_no} — ${b.purpose} oleh ${user.name ?? 'Unknown'}`,
       timestamp: b.created_at,
       status: b.status,
-      link: `/admin/bookings/${b.id}`,
+      link: `/admin/bookings/${b.reference_no}`,
       meta: { instansi: user.institution || '-' },
     })
   }
@@ -273,7 +273,7 @@ export default async function NotificationInboxPage({
       description: `${b.reference_no} — ${b.purpose} oleh ${user.name ?? 'Unknown'}`,
       timestamp: b.created_at,
       status: b.status,
-      link: `/admin/bookings/${b.id}`,
+      link: `/admin/bookings/${b.reference_no}`,
       meta: { instansi: user.institution || '-' },
     })
   }
@@ -288,7 +288,7 @@ export default async function NotificationInboxPage({
       description: `${b.reference_no} — ${b.purpose} oleh ${user.name ?? 'Unknown'}`,
       timestamp: b.created_at,
       status: b.status,
-      link: `/admin/bookings/${b.id}`,
+      link: `/admin/bookings/${b.reference_no}`,
       meta: { instansi: user.institution || '-' },
     })
   }
@@ -303,7 +303,7 @@ export default async function NotificationInboxPage({
       description: `${b.reference_no} — ${b.purpose} oleh ${user.name ?? 'Unknown'}`,
       timestamp: b.created_at,
       status: b.status,
-      link: `/admin/bookings/${b.id}`,
+      link: `/admin/bookings/${b.reference_no}`,
       meta: { instansi: user.institution || '-' },
     })
   }
@@ -321,7 +321,7 @@ export default async function NotificationInboxPage({
       title: 'Keterlambatan Pengembalian',
       description: `${b.reference_no} — ${b.purpose} oleh ${user.name ?? 'Unknown'}`,
       timestamp: b.end_datetime,
-      link: `/admin/bookings/${b.id}`,
+      link: `/admin/bookings/${b.reference_no}`,
       meta: { deadline: b.end_datetime, instansi: user.institution || '-' },
     })
   }

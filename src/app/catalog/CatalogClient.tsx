@@ -41,7 +41,7 @@ import {
 import { formatRupiah, formatDateTime, cn } from '@/lib/utils'
 import { SafeImage } from '@/components/shared/SafeImage'
 import { EmptyState } from '@/components/ui/empty-state'
-import { createClient } from '@/lib/supabase/client'
+import { fetchPublicScheduleAction } from '@/app/catalog/actions'
 
 const PAGE_SIZE = 12
 
@@ -113,6 +113,7 @@ interface Props {
   buildings: BuildingRow[]
   equipment: EquipmentRow[]
   institution: InstitutionProfile | null
+  bookedRoomIds?: string[]
 }
 
 const EQUIPMENT_CATEGORIES = [
@@ -228,7 +229,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
   )
 }
 
-function RoomCard({ room, onOpenCalendar, onOpenSchedule }: { room: Room & { buildingName: string; buildingCode?: string; displayName: string }; onOpenCalendar: (id: string, name: string) => void; onOpenSchedule: (id: string, name: string) => void }) {
+function RoomCard({ room, onOpenCalendar, onOpenSchedule, isBooked }: { room: Room & { buildingName: string; buildingCode?: string; displayName: string }; onOpenCalendar: (id: string, name: string) => void; onOpenSchedule: (id: string, name: string) => void; isBooked?: boolean }) {
   const lowestRate = useMemo(() => getLowestRoomRate(room.room_rates), [room.room_rates])
   const slug = createSlug(room.name)
 
@@ -268,11 +269,13 @@ function RoomCard({ room, onOpenCalendar, onOpenSchedule }: { room: Room & { bui
           <div className="absolute top-2 right-2">
             <Badge className={cn(
               "text-[10px] font-medium border-0 px-2 py-0.5",
-              room.current_condition === 'good'
-                ? "bg-emerald-500 text-white"
-                : "bg-red-500 text-white"
+              isBooked
+                ? "bg-red-500 text-white"
+                : room.current_condition === 'good'
+                  ? "bg-emerald-500 text-white"
+                  : "bg-red-500 text-white"
             )}>
-              {room.current_condition === 'good' ? 'Tersedia' : 'Sedang Digunakan'}
+              {isBooked ? 'Sedang Digunakan' : room.current_condition === 'good' ? 'Tersedia' : 'Sedang Digunakan'}
             </Badge>
           </div>
         </div>
@@ -827,7 +830,7 @@ function FilterSidebar({
   )
 }
 
-export function CatalogClient({ buildings, equipment }: Props) {
+export function CatalogClient({ buildings, equipment, bookedRoomIds = [] }: Props) {
   // Tab state: 'all' | 'rooms' | 'equipment'
   const [activeTab, setActiveTab] = useState<'all' | 'rooms' | 'equipment'>('all')
   
@@ -1189,7 +1192,7 @@ export function CatalogClient({ buildings, equipment }: Props) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {paginatedItems.map((item) => (
                     item.type === 'room' ? (
-                      <RoomCard key={item.data.id} room={item.data as Room & { buildingName: string; buildingCode?: string; displayName: string }} onOpenCalendar={openRoomCalendar} onOpenSchedule={openRoomSchedule} />
+                      <RoomCard key={item.data.id} room={item.data as Room & { buildingName: string; buildingCode?: string; displayName: string }} onOpenCalendar={openRoomCalendar} onOpenSchedule={openRoomSchedule} isBooked={bookedRoomIds.includes(item.data.id)} />
                     ) : (
                       <EquipmentCard key={item.data.id} item={item.data as EquipmentRow & { displayName: string }} onOpenCalendar={openEquipmentCalendar} onOpenSchedule={openEquipmentSchedule} />
                     )
@@ -1278,7 +1281,6 @@ function ScheduleView({ type, id, name }: { type: 'room' | 'equipment'; id: stri
   const [loading, setLoading] = useState(true)
   const [bookings, setBookings] = useState<ScheduleBooking[]>([])
   const [classes, setClasses] = useState<ScheduleClass[]>([])
-  const supabase = createClient()
 
   useEffect(() => {
     if (!id) return
@@ -1286,49 +1288,8 @@ function ScheduleView({ type, id, name }: { type: 'room' | 'equipment'; id: stri
 
     async function fetchSchedule() {
       setLoading(true)
-      const now = new Date().toISOString()
-
       try {
-        // Fetch booking items
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: bookingItems } = await (supabase as any)
-          .from('booking_items')
-          .select('booking_id')
-          .eq(type === 'room' ? 'room_id' : 'equipment_id', id)
-          .eq('item_type', type)
-
-        const bookingIds = (bookingItems ?? []).map((bi: { booking_id: string }) => bi.booking_id)
-
-        let fetchedBookings: ScheduleBooking[] = []
-        if (bookingIds.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data } = await (supabase as any)
-            .from('bookings')
-            .select('id, reference_no, start_datetime, end_datetime, status, purpose')
-            .in('id', bookingIds)
-            .in('status', ['pending', 'approved', 'paid', 'active'])
-            .gte('end_datetime', now)
-            .order('start_datetime', { ascending: true })
-            .limit(20)
-
-          fetchedBookings = data ?? []
-        }
-
-        let fetchedClasses: ScheduleClass[] = []
-        if (type === 'room') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: classData } = await (supabase as any)
-            .from('room_schedule_blocks')
-            .select('id, mata_kuliah, dosen, kelas, semester, start_datetime, end_datetime')
-            .eq('room_id', id)
-            .eq('schedule_type', 'class')
-            .gte('end_datetime', now)
-            .order('start_datetime', { ascending: true })
-            .limit(10)
-
-          fetchedClasses = classData ?? []
-        }
-
+        const { bookings: fetchedBookings, classes: fetchedClasses } = await fetchPublicScheduleAction(type, id)
         if (!cancelled) {
           setBookings(fetchedBookings)
           setClasses(fetchedClasses)
@@ -1342,7 +1303,7 @@ function ScheduleView({ type, id, name }: { type: 'room' | 'equipment'; id: stri
 
     fetchSchedule()
     return () => { cancelled = true }
-  }, [type, id, supabase])
+  }, [type, id])
 
   const STATUS_LABEL: Record<string, string> = {
     pending: 'Menunggu Konfirmasi',

@@ -165,7 +165,7 @@ export default async function NewBookingPage({
   const items: BookableItem[] = [...roomItems, ...equipmentItems]
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div id="booking-form-container" className="max-w-6xl mx-auto space-y-6 pb-28 lg:pb-0">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Ajukan Peminjaman</h1>

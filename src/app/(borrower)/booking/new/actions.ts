@@ -347,6 +347,26 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
     return { success: false, error: 'Gagal menyimpan item peminjaman. Silakan coba lagi.' }
   }
 
+  // ── Insert room booking slots for tracking ────────────────────────────────
+  if (hasRooms) {
+    const slotRange = `["${startDt.toISOString()}", "${endDt.toISOString()}"]`
+    const roomSlots = room_ids.map(roomId => ({
+      room_id: roomId,
+      booking_id: booking.id,
+      slot: slotRange,
+      status: 'pending' as const,
+    }))
+
+    const { error: roomSlotsError } = await supabase
+      .from('room_booking_slots')
+      .insert(roomSlots)
+
+    if (roomSlotsError) {
+      console.error('Error inserting room booking slots:', roomSlotsError)
+      // Don't fail the booking, just log
+    }
+  }
+
   // ── Insert equipment booking slots for tracking ────────────────────────────
   if (hasEquipment) {
     const slotRange = `["${startDt.toISOString()}", "${endDt.toISOString()}"]`

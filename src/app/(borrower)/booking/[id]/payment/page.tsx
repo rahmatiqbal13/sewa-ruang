@@ -417,7 +417,7 @@ export default function PaymentPage() {
         <h1 className="text-2xl font-bold text-foreground">Peminjaman Gratis</h1>
         <p className="text-muted-foreground mt-2">Peminjaman ini tidak dikenakan biaya</p>
         <div className="mt-6 flex gap-4">
-          <Link href={`/bookings/${bookingId}`}>
+          <Link href={`/bookings/${booking.reference_no}`}>
             <Button variant="outline">Lihat Detail Booking</Button>
           </Link>
           <Link href="/bookings">
@@ -436,7 +436,7 @@ export default function PaymentPage() {
         <h1 className="text-2xl font-bold text-foreground">Pembayaran Lunas!</h1>
         <p className="text-muted-foreground mt-2">Terima kasih, pembayaran Anda sudah diverifikasi</p>
         <div className="mt-6 flex gap-4">
-          <Link href={`/bookings/${bookingId}`}>
+          <Link href={`/bookings/${booking.reference_no}`}>
             <Button variant="outline">Lihat Detail Booking</Button>
           </Link>
           <Link href="/bookings">
@@ -452,7 +452,7 @@ export default function PaymentPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <Link href={`/bookings/${bookingId}`} className="inline-flex items-center text-muted-foreground hover:text-foreground">
+          <Link href={`/bookings/${booking.reference_no}`} className="inline-flex items-center text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Kembali ke Booking
           </Link>

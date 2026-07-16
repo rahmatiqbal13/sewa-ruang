@@ -179,7 +179,7 @@ export default async function MyBookingsPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link 
-                          href={`/bookings/${booking.id}`} 
+                          href={`/bookings/${booking.reference_no}`} 
                           className={buttonVariants({ variant: 'outline', size: 'sm' })}
                         >
                           Detail
@@ -237,7 +237,7 @@ export default async function MyBookingsPage() {
                   </span>
                   <div className="flex gap-2">
                     <Link 
-                      href={`/bookings/${booking.id}`} 
+                      href={`/bookings/${booking.reference_no}`} 
                       className={buttonVariants({ variant: 'outline', size: 'sm' })}
                     >
                       Detail

@@ -168,7 +168,7 @@ async function TransaksiTab() {
                     <td><span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', cfg.color)}>{cfg.label}</span></td>
                     <td>
                       <div className="flex gap-1.5">
-                        <Link href={`/admin/bookings/${booking.id}`} className="icon-btn" aria-label="Lihat detail">
+                        <Link href={`/admin/bookings/${booking.reference_no}`} className="icon-btn" aria-label="Lihat detail">
                           <Eye className="h-4 w-4" />
                         </Link>
                       </div>

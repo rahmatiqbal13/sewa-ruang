@@ -132,7 +132,7 @@ export function BookingQuickActions({
       </DropdownMenu>
 
       {/* Detail */}
-      <Link href={`/admin/bookings/${bookingId}`} className="inline-flex items-center justify-center h-7 w-7 rounded-md border border-input bg-background hover:bg-accent transition-colors">
+      <Link href={`/admin/bookings/${bookingRef}`} className="inline-flex items-center justify-center h-7 w-7 rounded-md border border-input bg-background hover:bg-accent transition-colors">
         <Eye className="h-3.5 w-3.5" />
       </Link>
     </div>

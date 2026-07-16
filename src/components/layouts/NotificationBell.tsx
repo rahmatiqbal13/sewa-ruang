@@ -141,7 +141,7 @@ export function NotificationBell() {
             daysLate >= 1 ? `${daysLate} hari telat` : 'jatuh tempo hari ini'
           }`,
           time: b.end_datetime,
-          href: `/admin/bookings/${b.id}`,
+          href: `/admin/bookings/${b.reference_no}`,
         })
       }
 
@@ -159,7 +159,7 @@ export function NotificationBell() {
             hoursLeft <= 1 ? 'kurang dari 1 jam' : `${hoursLeft} jam lagi`
           }`,
           time: b.end_datetime,
-          href: `/admin/bookings/${b.id}`,
+          href: `/admin/bookings/${b.reference_no}`,
         })
       }
 
@@ -174,7 +174,7 @@ export function NotificationBell() {
           title: `Pengajuan baru — ${b.reference_no}`,
           subtitle: `${b.users?.name ?? 'Peminjam'} · ${assetName}`,
           time: b.created_at,
-          href: `/admin/bookings/${b.id}`,
+          href: `/admin/bookings/${b.reference_no}`,
         })
       }
 

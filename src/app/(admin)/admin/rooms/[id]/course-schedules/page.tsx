@@ -44,8 +44,8 @@ export default async function RoomCourseSchedulesPage({
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Jadwal Kuliah - {matched.name}</h1>
-          <p className="text-muted-foreground">Kelola jadwal kuliah berulang per semester</p>
+          <h1 className="text-2xl font-bold text-[#111827]">Jadwal Kuliah - {matched.name}</h1>
+          <p className="text-[#6B7280]">Kelola jadwal kuliah berulang per semester</p>
         </div>
       </div>
 

@@ -90,13 +90,13 @@ const schema = z.object({
 
 function getRateForEquipment(equipment: EquipmentItem, borrowerCategory: BorrowerCategory): number {
   const rate = equipment.rates.find(r => r.user_category === borrowerCategory)
-    ?? equipment.rates.find(r => r.user_category === 'umum') // fallback
+    ?? equipment.rates.find(r => r.user_category === 'umum')
   return rate?.rate_per_day ?? 0
 }
 
 function requiresSupervision(equipment: EquipmentItem, borrowerCategory: BorrowerCategory): boolean {
   const rate = equipment.rates.find(r => r.user_category === borrowerCategory)
-    ?? equipment.rates.find(r => r.user_category === 'umum') // fallback
+    ?? equipment.rates.find(r => r.user_category === 'umum')
   return rate?.requires_supervision ?? false
 }
 
@@ -112,19 +112,16 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  // Separate items by type
   const roomItems = useMemo(() => items.filter((i): i is RoomItem => i.item_type === 'room'), [items])
   const equipmentItems = useMemo(() => items.filter((i): i is EquipmentItem => i.item_type === 'equipment'), [items])
 
-  // Search states
   const [roomSearch, setRoomSearch] = useState('')
   const [equipmentSearch, setEquipmentSearch] = useState('')
 
-  // Filter items based on search
   const filteredRoomItems = useMemo(() => {
     if (!roomSearch.trim()) return roomItems
     const searchLower = roomSearch.toLowerCase()
-    return roomItems.filter(room => 
+    return roomItems.filter(room =>
       room.name.toLowerCase().includes(searchLower) ||
       room.room_code?.toLowerCase().includes(searchLower) ||
       room.building_name?.toLowerCase().includes(searchLower)
@@ -134,14 +131,13 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
   const filteredEquipmentItems = useMemo(() => {
     if (!equipmentSearch.trim()) return equipmentItems
     const searchLower = equipmentSearch.toLowerCase()
-    return equipmentItems.filter(equip => 
+    return equipmentItems.filter(equip =>
       equip.name.toLowerCase().includes(searchLower) ||
       equip.equipment_code?.toLowerCase().includes(searchLower) ||
       equip.merk?.toLowerCase().includes(searchLower)
     )
   }, [equipmentItems, equipmentSearch])
 
-  // Selected items state
   const [selectedRooms, setSelectedRooms] = useState<SelectedRoom[]>(
     roomItems.map(r => ({ ...r, selected: defaultItemId && defaultItemType === 'room' ? r.id === defaultItemId : false }))
   )
@@ -149,7 +145,6 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     equipmentItems.map(e => ({ ...e, selected: defaultItemId && defaultItemType === 'equipment' ? e.id === defaultItemId : false, quantity: 1 }))
   )
 
-  // Form setup
   const { register, handleSubmit, watch, formState: { errors, isValid } } = useForm<FormData>({
     resolver: zodResolver(schema) as never,
     mode: 'onChange',
@@ -161,7 +156,6 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     },
   })
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const startDate = watch('start_date')
   const startTime = watch('start_time')
   const endDate = watch('end_date')
@@ -171,45 +165,39 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
 
   const today = new Date().toISOString().split('T')[0]
 
-  // Get selected items
   const selectedRoomList = selectedRooms.filter(r => r.selected)
   const selectedEquipmentList = selectedEquipment.filter(e => e.selected)
   const hasRooms = selectedRoomList.length > 0
   const hasEquipment = selectedEquipmentList.length > 0
   const hasItems = hasRooms || hasEquipment
 
-  // Calculate totals
   const [estimatedTotal, setEstimatedTotal] = useState<number>(0)
   const [priceBreakdown, setPriceBreakdown] = useState<Array<{name: string, type: string, price: number, details: string}>>([])
 
   useEffect(() => {
-    // Derive lists inside effect to avoid infinite loop from new array refs
     const roomList = selectedRooms.filter(r => r.selected)
     const equipList = selectedEquipment.filter(e => e.selected)
     const roomsSelected = roomList.length > 0
 
-    // Check required fields based on selection
     if (!startDate || !endDate) {
       setEstimatedTotal(0)
       setPriceBreakdown([])
       return
     }
 
-    // If rooms selected, time is required
     if (roomsSelected && (!startTime || !endTime)) {
       setEstimatedTotal(0)
       setPriceBreakdown([])
       return
     }
 
-    // Parse dates
-    const start = roomsSelected && startTime 
+    const start = roomsSelected && startTime
       ? new Date(`${startDate}T${startTime}`)
       : new Date(`${startDate}T00:00`)
     const end = roomsSelected && endTime
       ? new Date(`${endDate}T${endTime}`)
       : new Date(`${endDate}T23:59`)
-    
+
     if (end <= start) {
       setEstimatedTotal(0)
       setPriceBreakdown([])
@@ -222,10 +210,8 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86400000))
     const hours = Math.ceil((end.getTime() - start.getTime()) / 3600000)
 
-    // Check free booking (perkuliahan + mahasiswa_s1)
     const isGratis = isFreeBooking(borrowerCategory, eventType, purpose)
 
-    // Calculate rooms
     if (roomsSelected && startTime && endTime && !isGratis) {
       roomList.forEach(room => {
         const ratePerDay = room.rate_per_day ?? 0
@@ -264,7 +250,6 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
       })
     }
 
-    // Calculate equipment (always daily rate, unless gratis)
     if (!isGratis) {
       equipList.forEach(equip => {
         const ratePerDay = getRateForEquipment(equip, borrowerCategory)
@@ -292,25 +277,15 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     setPriceBreakdown(breakdown)
   }, [startDate, startTime, endDate, endTime, selectedRooms, selectedEquipment, eventType, borrowerCategory, purpose])
 
-  // Toggle room selection
   function toggleRoom(roomId: string) {
-    setSelectedRooms(prev => prev.map(r => 
+    setSelectedRooms(prev => prev.map(r =>
       r.id === roomId ? { ...r, selected: !r.selected } : r
     ))
   }
 
-  // Toggle equipment selection
   function toggleEquipment(equipmentId: string) {
-    setSelectedEquipment(prev => prev.map(e => 
+    setSelectedEquipment(prev => prev.map(e =>
       e.id === equipmentId ? { ...e, selected: !e.selected } : e
-    ))
-  }
-
-  // Update equipment quantity
-  function updateEquipmentQuantity(equipmentId: string, quantity: number) {
-    if (quantity < 1) return
-    setSelectedEquipment(prev => prev.map(e => 
-      e.id === equipmentId ? { ...e, quantity } : e
     ))
   }
 
@@ -343,14 +318,13 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
 
     toast.success('Pengajuan berhasil dikirim!')
 
-    // Notifikasi ke admin (async, tidak block user)
     fetch('/api/notifications/booking-submitted', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ booking_id: result.bookingId }),
     }).catch(() => { /* Silent fail */ })
 
-    router.push(`/bookings/${result.bookingId}`)
+    router.push(`/bookings/${result.referenceNo}`)
     setLoading(false)
   }
 
@@ -494,8 +468,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
                 </p>
               )}
               {filteredEquipmentItems.map((equip) => {
-                const selected = selectedEquipment.find(e => e.id === equip.id)
-                const isSelected = selected?.selected ?? false
+                const isSelected = selectedEquipment.find(e => e.id === equip.id)?.selected ?? false
                 const rate = getRateForEquipment(equip, borrowerCategory)
                 return (
                   <div

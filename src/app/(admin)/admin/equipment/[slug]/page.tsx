@@ -172,6 +172,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
             status: b.status,
             booking: {
               id: b.id,
+              reference_no: b.reference_no,
               booking_code: b.reference_no,
               user: { full_name: b.user_id, email: '' },
               purpose: b.purpose,
@@ -238,6 +239,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
             status: b.status,
             booking: {
               id: b.id,
+              reference_no: b.reference_no,
               booking_code: b.reference_no,
               user: { full_name: b.user_id, email: '' },
               purpose: b.purpose,
@@ -599,6 +601,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
                     status: string
                     booking: {
                       id: string
+                      reference_no: string
                       booking_code: string
                       user: { full_name: string; email: string }
                       purpose: string
@@ -655,7 +658,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
                             </p>
                           </div>
                           <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/admin/bookings/${bookingSlot.booking.id}`}>
+                            <Link href={`/admin/bookings/${bookingSlot.booking.reference_no}`}>
                               Detail
                             </Link>
                           </Button>
@@ -690,6 +693,7 @@ export default async function EquipmentDetailPage({ params }: Props) {
                     status: string
                     booking: {
                       id: string
+                      reference_no: string
                       booking_code: string
                       user: { full_name: string; email: string }
                       purpose: string

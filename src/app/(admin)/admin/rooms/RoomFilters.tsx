@@ -61,14 +61,14 @@ export function RoomFilters({ buildings }: RoomFiltersProps) {
   }
 
   return (
-    <div className="bg-card rounded-[14px] border border-border p-4 space-y-4">
-      <div className="flex items-center gap-2 text-foreground">
+    <div className="bg-white rounded-[14px] border border-[#E5E7EB] p-4 space-y-4">
+      <div className="flex items-center gap-2 text-[#374151]">
         <Filter className="h-4 w-4" />
-        <span className="font-medium">Filter</span>
+        <span className="font-semibold text-sm">Filter</span>
         {hasActiveFilters && (
           <Link 
             href="/admin/rooms"
-            className="ml-auto text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+            className="ml-auto text-sm text-[#6B7280] hover:text-[#111827] flex items-center gap-1 transition-colors"
           >
             <X className="h-3.5 w-3.5" />
             Reset
@@ -79,16 +79,16 @@ export function RoomFilters({ buildings }: RoomFiltersProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Building Filter */}
         <div>
-          <label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+          <label className="text-xs text-[#6B7280] mb-1.5 flex items-center gap-1">
             <Building2 className="h-3 w-3" />
-            Jenis Gedung
+            Gedung
           </label>
           <Select value={buildingFilter} onValueChange={handleBuildingChange}>
-            <SelectTrigger className="w-full rounded-[10px] border-border">
+            <SelectTrigger className="w-full rounded-[10px] border-[#E5E7EB] h-10">
               {selectedBuilding ? (
-                <span className="truncate">{selectedBuilding.name} ({selectedBuilding.code})</span>
+                <span className="truncate text-[#111827]">{selectedBuilding.name} ({selectedBuilding.code})</span>
               ) : (
-                <span className="text-muted-foreground/70">Pilih gedung...</span>
+                <span className="text-[#9CA3AF]">Pilih gedung...</span>
               )}
             </SelectTrigger>
             <SelectContent className="rounded-[10px]">
@@ -104,11 +104,11 @@ export function RoomFilters({ buildings }: RoomFiltersProps) {
 
         {/* Floor Filter */}
         <div>
-          <label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+          <label className="text-xs text-[#6B7280] mb-1.5 flex items-center gap-1">
             <Layers className="h-3 w-3" />
-            Lantai Gedung
+            Lantai
             {selectedBuilding && (
-              <span className="text-xs text-primary ml-auto">
+              <span className="text-[10px] text-[#0891B2] ml-auto font-medium">
                 ({selectedBuilding.floor_count} lantai)
               </span>
             )}
@@ -119,13 +119,13 @@ export function RoomFilters({ buildings }: RoomFiltersProps) {
             disabled={!buildingFilter}
           >
             <SelectTrigger className={cn(
-              "w-full rounded-[10px] border-border",
-              !buildingFilter && "bg-muted text-muted-foreground/70"
+              "w-full rounded-[10px] border-[#E5E7EB] h-10",
+              !buildingFilter && "bg-[#F3F4F6] text-[#9CA3AF]"
             )}>
               {floorFilter ? (
-                <span>Lantai {floorFilter}</span>
+                <span className="text-[#111827]">Lantai {floorFilter}</span>
               ) : (
-                <span className="text-muted-foreground/70">
+                <span className="text-[#9CA3AF]">
                   {buildingFilter ? "Pilih lantai..." : "Pilih gedung dulu"}
                 </span>
               )}
