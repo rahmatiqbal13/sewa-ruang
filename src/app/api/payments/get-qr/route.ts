@@ -92,6 +92,7 @@ export async function POST(req: Request) {
 
     // Generate payment instructions
     const paymentInfo = {
+      bookingId,
       referenceNo: booking.reference_no,
       amount: booking.total_amount,
       paymentCode: paymentCode,
@@ -181,11 +182,13 @@ export async function GET(req: Request) {
 
 // Helper function to generate payment text
 function generatePaymentText({
+  bookingId,
   referenceNo,
   amount,
   paymentCode,
   userName
 }: {
+  bookingId: string
   referenceNo: string
   amount: number
   paymentCode: string
@@ -210,7 +213,7 @@ Transfer tepat sesuai nominal
 agar verifikasi lebih cepat
 
 Upload bukti transfer di:
-${process.env.NEXT_PUBLIC_APP_URL}/booking/${referenceNo}/upload-proof
+${process.env.NEXT_PUBLIC_APP_URL}/booking/${bookingId}/upload-proof
 
 ================================
 `.trim()

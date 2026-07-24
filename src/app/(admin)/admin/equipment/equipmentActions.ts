@@ -14,8 +14,9 @@ export async function softDeleteEquipment(equipmentId: string) {
 
     const { error } = await sb
       .from('equipment')
-      .update({ 
+      .update({
         is_active: false,
+        deleted_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', equipmentId)
@@ -43,8 +44,9 @@ export async function restoreEquipment(equipmentId: string) {
 
     const { error } = await sb
       .from('equipment')
-      .update({ 
+      .update({
         is_active: true,
+        deleted_at: null,
         updated_at: new Date().toISOString()
       })
       .eq('id', equipmentId)
@@ -72,8 +74,9 @@ export async function bulkSoftDeleteEquipment(equipmentIds: string[]) {
 
     const { error } = await sb
       .from('equipment')
-      .update({ 
+      .update({
         is_active: false,
+        deleted_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .in('id', equipmentIds)
@@ -101,8 +104,9 @@ export async function bulkRestoreEquipment(equipmentIds: string[]) {
 
     const { error } = await sb
       .from('equipment')
-      .update({ 
+      .update({
         is_active: true,
+        deleted_at: null,
         updated_at: new Date().toISOString()
       })
       .in('id', equipmentIds)

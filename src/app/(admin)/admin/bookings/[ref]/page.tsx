@@ -10,11 +10,11 @@ import { ApprovalButtons } from './ApprovalButtons'
 import { RecordPaymentButton } from '../../payments/RecordPaymentButton'
 import { formatDateTime, formatRupiah, cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
-import { 
-  ArrowLeft, User, Mail, Phone, Building2, 
+import {
+  ArrowLeft, User, Mail, Phone, Building2,
   Package, CreditCard, FileText, Receipt, Clock,
   MessageSquare, Download, MapPin, GraduationCap, CheckCircle2,
-  Clock3, AlertCircle
+  Clock3, AlertCircle, FileImage, Eye
 } from 'lucide-react'
 import { getBorrowerCategoryLabel, getEventTypeLabel, isFreeBooking, migrateBorrowerCategory } from '@/lib/categories'
 
@@ -114,6 +114,21 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     .select('id, method, amount, status, paid_at, proof_url')
     .eq('booking_id', bookingId)
     .order('created_at', { ascending: false })
+
+  // Fetch payment proofs (bukti transfer dari peminjam)
+  const { data: paymentProofs } = await (sb.from('payment_proofs') as any)
+    .select('id, proof_url, bank_name, account_name, transfer_amount, transfer_date, notes, status, verified_at, rejection_reason, created_at')
+    .eq('booking_id', bookingId)
+    .order('created_at', { ascending: false })
+
+  const isBookingPaid = booking.status === 'paid'
+  const paymentsTableTotal = (payments || [])
+    .filter((p: any) => p.status === 'paid')
+    .reduce((sum: number, p: any) => sum + p.amount, 0)
+  // Jika booking sudah 'paid' via verifikasi bukti transfer, anggap lunas penuh
+  const totalPaidAmount = isBookingPaid && paymentsTableTotal === 0
+    ? booking.total_amount
+    : paymentsTableTotal
 
   const borrower = booking.users
 
@@ -579,17 +594,13 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                   <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-[10px]">
                     <span className="text-[#6B7280]">Sudah Dibayar</span>
                     <span className="font-semibold text-green-600">
-                      {formatRupiah((payments || [])
-                        .filter((p: any) => p.status === 'paid')
-                        .reduce((sum: number, p: any) => sum + p.amount, 0))}
+                      {formatRupiah(totalPaidAmount)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-amber-50 rounded-[10px]">
                     <span className="text-amber-800 font-medium">Sisa Pembayaran</span>
                     <span className="font-bold text-amber-800">
-                      {formatRupiah(Math.max(0, displayTotal - (payments || [])
-                        .filter((p: any) => p.status === 'paid')
-                        .reduce((sum: number, p: any) => sum + p.amount, 0)))}
+                      {formatRupiah(Math.max(0, displayTotal - totalPaidAmount))}
                     </span>
                   </div>
                 </div>
@@ -601,6 +612,121 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               )}
             </CardContent>
           </Card>
+
+          {/* Bukti Pembayaran */}
+          {paymentProofs && paymentProofs.length > 0 && (
+            <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
+              <CardHeader className="pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+                <CardTitle className="text-sm flex items-center gap-2 text-[#374151]">
+                  <FileImage className="h-4 w-4 text-[#0891B2]" />
+                  Bukti Pembayaran
+                  <span className="ml-auto text-xs font-normal text-[#6B7280]">
+                    {paymentProofs.length} file
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 space-y-5">
+                {paymentProofs.map((proof: any, index: number) => (
+                  <div key={proof.id} className={cn(index > 0 && 'pt-5 border-t border-[#E5E7EB]')}>
+                    {/* Header row */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs text-[#6B7280]">
+                        Dikirim {formatDateTime(proof.created_at)}
+                      </span>
+                      <Badge
+                        variant={
+                          proof.status === 'verified' ? 'default' :
+                          proof.status === 'rejected' ? 'destructive' : 'secondary'
+                        }
+                      >
+                        {proof.status === 'verified' ? 'Terverifikasi' :
+                         proof.status === 'rejected' ? 'Ditolak' : 'Menunggu Verifikasi'}
+                      </Badge>
+                    </div>
+
+                    {/* Proof image */}
+                    {proof.proof_url && (
+                      <a
+                        href={proof.proof_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block mb-4 group"
+                      >
+                        <div className="relative overflow-hidden rounded-[10px] border border-[#E5E7EB] bg-[#F9FAFB]">
+                          <img
+                            src={proof.proof_url}
+                            alt="Bukti Pembayaran"
+                            className="w-full object-contain max-h-72"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 text-[#111827] text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                              <Eye className="h-3.5 w-3.5" />
+                              Lihat ukuran penuh
+                            </span>
+                          </div>
+                        </div>
+                      </a>
+                    )}
+
+                    {/* Transfer details */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {proof.bank_name && (
+                        <div>
+                          <p className="text-xs text-[#6B7280] mb-0.5">Bank</p>
+                          <p className="text-sm font-medium text-[#111827]">{proof.bank_name}</p>
+                        </div>
+                      )}
+                      {proof.account_name && (
+                        <div>
+                          <p className="text-xs text-[#6B7280] mb-0.5">Nama Pengirim</p>
+                          <p className="text-sm font-medium text-[#111827]">{proof.account_name}</p>
+                        </div>
+                      )}
+                      {proof.transfer_amount && (
+                        <div>
+                          <p className="text-xs text-[#6B7280] mb-0.5">Jumlah Transfer</p>
+                          <p className="text-sm font-semibold text-[#111827]">{formatRupiah(proof.transfer_amount)}</p>
+                        </div>
+                      )}
+                      {proof.transfer_date && (
+                        <div>
+                          <p className="text-xs text-[#6B7280] mb-0.5">Tanggal Transfer</p>
+                          <p className="text-sm text-[#111827]">
+                            {new Date(proof.transfer_date).toLocaleDateString('id-ID', {
+                              day: 'numeric', month: 'long', year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    {proof.notes && (
+                      <div className="mt-3 p-3 bg-[#F9FAFB] rounded-[8px]">
+                        <p className="text-xs text-[#6B7280] mb-1">Catatan Peminjam</p>
+                        <p className="text-sm text-[#111827]">{proof.notes}</p>
+                      </div>
+                    )}
+
+                    {/* Rejection reason */}
+                    {proof.status === 'rejected' && proof.rejection_reason && (
+                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-[8px]">
+                        <p className="text-xs text-red-600 mb-1 font-medium">Alasan Penolakan</p>
+                        <p className="text-sm text-red-800">{proof.rejection_reason}</p>
+                      </div>
+                    )}
+
+                    {/* Verified timestamp */}
+                    {proof.verified_at && (
+                      <p className="text-xs text-[#6B7280] mt-2">
+                        {proof.status === 'verified' ? 'Diverifikasi' : 'Diproses'} pada {formatDateTime(proof.verified_at)}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Status Timeline */}
           <Card className="rounded-[14px] border-[#E5E7EB] shadow-soft overflow-hidden">
@@ -723,12 +849,10 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 {/* Approved + Payment Proof Pending */}
                 {booking.status === 'approved' && !isGratis && booking.total_amount > 0 && (
                   <>
-                    <RecordPaymentButton 
-                      bookingId={bookingId} 
-                      totalAmount={booking.total_amount} 
-                      paidAmount={(payments || [])
-                        .filter((p: any) => p.status === 'paid')
-                        .reduce((sum: number, p: any) => sum + p.amount, 0)}
+                    <RecordPaymentButton
+                      bookingId={bookingId}
+                      totalAmount={booking.total_amount}
+                      paidAmount={totalPaidAmount}
                     />
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-[10px]">
                       <p className="text-xs text-amber-800">

@@ -51,17 +51,8 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
   const plannedEnd = new Date(booking.end_datetime)
   const actualEnd = new Date(actualEndDate)
   const isEarlyReturn = actualEnd < plannedEnd
-  
-  // Calculate refund if early return
-  let refundAmount = 0
-  if (isEarlyReturn && totalPaid > 0) {
-    const plannedDuration = plannedEnd.getTime() - new Date(booking.start_datetime).getTime()
-    const actualDuration = actualEnd.getTime() - new Date(booking.start_datetime).getTime()
-    if (actualDuration > 0 && plannedDuration > 0) {
-      const unusedRatio = (plannedDuration - actualDuration) / plannedDuration
-      refundAmount = Math.floor(booking.total_amount * unusedRatio)
-    }
-  }
+
+
 
   async function handleSubmit() {
     if (condition !== 'good' && notes.trim().length < 10) {
@@ -83,54 +74,42 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
 
       // 1. Record the return
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: returnError } = await (supabase.from('returns') as any).insert({
+      const { data: returnData, error: returnError } = await (supabase.from('returns') as any).insert({
         booking_id: bookingId,
         returned_at: new Date(actualEndDate).toISOString(),
         condition: condition,
         notes: notes || null,
-        photo_url: photoUrl || null,
         recorded_by: user.id,
-        is_early_return: isEarlyReturn,
-        refund_amount: refundAmount > 0 ? refundAmount : null,
-      })
+      }).select('id').single()
 
       if (returnError) throw returnError
 
+      // 1b. Save photo to return_images if provided
+      if (photoUrl && returnData?.id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from('return_images') as any).insert({
+          return_id: returnData.id,
+          url: photoUrl,
+        })
+      }
+
       // 2. Update booking status to completed
+      const adminNotesParts = []
+      if (isEarlyReturn) adminNotesParts.push('Pengembalian lebih cepat')
+      if (notes) adminNotesParts.push(notes)
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: bookingError } = await (supabase.from('bookings') as any)
         .update({
           status: 'completed',
-          actual_end_datetime: actualEndDate,
-          admin_notes: notes 
-            ? `Pengembalian: ${notes}${isEarlyReturn ? ' (Pengembalian lebih cepat)' : ''}`
-            : isEarlyReturn ? 'Pengembalian lebih cepat' : null
+          admin_notes: adminNotesParts.length > 0 ? adminNotesParts.join(' — ') : null,
         })
         .eq('id', bookingId)
 
       if (bookingError) throw bookingError
 
-      // 3. Create refund record if applicable
-      if (refundAmount > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: refundError } = await (supabase.from('payments') as any).insert({
-          booking_id: bookingId,
-          amount: -refundAmount,
-          method: 'refund',
-          status: 'pending',
-          notes: `Refund pengembalian lebih cepat - Kondisi: ${conditionLabel[condition].label}`,
-        })
-
-        if (refundError) throw refundError
-      }
-
       toast.success('Pengembalian berhasil dicatat')
-      if (refundAmount > 0) {
-        toast.info(`Refund ${formatRupiah(refundAmount)} perlu diproses`)
-      }
-      
-      router.refresh()
-      onComplete?.()
+      router.push('/admin/returns')
     } catch (error) {
       toast.error('Gagal mencatat pengembalian: ' + (error as Error).message)
     } finally {
@@ -180,7 +159,7 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
           />
           {isEarlyReturn && (
             <p className="text-xs text-amber-600">
-              Pengembalian lebih cepat! Refund akan dihitung otomatis.
+              Pengembalian lebih cepat dari jadwal.
             </p>
           )}
         </div>
@@ -209,17 +188,6 @@ export function CompleteReturnForm({ bookingId, booking, totalPaid, onComplete }
           </Select>
         </div>
 
-        {/* Refund Info */}
-        {isEarlyReturn && refundAmount > 0 && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-[10px]">
-            <p className="text-sm font-medium text-green-800">
-              Refund Dihitung: {formatRupiah(refundAmount)}
-            </p>
-            <p className="text-xs text-green-600">
-              Berdasarkan waktu tidak terpakai
-            </p>
-          </div>
-        )}
 
         {/* Notes */}
         <div className="space-y-2">

@@ -15,6 +15,8 @@ export interface CourseSchedule {
   created_by: string
   created_at: string
   updated_at: string
+  // joined from getCourseSchedules when no roomId filter (global page)
+  rooms?: { id: string; name: string; room_code: string | null } | null
 }
 
 export const DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']

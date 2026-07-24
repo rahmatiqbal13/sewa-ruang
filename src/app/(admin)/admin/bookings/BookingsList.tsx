@@ -9,18 +9,12 @@ import { Checkbox } from '@/components/ui/checkbox'
 import {
   Calendar, Package, Plus, Download, Eye,
   ChevronLeft, ChevronRightIcon, Search, Send, Loader2, Trash2,
-  CheckCircle, XCircle, FileText, RotateCcw, MoreHorizontal
+  CheckCircle, XCircle, FileText, RotateCcw
 } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { BookingStatusBadge } from '@/components/shared/BookingStatusBadge'
 import { cn, formatDateTime, formatRupiah } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -507,26 +501,22 @@ export function BookingsList({ bookings, statusCounts, currentStatus, totalCount
                         {(booking.users?.email || booking.users?.phone) && (
                           <ContactButtons booking={{ id: booking.id, reference_no: booking.reference_no, status: booking.status, start_datetime: booking.start_datetime, end_datetime: booking.end_datetime, users: booking.users ? { name: booking.users.name, email: booking.users.email || undefined, phone: booking.users.phone || undefined, telegram_username: booking.users.telegram_username || undefined } : null, booking_items: booking.booking_items }} />
                         )}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <span className="icon-btn inline-flex items-center justify-center" aria-label="Menu lainnya">
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                            </span>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-[10px]">
-                            <DropdownMenuItem
-                              onClick={() => window.location.href = `/admin/bookings/${booking.reference_no}`}
-                              className="cursor-pointer"
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Detail
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeleteTarget(booking)} className="cursor-pointer text-red-600 focus:text-red-600">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Hapus
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Link
+                          href={`/admin/bookings/${booking.reference_no}`}
+                          className="icon-btn"
+                          title="Detail peminjaman"
+                          aria-label="Detail"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                        </Link>
+                        <button
+                          onClick={() => setDeleteTarget(booking)}
+                          className="icon-btn text-red-400 hover:bg-red-50 hover:text-red-600"
+                          title="Hapus peminjaman"
+                          aria-label="Hapus"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>

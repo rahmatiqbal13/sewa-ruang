@@ -21,9 +21,15 @@ export default async function GlobalCourseSchedulesPage() {
     .eq('is_active', true)
     .order('name')
 
-  // Get current user ID for actions
+  // Get current user ID + role for actions
   const { data: { user } } = await sb.auth.getUser()
   const userId = user?.id || ''
+  const { data: profile } = await sb
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single()
+  const userRole = (profile as { role: string } | null)?.role || ''
 
   return (
     <div className="p-6 space-y-6">
@@ -36,6 +42,7 @@ export default async function GlobalCourseSchedulesPage() {
         roomId=""
         schedules={schedules || []}
         userId={userId}
+        userRole={userRole}
         rooms={rooms || []}
         buildings={buildings || []}
         isGlobalPage

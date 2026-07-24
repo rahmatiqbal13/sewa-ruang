@@ -37,9 +37,9 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    if (!['verified', 'rejected'].includes(status)) {
-      return NextResponse.json({ 
-        error: 'Status must be verified or rejected' 
+    if (!['verified', 'partial', 'rejected'].includes(status)) {
+      return NextResponse.json({
+        error: 'Status must be verified, partial, or rejected'
       }, { status: 400 })
     }
 
@@ -108,12 +108,16 @@ export async function POST(req: Request) {
       console.error('Notification error:', notifError)
     }
 
+    const bookingStatus = status === 'verified' ? 'paid'
+      : status === 'partial' ? 'approved'
+      : 'pending_payment'
+
     return NextResponse.json({
       success: true,
-      message: status === 'verified' 
-        ? 'Payment verified successfully' 
-        : 'Payment rejected',
-      bookingStatus: status === 'verified' ? 'paid' : 'pending_payment',
+      message: status === 'verified' ? 'Pembayaran lunas diverifikasi'
+        : status === 'partial' ? 'Pembayaran sebagian diterima, menunggu sisa'
+        : 'Pembayaran ditolak',
+      bookingStatus,
       bookingId: bookingId
     })
 
@@ -170,15 +174,36 @@ export async function GET(req: Request) {
 
     if (error) {
       console.error('Error fetching proofs:', error)
-      return NextResponse.json({ 
-        error: 'Failed to fetch payment proofs' 
+      return NextResponse.json({
+        error: 'Failed to fetch payment proofs'
       }, { status: 500 })
     }
 
+    // Hitung total sudah terbayar (verified proofs) per booking
+    const bookingIds = [...new Set((proofs || []).map((p: any) => p.bookings?.id).filter(Boolean))]
+    let alreadyPaidMap: Record<string, number> = {}
+
+    if (bookingIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: verifiedProofs } = await (supabase.from('payment_proofs') as any)
+        .select('booking_id, transfer_amount')
+        .in('booking_id', bookingIds)
+        .eq('status', 'verified')
+
+      for (const vp of verifiedProofs || []) {
+        alreadyPaidMap[vp.booking_id] = (alreadyPaidMap[vp.booking_id] || 0) + Number(vp.transfer_amount)
+      }
+    }
+
+    const proofsWithContext = (proofs || []).map((p: any) => ({
+      ...p,
+      already_paid: alreadyPaidMap[p.bookings?.id] || 0,
+    }))
+
     return NextResponse.json({
       success: true,
-      proofs: proofs || [],
-      count: proofs?.length || 0
+      proofs: proofsWithContext,
+      count: proofsWithContext.length
     })
 
   } catch (error) {

@@ -26,6 +26,7 @@ const CONDITIONS = [
 
 const schema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
+  merk: z.string().optional(),
   quantity: z.coerce.number().int().min(1, 'Jumlah minimal 1'),
   condition: z.enum(['good', 'needs_repair', 'damaged']),
   inventory_code: z.string().optional(),
@@ -54,6 +55,7 @@ interface Room {
 interface InventoryItem {
   id: string
   name: string
+  merk: string | null
   quantity: number
   condition: 'good' | 'needs_repair' | 'damaged'
   inventory_code: string | null
@@ -89,6 +91,7 @@ export function InventoryForm({
     resolver: zodResolver(schema) as any,
     defaultValues: item ? {
       name: item.name,
+      merk: item.merk ?? '',
       quantity: item.quantity,
       condition: item.condition,
       inventory_code: item.inventory_code ?? '',
@@ -124,6 +127,7 @@ export function InventoryForm({
 
     const payload = {
       name: data.name.trim(),
+      merk: data.merk?.trim() || null,
       quantity: data.quantity,
       condition: data.condition,
       inventory_code: data.inventory_code?.trim() || null,
@@ -346,20 +350,31 @@ export function InventoryForm({
                 />
               </div>
 
-              {/* Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground/80 font-medium">
-                  Nama Item <span className="text-red-500">*</span>
-                </Label>
-                <Input 
-                  id="name"
-                  placeholder="Contoh: Proyektor, AC, Papan Tulis, Meja, Kursi..." 
-                  className="h-12 rounded-[14px] border-border focus:border-amber-500 focus:ring-amber-500/20"
-                  {...register('name')} 
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
-                )}
+              {/* Name + Merk */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-foreground/80 font-medium">
+                    Nama Item <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder="Proyektor, AC, Kursi..."
+                    className="h-12 rounded-[14px] border-border focus:border-amber-500 focus:ring-amber-500/20"
+                    {...register('name')}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="merk" className="text-foreground/80 font-medium">Merk / Tipe</Label>
+                  <Input
+                    id="merk"
+                    placeholder="Samsung, Epson, HP..."
+                    className="h-12 rounded-[14px] border-border focus:border-amber-500 focus:ring-amber-500/20"
+                    {...register('merk')}
+                  />
+                </div>
               </div>
 
               {/* Quantity & Inventory Code */}

@@ -60,7 +60,8 @@ export default async function EquipmentPage({
   const isSuperAdmin = userProfile?.role === 'super_admin'
 
   // Build base query for counting
-  let countQuery = sb.from('equipment').select('*', { count: 'exact', head: true })
+  // deleted_at IS NULL ensures trash items never appear in the main list
+  let countQuery = sb.from('equipment').select('*', { count: 'exact', head: true }).is('deleted_at', null)
 
   // is_active filtering: inactiveOnly → false, showInactive → all, default → true
   if (inactiveOnly === 'true') {
@@ -101,6 +102,7 @@ export default async function EquipmentPage({
       is_active, photo_url, current_location, storage_room_id,
       equipment_rates(user_category, rate_per_day, rate_per_hour, requires_supervision)
     `)
+    .is('deleted_at', null)
     .order('name')
     .range(offset, offset + ITEMS_PER_PAGE - 1)
 
@@ -121,6 +123,7 @@ export default async function EquipmentPage({
       is_active, photo_url, current_location, storage_room_id,
       equipment_rates(user_category, rate_per_day, rate_per_hour, requires_supervision)
     `)
+    .is('deleted_at', null)
     .order('name')
 
   if (inactiveOnly === 'true') allEquipmentQuery = allEquipmentQuery.eq('is_active', false)
@@ -132,7 +135,7 @@ export default async function EquipmentPage({
   if (sanitizedSearch) allEquipmentQuery = allEquipmentQuery.or(`name.ilike.%${sanitizedSearch}%,equipment_code.ilike.%${sanitizedSearch}%,merk.ilike.%${sanitizedSearch}%`)
 
   // Build availability query
-  let availabilityQuery = sb.from('equipment').select('ketersediaan')
+  let availabilityQuery = sb.from('equipment').select('ketersediaan').is('deleted_at', null)
   if (showInactive !== 'true') availabilityQuery = availabilityQuery.eq('is_active', true)
   if (todayOnly === 'true') availabilityQuery = availabilityQuery.gte('created_at', todayIso)
 
@@ -143,7 +146,7 @@ export default async function EquipmentPage({
     allEquipmentQuery,
     sb.from('equipment').select('category').not('category', 'is', null),
     availabilityQuery,
-    sb.from('equipment').select('*', { count: 'exact', head: true }).eq('is_active', false),
+    sb.from('equipment').select('*', { count: 'exact', head: true }).eq('is_active', false).is('deleted_at', null),
   ])
 
   const totalCount: number | null = r0.count

@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     const fileExt = proofImage.name.split('.').pop()
     const fileName = `payment-proofs/${bookingId}/${Date.now()}.${fileExt}`
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await adminDb.storage
       .from('payments')
       .upload(fileName, proofImage, {
         contentType: proofImage.type,
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = adminDb.storage
       .from('payments')
       .getPublicUrl(fileName)
 
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
     if (proofError) {
       console.error('Proof insert error:', proofError)
       // Try to delete uploaded file
-      await supabase.storage.from('payments').remove([fileName])
+      await adminDb.storage.from('payments').remove([fileName])
       return NextResponse.json({ 
         error: 'Failed to save payment proof' 
       }, { status: 500 })
@@ -118,7 +118,6 @@ export async function POST(req: Request) {
       .update({
         status: 'payment_uploaded',
         payment_proof_url: publicUrl,
-        updated_at: new Date().toISOString()
       })
       .eq('id', bookingId)
 
@@ -127,7 +126,7 @@ export async function POST(req: Request) {
       // Rollback: hapus record proof dan file yang sudah diupload
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (adminDb.from('payment_proofs') as any).delete().eq('id', proofData.id)
-      await supabase.storage.from('payments').remove([fileName])
+      await adminDb.storage.from('payments').remove([fileName])
       return NextResponse.json({
         error: 'Gagal memperbarui status booking. Silakan coba lagi.'
       }, { status: 500 })

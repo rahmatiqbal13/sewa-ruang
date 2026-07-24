@@ -120,25 +120,7 @@ export function EarlyReturnButton({ bookingId, booking, items, totalPaid }: Earl
 
       if (bookingError) throw bookingError
 
-      // If there's a refund, create refund record
-      if (refundAmount > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: refundError } = await (supabase.from('payments') as any)
-          .insert({
-            booking_id: bookingId,
-            amount: -refundAmount,
-            method: 'refund',
-            status: 'pending',
-            notes: `Refund pengembalian lebih cepat - ${notes || 'Tidak ada catatan'}`,
-          })
-
-        if (refundError) throw refundError
-      }
-
       toast.success('Pengembalian lebih cepat berhasil dicatat')
-      if (refundAmount > 0) {
-        toast.info(`Refund sebesar ${formatRupiah(refundAmount)} perlu diproses`)
-      }
       
       setOpen(false)
       router.refresh()

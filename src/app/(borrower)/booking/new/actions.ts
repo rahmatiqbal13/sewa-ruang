@@ -80,10 +80,10 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sesi habis, silakan login kembali' }
 
-  // Get user profile
+  // Get user profile + role
   const { data: profile } = await supabase
     .from('users')
-    .select('id, borrower_category')
+    .select('id, borrower_category, role')
     .eq('id', user.id)
     .single()
 
@@ -91,6 +91,7 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
 
   // Normalize borrower category (migrate legacy values)
   const borrowerCategory = migrateBorrowerCategory(profile.borrower_category) as BorrowerCategory
+  const isAdminUser = ['admin', 'super_admin'].includes(profile.role ?? '')
 
   // ── Conflict check for rooms ─────────────────────────────────────────────
   if (hasRooms) {
@@ -123,25 +124,28 @@ export async function createBookingAction(input: CreateBookingInput): Promise<Cr
     }
 
     // ── Check class schedule blocks ───────────────────────────────────────
-    const { data: classBlocks } = await supabase
-      .from('room_schedule_blocks')
-      .select('mata_kuliah, dosen, start_datetime, end_datetime, room_id')
-      .in('room_id', room_ids)
-      .eq('schedule_type', 'class')
-      .lt('start_datetime', endDt.toISOString())
-      .gt('end_datetime', startDt.toISOString())
-      .limit(1)
+    // Admin/super_admin dapat melakukan override jadwal kuliah untuk kegiatan khusus
+    if (!isAdminUser) {
+      const { data: classBlocks } = await supabase
+        .from('room_schedule_blocks')
+        .select('mata_kuliah, dosen, start_datetime, end_datetime, room_id')
+        .in('room_id', room_ids)
+        .eq('schedule_type', 'class')
+        .lt('start_datetime', endDt.toISOString())
+        .gt('end_datetime', startDt.toISOString())
+        .limit(1)
 
-    if (classBlocks && classBlocks.length > 0) {
-      const block = classBlocks[0]
-      const { data: room } = await supabase
-        .from('rooms')
-        .select('name')
-        .eq('id', block.room_id)
-        .single()
-      return {
-        success: false,
-        error: `Ruangan "${room?.name ?? 'tersebut'}" sedang dipakai untuk jadwal kuliah "${block.mata_kuliah}" (Dosen: ${block.dosen})`
+      if (classBlocks && classBlocks.length > 0) {
+        const block = classBlocks[0]
+        const { data: room } = await supabase
+          .from('rooms')
+          .select('name')
+          .eq('id', block.room_id)
+          .single()
+        return {
+          success: false,
+          error: `Ruangan "${room?.name ?? 'tersebut'}" sedang dipakai untuk jadwal kuliah "${block.mata_kuliah}" (Dosen: ${block.dosen})`
+        }
       }
     }
   }

@@ -54,12 +54,14 @@ export default async function InventoryPage({
       notFound()
     }
 
-    // Get inventory items for this room
-    const { data: items, error: itemsError } = await sb
+    // Get inventory items for this room — is_active = true AND deleted_at IS NULL excludes trash
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: items, error: itemsError } = await (sb as any)
       .from('room_inventories')
-      .select('id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name), room_id')
+      .select('id, name, merk, quantity, condition, inventory_code, notes, photo_url, last_updated_at, users:last_updated_by(name), room_id')
       .eq('room_id', roomId)
       .eq('is_active', true)
+      .is('deleted_at', null)
       .order('name')
 
     if (itemsError) {
@@ -69,8 +71,10 @@ export default async function InventoryPage({
     return (
       <RoomInventoryList
         room={room as Room}
-        items={(items || []) as InventoryItem[]}
-        allItems={(items || []) as InventoryItem[]}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        items={(items || []) as any}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        allItems={(items || []) as any}
         roomId={roomId}
       />
     )

@@ -51,14 +51,14 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
   const booking = bookingRaw
   if (!booking) notFound()
 
-  // Check if already returned
-  const { data: existingReturn } = await sb
-    .from('returns')
-    .select('id')
-    .eq('booking_id', id)
-    .single()
+  // Check if already returned — cek kedua tabel (normal return & early return)
+  const [{ data: existingReturn }, { data: existingEarlyReturn }] = await Promise.all([
+    sb.from('returns').select('id').eq('booking_id', id).maybeSingle(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (sb as any).from('booking_early_returns').select('id').eq('booking_id', id).maybeSingle(),
+  ])
 
-  if (existingReturn) {
+  if (existingReturn || existingEarlyReturn) {
     return (
       <div className="p-6 max-w-2xl mx-auto text-center">
         <div className="bg-green-50 border border-green-200 rounded-[14px] p-8">
@@ -73,11 +73,25 @@ export default async function RecordReturnPage({ params }: { params: Promise<{ i
     )
   }
 
-  const totalPaid = (booking.payments || [])
+  const isPaid = booking.status === 'paid'
+
+  // Hitung total dari tabel payments (tunai/refund)
+  const paymentsTotal = (booking.payments || [])
     .filter((p) => p.status === 'paid')
     .reduce((sum: number, p) => sum + p.amount, 0)
 
-  const isPaid = booking.status === 'paid'
+  // Hitung total dari payment_proofs yang sudah diverifikasi (transfer bukti)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: verifiedProofs } = await (sb as any)
+    .from('payment_proofs')
+    .select('transfer_amount')
+    .eq('booking_id', id)
+    .eq('status', 'verified')
+
+  const proofsTotal = (verifiedProofs || [])
+    .reduce((sum: number, p: { transfer_amount: number }) => sum + Number(p.transfer_amount), 0)
+
+  const totalPaid = paymentsTotal + proofsTotal
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">

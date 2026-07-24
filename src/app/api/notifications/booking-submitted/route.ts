@@ -53,6 +53,13 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = await createClient()
+
+    // Auth check — hanya user yang login yang boleh trigger notifikasi
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any
 
@@ -78,6 +85,15 @@ export async function POST(req: NextRequest) {
 
     if (!booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    }
+
+    // Pastikan user adalah pemilik booking atau admin/super_admin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userRow } = await sb.from('users').select('role').eq('id', user.id).single() as { data: any }
+    const isAdmin = userRow?.role === 'admin' || userRow?.role === 'super_admin'
+    const isOwner = booking.users?.id === user.id || (booking as any).user_id === user.id
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Telegram notification — baca dari DB config

@@ -11,11 +11,15 @@ interface InventoryItem {
   id: string
   item_name?: string
   name?: string
+  merk?: string | null
   quantity: number
   condition: string
+  inventory_code?: string | null
   description?: string | null
   notes?: string | null
   is_active?: boolean
+  room_name?: string | null
+  building_name?: string | null
 }
 
 interface Room {
@@ -45,24 +49,32 @@ export async function exportInventoryToExcel(
     return
   }
 
-  const exportData = inventoryToExport.map(item => ({
-    'Nama Barang': item.item_name || item.name || '',
-    'Jumlah': item.quantity,
-    'Kondisi': CONDITION_LABELS[item.condition] || item.condition,
-    'Status': item.is_active !== false ? 'Aktif' : 'Nonaktif',
-    'Keterangan': item.description || item.notes || '-',
-  }))
+  const hasRoom = inventoryToExport.some(i => i.room_name)
+
+  const exportData = inventoryToExport.map(item => {
+    const row: Record<string, string | number> = {}
+    if (hasRoom) {
+      row['Gedung'] = item.building_name || '-'
+      row['Ruangan'] = item.room_name || '-'
+    }
+    row['Kode Inventaris'] = item.inventory_code || '-'
+    row['Nama Barang'] = item.item_name || item.name || ''
+    row['Merk / Tipe'] = item.merk || '-'
+    row['Jumlah'] = item.quantity
+    row['Kondisi'] = CONDITION_LABELS[item.condition] || item.condition
+    row['Keterangan'] = item.description || item.notes || '-'
+    return row
+  })
 
   const wb = XLSX.utils.book_new()
   const ws = XLSX.utils.json_to_sheet(exportData)
 
-  ws['!cols'] = [
-    { wch: 30 },
-    { wch: 10 },
-    { wch: 12 },
-    { wch: 10 },
-    { wch: 40 },
-  ]
+  const cols = []
+  if (hasRoom) {
+    cols.push({ wch: 30 }, { wch: 30 })
+  }
+  cols.push({ wch: 14 }, { wch: 35 }, { wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 40 })
+  ws['!cols'] = cols
 
   XLSX.utils.book_append_sheet(wb, ws, 'Inventaris')
 
@@ -82,15 +94,24 @@ export async function downloadInventoryTemplate() {
   const templateData = [
     {
       'Nama Barang': 'Meja Kerja',
+      'Merk': 'Olympic',
       'Jumlah': 10,
       'Kondisi': 'Baik',
       'Keterangan': 'Meja kayu ukuran 120x60cm'
     },
     {
       'Nama Barang': 'Kursi Putar',
+      'Merk': 'Ergotec',
       'Jumlah': 10,
       'Kondisi': 'Baik',
       'Keterangan': 'Kursi ergonomis'
+    },
+    {
+      'Nama Barang': 'Proyektor',
+      'Merk': 'Epson EB-X51',
+      'Jumlah': 2,
+      'Kondisi': 'Baik',
+      'Keterangan': ''
     }
   ]
 
@@ -103,6 +124,10 @@ export async function downloadInventoryTemplate() {
     { 'Keterangan': 'Kolom yang wajib diisi:' },
     { 'Keterangan': '- Nama Barang' },
     { 'Keterangan': '- Jumlah (angka positif)' },
+    { 'Keterangan': '' },
+    { 'Keterangan': 'Kolom opsional:' },
+    { 'Keterangan': '- Merk (merk/tipe barang, contoh: Samsung, Epson EB-X51)' },
+    { 'Keterangan': '- Keterangan (catatan tambahan)' },
     { 'Keterangan': '' },
     { 'Keterangan': 'Kondisi: Baik, Cukup, Kurang, Rusak' },
   ]

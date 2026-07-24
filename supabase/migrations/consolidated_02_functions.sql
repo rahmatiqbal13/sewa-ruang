@@ -199,34 +199,12 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- PAYMENT CODE AUTO-GENERATE
--- Format: SIMP-{booking_id_8chars}-{random_6chars}
+-- PAYMENT CODE — digenerate oleh API (get-va/get-qr), bukan trigger DB
+-- Format: PAY-{referenceNo}-{timestamp_base36}
+-- Trigger dihapus untuk menghindari konflik format
 -- ============================================================
-
-CREATE OR REPLACE FUNCTION public.generate_payment_code()
-RETURNS TRIGGER AS $$
-DECLARE
-  new_code VARCHAR(50);
-  code_exists BOOLEAN;
-BEGIN
-  IF NEW.payment_code IS NULL AND NEW.status = 'pending_payment' THEN
-    LOOP
-      new_code := 'SIMP-' ||
-        SUBSTRING(NEW.id::text, 1, 8) || '-' ||
-        UPPER(SUBSTRING(MD5(RANDOM()::text), 1, 6));
-      SELECT EXISTS(SELECT 1 FROM public.bookings WHERE payment_code = new_code) INTO code_exists;
-      EXIT WHEN NOT code_exists;
-    END LOOP;
-    NEW.payment_code := new_code;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS trg_generate_payment_code ON public.bookings;
-CREATE TRIGGER trg_generate_payment_code
-  BEFORE INSERT OR UPDATE ON public.bookings
-  FOR EACH ROW EXECUTE FUNCTION public.generate_payment_code();
+DROP FUNCTION IF EXISTS public.generate_payment_code();
 
 -- ============================================================
 -- VERIFY BOOKING PAYMENT (admin)
@@ -251,12 +229,23 @@ BEGIN
   IF p_status = 'verified' THEN
     UPDATE public.bookings
     SET status = 'paid', payment_verified_at = NOW(),
-        payment_verified_by = p_admin_id, updated_at = NOW()
+        payment_verified_by = p_admin_id
     WHERE id = p_booking_id;
 
     UPDATE public.payment_proofs
     SET status = 'verified', verified_by = p_admin_id, verified_at = NOW()
     WHERE booking_id = p_booking_id AND status = 'pending';
+
+  ELSIF p_status = 'partial' THEN
+    -- Terima pembayaran sebagian: tandai proof ini verified, kembalikan booking
+    -- ke status 'approved' supaya peminjam bisa upload bukti sisa pembayaran
+    UPDATE public.payment_proofs
+    SET status = 'verified', verified_by = p_admin_id, verified_at = NOW()
+    WHERE booking_id = p_booking_id AND status = 'pending';
+
+    UPDATE public.bookings
+    SET status = 'approved', payment_proof_url = NULL
+    WHERE id = p_booking_id;
 
   ELSIF p_status = 'rejected' THEN
     UPDATE public.payment_proofs
@@ -264,8 +253,9 @@ BEGIN
         verified_at = NOW(), rejection_reason = p_rejection_reason
     WHERE booking_id = p_booking_id AND status = 'pending';
 
+    -- payment_rejected: peminjam harus upload ulang bukti
     UPDATE public.bookings
-    SET status = 'pending_payment', payment_proof_url = NULL, updated_at = NOW()
+    SET status = 'payment_rejected', payment_proof_url = NULL
     WHERE id = p_booking_id;
   END IF;
 

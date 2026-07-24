@@ -4,8 +4,9 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { CourseScheduleFormData, CSVRow, DAY_MAP } from '@/lib/course-schedules'
 
-function createSlug(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+function revalidateSchedulePages() {
+  revalidatePath('/admin/course-schedules')
+  revalidatePath('/admin/rooms', 'layout')
 }
 
 export async function createCourseSchedule(
@@ -27,7 +28,7 @@ export async function createCourseSchedule(
     return { error: error.message }
   }
 
-  revalidatePath('/admin/course-schedules')
+  revalidateSchedulePages()
   return { success: true, data: result }
 }
 
@@ -46,23 +47,24 @@ export async function updateCourseSchedule(
     return { error: error.message }
   }
 
-  revalidatePath('/admin/rooms/[id]/course-schedules')
+  revalidateSchedulePages()
   return { success: true }
 }
 
 export async function deleteCourseSchedule(id: string) {
   const sb = await createAdminClient()
 
+  // Soft delete — consistent with is_active = true filter in getCourseSchedules
   const { error } = await sb
     .from('course_schedules')
-    .delete()
+    .update({ is_active: false })
     .eq('id', id)
 
   if (error) {
     return { error: error.message }
   }
 
-  revalidatePath('/admin/rooms/[id]/course-schedules')
+  revalidateSchedulePages()
   return { success: true }
 }
 
@@ -129,7 +131,7 @@ export async function importCourseSchedulesFromCSV(
     }
   }
 
-  revalidatePath('/admin/rooms/[id]/course-schedules')
+  revalidateSchedulePages()
   return results
 }
 
@@ -138,7 +140,7 @@ export async function getCourseSchedules(roomId?: string) {
 
   let query = sb
     .from('course_schedules')
-    .select('*')
+    .select('*, rooms:room_id(id, name, room_code)')
     .eq('is_active', true)
     .order('semester', { ascending: false })
     .order('day_of_week', { ascending: true })

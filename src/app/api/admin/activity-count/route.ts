@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server'
-import { createAdminDbClient } from '@/lib/supabase/server'
+import { createClient, createAdminDbClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
+    // Auth check — hanya admin/super_admin yang boleh akses
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ count: 0 }, { status: 401 })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userRow } = await (supabase as any).from('users').select('role').eq('id', user.id).single()
+    if (!['admin', 'super_admin', 'staff'].includes(userRow?.role)) {
+      return NextResponse.json({ count: 0 }, { status: 403 })
+    }
+
     const sb = createAdminDbClient()
     const now = new Date().toISOString()
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()

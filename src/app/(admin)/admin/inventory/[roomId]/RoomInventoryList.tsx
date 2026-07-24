@@ -7,7 +7,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ArrowLeft, Download, FileUp, CheckSquare, Package, Loader2 } from 'lucide-react'
+import { ArrowLeft, Download, FileUp, CheckSquare, Package, Loader2, Trash2, AlertTriangle } from 'lucide-react'
 import { AddInventoryItemDialog } from './AddInventoryItemDialog'
 import { InventoryItemActions } from './InventoryItemActions'
 import { formatDateTime, cn } from '@/lib/utils'
@@ -15,10 +15,18 @@ import { exportInventoryToExcel, downloadInventoryTemplate } from '../exportInve
 import { importInventoryFromExcel } from '../importInventory'
 import { ImportDialog } from '../../equipment/ImportDialog'
 import type { ImportResult } from '../../equipment/importEquipment'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogMedia, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 interface InventoryItem {
   id: string
   name: string
+  merk: string | null
   quantity: number
   condition: 'good' | 'needs_repair' | 'damaged'
   inventory_code: string | null
@@ -48,6 +56,8 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isExporting, setIsExporting] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<'bulk' | string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const toggleSelection = (id: string) => {
     const newSelected = new Set(selectedIds)
@@ -73,7 +83,30 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
 
   const isSelected = (id: string) => selectedIds.has(id)
   const isAllSelected = selectedIds.size === items.length && items.length > 0
+  const isPartialSelected = selectedIds.size > 0 && selectedIds.size < items.length
   const hasSelection = selectedIds.size > 0
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase.from('room_inventories') as any
+
+    const now = new Date().toISOString()
+    if (deleteTarget === 'bulk') {
+      const ids = Array.from(selectedIds)
+      const { error } = await sb.update({ is_active: false, deleted_at: now }).in('id', ids)
+      if (error) toast.error('Gagal menghapus: ' + error.message)
+      else { toast.success(`${ids.length} item berhasil dihapus`); clearSelection(); router.refresh() }
+    } else {
+      const { error } = await sb.update({ is_active: false, deleted_at: now }).eq('id', deleteTarget)
+      if (error) toast.error('Gagal menghapus: ' + error.message)
+      else { toast.success('Item berhasil dihapus'); router.refresh() }
+    }
+    setIsDeleting(false)
+    setDeleteTarget(null)
+  }
 
   const handleExport = () => {
     setIsExporting(true)
@@ -86,10 +119,12 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
     // Transform data for export
     const exportData = inventoryToExport.map(item => ({
       id: item.id,
-      item_name: item.name,
+      name: item.name,
+      merk: item.merk,
+      inventory_code: item.inventory_code,
       quantity: item.quantity,
       condition: item.condition,
-      description: item.notes,
+      notes: item.notes,
       is_active: true,
     }))
     
@@ -114,6 +149,31 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
 
   return (
     <div className="p-6 space-y-6">
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={open => { if (!open && !isDeleting) setDeleteTarget(null) }}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-red-50">
+              <AlertTriangle className="size-5 text-red-600" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>
+              {deleteTarget === 'bulk' ? `Hapus ${selectedIds.size} item?` : 'Hapus item ini?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget === 'bulk'
+                ? `${selectedIds.size} item inventaris akan dihapus. Item bisa dipulihkan dari halaman Trash.`
+                : 'Item inventaris ini akan dihapus. Bisa dipulihkan dari halaman Trash.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" disabled={isDeleting} onClick={confirmDelete}>
+              {isDeleting ? 'Menghapus...' : 'Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Import Dialog */}
       <ImportDialog
         isOpen={isImportDialogOpen}
@@ -148,65 +208,54 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
             <Package className="h-4 w-4 text-teal-500" />
             {items.length} item inventaris
           </div>
-          {hasSelection && (
-            <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-[10px] px-3 py-1.5">
-              <CheckSquare className="h-4 w-4" />
-              {selectedIds.size} dipilih
-              <button 
-                onClick={clearSelection}
-                className="text-xs underline hover:text-blue-800 ml-1"
-              >
-                Batal
-              </button>
-            </div>
-          )}
         </div>
-        
+
         <div className="flex items-center gap-2">
-          {/* Export Selected Button */}
-          {hasSelection && (
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              disabled={isExporting}
-              className="hidden sm:flex border-blue-200 text-blue-700 hover:bg-blue-50"
-            >
-              {isExporting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
-              )}
-              Export ({selectedIds.size})
-            </Button>
-          )}
-          
-          {/* Export All Button */}
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            disabled={isExporting}
-            className="hidden sm:flex"
-          >
-            {isExporting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="mr-2 h-4 w-4" />
-            )}
-            {isExporting ? 'Mengekspor...' : 'Export Semua'}
+          <Button variant="outline" onClick={handleExport} disabled={isExporting} className="hidden sm:flex">
+            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            {hasSelection ? `Export (${selectedIds.size})` : 'Export Semua'}
           </Button>
-          
-          {/* Import Button */}
-          <Button
-            variant="outline"
-            onClick={() => setIsImportDialogOpen(true)}
-            className="hidden sm:flex"
-          >
-            <FileUp className="mr-2 h-4 w-4" />
-            Import
+          <Button variant="outline" onClick={() => setIsImportDialogOpen(true)} className="hidden sm:flex">
+            <FileUp className="mr-2 h-4 w-4" />Import
           </Button>
-          
           <AddInventoryItemDialog roomId={roomId} />
         </div>
+      </div>
+
+      {/* Selection Bar */}
+      <div className="flex items-center justify-between bg-card border rounded-[10px] px-4 py-2.5">
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={isAllSelected}
+            ref={el => { if (el) el.indeterminate = isPartialSelected }}
+            onChange={toggleAll}
+            className="h-4 w-4 rounded border-border text-red-600 cursor-pointer"
+          />
+          <span className="text-sm text-muted-foreground">
+            {isAllSelected
+              ? <span className="text-foreground font-medium">Semua {items.length} item dipilih</span>
+              : hasSelection
+                ? <span className="text-foreground font-medium">{selectedIds.size} dari {items.length} dipilih</span>
+                : <span>Pilih semua {items.length} item</span>}
+          </span>
+          {hasSelection && (
+            <button onClick={clearSelection} className="text-xs text-muted-foreground hover:text-foreground underline">
+              Batalkan
+            </button>
+          )}
+        </div>
+        {hasSelection && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setDeleteTarget('bulk')}
+            className="border-red-200 text-red-600 hover:bg-red-50 gap-1.5"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Hapus ({selectedIds.size})
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -219,8 +268,9 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
                   <input
                     type="checkbox"
                     checked={isAllSelected}
+                    ref={el => { if (el) el.indeterminate = isPartialSelected }}
                     onChange={toggleAll}
-                    className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-border text-red-600 cursor-pointer"
                   />
                 </TableHead>
                 <TableHead>Nama Item</TableHead>
@@ -289,16 +339,26 @@ export function RoomInventoryList({ room, items, allItems, roomId }: RoomInvento
                       )}
                     </TableCell>
                     <TableCell>
-                      <InventoryItemActions item={{
-                        id: item.id,
-                        name: item.name,
-                        quantity: item.quantity,
-                        condition: item.condition,
-                        inventory_code: item.inventory_code,
-                        notes: item.notes,
-                        photo_url: item.photo_url,
-                        room_id: item.room_id,
-                      }} />
+                      <div className="flex items-center gap-1">
+                        <InventoryItemActions item={{
+                          id: item.id,
+                          name: item.name,
+                          merk: item.merk,
+                          quantity: item.quantity,
+                          condition: item.condition,
+                          inventory_code: item.inventory_code,
+                          notes: item.notes,
+                          photo_url: item.photo_url,
+                          room_id: item.room_id,
+                        }} />
+                        <button
+                          onClick={() => setDeleteTarget(item.id)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
+                          title="Hapus item"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

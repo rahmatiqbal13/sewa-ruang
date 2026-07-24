@@ -12,13 +12,13 @@ export default async function InventoryIndexPage({
   const sb = createAdminDbClient()
 
   try {
-    // Query items
-    let query = sb
+    // Query items — is_active = true AND deleted_at IS NULL ensures trash items never show
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (sb as any)
       .from('room_inventories')
-      .select(`
-        id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_id
-      `)
+      .select(`id, name, merk, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_id`)
       .eq('is_active', true)
+      .is('deleted_at', null)
       .order('name')
 
     if (condition) {
@@ -32,7 +32,7 @@ export default async function InventoryIndexPage({
     }
 
     // Get all room_ids from items
-    const roomIds = [...new Set((itemsData || []).map((item) => item.room_id).filter(Boolean))]
+    const roomIds = [...new Set((itemsData || []).map((item: any) => item.room_id).filter(Boolean))] as string[]
 
     // Fetch rooms data
     let roomsData: any[] = []
@@ -69,10 +69,12 @@ export default async function InventoryIndexPage({
     }))
 
     // Query ALL items for export
-    let allItemsQuery = sb
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let allItemsQuery = (sb as any)
       .from('room_inventories')
-      .select(`id, name, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_id`)
+      .select(`id, name, merk, quantity, condition, inventory_code, notes, photo_url, last_updated_at, room_id`)
       .eq('is_active', true)
+      .is('deleted_at', null)
       .order('name')
 
     if (condition) {
@@ -87,11 +89,12 @@ export default async function InventoryIndexPage({
       rooms: roomsMap.get(item.room_id) || null
     }))
 
-    // Count per condition
-    const { data: allConditionItems } = await sb
+    // Count per condition — exclude trash items from count
+    const { data: allConditionItems } = await (sb as any)
       .from('room_inventories')
       .select('condition')
       .eq('is_active', true)
+      .is('deleted_at', null)
 
     const condCounts: Record<string, number> = {}
     for (const i of allConditionItems ?? []) condCounts[i.condition] = (condCounts[i.condition] ?? 0) + 1

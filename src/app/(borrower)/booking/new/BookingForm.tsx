@@ -66,20 +66,23 @@ const schema = z.object({
   if (data.start_date && data.end_date) {
     const start = new Date(data.start_date)
     const end = new Date(data.end_date)
-    if (end <= start) {
+    // Tanggal sama = 1 hari, diperbolehkan
+    if (end < start) {
       return false
     }
   }
   return true
 }, {
-  message: 'Tanggal selesai harus setelah tanggal mulai',
+  message: 'Tanggal selesai tidak boleh sebelum tanggal mulai',
   path: ['end_date'],
 }).refine((data) => {
   if (data.start_date && data.end_date) {
     const start = new Date(data.start_date)
     const end = new Date(data.end_date)
-    const diffTime = end.getTime() - start.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    // Tanggal sama = 1 hari, beda = selisih + 1
+    const diffDays = start.toDateString() === end.toDateString()
+      ? 1
+      : Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
     if (diffDays > MAX_BOOKING_DAYS) {
       return false
     }
@@ -200,7 +203,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
       ? new Date(`${endDate}T${endTime}`)
       : new Date(`${endDate}T23:59`)
 
-    if (end <= start) {
+    if (end < start) {
       setEstimatedTotal(0)
       setPriceBreakdown([])
       return
@@ -209,8 +212,14 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
     let total = 0
     const breakdown: Array<{name: string, type: string, price: number, details: string}> = []
 
-    const days = Math.ceil((end.getTime() - start.getTime()) / 86400000)
-    const hours = Math.ceil((end.getTime() - start.getTime()) / 3600000)
+    // Tanggal sama = 1 hari; beda tanggal = selisih hari + 1 (inklusif)
+    const isSameDay = startDate === endDate
+    const days = isSameDay
+      ? 1
+      : Math.ceil((new Date(`${endDate}T00:00`).getTime() - new Date(`${startDate}T00:00`).getTime()) / 86400000) + 1
+    const hours = isSameDay
+      ? Math.ceil((end.getTime() - start.getTime()) / 3600000) || 1
+      : Math.ceil((end.getTime() - start.getTime()) / 3600000)
 
     const isGratis = isFreeBooking(borrowerCategory, eventType, purpose)
 
@@ -718,7 +727,7 @@ export function BookingForm({ items, profile, borrowerCategory, defaultItemId, d
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4" />
               <span>
-                Durasi: {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))} hari
+                Durasi: {startDate === endDate ? 1 : Math.ceil((new Date(`${endDate}T00:00`).getTime() - new Date(`${startDate}T00:00`).getTime()) / 86400000) + 1} hari
                 {hasRooms && startTime && endTime && ` (${startTime} - ${endTime})`}
               </span>
             </div>

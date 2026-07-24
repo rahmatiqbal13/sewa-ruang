@@ -4,23 +4,27 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { 
-  Boxes, ChevronRight, Building2, DoorOpen, Package, Plus, Download, 
-  FileUp, Pencil, MoreHorizontal, Trash2, LayoutGrid, 
-  Table2, ChevronLeft, ChevronRightIcon
+import {
+  Boxes, ChevronRight, Building2, DoorOpen, Package, Plus, Download,
+  FileUp, Pencil, MoreHorizontal, Trash2, LayoutGrid,
+  Table2, ChevronLeft, ChevronRightIcon, AlertTriangle
 } from 'lucide-react'
 import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { cn } from '@/lib/utils'
-import { exportInventoryToExcel, downloadInventoryTemplate } from './exportInventory'
-import { ImportDialog } from '../equipment/ImportDialog'
+import { exportInventoryToExcel } from './exportInventory'
+import { InventoryImportDialog } from './InventoryImportDialog'
 import { EditInventoryItemDialog } from './[roomId]/EditInventoryItemDialog'
-import type { ImportResult } from '../equipment/importEquipment'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogMedia, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { SafeImage } from '@/components/shared/SafeImage'
 
 const CONDITIONS = [
@@ -33,13 +37,14 @@ const CONDITIONS = [
 interface InventoryItem {
   id: string
   name: string
+  merk: string | null
   quantity: number
   condition: 'good' | 'needs_repair' | 'damaged'
   inventory_code: string | null
   notes: string | null
   photo_url: string | null
   last_updated_at?: string
-  room_id: string
+  room_id: string | null
   rooms: {
     id: string
     name: string
@@ -86,6 +91,8 @@ export function InventoryList({
   const [isExporting, setIsExporting] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<InventoryItem | 'bulk' | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -101,14 +108,16 @@ export function InventoryList({
   }
 
   const toggleAll = () => {
-    if (selectedIds.size === paginatedItems.length) setSelectedIds(new Set())
-    else setSelectedIds(new Set(paginatedItems.map(i => i.id)))
+    // Select/deselect ALL items across all pages
+    if (selectedIds.size === items.length) setSelectedIds(new Set())
+    else setSelectedIds(new Set(items.map(i => i.id)))
   }
 
   const clearSelection = () => setSelectedIds(new Set())
 
   const isSelected = (id: string) => selectedIds.has(id)
-  const isAllSelected = selectedIds.size === paginatedItems.length && paginatedItems.length > 0
+  const isAllSelected = items.length > 0 && selectedIds.size === items.length
+  const isPartialSelected = selectedIds.size > 0 && selectedIds.size < items.length
   const hasSelection = selectedIds.size > 0
 
   const handleExport = () => {
@@ -117,45 +126,60 @@ export function InventoryList({
     const inventoryToExport = selectedArray.length > 0
       ? allItems.filter(item => selectedArray.includes(item.id))
       : allItems
-    
+
     const exportData = inventoryToExport.map(item => ({
       id: item.id,
-      item_name: item.name,
+      name: item.name,
+      merk: item.merk,
+      inventory_code: item.inventory_code,
       quantity: item.quantity,
       condition: item.condition,
-      description: item.notes,
+      notes: item.notes,
       is_active: true,
+      room_name: item.rooms?.name ?? null,
+      building_name: item.rooms?.buildings?.name ?? null,
     }))
-    
+
     exportInventoryToExcel(selectedArray, exportData)
     setIsExporting(false)
     clearSelection()
   }
 
-  const handleImport = async (): Promise<ImportResult> => ({
-    success: false,
-    message: 'Silakan pilih ruangan terlebih dahulu untuk mengimport inventaris.',
-    totalRows: 0,
-    successCount: 0,
-    errorCount: 1,
-    importedIds: [],
-    errors: [{ row: 0, message: 'Pilih ruangan terlebih dahulu' }]
-  })
 
-  async function softDelete(item: InventoryItem) {
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setIsDeleting(true)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('room_inventories') as any)
-      .update({ is_active: false })
-      .eq('id', item.id)
-    
-    if (error) {
-      toast.error('Gagal menghapus: ' + error.message)
-      return
+    const sb = supabase.from('room_inventories') as any
+
+    const now = new Date().toISOString()
+    if (deleteTarget === 'bulk') {
+      const ids = Array.from(selectedIds)
+      const { error } = await sb
+        .update({ is_active: false, deleted_at: now })
+        .in('id', ids)
+      if (error) {
+        toast.error('Gagal menghapus: ' + error.message)
+      } else {
+        toast.success(`${ids.length} item berhasil dihapus`)
+        clearSelection()
+        router.refresh()
+      }
+    } else {
+      const { error } = await sb
+        .update({ is_active: false, deleted_at: now })
+        .eq('id', deleteTarget.id)
+      if (error) {
+        toast.error('Gagal menghapus: ' + error.message)
+      } else {
+        toast.success(`"${deleteTarget.name}" berhasil dihapus`)
+        router.refresh()
+      }
     }
-    
-    toast.success('Item dihapus')
-    router.refresh()
+
+    setIsDeleting(false)
+    setDeleteTarget(null)
   }
 
   const buildQueryString = (newCondition: string) => {
@@ -174,15 +198,47 @@ export function InventoryList({
         />
       )}
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open && !isDeleting) setDeleteTarget(null) }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-red-50">
+              <AlertTriangle className="size-5 text-red-600" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>
+              {deleteTarget === 'bulk'
+                ? `Hapus ${selectedIds.size} item?`
+                : `Hapus "${deleteTarget instanceof Object ? (deleteTarget as InventoryItem).name : ''}"?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget === 'bulk'
+                ? `${selectedIds.size} item inventaris yang dipilih akan dihapus. Tindakan ini tidak dapat dibatalkan.`
+                : 'Item inventaris ini akan dihapus. Tindakan ini tidak dapat dibatalkan.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={confirmDelete}
+            >
+              {isDeleting ? 'Menghapus...' : 'Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Import Dialog */}
-      <ImportDialog
+      <InventoryImportDialog
         isOpen={isImportDialogOpen}
-        onClose={() => setIsImportDialogOpen(false)}
-        onImport={handleImport}
-        onDownloadTemplate={downloadInventoryTemplate}
-        title="Import Inventaris"
-        description="Unggah file Excel untuk mengimport data inventaris. Import inventaris harus dilakukan di halaman detail ruangan."
-        entityName="inventaris"
+        onClose={() => {
+          setIsImportDialogOpen(false)
+          router.refresh()
+        }}
       />
 
       {/* Info Banner */}
@@ -208,15 +264,25 @@ export function InventoryList({
         </div>
         <div className="flex items-center gap-2">
           {hasSelection && (
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              disabled={isExporting}
-              className="hidden sm:flex border-blue-200 text-blue-700 hover:bg-blue-50"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export ({selectedIds.size})
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={handleExport}
+                disabled={isExporting}
+                className="hidden sm:flex border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export ({selectedIds.size})
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteTarget('bulk')}
+                className="hidden sm:flex border-red-200 text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Hapus ({selectedIds.size})
+              </Button>
+            </>
           )}
           
           <Button
@@ -324,22 +390,44 @@ export function InventoryList({
 
       {/* Selection Header */}
       {paginatedItems.length > 0 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-card border rounded-[10px] px-4 py-2.5">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={isAllSelected}
+              ref={el => { if (el) el.indeterminate = isPartialSelected }}
               onChange={toggleAll}
-              className="h-5 w-5 rounded border-2 border-border text-blue-600"
+              className="h-4 w-4 rounded border-border text-red-600 cursor-pointer"
             />
             <span className="text-sm text-muted-foreground">
-              {hasSelection ? `${selectedIds.size} dipilih` : 'Pilih semua'}
+              {isAllSelected
+                ? <span className="text-foreground font-medium">Semua {items.length} item dipilih</span>
+                : hasSelection
+                  ? <span className="text-foreground font-medium">{selectedIds.size} dari {items.length} item dipilih</span>
+                  : <span>Pilih semua {items.length} item</span>}
             </span>
+            {hasSelection && (
+              <button onClick={clearSelection} className="text-xs text-muted-foreground hover:text-foreground underline">
+                Batalkan
+              </button>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Menampilkan {paginatedItems.length} dari {items.length} item
-            {totalPages > 1 && ` (Halaman ${currentPage} dari ${totalPages})`}
-          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              Halaman {currentPage}/{totalPages}
+            </span>
+            {hasSelection && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDeleteTarget('bulk')}
+                className="border-red-200 text-red-600 hover:bg-red-50 gap-1.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Hapus ({selectedIds.size})
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -420,9 +508,12 @@ export function InventoryList({
 
                 {/* Content — Catalog Style */}
                 <div className="p-4">
-                  <h3 className="font-bold text-[#111827] text-base truncate group-hover:text-[#0891B2] transition-colors mb-1">
+                  <h3 className="font-bold text-[#111827] text-base truncate group-hover:text-[#0891B2] transition-colors">
                     {item.name}
                   </h3>
+                  {item.merk && (
+                    <p className="text-xs text-[#6B7280] mb-1">{item.merk}</p>
+                  )}
                   
                   {/* Location */}
                   <div className="mb-3 space-y-1">
@@ -485,7 +576,7 @@ export function InventoryList({
                           <Pencil className="h-4 w-4" /> Edit Detail
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => softDelete(item)} className="gap-2 cursor-pointer text-red-600">
+                        <DropdownMenuItem onClick={() => setDeleteTarget(item)} className="gap-2 cursor-pointer text-red-600">
                           <Trash2 className="h-4 w-4" /> Hapus
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -551,7 +642,8 @@ export function InventoryList({
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-foreground">{item.name}</p>
-                        {item.notes && <p className="text-xs text-muted-foreground/70 truncate max-w-[200px]">{item.notes}</p>}
+                        {item.merk && <p className="text-xs text-muted-foreground/70">{item.merk}</p>}
+                        {item.notes && <p className="text-xs text-muted-foreground/50 truncate max-w-[200px]">{item.notes}</p>}
                       </td>
                       <td className="px-4 py-3">
                         {room ? (
@@ -587,7 +679,7 @@ export function InventoryList({
                                 <Pencil className="h-4 w-4" /> Edit
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => softDelete(item)} className="gap-2 cursor-pointer text-red-600">
+                              <DropdownMenuItem onClick={() => setDeleteTarget(item)} className="gap-2 cursor-pointer text-red-600">
                                 <Trash2 className="h-4 w-4" /> Hapus
                               </DropdownMenuItem>
                             </DropdownMenuContent>

@@ -14,12 +14,13 @@ import {
   DialogFooter
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { 
-  Loader2, 
-  CheckCircle, 
+import {
+  Loader2,
+  CheckCircle,
   XCircle,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  SplitSquareHorizontal
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatRupiah, formatDateTime } from '@/lib/utils'
@@ -35,6 +36,7 @@ interface PaymentProof {
   status: 'pending' | 'verified' | 'rejected'
   rejection_reason: string | null
   created_at: string
+  already_paid: number
   bookings: {
     id: string
     reference_no: string
@@ -83,7 +85,7 @@ export default function PaymentVerificationPage() {
     return () => clearTimeout(id)
   }, [activeTab])
 
-  const handleVerify = async (status: 'verified' | 'rejected') => {
+  const handleVerify = async (status: 'verified' | 'partial' | 'rejected') => {
     if (!selectedProof) return
 
     if (status === 'rejected' && !rejectionReason.trim()) {
@@ -110,7 +112,11 @@ export default function PaymentVerificationPage() {
         throw new Error(data.error || 'Failed to verify payment')
       }
 
-      toast.success(status === 'verified' ? 'Pembayaran diverifikasi!' : 'Pembayaran ditolak')
+      toast.success(
+        status === 'verified' ? 'Pembayaran lunas diverifikasi!' :
+        status === 'partial' ? 'Pembayaran sebagian diterima!' :
+        'Pembayaran ditolak'
+      )
       setDialogOpen(false)
       setSelectedProof(null)
       setRejectionReason('')
@@ -264,12 +270,24 @@ export default function PaymentVerificationPage() {
                           </div>
                         </div>
 
-                        {proof.transfer_amount !== proof.bookings.total_amount && (
-                          <div className="bg-red-50 border border-red-200 rounded-[10px] p-2 text-sm text-red-800">
-                            <AlertCircle className="h-4 w-4 inline mr-1" />
-                            Nominal transfer tidak sesuai!
-                          </div>
-                        )}
+                        {(() => {
+                          const remaining = proof.bookings.total_amount - proof.already_paid - proof.transfer_amount
+                          if (remaining > 0) return (
+                            <div className="bg-amber-50 border border-amber-200 rounded-[10px] p-2 text-sm text-amber-800 space-y-0.5">
+                              <div><AlertCircle className="h-4 w-4 inline mr-1" />Pembayaran kurang — sisa {formatRupiah(remaining)}</div>
+                              {proof.already_paid > 0 && (
+                                <div className="text-xs text-amber-700">Sudah terbayar sebelumnya: {formatRupiah(proof.already_paid)}</div>
+                              )}
+                            </div>
+                          )
+                          if (remaining < 0) return (
+                            <div className="bg-red-50 border border-red-200 rounded-[10px] p-2 text-sm text-red-800">
+                              <AlertCircle className="h-4 w-4 inline mr-1" />
+                              Transfer melebihi tagihan sebesar {formatRupiah(Math.abs(remaining))}
+                            </div>
+                          )
+                          return null
+                        })()}
 
                         {proof.status === 'pending' && (
                           <div className="flex gap-2">
@@ -301,115 +319,152 @@ export default function PaymentVerificationPage() {
 
       {/* Verification Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-[14px]">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Verifikasi Pembayaran</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Periksa bukti transfer sebelum melakukan verifikasi
+        <DialogContent className="sm:max-w-xl rounded-[14px] p-6">
+          <DialogHeader className="pb-0">
+            <DialogTitle className="text-foreground text-lg">Verifikasi Pembayaran</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm">
+              {selectedProof?.bookings.reference_no} · {selectedProof?.bookings.users.name}
             </DialogDescription>
           </DialogHeader>
 
-          {selectedProof && (
-            <div className="space-y-4">
-              {/* Large Image Preview */}
-              <div className="border border-border rounded-[10px] overflow-hidden">
-                <img 
-                  src={selectedProof.proof_url} 
-                  alt="Bukti Transfer" 
-                  className="w-full max-h-96 object-contain bg-muted"
-                />
+          {selectedProof && (() => {
+            const alreadyPaid = selectedProof.already_paid
+            const thisTransfer = selectedProof.transfer_amount
+            const total = selectedProof.bookings.total_amount
+            const remaining = total - alreadyPaid - thisTransfer
+            const isExact = remaining === 0
+            const isPartial = remaining > 0
+
+            return (
+              <div className="space-y-4">
+                {/* Row 1: image + summary */}
+                <div className="flex gap-3">
+                  {/* Proof image */}
+                  <div className="w-40 h-40 flex-shrink-0 border border-border rounded-[12px] overflow-hidden bg-muted">
+                    <img
+                      src={selectedProof.proof_url}
+                      alt="Bukti Transfer"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Payment rows */}
+                  <div className="flex-1 divide-y divide-border border border-border rounded-[12px] overflow-hidden text-sm">
+                    <div className="flex items-center justify-between px-4 py-3 bg-muted/50">
+                      <span className="text-muted-foreground whitespace-nowrap">Total Tagihan</span>
+                      <span className="font-bold text-foreground ml-3">{formatRupiah(total)}</span>
+                    </div>
+                    {alreadyPaid > 0 && (
+                      <div className="flex items-center justify-between px-4 py-3 bg-muted/50">
+                        <span className="text-muted-foreground whitespace-nowrap">Sudah Dibayar</span>
+                        <span className="font-bold text-blue-600 ml-3">{formatRupiah(alreadyPaid)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between px-4 py-3 bg-muted/50">
+                      <span className="text-muted-foreground whitespace-nowrap">Transfer Ini</span>
+                      <span className={`font-bold ml-3 ${isExact ? 'text-green-600' : isPartial ? 'text-amber-600' : 'text-red-600'}`}>
+                        {formatRupiah(thisTransfer)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3 bg-muted/50">
+                      <span className="text-muted-foreground whitespace-nowrap">{remaining >= 0 ? 'Sisa Tagihan' : 'Kelebihan'}</span>
+                      <span className={`font-bold ml-3 ${remaining === 0 ? 'text-green-600' : remaining > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                        {formatRupiah(Math.abs(remaining))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Warning banner */}
+                {isPartial && (
+                  <div className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-[10px] text-xs text-amber-800">
+                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                    <span>Pembayaran belum lunas. Gunakan <strong>Terima Sebagian</strong> agar peminjam bisa upload sisa bukti.</span>
+                  </div>
+                )}
+                {!isPartial && !isExact && (
+                  <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-200 rounded-[10px] text-xs text-red-800">
+                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                    <span>Transfer melebihi tagihan sebesar {formatRupiah(Math.abs(remaining))}.</span>
+                  </div>
+                )}
+
+                {/* Transfer details */}
+                <div className="divide-y divide-border border border-border rounded-[10px] overflow-hidden text-sm">
+                  {[
+                    { label: 'Bank', value: selectedProof.bank_name || '-' },
+                    { label: 'Atas Nama', value: selectedProof.account_name || '-' },
+                    { label: 'Tanggal Transfer', value: selectedProof.transfer_date || '-' },
+                    { label: 'Kode Pembayaran', value: selectedProof.bookings.payment_code || '-', mono: true },
+                  ].map(({ label, value, mono }) => (
+                    <div key={label} className="flex items-center justify-between gap-4 px-4 py-2.5">
+                      <span className="text-muted-foreground shrink-0">{label}</span>
+                      <span className={`font-medium text-foreground text-right whitespace-nowrap ${mono ? 'font-mono text-xs' : ''}`}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {selectedProof.notes && (
+                  <div className="flex gap-2 bg-yellow-50 border border-yellow-200 p-2.5 rounded-[10px] text-xs text-yellow-800">
+                    <span className="font-semibold shrink-0">Catatan:</span>
+                    <span>{selectedProof.notes}</span>
+                  </div>
+                )}
+
+                {/* Rejection reason */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">
+                    Alasan Penolakan <span className="text-muted-foreground font-normal text-xs">(wajib jika menolak)</span>
+                  </label>
+                  <Textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Contoh: Nominal tidak sesuai, bukti tidak jelas, dll"
+                    rows={2}
+                    className="rounded-[10px] border-border resize-none text-sm"
+                  />
+                </div>
               </div>
+            )
+          })()}
 
-              {/* Comparison */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-[10px]">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total yang Harus Dibayar</p>
-                  <p className="text-xl font-bold text-foreground">{formatRupiah(selectedProof.bookings.total_amount)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Jumlah Transfer</p>
-                  <p className={`text-xl font-bold ${
-                    selectedProof.transfer_amount === selectedProof.bookings.total_amount
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                    {formatRupiah(selectedProof.transfer_amount)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Details */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Kode Pembayaran:</span>
-                  <span className="ml-2 font-mono text-foreground">{selectedProof.bookings.payment_code}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Bank:</span>
-                  <span className="ml-2 text-foreground">{selectedProof.bank_name}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Atas Nama:</span>
-                  <span className="ml-2 text-foreground">{selectedProof.account_name || '-'}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Tanggal Transfer:</span>
-                  <span className="ml-2 text-foreground">{selectedProof.transfer_date || '-'}</span>
-                </div>
-              </div>
-
-              {selectedProof.notes && (
-                <div className="bg-yellow-50 p-3 rounded-[10px] text-sm">
-                  <span className="font-medium">Catatan:</span> {selectedProof.notes}
-                </div>
-              )}
-
-              {/* Rejection Reason */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Alasan Penolakan (jika menolak)</label>
-                <Textarea
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Contoh: Nominal tidak sesuai, bukti tidak jelas, dll"
-                  className="rounded-[10px] border-border"
-                />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
+          {/* Footer */}
+          <DialogFooter className="flex-row gap-2 pt-2">
+            <Button
+              variant="outline"
               onClick={() => setDialogOpen(false)}
               disabled={processing}
               className="rounded-[10px]"
             >
               Batal
             </Button>
-            <Button 
+            <div className="flex-1" />
+            <Button
               variant="destructive"
               onClick={() => handleVerify('rejected')}
               disabled={processing || !rejectionReason.trim()}
               className="rounded-[10px]"
             >
-              {processing ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <XCircle className="h-4 w-4 mr-2" />
-              )}
+              {processing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
               Tolak
             </Button>
-            <Button 
+            {selectedProof && (selectedProof.bookings.total_amount - selectedProof.already_paid - selectedProof.transfer_amount) > 0 && (
+              <Button
+                onClick={() => handleVerify('partial')}
+                disabled={processing}
+                className="bg-amber-500 hover:bg-amber-600 rounded-[10px]"
+              >
+                {processing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <SplitSquareHorizontal className="h-4 w-4 mr-1" />}
+                Terima Sebagian
+              </Button>
+            )}
+            <Button
               onClick={() => handleVerify('verified')}
               disabled={processing}
               className="bg-green-600 hover:bg-green-700 rounded-[10px]"
             >
-              {processing ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <CheckCircle className="h-4 w-4 mr-2" />
-              )}
-              Verifikasi
+              {processing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+              Lunas
             </Button>
           </DialogFooter>
         </DialogContent>

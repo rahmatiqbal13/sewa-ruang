@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Plus, Trash2, User, Calendar, Package, ArrowLeft, Search } from 'lucide-react'
+import { Loader2, Plus, Trash2, User, Calendar, Package, ArrowLeft, Search, AlertTriangle, GraduationCap } from 'lucide-react'
 import { format, addHours } from 'date-fns'
 import Link from 'next/link'
 import {
@@ -85,6 +85,13 @@ export function AdminBookingForm() {
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [totalAmount, setTotalAmount] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
+  const [classConflicts, setClassConflicts] = useState<Array<{
+    mata_kuliah: string | null
+    dosen: string | null
+    start_datetime: string
+    end_datetime: string
+    room_id: string
+  }>>([])
 
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -239,6 +246,40 @@ export function AdminBookingForm() {
 
     setTotalAmount(total)
   }, [watchItems, watchStart, watchEnd, watchBorrowerCategory, rooms, equipment])
+
+  // Check for class schedule conflicts on selected rooms + time range
+  useEffect(() => {
+    const roomIds = watchItems
+      ?.filter(item => item.item_type === 'room' && item.room_id)
+      .map(item => item.room_id) || []
+
+    if (roomIds.length === 0 || !watchStart || !watchEnd) {
+      setClassConflicts([])
+      return
+    }
+
+    const startDt = new Date(watchStart)
+    const endDt = new Date(watchEnd)
+    if (isNaN(startDt.getTime()) || isNaN(endDt.getTime()) || endDt <= startDt) {
+      setClassConflicts([])
+      return
+    }
+
+    async function checkConflicts() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('room_schedule_blocks')
+        .select('mata_kuliah, dosen, start_datetime, end_datetime, room_id')
+        .in('room_id', roomIds)
+        .eq('schedule_type', 'class')
+        .lt('start_datetime', endDt.toISOString())
+        .gt('end_datetime', startDt.toISOString())
+        .limit(5)
+      setClassConflicts(data || [])
+    }
+
+    checkConflicts()
+  }, [watchItems, watchStart, watchEnd])
 
   // Filter items based on search
   const getFilteredItems = (type: 'room' | 'equipment') => {
@@ -511,6 +552,31 @@ export function AdminBookingForm() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Class schedule conflict warning — admin can still proceed */}
+        {classConflicts.length > 0 && (
+          <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-[12px]">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-amber-800">Konflik Jadwal Kuliah</p>
+              <p className="text-sm text-amber-700 mt-1">
+                Ruangan yang dipilih memiliki jadwal perkuliahan pada waktu ini.
+                Sebagai admin, Anda tetap dapat membuat peminjaman untuk kegiatan khusus.
+              </p>
+              <ul className="mt-2 space-y-1">
+                {classConflicts.map((c, i) => (
+                  <li key={i} className="text-sm text-amber-800 flex items-start gap-1.5">
+                    <GraduationCap className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                    <span>
+                      <strong>{c.mata_kuliah}</strong> — {c.dosen}
+                      {' '}({format(new Date(c.start_datetime), 'HH:mm')}–{format(new Date(c.end_datetime), 'HH:mm')})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
 
         {/* Item yang Dipinjam */}
         <Card>

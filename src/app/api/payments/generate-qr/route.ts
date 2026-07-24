@@ -91,6 +91,7 @@ export async function POST(req: Request) {
 
     // Generate QR content
     const qrContent = generateQRContent({
+      bookingId,
       referenceNo: booking.reference_no,
       amount: booking.total_amount,
       paymentCode: paymentCode,
@@ -144,6 +145,7 @@ export async function POST(req: Request) {
 
 // Helper function to generate QR content
 function generateQRContent({
+  bookingId,
   referenceNo,
   amount,
   paymentCode,
@@ -153,6 +155,7 @@ function generateQRContent({
   userName,
   baseUrl
 }: {
+  bookingId: string
   referenceNo: string
   amount: number
   paymentCode: string
@@ -187,7 +190,7 @@ atau 3 digit terakhir unik
 untuk verifikasi otomatis
 
 Upload bukti transfer di:
-${baseUrl}/booking/payment/${referenceNo}
+${baseUrl}/booking/${bookingId}/payment
 
 ================================
 `.trim()

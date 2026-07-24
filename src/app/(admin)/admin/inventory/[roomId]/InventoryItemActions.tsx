@@ -18,6 +18,7 @@ import { EditInventoryItemDialog } from './EditInventoryItemDialog'
 interface Item {
   id: string
   name: string
+  merk: string | null
   quantity: number
   condition: 'good' | 'needs_repair' | 'damaged'
   inventory_code: string | null
@@ -69,14 +70,14 @@ export function InventoryItemActions({ item }: InventoryItemActionsProps) {
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from('room_inventories') as any)
-      .update({ is_active: false })
+      .update({ is_active: false, deleted_at: new Date().toISOString() })
       .eq('id', item.id)
-    
+
     if (error) {
       toast.error('Gagal menghapus: ' + error.message)
       return
     }
-    
+
     toast.success('Item dihapus')
     router.refresh()
   }
