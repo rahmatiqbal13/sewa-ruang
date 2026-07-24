@@ -20,7 +20,7 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
 
   const [roomRes, buildingsRes, ratesRes] = await Promise.all([
     sb.from('rooms')
-      .select('id, name, building_id, floor_number, room_sequence, description, capacity, is_for_rent, photo_url')
+      .select('id, name, building_id, floor_number, room_sequence, description, capacity, is_for_rent, photo_url, door_photo_url')
       .eq('id', id)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .single() as any,
@@ -31,9 +31,8 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
       .order('name') as any,
     sb.from('room_rates')
       .select('usage_category, rate_per_hour, rate_per_day')
-      .eq('room_id', id)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .single() as any,
+      .eq('room_id', id) as any,
   ])
 
   if (!roomRes.data) notFound()

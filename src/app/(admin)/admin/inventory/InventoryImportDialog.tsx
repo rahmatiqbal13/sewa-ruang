@@ -55,7 +55,7 @@ export function InventoryImportDialog({ isOpen, onClose }: InventoryImportDialog
 
     try {
       // roomId = null: import tanpa ruangan, ruangan bisa diisi manual nanti
-      const importResult = await importInventoryFromExcel(formData, null)
+      const importResult = await importInventoryFromExcel(formData, '')
       setResult(importResult)
       if (importResult.successCount > 0) {
         router.refresh()
@@ -66,6 +66,7 @@ export function InventoryImportDialog({ isOpen, onClose }: InventoryImportDialog
         message: 'Terjadi kesalahan saat mengimport',
         totalRows: 0,
         successCount: 0,
+        skippedCount: 0,
         errorCount: 1,
         importedIds: [],
         errors: [{ row: 0, message: error instanceof Error ? error.message : 'Unknown error' }],

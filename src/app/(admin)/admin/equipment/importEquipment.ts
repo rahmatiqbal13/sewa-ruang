@@ -9,6 +9,7 @@ export interface ImportResult {
   message: string
   totalRows: number
   successCount: number
+  skippedCount: number
   errorCount: number
   importedIds: string[]  // IDs of successfully imported equipment
   errors: Array<{
@@ -31,6 +32,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         message: 'File tidak ditemukan',
         totalRows: 0,
         successCount: 0,
+        skippedCount: 0,
         errorCount: 1,
         importedIds: [],
         errors: [{ row: 0, message: 'File tidak ditemukan' }]
@@ -92,6 +94,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         message: 'File Excel kosong atau tidak memiliki data. Pastikan ada sheet dengan header "Nama Alat"',
         totalRows: 0,
         successCount: 0,
+        skippedCount: 0,
         errorCount: 1,
         importedIds: [],
         errors: [{ row: 0, message: `Sheet yang tersedia: ${workbook.SheetNames.join(', ')}` }]
@@ -138,6 +141,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         message: 'Unauthorized',
         totalRows: 0,
         successCount: 0,
+        skippedCount: 0,
         errorCount: 1,
         importedIds: [],
         errors: [{ row: 0, message: 'Unauthorized' }]
@@ -162,16 +166,24 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
       }
     }
 
-    // Get existing names to check duplicates
-    const { data: existingNamesData } = await sb
+    // Get existing names and codes to detect duplicates
+    const { data: existingEquipmentData } = await sb
       .from('equipment')
-      .select('name')
+      .select('name, equipment_code')
 
-    const existingNames = existingNamesData?.map((e: { name: string }) => e.name.toLowerCase().trim()) ?? []
+    const existingNames = new Set<string>(
+      existingEquipmentData?.map((e: { name: string }) => e.name.toLowerCase().trim()) ?? []
+    )
+    const existingCodes = new Set<string>(
+      existingEquipmentData
+        ?.map((e: { equipment_code: string | null }) => e.equipment_code?.toLowerCase().trim())
+        .filter(Boolean) ?? []
+    )
 
     const errors: Array<{ row: number; message: string; data?: Record<string, unknown> }> = []
     const importedIds: string[] = []
     let successCount = 0
+    let skippedCount = 0
     const headerRow = actualData[0]
     const rows = actualData.slice(1)
 
@@ -260,10 +272,11 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
         message: 'Kolom "Nama Alat" tidak ditemukan. Pastikan header Excel sesuai template.',
         totalRows: 0,
         successCount: 0,
+        skippedCount: 0,
         errorCount: 1,
         importedIds: [],
-        errors: [{ 
-          row: 1, 
+        errors: [{
+          row: 1,
           message: `Header yang terdeteksi: ${headerRow.join(', ')}`,
           data: { headers: headerRow }
         }]
@@ -286,20 +299,17 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
           continue
         }
 
-        // Check for duplicate names and generate unique name
-        let finalName = name
-        const normalizedBase = name.toLowerCase().trim()
-        const baseExistingNames = existingNames.filter((n: string) => n === normalizedBase || n.startsWith(normalizedBase + ' ('))
-        
-        if (baseExistingNames.length > 0) {
-          let counter = 2
-          let newName = `${name} (${counter})`
-          while (existingNames.includes(newName.toLowerCase())) {
-            counter++
-            newName = `${name} (${counter})`
-          }
-          finalName = newName
+        // Skip if equipment with same name or code already exists
+        const normalizedName = name.toLowerCase().trim()
+        const codeFromRow = row[getColumnIndex('kode') !== -1 ? getColumnIndex('kode') : getColumnIndex('equipment code')]
+          ?.toString().toLowerCase().trim()
+
+        if (existingNames.has(normalizedName) || (codeFromRow && existingCodes.has(codeFromRow))) {
+          skippedCount++
+          continue
         }
+
+        const finalName = name
 
         // Generate equipment code
         lastNum++
@@ -400,8 +410,8 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
           console.log(`Successfully imported row ${rowNum}:`, insertedData)
           successCount++
           importedIds.push(insertedData.id)
-          // Add to existing names to prevent duplicates within the same import
-          existingNames.push(finalName.toLowerCase())
+          // Track within-batch to prevent duplicates across rows in the same file
+          existingNames.add(finalName.toLowerCase())
           
           // Insert rates for each category
           const rateCategories = [
@@ -523,13 +533,17 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
       }
     }
 
+    const parts: string[] = []
+    if (successCount > 0) parts.push(`${successCount} alat berhasil diimport`)
+    if (skippedCount > 0) parts.push(`${skippedCount} dilewati (sudah ada)`)
+    if (errors.length > 0) parts.push(`${errors.length} gagal`)
+
     return {
       success: errors.length === 0,
-      message: errors.length === 0 
-        ? `Berhasil mengimport ${successCount} alat` 
-        : `Berhasil mengimport ${successCount} alat, ${errors.length} gagal`,
+      message: parts.length > 0 ? parts.join(', ') : 'Tidak ada data yang diproses',
       totalRows: rows.filter(row => row && row.some(cell => cell)).length,
       successCount,
+      skippedCount,
       errorCount: errors.length,
       importedIds,
       errors
@@ -541,6 +555,7 @@ export async function importEquipmentFromExcel(formData: FormData): Promise<Impo
       message: `Terjadi kesalahan: ${errorMessage}`,
       totalRows: 0,
       successCount: 0,
+      skippedCount: 0,
       errorCount: 1,
       importedIds: [],
       errors: [{ row: 0, message: errorMessage }]

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,11 +12,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Plus, Trash2, User, Calendar, Package, ArrowLeft, Search, AlertTriangle, GraduationCap } from 'lucide-react'
+import {
+  Loader2, Plus, Trash2, User, Calendar, Package,
+  ArrowLeft, Search, X, Building2, Wrench, CheckCircle2,
+  DoorOpen, Clock, AlertTriangle, GraduationCap,
+} from 'lucide-react'
 import { format, addHours } from 'date-fns'
 import Link from 'next/link'
+import { formatRupiah, cn } from '@/lib/utils'
 import {
   BORROWER_CATEGORIES,
   EVENT_TYPES,
@@ -84,7 +88,10 @@ export function AdminBookingForm() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [totalAmount, setTotalAmount] = useState(0)
-  const [searchQuery, setSearchQuery] = useState('')
+  // Per-item search state (keyed by field index)
+  const [searchQueries, setSearchQueries] = useState<Record<number, string>>({})
+  const [dropdownOpen, setDropdownOpen] = useState<Record<number, boolean>>({})
+  const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const [classConflicts, setClassConflicts] = useState<Array<{
     mata_kuliah: string | null
     dosen: string | null
@@ -104,167 +111,121 @@ export function AdminBookingForm() {
     }
   })
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'items'
-  })
+  const { fields, append, remove } = useFieldArray({ control, name: 'items' })
 
   const watchItems = watch('items')
   const watchStart = watch('start_datetime')
   const watchEnd = watch('end_datetime')
   const watchBorrowerCategory = watch('borrower_category')
+  const watchEventType = watch('event_type')
 
-  // Load rooms and equipment with their rates
+  // Load rooms and equipment
   useEffect(() => {
     async function loadData() {
       const supabase = createClient()
-      
-      // Load rooms with rates
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: roomsData } = await (supabase.from('rooms') as any)
-        .select(`
-          id, name, room_code, capacity, photo_url,
-          buildings(name),
-          room_rates(usage_category, rate_per_hour, rate_per_day)
-        `)
+        .select(`id, name, room_code, capacity, photo_url, buildings(name), room_rates(usage_category, rate_per_hour, rate_per_day)`)
         .eq('is_active', true)
         .eq('is_for_rent', true)
         .order('name')
-      
+
       if (roomsData) {
         const rawRooms = roomsData as Array<{
-          id: string
-          name: string
-          room_code: string | null
-          capacity: number | null
-          photo_url: string | null
-          buildings: { name: string } | null
-          room_rates: RoomRate[]
+          id: string; name: string; room_code: string | null; capacity: number | null
+          photo_url: string | null; buildings: { name: string } | null; room_rates: RoomRate[]
         }>
-        setRooms(rawRooms.map((r) => ({
-          id: r.id,
-          name: r.name,
-          room_code: r.room_code,
-          capacity: r.capacity,
-          photo_url: r.photo_url,
-          building_name: r.buildings?.name || '-',
-          rates: r.room_rates || [],
+        setRooms(rawRooms.map(r => ({
+          id: r.id, name: r.name, room_code: r.room_code, capacity: r.capacity,
+          photo_url: r.photo_url, building_name: r.buildings?.name || '-', rates: r.room_rates || [],
         })))
       }
 
-      // Load equipment with rates
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: equipmentData } = await (supabase.from('equipment') as any)
-        .select(`
-          id, name, equipment_code, merk, photo_url, ketersediaan,
-          equipment_rates(user_category, rate_per_hour, rate_per_day, requires_supervision)
-        `)
+        .select(`id, name, equipment_code, merk, photo_url, ketersediaan, equipment_rates(user_category, rate_per_hour, rate_per_day, requires_supervision)`)
         .eq('is_active', true)
         .eq('ketersediaan', 'tersedia')
         .order('name')
-      
+
       if (equipmentData) {
         const rawEquipment = equipmentData as Array<{
-          id: string
-          name: string
-          equipment_code: string | null
-          merk: string | null
-          photo_url: string | null
-          ketersediaan: string
-          equipment_rates: EquipmentRate[]
+          id: string; name: string; equipment_code: string | null; merk: string | null
+          photo_url: string | null; ketersediaan: string; equipment_rates: EquipmentRate[]
         }>
-        setEquipment(rawEquipment.map((e) => ({
-          id: e.id,
-          name: e.name,
-          equipment_code: e.equipment_code,
-          merk: e.merk,
-          photo_url: e.photo_url,
-          ketersediaan: e.ketersediaan,
-          rates: e.equipment_rates || [],
+        setEquipment(rawEquipment.map(e => ({
+          id: e.id, name: e.name, equipment_code: e.equipment_code, merk: e.merk,
+          photo_url: e.photo_url, ketersediaan: e.ketersediaan, rates: e.equipment_rates || [],
         })))
       }
     }
-    
     loadData()
   }, [])
 
-  // Get rate for specific borrower category (direct lookup, no mapping)
-  const getRoomRate = (room: Room, borrowerCategory: string) => {
-    const rate = room.rates.find(r => r.usage_category === borrowerCategory)
-      ?? room.rates.find(r => r.usage_category === 'umum') // fallback
-    return rate || { rate_per_hour: null, rate_per_day: null }
-  }
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      const target = e.target as Node
+      const anyOpen = Object.values(dropdownOpen).some(Boolean)
+      if (!anyOpen) return
+      const clickedInside = Object.values(dropdownRefs.current).some(ref => ref?.contains(target))
+      if (!clickedInside) setDropdownOpen({})
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [dropdownOpen])
 
-  const getEquipmentRate = (eq: Equipment, borrowerCategory: string) => {
-    const rate = eq.rates.find(r => r.user_category === borrowerCategory)
-      ?? eq.rates.find(r => r.user_category === 'umum') // fallback
-    return rate || { rate_per_hour: null, rate_per_day: null }
-  }
+  const getRoomRate = (room: Room, cat: string) =>
+    room.rates.find(r => r.usage_category === cat) ??
+    room.rates.find(r => r.usage_category === 'umum') ?? { rate_per_hour: null, rate_per_day: null }
 
-  // Calculate total based on borrower category rates + event type
+  const getEquipmentRate = (eq: Equipment, cat: string) =>
+    eq.rates.find(r => r.user_category === cat) ??
+    eq.rates.find(r => r.user_category === 'umum') ?? { rate_per_hour: null, rate_per_day: null }
+
+  // Calculate total
   useEffect(() => {
     if (!watchStart || !watchEnd || !watchBorrowerCategory) return
-
     const start = new Date(watchStart)
     const end = new Date(watchEnd)
-    const hours = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60)))
-    const days = Math.ceil(hours / 24)
-
-    const eventType = watch('event_type')
-    const isGratis = isFreeBooking(watchBorrowerCategory, eventType)
-
+    const hours = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 3_600_000))
+    const days = Math.max(1, Math.ceil(hours / 24))
+    const isGratis = isFreeBooking(watchBorrowerCategory, watchEventType)
     let total = 0
-
     if (!isGratis) {
       watchItems?.forEach((item) => {
         if (item.item_type === 'room' && item.room_id) {
           const room = rooms.find(r => r.id === item.room_id)
           if (room) {
             const rate = getRoomRate(room, watchBorrowerCategory)
-            if (hours > 12 && rate.rate_per_day) {
-              total += rate.rate_per_day * days * item.quantity
-            } else if (rate.rate_per_hour) {
-              total += rate.rate_per_hour * hours * item.quantity
-            } else if (rate.rate_per_day) {
-              total += rate.rate_per_day * days * item.quantity
-            }
+            if (hours > 12 && rate.rate_per_day) total += rate.rate_per_day * days * item.quantity
+            else if (rate.rate_per_hour) total += rate.rate_per_hour * hours * item.quantity
+            else if (rate.rate_per_day) total += rate.rate_per_day * days * item.quantity
           }
         } else if (item.item_type === 'equipment' && item.equipment_id) {
           const eq = equipment.find(e => e.id === item.equipment_id)
           if (eq) {
             const rate = getEquipmentRate(eq, watchBorrowerCategory)
-            // Equipment is always charged per day regardless of hours
-            if (rate.rate_per_day) {
-              total += rate.rate_per_day * days * item.quantity
-            } else if (rate.rate_per_hour) {
-              total += rate.rate_per_hour * hours * item.quantity
-            }
+            if (rate.rate_per_day) total += rate.rate_per_day * days * item.quantity
+            else if (rate.rate_per_hour) total += rate.rate_per_hour * hours * item.quantity
           }
         }
       })
     }
-
     setTotalAmount(total)
-  }, [watchItems, watchStart, watchEnd, watchBorrowerCategory, rooms, equipment])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchItems, watchStart, watchEnd, watchBorrowerCategory, watchEventType, rooms, equipment])
 
-  // Check for class schedule conflicts on selected rooms + time range
+  // Check class schedule conflicts on selected rooms + time range
   useEffect(() => {
     const roomIds = watchItems
       ?.filter(item => item.item_type === 'room' && item.room_id)
       .map(item => item.room_id) || []
-
-    if (roomIds.length === 0 || !watchStart || !watchEnd) {
-      setClassConflicts([])
-      return
-    }
-
+    if (roomIds.length === 0 || !watchStart || !watchEnd) { setClassConflicts([]); return }
     const startDt = new Date(watchStart)
     const endDt = new Date(watchEnd)
-    if (isNaN(startDt.getTime()) || isNaN(endDt.getTime()) || endDt <= startDt) {
-      setClassConflicts([])
-      return
-    }
-
+    if (isNaN(startDt.getTime()) || isNaN(endDt.getTime()) || endDt <= startDt) { setClassConflicts([]); return }
     async function checkConflicts() {
       const supabase = createClient()
       const { data } = await supabase
@@ -277,114 +238,39 @@ export function AdminBookingForm() {
         .limit(5)
       setClassConflicts(data || [])
     }
-
     checkConflicts()
   }, [watchItems, watchStart, watchEnd])
 
-  // Filter items based on search
-  const getFilteredItems = (type: 'room' | 'equipment') => {
-    if (!searchQuery) {
-      return type === 'room' ? rooms : equipment
-    }
-    
-    const query = searchQuery.toLowerCase()
+  function getFilteredItems(type: 'room' | 'equipment', query: string) {
+    const q = query.toLowerCase()
     if (type === 'room') {
-      return rooms.filter(r => 
-        r.name.toLowerCase().includes(query) ||
-        (r.room_code && r.room_code.toLowerCase().includes(query))
-      )
-    } else {
-      return equipment.filter(e => 
-        e.name.toLowerCase().includes(query) ||
-        (e.equipment_code && e.equipment_code.toLowerCase().includes(query))
-      )
+      return rooms.filter(r =>
+        !q || r.name.toLowerCase().includes(q) || (r.room_code ?? '').toLowerCase().includes(q) ||
+        r.building_name.toLowerCase().includes(q)
+      ).slice(0, 8)
     }
+    return equipment.filter(e =>
+      !q || e.name.toLowerCase().includes(q) || (e.equipment_code ?? '').toLowerCase().includes(q) ||
+      (e.merk ?? '').toLowerCase().includes(q)
+    ).slice(0, 8)
   }
-
-  // Get selected item details
-  const getSelectedRoom = (roomId: string) => rooms.find(r => r.id === roomId)
-  const getSelectedEquipment = (eqId: string) => equipment.find(e => e.id === eqId)
 
   async function onSubmit(data: FormData) {
     setLoading(true)
     const supabase = createClient()
-    
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        toast.error('Anda harus login')
-        return
-      }
-
-      // Prevent booking with zero total if there are items that should have rates
-      if (totalAmount === 0 && data.items.length > 0) {
-        const itemsWithoutRate = data.items.filter((item) => {
-          if (item.item_type === 'room' && item.room_id) {
-            const room = rooms.find(r => r.id === item.room_id)
-            if (!room) return true
-            const rate = getRoomRate(room, data.borrower_category)
-            return !rate.rate_per_hour && !rate.rate_per_day
-          } else if (item.item_type === 'equipment' && item.equipment_id) {
-            const eq = equipment.find(e => e.id === item.equipment_id)
-            if (!eq) return true
-            const rate = getEquipmentRate(eq, data.borrower_category)
-            return !rate.rate_per_hour && !rate.rate_per_day
-          }
-          return false
-        })
-        if (itemsWithoutRate.length > 0) {
-          toast.error('Beberapa item tidak memiliki tarif. Silakan periksa pengaturan tarif sebelum membuat peminjaman.')
-          setLoading(false)
-          return
-        }
-      }
+      if (!user) { toast.error('Anda harus login'); return }
 
       const dateStr = format(new Date(), 'yyyyMMdd')
       const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase()
       const referenceNo = `BK${dateStr}-${randomStr}`
 
-      // Get rate snapshot for first item (for metadata)
-      let snapshotRate: Record<string, string | number | boolean | null | undefined> = {}
-      if (data.items.length > 0) {
-        const firstItem = data.items[0]
-        if (firstItem.item_type === 'room' && firstItem.room_id) {
-          const room = rooms.find(r => r.id === firstItem.room_id)
-          if (room) {
-            const rate = getRoomRate(room, data.borrower_category)
-            snapshotRate = { 
-              item_type: 'room',
-              item_name: room.name,
-              rate_per_hour: rate.rate_per_hour,
-              rate_per_day: rate.rate_per_day,
-              borrower_category: data.borrower_category
-            }
-          }
-        } else if (firstItem.item_type === 'equipment' && firstItem.equipment_id) {
-          const eq = equipment.find(e => e.id === firstItem.equipment_id)
-          if (eq) {
-            const rate = getEquipmentRate(eq, data.borrower_category)
-            snapshotRate = { 
-              item_type: 'equipment',
-              item_name: eq.name,
-              rate_per_hour: rate.rate_per_hour,
-              rate_per_day: rate.rate_per_day,
-              borrower_category: data.borrower_category
-            }
-          }
-        }
-      }
-
-      // Include borrower info in snapshot_rate
-      snapshotRate = {
-        ...snapshotRate,
-        borrower_name: data.borrower_name,
-        borrower_email: data.borrower_email,
-        borrower_phone: data.borrower_phone,
-        borrower_institution: data.borrower_institution,
-        borrower_class: data.borrower_class,
-        borrower_category: data.borrower_category,
-        event_type: data.event_type,
-        created_by_admin: true,
+      let snapshotRate: Record<string, string | number | boolean | null | undefined> = {
+        borrower_name: data.borrower_name, borrower_email: data.borrower_email,
+        borrower_phone: data.borrower_phone, borrower_institution: data.borrower_institution,
+        borrower_class: data.borrower_class, borrower_category: data.borrower_category,
+        event_type: data.event_type, created_by_admin: true,
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -400,22 +286,19 @@ export function AdminBookingForm() {
           status: 'approved',
           snapshot_rate: snapshotRate,
         })
-        .select()
-        .single()
+        .select().single()
 
       if (bookingError) throw bookingError
 
-      const bookingItems = data.items.map(item => ({
-        booking_id: booking.id,
-        item_type: item.item_type,
-        room_id: item.item_type === 'room' ? item.room_id || null : null,
-        equipment_id: item.item_type === 'equipment' ? item.equipment_id || null : null,
-        quantity: item.quantity,
-      }))
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: itemsError } = await (supabase.from('booking_items') as any)
-        .insert(bookingItems)
+        .insert(data.items.map(item => ({
+          booking_id: booking.id,
+          item_type: item.item_type,
+          room_id: item.item_type === 'room' ? item.room_id || null : null,
+          equipment_id: item.item_type === 'equipment' ? item.equipment_id || null : null,
+          quantity: item.quantity,
+        })))
 
       if (itemsError) throw itemsError
 
@@ -429,69 +312,100 @@ export function AdminBookingForm() {
     }
   }
 
+  const isGratis = isFreeBooking(watchBorrowerCategory, watchEventType)
+
+  // Duration for display
+  const durationText = (() => {
+    if (!watchStart || !watchEnd) return null
+    const start = new Date(watchStart)
+    const end = new Date(watchEnd)
+    const hours = Math.ceil((end.getTime() - start.getTime()) / 3_600_000)
+    if (hours <= 0) return null
+    if (hours < 24) return `${hours} jam`
+    return `${Math.ceil(hours / 24)} hari`
+  })()
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="admin-page max-w-3xl">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/admin/bookings" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground/80">
-          <ArrowLeft className="h-4 w-4" /> Kembali
-        </Link>
+      <div className="page-header">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/bookings"
+            className="h-9 w-9 rounded-[10px] flex items-center justify-center border border-border bg-card text-muted-foreground hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="page-title">Peminjaman Baru</h1>
+            <p className="page-subtitle">Buat pengajuan langsung untuk pimpinan / tamu</p>
+          </div>
+        </div>
+        <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-xs font-medium self-start mt-1">
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          Langsung Disetujui
+        </Badge>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="h-14 w-14 bg-primary rounded-[14px] flex items-center justify-center shadow-lg">
-          <Calendar className="h-7 w-7 text-white" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Peminjaman Baru</h1>
-          <p className="text-muted-foreground">Buat pengajuan peminjaman untuk pimpinan/tamu</p>
-        </div>
-      </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Data Peminjam */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-500" />
-              Data Peminjam
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Nama Peminjam <span className="text-red-500">*</span></Label>
+        {/* ── Bagian 1: Data Peminjam ── */}
+        <section className="bg-card rounded-[14px] border border-border overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-border flex items-center gap-2 bg-muted/40">
+            <div className="h-7 w-7 rounded-lg bg-blue-100 flex items-center justify-center">
+              <User className="h-3.5 w-3.5 text-blue-600" />
+            </div>
+            <p className="text-sm font-semibold">Data Peminjam</p>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Nama Peminjam <span className="text-destructive">*</span>
+                </Label>
                 <Input placeholder="Nama lengkap" {...register('borrower_name')} />
-                {errors.borrower_name && <p className="text-sm text-red-500">{errors.borrower_name.message}</p>}
+                {errors.borrower_name && (
+                  <p className="text-xs text-destructive">{errors.borrower_name.message}</p>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label>Instansi/Organisasi <span className="text-red-500">*</span></Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Instansi/Organisasi <span className="text-destructive">*</span>
+                </Label>
                 <Input placeholder="Nama instansi" {...register('borrower_institution')} />
-                {errors.borrower_institution && <p className="text-sm text-red-500">{errors.borrower_institution.message}</p>}
+                {errors.borrower_institution && (
+                  <p className="text-xs text-destructive">{errors.borrower_institution.message}</p>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Email</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Email</Label>
                 <Input type="email" placeholder="email@example.com" {...register('borrower_email')} />
+                {errors.borrower_email && (
+                  <p className="text-xs text-destructive">{errors.borrower_email.message}</p>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label>Nomor WhatsApp</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Nomor WhatsApp</Label>
                 <Input placeholder="08123456789" {...register('borrower_phone')} />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Kategori Peminjam <span className="text-red-500">*</span></Label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Kategori <span className="text-destructive">*</span>
+                </Label>
                 <Select
                   value={watch('borrower_category')}
-                  onValueChange={(v) => setValue('borrower_category', v as FormData['borrower_category'])}
+                  onValueChange={v => setValue('borrower_category', v as FormData['borrower_category'])}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih kategori peminjam">
-                      {getBorrowerCategoryLabel(watch('borrower_category')) || "Pilih kategori peminjam"}
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue>
+                      {getBorrowerCategoryLabel(watch('borrower_category')) || 'Pilih kategori'}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -501,14 +415,18 @@ export function AdminBookingForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Jenis Kegiatan <span className="text-red-500">*</span></Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Jenis Kegiatan <span className="text-destructive">*</span>
+                </Label>
                 <Select
                   value={watch('event_type')}
-                  onValueChange={(v) => setValue('event_type', v as FormData['event_type'])}
+                  onValueChange={v => setValue('event_type', v as FormData['event_type'])}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih jenis kegiatan" />
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue>
+                      {EVENT_TYPES.find(et => et.key === watch('event_type'))?.label || 'Pilih jenis kegiatan'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {EVENT_TYPES.map(et => (
@@ -517,41 +435,67 @@ export function AdminBookingForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Kelas/Divisi</Label>
-                <Input placeholder="Contoh: Kelas A / Divisi IT" {...register('borrower_class')} />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Kelas/Divisi</Label>
+                <Input placeholder="Kelas A / Divisi IT" {...register('borrower_class')} />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Detail Peminjaman */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-500" />
-              Detail Peminjaman
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Tanggal & Waktu Mulai <span className="text-red-500">*</span></Label>
-                <Input type="datetime-local" {...register('start_datetime')} />
+        {/* ── Bagian 2: Jadwal ── */}
+        <section className="bg-card rounded-[14px] border border-border overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-border flex items-center gap-2 bg-muted/40">
+            <div className="h-7 w-7 rounded-lg bg-indigo-100 flex items-center justify-center">
+              <Calendar className="h-3.5 w-3.5 text-indigo-600" />
+            </div>
+            <p className="text-sm font-semibold">Jadwal Peminjaman</p>
+            {durationText && (
+              <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                Durasi: <span className="font-medium text-foreground">{durationText}</span>
+              </span>
+            )}
+          </div>
+
+          <div className="p-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Mulai <span className="text-destructive">*</span>
+                </Label>
+                <Input type="datetime-local" className="h-9 text-sm" {...register('start_datetime')} />
+                {errors.start_datetime && (
+                  <p className="text-xs text-destructive">{errors.start_datetime.message}</p>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label>Tanggal & Waktu Selesai <span className="text-red-500">*</span></Label>
-                <Input type="datetime-local" {...register('end_datetime')} />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Selesai <span className="text-destructive">*</span>
+                </Label>
+                <Input type="datetime-local" className="h-9 text-sm" {...register('end_datetime')} />
+                {errors.end_datetime && (
+                  <p className="text-xs text-destructive">{errors.end_datetime.message}</p>
+                )}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Tujuan Peminjaman <span className="text-red-500">*</span></Label>
-              <Textarea placeholder="Jelaskan tujuan peminjaman..." rows={3} {...register('purpose')} />
-              {errors.purpose && <p className="text-sm text-red-500">{errors.purpose.message}</p>}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">
+                Tujuan Peminjaman <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                placeholder="Jelaskan tujuan penggunaan ruangan / alat..."
+                rows={3}
+                className="text-sm resize-none"
+                {...register('purpose')}
+              />
+              {errors.purpose && (
+                <p className="text-xs text-destructive">{errors.purpose.message}</p>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
         {/* Class schedule conflict warning — admin can still proceed */}
         {classConflicts.length > 0 && (
@@ -578,278 +522,294 @@ export function AdminBookingForm() {
           </div>
         )}
 
-        {/* Item yang Dipinjam */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-blue-500" />
-              Item yang Dipinjam
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {/* ── Bagian 3: Item ── */}
+        <section className="bg-card rounded-[14px] border border-border overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-border flex items-center gap-2 bg-muted/40">
+            <div className="h-7 w-7 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <Package className="h-3.5 w-3.5 text-emerald-600" />
+            </div>
+            <p className="text-sm font-semibold">Item yang Dipinjam</p>
+            <Badge variant="secondary" className="ml-1 text-xs">{fields.length} item</Badge>
+          </div>
+
+          <div className="p-5 space-y-3">
             {fields.map((field, index) => {
               const currentItem = watchItems?.[index]
-              const selectedRoom = currentItem?.room_id ? getSelectedRoom(currentItem.room_id) : null
-              const selectedEquipment = currentItem?.equipment_id ? getSelectedEquipment(currentItem.equipment_id) : null
-              
-              // Get rates for selected member type
-              const roomRate = selectedRoom ? getRoomRate(selectedRoom, watchBorrowerCategory) : null
-              const equipmentRate = selectedEquipment ? getEquipmentRate(selectedEquipment, watchBorrowerCategory) : null
+              const selectedRoom = currentItem?.room_id ? rooms.find(r => r.id === currentItem.room_id) : null
+              const selectedEquipment = currentItem?.equipment_id ? equipment.find(e => e.id === currentItem.equipment_id) : null
+              const isRoom = currentItem?.item_type === 'room'
+              const query = searchQueries[index] ?? ''
+              const filteredList = getFilteredItems(isRoom ? 'room' : 'equipment', query)
+              const hasSelection = isRoom ? !!selectedRoom : !!selectedEquipment
+              const rate = selectedRoom
+                ? getRoomRate(selectedRoom, watchBorrowerCategory)
+                : selectedEquipment
+                ? getEquipmentRate(selectedEquipment, watchBorrowerCategory)
+                : null
+              const displayRate = rate?.rate_per_day ?? rate?.rate_per_hour ?? 0
+              const rateUnit = rate?.rate_per_day ? 'hari' : 'jam'
 
               return (
-                <div key={field.id} className="p-4 border rounded-[10px] space-y-4">
+                <div
+                  key={field.id}
+                  className={cn(
+                    'rounded-[12px] border p-4 space-y-3 transition-colors',
+                    hasSelection ? 'border-emerald-200 bg-emerald-50/30' : 'border-border bg-muted/20'
+                  )}
+                >
+                  {/* Item header */}
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Item #{index + 1}</h4>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Item #{index + 1}
+                    </span>
                     {fields.length > 1 && (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)} className="text-red-600">
-                        <Trash2 className="h-4 w-4 mr-1" /> Hapus
-                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => remove(index)}
+                        className="text-xs text-destructive hover:text-destructive/80 flex items-center gap-1 transition-colors"
+                      >
+                        <Trash2 className="h-3 w-3" /> Hapus
+                      </button>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Tipe Item</Label>
-                      <Select
-                        value={currentItem?.item_type || 'room'}
-                        onValueChange={(v) => {
-                          setValue(`items.${index}.item_type`, v as 'room' | 'equipment')
+                  {/* Type toggle */}
+                  <div className="flex gap-2">
+                    {[
+                      { value: 'room', label: 'Ruangan', icon: DoorOpen },
+                      { value: 'equipment', label: 'Alat', icon: Wrench },
+                    ].map(({ value, label, icon: Icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setValue(`items.${index}.item_type`, value as 'room' | 'equipment')
                           setValue(`items.${index}.room_id`, '')
                           setValue(`items.${index}.equipment_id`, '')
+                          setSearchQueries(p => ({ ...p, [index]: '' }))
+                          setDropdownOpen(p => ({ ...p, [index]: false }))
                         }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>
-                            {currentItem?.item_type === 'room' ? 'Ruang' : 'Alat'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="room">Ruang</SelectItem>
-                          <SelectItem value="equipment">Alat</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label>{currentItem?.item_type === 'room' ? 'Pilih Ruang' : 'Pilih Alat'}</Label>
-                      <Select
-                        value={currentItem?.item_type === 'room' ? currentItem?.room_id || '' : currentItem?.equipment_id || ''}
-                        onValueChange={(v) => {
-                          if (currentItem?.item_type === 'room') {
-                            setValue(`items.${index}.room_id`, v || '')
-                          } else {
-                            setValue(`items.${index}.equipment_id`, v || '')
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Pilih ${currentItem?.item_type === 'room' ? 'ruang' : 'alat'}...`}>
-                            {(() => {
-                              if (currentItem?.item_type === 'room' && currentItem?.room_id) {
-                                const room = rooms.find(r => r.id === currentItem.room_id)
-                                return room ? `${room.name} (${room.room_code || 'Tanpa Kode'})` : 'Pilih ruang...'
-                              } else if (currentItem?.item_type === 'equipment' && currentItem?.equipment_id) {
-                                const eq = equipment.find(e => e.id === currentItem.equipment_id)
-                                return eq ? `${eq.name} (${eq.equipment_code || 'Tanpa Kode'})` : 'Pilih alat...'
-                              }
-                              return `Pilih ${currentItem?.item_type === 'room' ? 'ruang' : 'alat'}...`
-                            })()}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {currentItem?.item_type === 'room' 
-                            ? rooms.map((item) => {
-                              const rate = getRoomRate(item, watchBorrowerCategory)
-                              const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
-                              return (
-                                <SelectItem key={item.id} value={item.id}>
-                                  <div className="flex items-center justify-between w-full">
-                                    <span>{item.name} {item.room_code ? `(${item.room_code})` : ''}</span>
-                                    <span className="text-xs text-muted-foreground ml-2">
-                                      Rp {displayRate.toLocaleString('id-ID')}
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                              )
-                            })
-                            : equipment.map((item) => {
-                              const rate = getEquipmentRate(item, watchBorrowerCategory)
-                              const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
-                              return (
-                                <SelectItem key={item.id} value={item.id}>
-                                  <div className="flex items-center justify-between w-full">
-                                    <span>{item.name} {item.equipment_code ? `(${item.equipment_code})` : ''}</span>
-                                    <span className="text-xs text-muted-foreground ml-2">
-                                      Rp {displayRate.toLocaleString('id-ID')}
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                              )
-                            })
-                          }
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Search Input */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Search className="h-4 w-4" />
-                      Cari {currentItem?.item_type === 'room' ? 'Ruang' : 'Alat'}
-                    </Label>
-                    <Input
-                      placeholder={`Ketik nama atau kode ${currentItem?.item_type === 'room' ? 'ruang' : 'alat'}...`}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="mb-2"
-                    />
-                    <div className="max-h-40 overflow-y-auto border rounded-[10px]">
-                      {(currentItem?.item_type === 'room' 
-                        ? getFilteredItems('room').slice(0, 5) 
-                        : getFilteredItems('equipment').slice(0, 5)
-                      ).map((item) => {
-                        const rate = currentItem?.item_type === 'room' 
-                          ? getRoomRate(item as Room, watchBorrowerCategory)
-                          : getEquipmentRate(item as Equipment, watchBorrowerCategory)
-                        const displayRate = rate.rate_per_day || rate.rate_per_hour || 0
-                        
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => {
-                              if (currentItem?.item_type === 'room') {
-                                setValue(`items.${index}.room_id`, item.id)
-                              } else {
-                                setValue(`items.${index}.equipment_id`, item.id)
-                              }
-                              setSearchQuery('')
-                            }}
-                            className="w-full flex items-center gap-3 p-3 hover:bg-muted border-b last:border-b-0 text-left"
-                          >
-                            {item.photo_url ? (
-                              <img src={item.photo_url} alt={item.name} className="w-12 h-12 object-cover rounded-[10px]" />
-                            ) : (
-                              <div className="w-12 h-12 bg-muted rounded-[10px] flex items-center justify-center">
-                                <Package className="h-6 w-6 text-muted-foreground/70" />
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {(item as Room).room_code || (item as Equipment).equipment_code ? `Kode: ${(item as Room).room_code || (item as Equipment).equipment_code}` : ''}
-                                {(item as Room).building_name ? ` • ${(item as Room).building_name}` : ''}
-                                {(item as Equipment).merk ? ` • ${(item as Equipment).merk}` : ''}
-                              </p>
-                            </div>
-                            <Badge variant="secondary" className="text-xs">
-                              Rp {displayRate.toLocaleString('id-ID')}
-                            </Badge>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Selected Item Info */}
-                  {(selectedRoom || selectedEquipment) && (
-                    <div className="p-4 bg-muted rounded-[10px]">
-                      <p className="text-sm font-medium mb-2">Item Terpilih:</p>
-                      <div className="flex gap-4">
-                        {(selectedRoom?.photo_url || selectedEquipment?.photo_url) ? (
-                          <img 
-                            src={selectedRoom?.photo_url || selectedEquipment?.photo_url || ''} 
-                            alt="Foto item terpilih" 
-                            className="w-24 h-24 object-cover rounded-[10px]"
-                          />
-                        ) : (
-                          <div className="w-24 h-24 bg-muted rounded-[10px] flex items-center justify-center">
-                            <Package className="h-10 w-10 text-muted-foreground/70" />
-                          </div>
+                        className={cn(
+                          'flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-medium border transition-all',
+                          currentItem?.item_type === value
+                            ? 'bg-foreground text-background border-foreground'
+                            : 'bg-card text-muted-foreground border-border hover:border-muted-foreground/40'
                         )}
-                        <div className="flex-1">
-                          <h5 className="font-semibold">
-                            {selectedRoom?.name || selectedEquipment?.name}
-                          </h5>
-                          {selectedRoom && (
-                            <>
-                              <p className="text-sm text-muted-foreground">Kode: {selectedRoom.room_code || '-'}</p>
-                              <p className="text-sm text-muted-foreground">Gedung: {selectedRoom.building_name}</p>
-                              <p className="text-sm text-muted-foreground">Kapasitas: {selectedRoom.capacity || '-'} orang</p>
-                            </>
-                          )}
-                          {selectedEquipment && (
-                            <>
-                              <p className="text-sm text-muted-foreground">Kode: {selectedEquipment.equipment_code || '-'}</p>
-                              <p className="text-sm text-muted-foreground">Merk: {selectedEquipment.merk || '-'}</p>
-                              <p className="text-sm text-muted-foreground">Status: Tersedia</p>
-                            </>
-                          )}
-                          <p className="text-sm font-medium text-blue-600 mt-1">
-                            Tarif ({getBorrowerCategoryLabel(watchBorrowerCategory)}):
-                            {' '}Rp {(roomRate?.rate_per_day || equipmentRate?.rate_per_day || roomRate?.rate_per_hour || equipmentRate?.rate_per_hour || 0).toLocaleString('id-ID')}
-                            /{(roomRate?.rate_per_day || equipmentRate?.rate_per_day) ? 'hari' : 'jam'}
+                      >
+                        <Icon className="h-3 w-3" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Search / Selection */}
+                  <div
+                    className="relative"
+                    ref={el => { dropdownRefs.current[index] = el }}
+                  >
+                    {hasSelection ? (
+                      /* Selected item chip */
+                      <div className="flex items-center gap-3 p-3 bg-card rounded-[10px] border border-emerald-200">
+                        <div className={cn(
+                          'h-9 w-9 rounded-lg flex items-center justify-center shrink-0',
+                          isRoom ? 'bg-blue-50' : 'bg-amber-50'
+                        )}>
+                          {isRoom
+                            ? <Building2 className="h-4 w-4 text-blue-500" />
+                            : <Wrench className="h-4 w-4 text-amber-500" />
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {selectedRoom?.name ?? selectedEquipment?.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {selectedRoom
+                              ? `${selectedRoom.room_code ?? 'Tanpa kode'} · ${selectedRoom.building_name}`
+                              : `${selectedEquipment?.equipment_code ?? 'Tanpa kode'}${selectedEquipment?.merk ? ' · ' + selectedEquipment.merk : ''}`
+                            }
                           </p>
                         </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs font-semibold text-emerald-700">
+                            {displayRate > 0 ? `${formatRupiah(displayRate)}/${rateUnit}` : 'Gratis'}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {getBorrowerCategoryLabel(watchBorrowerCategory)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isRoom) setValue(`items.${index}.room_id`, '')
+                            else setValue(`items.${index}.equipment_id`, '')
+                          }}
+                          className="h-7 w-7 shrink-0 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-red-50 transition-colors"
+                          aria-label="Hapus pilihan"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      /* Search input */
+                      <>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                          <Input
+                            placeholder={`Cari ${isRoom ? 'ruangan' : 'alat'} berdasarkan nama atau kode...`}
+                            value={query}
+                            onChange={e => {
+                              setSearchQueries(p => ({ ...p, [index]: e.target.value }))
+                              setDropdownOpen(p => ({ ...p, [index]: true }))
+                            }}
+                            onFocus={() => setDropdownOpen(p => ({ ...p, [index]: true }))}
+                            className="pl-9 h-9 text-sm"
+                          />
+                          {query && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchQueries(p => ({ ...p, [index]: '' }))
+                                setDropdownOpen(p => ({ ...p, [index]: true }))
+                              }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
 
-                  <div className="space-y-2">
-                    <Label>Jumlah</Label>
-                    <Input 
-                      type="number"
-                      min={1}
-                      {...register(`items.${index}.quantity` as const, { valueAsNumber: true })}
-                      className="w-32"
-                    />
+                        {/* Dropdown results */}
+                        {dropdownOpen[index] && (
+                          <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-card border border-border rounded-[10px] shadow-lg overflow-hidden">
+                            {filteredList.length === 0 ? (
+                              <p className="text-sm text-muted-foreground text-center py-6">
+                                {query ? 'Tidak ada hasil' : `Belum ada ${isRoom ? 'ruangan' : 'alat'} tersedia`}
+                              </p>
+                            ) : (
+                              <div className="max-h-52 overflow-y-auto divide-y divide-border">
+                                {filteredList.map(item => {
+                                  const r = isRoom
+                                    ? getRoomRate(item as Room, watchBorrowerCategory)
+                                    : getEquipmentRate(item as Equipment, watchBorrowerCategory)
+                                  const dr = r.rate_per_day ?? r.rate_per_hour ?? 0
+                                  const ru = r.rate_per_day ? 'hari' : 'jam'
+                                  return (
+                                    <button
+                                      key={item.id}
+                                      type="button"
+                                      onClick={() => {
+                                        if (isRoom) setValue(`items.${index}.room_id`, item.id)
+                                        else setValue(`items.${index}.equipment_id`, item.id)
+                                        setSearchQueries(p => ({ ...p, [index]: '' }))
+                                        setDropdownOpen(p => ({ ...p, [index]: false }))
+                                      }}
+                                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted text-left transition-colors"
+                                    >
+                                      <div className={cn(
+                                        'h-8 w-8 rounded-lg flex items-center justify-center shrink-0',
+                                        isRoom ? 'bg-blue-50' : 'bg-amber-50'
+                                      )}>
+                                        {isRoom
+                                          ? <Building2 className="h-3.5 w-3.5 text-blue-500" />
+                                          : <Wrench className="h-3.5 w-3.5 text-amber-500" />
+                                        }
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{item.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          {(item as Room).room_code || (item as Equipment).equipment_code
+                                            ? `${(item as Room).room_code || (item as Equipment).equipment_code} · `
+                                            : ''}
+                                          {(item as Room).building_name || (item as Equipment).merk || ''}
+                                        </p>
+                                      </div>
+                                      <span className="text-xs font-medium text-emerald-700 shrink-0">
+                                        {dr > 0 ? `${formatRupiah(dr)}/${ru}` : 'Gratis'}
+                                      </span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
+
                 </div>
               )
             })}
 
-            <Button
+            {/* Add item */}
+            <button
               type="button"
-              variant="outline"
               onClick={() => append({ item_type: 'room', room_id: '', equipment_id: '', quantity: 1 })}
-              className="w-full"
+              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-border rounded-[12px] text-sm text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground transition-colors"
             >
-              <Plus className="h-4 w-4 mr-2" /> Tambah Item
-            </Button>
+              <Plus className="h-4 w-4" /> Tambah Item
+            </button>
 
-            {errors.items && <p className="text-sm text-red-500">{errors.items.message}</p>}
-          </CardContent>
-        </Card>
+            {errors.items && typeof errors.items.message === 'string' && (
+              <p className="text-xs text-destructive">{errors.items.message}</p>
+            )}
+          </div>
+        </section>
 
-        {/* Total */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600">
-                  Estimasi Total 
-                  <span className="ml-1 text-xs">
-                    ({getBorrowerCategoryLabel(watchBorrowerCategory)})
-                  </span>
-                </p>
-                <p className="text-3xl font-bold text-blue-900">
-                  Rp {totalAmount.toLocaleString('id-ID')}
-                </p>
-              </div>
-              <p className="text-sm text-blue-600">Peminjaman ini akan langsung disetujui</p>
+        {/* ── Total ── */}
+        <section className={cn(
+          'rounded-[14px] border p-5',
+          isGratis
+            ? 'bg-emerald-50 border-emerald-200'
+            : 'bg-blue-50 border-blue-200'
+        )}>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Estimasi Total · {getBorrowerCategoryLabel(watchBorrowerCategory)}
+                {isGratis && (
+                  <Badge className="ml-2 text-[10px] bg-emerald-100 text-emerald-700 border border-emerald-200">
+                    Gratis
+                  </Badge>
+                )}
+              </p>
+              <p className={cn(
+                'text-3xl font-bold',
+                isGratis ? 'text-emerald-700' : 'text-blue-900'
+              )}>
+                {formatRupiah(totalAmount)}
+              </p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-right text-xs text-muted-foreground shrink-0">
+              <p className="flex items-center gap-1 justify-end">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                Langsung disetujui
+              </p>
+              <p className="mt-0.5 opacity-70">tanpa menunggu konfirmasi</p>
+            </div>
+          </div>
+        </section>
 
-        {/* Submit Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button type="submit" disabled={loading} className="flex-1 h-12 bg-blue-600 hover:bg-blue-700">
-            {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-            Buat Peminjaman
-          </Button>
-          <Button type="button" variant="outline" onClick={() => router.back()} className="h-12 px-8">
+        {/* ── Actions ── */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            className="sm:w-auto h-11"
+          >
             Batal
+          </Button>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="flex-1 h-11"
+          >
+            {loading
+              ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
+              : <><Calendar className="mr-2 h-4 w-4" /> Buat Peminjaman</>
+            }
           </Button>
         </div>
       </form>

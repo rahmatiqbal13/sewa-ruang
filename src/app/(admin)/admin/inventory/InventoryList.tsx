@@ -13,6 +13,7 @@ import { ConditionBadge } from '@/components/shared/ConditionBadge'
 import { cn } from '@/lib/utils'
 import { exportInventoryToExcel } from './exportInventory'
 import { InventoryImportDialog } from './InventoryImportDialog'
+import type { ImportResult } from '../equipment/importEquipment'
 import { EditInventoryItemDialog } from './[roomId]/EditInventoryItemDialog'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -145,6 +146,16 @@ export function InventoryList({
     clearSelection()
   }
 
+  const handleImport = async (): Promise<ImportResult> => ({
+    success: false,
+    message: 'Silakan pilih ruangan terlebih dahulu untuk mengimport inventaris.',
+    totalRows: 0,
+    successCount: 0,
+    skippedCount: 0,
+    errorCount: 1,
+    importedIds: [],
+    errors: [{ row: 0, message: 'Pilih ruangan terlebih dahulu' }],
+  })
 
   async function confirmDelete() {
     if (!deleteTarget) return
